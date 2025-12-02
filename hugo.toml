@@ -1,0 +1,63 @@
+baseURL = "https://stepinto.dev/"
+languageCode = "en-gb"
+title = "Step Into Dev"
+theme = "terminal"
+
+# Pagination
+paginate = 10
+
+[params]
+  # Terminal theme config
+  contentTypeName = "posts"
+  themeColor = "green"
+  showMenuItems = 2
+  showLanguageSelector = false
+  fullWidthTheme = false
+  centerTheme = true
+  autoCover = true
+  showLastUpdated = false
+  
+  # Custom
+  description = "Tech musings from someone who's been doing this for a while"
+  author = "Andy Cross"
+  
+[params.twitter]
+  creator = ""
+
+[languages]
+  [languages.en]
+    languageName = "English"
+    title = "Step Into Dev"
+    subtitle = "Building things that matter"
+    owner = "Andy Cross"
+    keywords = "mcp, ai, development, azure, python"
+    copyright = ""
+    menuMore = "Show more"
+    readMore = "Read more"
+    readOtherPosts = "Read other posts"
+    newerPosts = "Newer posts"
+    olderPosts = "Older posts"
+    missingContentMessage = "Page not found..."
+    missingBackButtonLabel = "Back to home page"
+    
+    [languages.en.params.logo]
+      logoText = "> stepinto.dev"
+      logoHomeLink = "/"
+
+    [languages.en.menu]
+      [[languages.en.menu.main]]
+        identifier = "posts"
+        name = "Posts"
+        url = "/posts"
+        weight = 1
+      [[languages.en.menu.main]]
+        identifier = "about"
+        name = "About"
+        url = "/about"
+        weight = 2
+
+[module]
+  [module.hugoVersion]
+    extended = false
+    min = "0.116.0"
+
