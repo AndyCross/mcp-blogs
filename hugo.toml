@@ -4,7 +4,8 @@ title = "Step Into Dev"
 theme = "terminal"
 
 # Pagination
-paginate = 10
+[pagination]
+  pagerSize = 10
 
 [params]
   # Terminal theme config
