@@ -14,12 +14,53 @@ jobs:
     if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.action != 'closed')
     runs-on: ubuntu-latest
     name: Build and Deploy
+    outputs:
+      new_posts: ${{ steps.check_posts.outputs.new_posts }}
+      post_titles: ${{ steps.check_posts.outputs.post_titles }}
+      post_slugs: ${{ steps.check_posts.outputs.post_slugs }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           submodules: true
           fetch-depth: 0
+
+      - name: Check for new posts
+        id: check_posts
+        run: |
+          # Get list of added files in content/posts/ from this push
+          NEW_POSTS=$(git diff --name-only --diff-filter=A HEAD~1 HEAD -- 'content/posts/*.md' 2>/dev/null || echo "")
+          
+          if [ -z "$NEW_POSTS" ]; then
+            echo "new_posts=false" >> $GITHUB_OUTPUT
+            echo "No new posts detected"
+          else
+            echo "new_posts=true" >> $GITHUB_OUTPUT
+            echo "New posts detected: $NEW_POSTS"
+            
+            # Extract titles and slugs from new posts
+            TITLES=""
+            SLUGS=""
+            for POST in $NEW_POSTS; do
+              # Extract title from frontmatter
+              TITLE=$(grep -m1 '^title = ' "$POST" | sed 's/title = "\(.*\)"/\1/')
+              # Get slug from filename
+              SLUG=$(basename "$POST" .md)
+              
+              if [ -n "$TITLES" ]; then
+                TITLES="$TITLES|$TITLE"
+                SLUGS="$SLUGS|$SLUG"
+              else
+                TITLES="$TITLE"
+                SLUGS="$SLUG"
+              fi
+            done
+            
+            echo "post_titles=$TITLES" >> $GITHUB_OUTPUT
+            echo "post_slugs=$SLUGS" >> $GITHUB_OUTPUT
+            echo "Titles: $TITLES"
+            echo "Slugs: $SLUGS"
+          fi
 
       - name: Setup Hugo
         uses: peaceiris/actions-hugo@v3
@@ -38,6 +79,46 @@ jobs:
           action: "upload"
           skip_app_build: true
           app_location: "public"
+
+  notify_subscribers:
+    needs: build_and_deploy
+    if: github.event_name == 'push' && needs.build_and_deploy.outputs.new_posts == 'true'
+    runs-on: ubuntu-latest
+    name: Notify Subscribers via Buttondown
+    steps:
+      - name: Send newsletter for new post
+        env:
+          BUTTONDOWN_API_KEY: ${{ secrets.BUTTONDOWN_API_KEY }}
+          POST_TITLES: ${{ needs.build_and_deploy.outputs.post_titles }}
+          POST_SLUGS: ${{ needs.build_and_deploy.outputs.post_slugs }}
+        run: |
+          # Process each new post (split by |)
+          IFS='|' read -ra TITLES <<< "$POST_TITLES"
+          IFS='|' read -ra SLUGS <<< "$POST_SLUGS"
+          
+          for i in "${!TITLES[@]}"; do
+            TITLE="${TITLES[$i]}"
+            SLUG="${SLUGS[$i]}"
+            URL="https://stepinto.dev/posts/${SLUG}/"
+            
+            echo "Creating newsletter draft for: $TITLE"
+            
+            # Create email via Buttondown API
+            curl -X POST "https://api.buttondown.com/v1/emails" \
+              -H "Authorization: Token $BUTTONDOWN_API_KEY" \
+              -H "X-API-Version: 2025-06-01" \
+              -H "Content-Type: application/json" \
+              -d @- <<EOF
+          {
+            "subject": "New Post: ${TITLE}",
+            "body": "I've just published a new post:\n\n## [${TITLE}](${URL})\n\nRead it on the blog: ${URL}\n\n---\n\n*You're receiving this because you subscribed to Step Into Dev.*",
+            "status": "draft"
+          }
+          EOF
+            
+            echo ""
+            echo "Draft created for: $TITLE"
+          done
 
   close_pull_request:
     if: github.event_name == 'pull_request' && github.event.action == 'closed'

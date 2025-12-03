@@ -1,11 +1,11 @@
-{{- if .Site.Params.showNewsletter }}
+{{- if and .Site.Params.showNewsletter .Site.Params.newsletterUsername }}
 <section class="newsletter-section">
   <div class="newsletter-container">
     <div class="newsletter-content">
       <h3 class="newsletter-heading">Stay Updated</h3>
-      <p class="newsletter-description">Get notified about new posts on AI, 3D rendering, and MCP development.</p>
+      <p class="newsletter-description">{{ .Site.Params.newsletterDescription | default "Get notified about new posts." }}</p>
     </div>
-    <form class="newsletter-form" action="#" method="POST">
+    <form class="newsletter-form" action="https://buttondown.com/api/emails/embed-subscribe/{{ .Site.Params.newsletterUsername }}" method="POST" target="_blank">
       <input 
         type="email" 
         name="email" 
@@ -14,6 +14,7 @@
         required
         aria-label="Email address"
       >
+      <input type="hidden" name="embed" value="1">
       <button type="submit" class="newsletter-button">Subscribe</button>
     </form>
   </div>

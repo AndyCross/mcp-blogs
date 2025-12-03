@@ -15,8 +15,12 @@ theme = "stepdev"
   # Step Into Dev Theme Settings
   heroTitle = "Building with AI & 3D"
   heroSubtitle = "Exploring the intersection of AI, 3D rendering, and the Model Context Protocol."
-  showNewsletter = true
   heroImage = "/images/hero.png"
+  
+  # Newsletter (Buttondown)
+  showNewsletter = true
+  newsletterUsername = "andycross"
+  newsletterDescription = "Get notified about new posts on AI, MCP development, and building things that matter."
 
   [[params.socialIcons]]
     name = "github"
