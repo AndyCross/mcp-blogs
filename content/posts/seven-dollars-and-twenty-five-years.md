@@ -140,7 +140,9 @@ The paywalled solutions exist because someone invested their time and expertise 
 
 The question is: who has that background? And what happens to the paywall business models when AI makes the "just build it" option increasingly viable?
 
-I don't have answers. But I suspect we're going to need that equation soon.
+What I do know is this: the 25 years weren't optional. Without them, the $7 buys you nothing but confident-sounding nonsense. The AI amplifies what you already have—it doesn't replace the judgement that comes from decades of getting things wrong in interesting ways.
+
+We're going to need that equation. And when we figure it out, I suspect experience will be the dominant term.
 
 ---
 
