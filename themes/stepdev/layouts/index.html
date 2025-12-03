@@ -1,0 +1,40 @@
+{{ define "main" }}
+<div class="container">
+  <!-- Hero Section -->
+  <section class="hero-section">
+    <h1 class="hero-title">{{ .Site.Params.heroTitle | default "Building with AI & 3D" }}</h1>
+    <p class="hero-subtitle">{{ .Site.Params.heroSubtitle | default .Site.Params.description }}</p>
+    
+    <div class="hero-image">
+      <div class="hero-image-inner">
+        <div class="hero-grid-overlay"></div>
+        {{- with .Site.Params.heroImage }}
+        <img src="{{ . | relURL }}" alt="Featured image" class="hero-img">
+        {{- end }}
+      </div>
+    </div>
+  </section>
+  
+  <!-- Latest Posts Section -->
+  <section class="posts-section">
+    <h2 class="section-header">Latest Posts</h2>
+    
+    <div class="posts-list">
+      {{- $pages := where .Site.RegularPages "Type" "posts" }}
+      {{- range first 10 $pages }}
+      {{- partial "post-card.html" . }}
+      {{- end }}
+    </div>
+    
+    {{- if gt (len $pages) 10 }}
+    <div class="view-all">
+      <a href="{{ "/posts/" | relURL }}" class="view-all-link">View all posts →</a>
+    </div>
+    {{- end }}
+  </section>
+  
+  <!-- Newsletter Section -->
+  {{- partial "newsletter.html" . }}
+</div>
+{{ end }}
+

@@ -42,10 +42,13 @@ resource staticWebApp 'Microsoft.Web/staticSites@2023-12-01' = {
 
 // Custom domain configuration
 // Note: DNS must be configured first before this will validate
+// Apex domains require dns-txt-token validation method
 resource customDomainResource 'Microsoft.Web/staticSites/customDomains@2023-12-01' = if (customDomain != '') {
   parent: staticWebApp
   name: customDomain
-  properties: {}
+  properties: {
+    validationMethod: 'dns-txt-token'
+  }
 }
 
 // Outputs

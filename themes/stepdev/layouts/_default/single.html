@@ -1,0 +1,64 @@
+{{ define "main" }}
+<article class="single-post">
+  <div class="container container-narrow">
+    <header class="post-header">
+      <h1 class="post-title">{{ .Title }}</h1>
+      
+      <div class="post-meta">
+        <time datetime="{{ .Date.Format "2006-01-02" }}">
+          {{ .Date.Format "January 2, 2006" }}
+        </time>
+        {{- with .Params.readingTime }}
+        <span class="meta-separator">·</span>
+        <span>{{ . }} min read</span>
+        {{- else }}
+        <span class="meta-separator">·</span>
+        <span>{{ math.Round (div (countwords .Content) 200.0) }} min read</span>
+        {{- end }}
+      </div>
+      
+      {{- with .Params.tags }}
+      <div class="post-tags">
+        {{- range . }}
+        <a href="{{ "/tags/" | relURL }}{{ . | urlize }}/" class="tag tag-link">{{ . }}</a>
+        {{- end }}
+      </div>
+      {{- end }}
+    </header>
+    
+    {{- with .Params.cover }}
+    <figure class="post-cover">
+      <img src="{{ . | relURL }}" alt="{{ $.Title }}" class="post-cover-img">
+    </figure>
+    {{- end }}
+    
+    <div class="post-content prose">
+      {{ .Content }}
+    </div>
+    
+    <footer class="post-footer">
+      {{- if or .PrevInSection .NextInSection }}
+      <nav class="post-nav">
+        {{- with .PrevInSection }}
+        <a href="{{ .Permalink }}" class="post-nav-link post-nav-prev">
+          <span class="post-nav-label">← Previous</span>
+          <span class="post-nav-title">{{ .Title }}</span>
+        </a>
+        {{- end }}
+        {{- with .NextInSection }}
+        <a href="{{ .Permalink }}" class="post-nav-link post-nav-next">
+          <span class="post-nav-label">Next →</span>
+          <span class="post-nav-title">{{ .Title }}</span>
+        </a>
+        {{- end }}
+      </nav>
+      {{- end }}
+    </footer>
+  </div>
+  
+  <div class="container">
+    {{- partial "newsletter.html" . }}
+  </div>
+</article>
+{{ end }}
+

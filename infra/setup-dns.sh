@@ -10,10 +10,10 @@
 set -euo pipefail
 
 # Configuration
-DNSIMPLE_TOKEN="${DNSIMPLE_TOKEN:-dnsimple_u_BDESWPB2dSxQnWkFYSbub5Sjn8JUDnmA}"
+DNSIMPLE_TOKEN="${DNSIMPLE_TOKEN:-}"
 DNSIMPLE_ACCOUNT_ID="${DNSIMPLE_ACCOUNT_ID:-}"
 DOMAIN="stepinto.dev"
-SWA_HOSTNAME="stepinto-dev-blog.azurestaticapps.net"
+SWA_HOSTNAME="happy-meadow-0e8dab403.3.azurestaticapps.net"
 
 # Colours for output
 RED='\033[0;31m'
@@ -41,17 +41,27 @@ if [[ -z "$VALIDATION_TOKEN" ]]; then
     read -p "Enter validation token (or press Enter to skip TXT record): " VALIDATION_TOKEN
 fi
 
+# Check token is set
+if [[ -z "$DNSIMPLE_TOKEN" ]]; then
+    log_error "DNSIMPLE_TOKEN environment variable is required"
+    echo "  export DNSIMPLE_TOKEN='your_token_here'"
+    exit 1
+fi
+
 # Get account ID if not set
 if [[ -z "$DNSIMPLE_ACCOUNT_ID" ]]; then
-    log_info "Fetching DNSimple account ID..."
+    log_info "Fetching DNSimple account ID from whoami..."
     ACCOUNT_RESPONSE=$(curl -s -H "Authorization: Bearer $DNSIMPLE_TOKEN" \
         "https://api.dnsimple.com/v2/whoami")
     
-    DNSIMPLE_ACCOUNT_ID=$(echo "$ACCOUNT_RESPONSE" | grep -o '"account":{"id":[0-9]*' | grep -o '[0-9]*' || true)
+    # Try jq first (cleaner), fall back to sed
+    if command -v jq &>/dev/null; then
+        DNSIMPLE_ACCOUNT_ID=$(echo "$ACCOUNT_RESPONSE" | jq -r '.data.account.id // .data.user.id // empty' 2>/dev/null || true)
+    fi
     
+    # Fallback: parse with sed
     if [[ -z "$DNSIMPLE_ACCOUNT_ID" ]]; then
-        # Try user account
-        DNSIMPLE_ACCOUNT_ID=$(echo "$ACCOUNT_RESPONSE" | grep -o '"user":{"id":[0-9]*' | grep -o '[0-9]*' || true)
+        DNSIMPLE_ACCOUNT_ID=$(echo "$ACCOUNT_RESPONSE" | sed -n 's/.*"account":{"id":\([0-9]*\).*/\1/p' || true)
     fi
     
     if [[ -z "$DNSIMPLE_ACCOUNT_ID" ]]; then
@@ -89,7 +99,7 @@ create_record() {
     if echo "$response" | grep -q '"id":'; then
         log_info "✓ $type record created successfully"
         return 0
-    elif echo "$response" | grep -q 'already been taken'; then
+    elif echo "$response" | grep -qE 'already been taken|already exists|Matching record'; then
         log_warn "$type record already exists, skipping"
         return 0
     else
@@ -103,10 +113,16 @@ create_record() {
 # Function to list existing records
 list_records() {
     log_info "Current DNS records for $DOMAIN:"
-    curl -s -H "Authorization: Bearer $DNSIMPLE_TOKEN" "$API_BASE" | \
-        grep -oE '"name":"[^"]*","type":"[^"]*","content":"[^"]*"' | \
-        sed 's/"name":"/@/g; s/","type":"/ /g; s/","content":"/ → /g; s/"//g' | \
-        while read line; do echo "  $line"; done
+    local response
+    response=$(curl -s -H "Authorization: Bearer $DNSIMPLE_TOKEN" "$API_BASE")
+    
+    if command -v jq &>/dev/null; then
+        echo "$response" | jq -r '.data[]? | "  \(if .name == "" then "@" else .name end) \(.type) → \(.content)"' 2>/dev/null || echo "  (none or error fetching)"
+    else
+        echo "$response" | grep -oE '"name":"[^"]*","type":"[^"]*","content":"[^"]*"' | \
+            sed 's/"name":"/@/g; s/","type":"/ /g; s/","content":"/ → /g; s/"//g' | \
+            while read -r line; do echo "  $line"; done || echo "  (none)"
+    fi
 }
 
 echo ""

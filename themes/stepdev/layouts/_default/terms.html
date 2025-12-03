@@ -1,0 +1,20 @@
+{{ define "main" }}
+<div class="container">
+  <header class="page-header">
+    <h1 class="page-title">{{ .Title }}</h1>
+    {{- with .Description }}
+    <p class="page-description">{{ . }}</p>
+    {{- end }}
+  </header>
+  
+  <div class="terms-list">
+    {{- range .Pages }}
+    <a href="{{ .Permalink }}" class="term-item">
+      <span class="term-name">{{ .Title }}</span>
+      <span class="term-count">{{ len .Pages }}</span>
+    </a>
+    {{- end }}
+  </div>
+</div>
+{{ end }}
+

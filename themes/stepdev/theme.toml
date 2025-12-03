@@ -1,0 +1,13 @@
+# Theme metadata
+name = "Step Into Dev"
+license = "MIT"
+licenselink = "https://github.com/andycross/mcp-blogs/blob/main/LICENSE"
+description = "A modern blue-tinted dark theme for AI/3D focused tech blogs"
+homepage = "https://github.com/andycross/mcp-blogs"
+tags = ["blog", "dark", "minimal", "responsive", "tech", "ai", "3d"]
+features = ["dark-mode", "responsive", "newsletter", "tags"]
+min_version = "0.112.0"
+
+[author]
+  name = "Andy Cross"
+

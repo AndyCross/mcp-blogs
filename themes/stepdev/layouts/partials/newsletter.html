@@ -1,0 +1,22 @@
+{{- if .Site.Params.showNewsletter }}
+<section class="newsletter-section">
+  <div class="newsletter-container">
+    <div class="newsletter-content">
+      <h3 class="newsletter-heading">Stay Updated</h3>
+      <p class="newsletter-description">Get notified about new posts on AI, 3D rendering, and MCP development.</p>
+    </div>
+    <form class="newsletter-form" action="#" method="POST">
+      <input 
+        type="email" 
+        name="email" 
+        placeholder="your@email.com" 
+        class="newsletter-input"
+        required
+        aria-label="Email address"
+      >
+      <button type="submit" class="newsletter-button">Subscribe</button>
+    </form>
+  </div>
+</section>
+{{- end }}
+

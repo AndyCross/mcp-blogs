@@ -1,7 +1,7 @@
 baseURL = "https://stepinto.dev/"
 languageCode = "en-gb"
 title = "Step Into Dev"
-theme = "PaperMod"
+theme = "stepdev"
 
 # Pagination
 [pagination]
@@ -9,66 +9,18 @@ theme = "PaperMod"
 
 [params]
   env = "production"
-  description = "Tech musings from someone who's been doing this for a while"
+  description = "Exploring the intersection of AI, 3D rendering, and the Model Context Protocol."
   author = "Andy Cross"
   
-  defaultTheme = "dark"
-  disableThemeToggle = false
-  ShowReadingTime = true
-  ShowShareButtons = false
-  ShowPostNavLinks = true
-  ShowBreadCrumbs = true
-  ShowCodeCopyButtons = true
-  ShowWordCount = false
-  ShowRssButtonInSectionTermList = true
-  UseHugoToc = true
-  disableSpecial1stPost = false
-  disableScrollToTop = false
-  hidemeta = false
-  hideSummary = false
-  showtoc = true
-  tocopen = false
-
-  [params.profileMode]
-    enabled = true
-    title = "> stepinto.dev"
-    subtitle = "Building things that matter"
-    imageUrl = ""
-    imageWidth = 120
-    imageHeight = 120
-    
-    [[params.profileMode.buttons]]
-      name = "Posts"
-      url = "/posts"
-    
-    [[params.profileMode.buttons]]
-      name = "About"
-      url = "/about"
-
-  [params.homeInfoParams]
-    Title = "> stepinto.dev"
-    Content = "Tech musings from someone who's been doing this for a while"
+  # Step Into Dev Theme Settings
+  heroTitle = "Building with AI & 3D"
+  heroSubtitle = "Exploring the intersection of AI, 3D rendering, and the Model Context Protocol."
+  showNewsletter = true
+  heroImage = "/images/hero.png"
 
   [[params.socialIcons]]
     name = "github"
     url = "https://github.com/andycross"
-
-  [params.cover]
-    hidden = true
-    hiddenInList = true
-    hiddenInSingle = true
-
-  [params.editPost]
-    disabled = true
-
-  [params.fuseOpts]
-    isCaseSensitive = false
-    shouldSort = true
-    location = 0
-    distance = 1000
-    threshold = 0.4
-    minMatchCharLength = 0
-    keys = ["title", "permalink", "summary", "content"]
 
 [menu]
   [[menu.main]]
@@ -82,12 +34,6 @@ theme = "PaperMod"
     name = "About"
     url = "/about/"
     weight = 20
-  
-  [[menu.main]]
-    identifier = "search"
-    name = "Search"
-    url = "/search/"
-    weight = 30
 
 [outputs]
   home = ["HTML", "RSS", "JSON"]
