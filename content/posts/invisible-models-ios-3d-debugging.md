@@ -158,5 +158,5 @@ When creating 3D assets for React Native, default to GLB with triangular geometr
 
 ---
 
-*Discovered December 2024 while building a 3D navigation app with Filament on React Native. The iPhone 11 involved has been forgiven but not forgotten.*
+*Discovered December 2025 while building a 3D navigation app with Filament on React Native. The iPhone 11 involved has been forgiven but not forgotten.*
 

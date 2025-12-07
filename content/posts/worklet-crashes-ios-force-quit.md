@@ -213,4 +213,4 @@ But start with the plugin. It's the lowest-effort fix for the most common case.
 
 ---
 
-*Discovered December 2024 while wondering why TestFlight users kept sending crash reports with no context. The phrase "Hard exit" will haunt me.*
+*Discovered December 2025 while wondering why TestFlight users kept sending crash reports with no context. The phrase "Hard exit" will haunt me.*
