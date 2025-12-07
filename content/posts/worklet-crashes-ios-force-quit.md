@@ -11,7 +11,9 @@ That's all I had to go on. No steps to reproduce, no description of what they we
 
 Turns out, the user had force-quit the app from the iOS app switcher. Swiped up, gone. And my app crashed *while dying*.
 
-This is the story of a race condition that only happens when users kill your app, and why your beautifully animated 3D scenes are secretly time bombs.
+This is the story of a race condition that only happens when users kill your app, why your beautifully animated 3D scenes are secretly time bombs, and how the "obvious" fix actually made things worse.
+
+**Update (December 2024):** After the initial fix, I got *another* crash—this time from just opening the app switcher, not even force-quitting. The rabbit hole went deeper. See [Part 2: The App Switcher Crash](#part-2-the-app-switcher-crash) below.
 
 ## The Crash Log
 
@@ -139,26 +141,32 @@ useRenderCallback(() => {
 }, [isSceneActive, /* ... */]);
 ```
 
-Also, stop rendering entirely when the app goes inactive:
+Also, stop rendering when the app goes inactive. **But be careful:** don't unmount native views, just skip rendering. (I learned this the hard way—see [Part 2](#part-2-the-app-switcher-crash).)
 
 ```typescript
 const [isAppActive, setIsAppActive] = useState(true);
+const isAppActiveShared = useSharedValue(true);
 
 useEffect(() => {
   const subscription = AppState.addEventListener('change', (state) => {
-    setIsAppActive(state === 'active');
+    const active = state === 'active';
+    setIsAppActive(active);
+    isAppActiveShared.value = active;
   });
   return () => subscription.remove();
 }, []);
 
-if (!isAppActive) {
-  return <View style={styles.placeholder} />;
-}
-
-return <FilamentView>{/* ... */}</FilamentView>;
+// In render callback - skip work but don't unmount
+useRenderCallback(() => {
+  'worklet';
+  if (!isAppActiveShared.value) return;  // Skip, don't crash
+  // ... render logic
+});
 ```
 
 The `inactive` state happens briefly during force-quit. If you stop rendering at that point, the worklet thread has nothing to do, and the race condition becomes much less likely.
+
+> ⚠️ **Important:** Don't conditionally unmount `<FilamentView>` based on `isAppActive`. This triggers native cleanup which can race with Hermes teardown. See [Part 2](#part-2-the-app-switcher-crash) for why.
 
 ## Who's Affected
 
@@ -197,6 +205,8 @@ Rebuild with `npx expo prebuild --clean`, and the cleanup handler gets added aut
 
 MIT licensed, because these kinds of fixes should just exist.
 
+> **Note:** This section describes v1.0.0 of the plugin. After discovering additional crash scenarios, I released v2.0.0 with improved lifecycle handling. See [Part 2](#part-2-the-app-switcher-crash) below for the full story.
+
 ## The Broader Lesson
 
 This bug is a perfect example of why crash reporting from real users matters. I never would have found this in development. The force-quit gesture is something users do constantly but developers almost never do—we're always hot-reloading or stopping from the CLI.
@@ -213,4 +223,180 @@ But start with the plugin. It's the lowest-effort fix for the most common case.
 
 ---
 
-*Discovered December 2025 while wondering why TestFlight users kept sending crash reports with no context. The phrase "Hard exit" will haunt me.*
+## Part 2: The App Switcher Crash
+
+A week after deploying the fix above, I got another crash. Different signature this time:
+
+```
+Exception Type:  EXC_BAD_ACCESS (SIGSEGV)
+Exception Codes: KERN_INVALID_ADDRESS at 0x000000000000000c
+
+Thread 1 Crashed:
+  convertNSExceptionToJSError
+  facebook::react::ObjCTurboModule::performVoidMethodInvocation
+  
+Thread 14:
+  filament::FRenderer::terminate
+  filament::FEngine::destroy
+  margelo::EngineImpl::~EngineImpl
+```
+
+The smoking gun: `0x000000000000000c`. That's 12 bytes offset from null—classic "accessing a field on a nil object."
+
+And Thread 14? That's Filament cleaning up. `FEngine::destroy()`. The 3D renderer was shutting down.
+
+But here's the kicker: **the user didn't force-quit**. They just opened the app switcher.
+
+### The Real Problem
+
+My "fix" from Part 1 included this pattern:
+
+```typescript
+if (!isAppActive) {
+  return <View style={styles.placeholder} />;
+}
+
+return <FilamentView>{/* ... */}</FilamentView>;
+```
+
+When the app goes inactive (app switcher opens), we stop rendering the FilamentView. Seems reasonable, right? Save battery, prevent worklet crashes.
+
+**Wrong.** This was the actual cause of the crash.
+
+When `isAppActive` becomes `false`, React unmounts `<FilamentView>`. Unmounting triggers Filament's native cleanup—`FEngine::destroy()`, `FRenderer::terminate()`. That cleanup throws an `NSException`. React Native tries to convert that exception to a JavaScript error. But Hermes (the JS runtime) is already being torn down, or the conversion is happening on the wrong thread.
+
+Null pointer. Crash.
+
+### Why applicationWillTerminate Wasn't Enough
+
+Remember the fix from Part 1? Adding `applicationWillTerminate` to post a cleanup notification?
+
+```swift
+public override func applicationWillTerminate(_ application: UIApplication) {
+    NotificationCenter.default.post(
+        name: NSNotification.Name("RCTBridgeWillInvalidateNotification"),
+        object: self
+    )
+    // ...
+}
+```
+
+Here's the thing: **`applicationWillTerminate` is not reliably called on iOS 13+**.
+
+When users swipe away apps in the app switcher, iOS often just kills the process without calling it. The scene-based lifecycle in iOS 13+ changed the rules, and `applicationWillTerminate` became more of a "nice to have" than a guarantee.
+
+So my cleanup notification was never being posted for the most common case.
+
+### The Actual Fix
+
+Two changes were needed:
+
+#### 1. Don't Unmount—Just Pause
+
+The key insight: **keep native 3D views mounted, but skip rendering in the worklet**.
+
+```typescript
+// DON'T do this - unmounting triggers native cleanup
+if (!isAppActive) {
+  return <View style={styles.placeholder} />;
+}
+return <FilamentScene>{/* ... */}</FilamentScene>;
+
+// DO this instead - always mount, but skip rendering
+return (
+  <View style={styles.container}>
+    <FilamentScene>
+      <SceneContent isAppActive={isAppActiveShared} />
+    </FilamentScene>
+    {/* Overlay when paused - scene stays mounted underneath */}
+    {!isAppActive && (
+      <View style={StyleSheet.absoluteFill}>
+        <Text>Paused</Text>
+      </View>
+    )}
+  </View>
+);
+```
+
+And in the render callback:
+
+```typescript
+const isAppActiveShared = useSharedValue(true);
+
+useEffect(() => {
+  const subscription = AppState.addEventListener('change', (state) => {
+    isAppActiveShared.value = state === 'active';
+  });
+  return () => subscription.remove();
+}, []);
+
+useRenderCallback(() => {
+  'worklet';
+  
+  // Skip rendering when backgrounded - no CPU work, no cleanup triggered
+  if (!isAppActive.value) return;
+  
+  // ... rest of render logic
+});
+```
+
+This way:
+- Native Filament resources stay allocated (no cleanup race)
+- We're not wasting CPU rendering frames nobody sees
+- The scene can resume instantly when the app returns to foreground
+
+#### 2. Add Background Notification to the Plugin
+
+Since `applicationWillTerminate` isn't reliable, the plugin now also adds `applicationDidEnterBackground`:
+
+```swift
+public override func applicationDidEnterBackground(_ application: UIApplication) {
+    NotificationCenter.default.post(
+        name: NSNotification.Name("RNAppDidEnterBackground"),
+        object: self
+    )
+    super.applicationDidEnterBackground(application)
+}
+```
+
+This notification **is** reliably called. Native modules can listen for it to prepare for potential termination—pause operations, flush caches, whatever they need.
+
+### Plugin v2.0.0
+
+The updated plugin is now on npm:
+
+```bash
+npm install expo-plugin-worklet-cleanup@^2.0.0
+```
+
+It adds both handlers:
+
+| Method | Notification | When | Reliability |
+|--------|-------------|------|-------------|
+| `applicationDidEnterBackground` | `RNAppDidEnterBackground` | App enters background | ✅ Always |
+| `applicationWillTerminate` | `RCTBridgeWillInvalidateNotification` | App terminating | ⚠️ Not reliable |
+
+### The Meta-Lesson
+
+The first fix (unmounting on background) was the "obvious" solution. It made intuitive sense: if the app is inactive, stop doing stuff. But it was actually *causing* crashes, not preventing them.
+
+Native resources and React component lifecycle don't mix cleanly. When you unmount a component that owns native resources, you trigger cleanup code. That cleanup code runs on native threads, potentially racing with other teardown operations.
+
+The counterintuitive solution: keep things mounted, but inert. Let the native resources live, but don't feed them work. When the app truly terminates, iOS will reclaim everything anyway.
+
+### Summary
+
+| Problem | Wrong Fix | Right Fix |
+|---------|-----------|-----------|
+| Worklet crashes on force-quit | — | Bail out early with `isSceneActive` guard |
+| Cleanup crashes on background | Unmount the FilamentScene | Keep mounted, skip rendering |
+| `applicationWillTerminate` not called | — | Also use `applicationDidEnterBackground` |
+
+---
+
+*Updated December 2024 after discovering that my "fix" was actually the cause of a second, different crash. The phrase "don't unmount, just pause" is now burned into my memory.*
+
+
+
+
+
