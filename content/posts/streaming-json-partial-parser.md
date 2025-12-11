@@ -261,3 +261,4 @@ Small change, significant improvement. That's the kind of optimisation I like.
 
 *The full parser code is [available as a Gist](https://gist.github.com/AndyCross/86a29ad97f8f24fb37b61f8bff72f4a0). MIT licensed, copy-paste friendly. Adapt it to your schema and streaming setup.*
 
+

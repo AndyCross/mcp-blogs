@@ -6,7 +6,7 @@
   "globalHeaders": {
     "X-Content-Type-Options": "nosniff",
     "X-Frame-Options": "DENY",
-    "Content-Security-Policy": "default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self'"
+    "Content-Security-Policy": "default-src 'self'; script-src 'self' https://cdn.counter.dev; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self'"
   },
   "mimeTypes": {
     ".xml": "application/xml",

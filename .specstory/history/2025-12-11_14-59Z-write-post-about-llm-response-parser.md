@@ -208,39 +208,303 @@ Now I have a good sense of the tone. Let me create a new blog post about the par
 
 ---
 
-<tool-use data-tool-type="unknown" data-tool-name="write">
-<details>
-<summary>Tool use: **write**</summary>
+<tool-use data-tool-type="write" data-tool-name="write">
 
+<details><summary>Tool use: **write** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/streaming-json-partial-parser.md</summary>
 
-Parameters:
+**Chunk 1**
+Lines added: 263, lines removed: 1
 
-```json
-{
-  "relativeWorkspacePath": "/Users/andycross/src/personal/mcp-blogs/content/posts/streaming-json-partial-parser.md",
-  "code": {
-    "code": "+++"
-  }
-}
+```diff
+@@ -1,1 +1,263 @@
+- 
++ +++
++ title = "Streaming LLM Responses: A Partial JSON Parser for Structured Output"
++ date = "2024-12-11"
++ draft = false
++ tags = ["llm", "ai", "typescript", "streaming"]
++ +++
++ 
++ I've been building conversational AI features recently, and I hit an annoying problem: I want *structured* responses from the LLM (JSON with specific fields), but I also want to *stream* the response text to the user as it generates. These two goals don't play nicely together.
++ 
++ When you ask an LLM to respond with structured JSON, you can't show anything to the user until the entire response arrives and parses successfully. That's a rubbish user experience—users stare at a spinner for seconds while the model churns through tokens that could already be on screen.
++ 
++ So I wrote a partial JSON parser. It's scrappy, it's specific to my use case, and it works beautifully.
++ 
++ ## The Problem
++ 
++ Here's the situation. I'm building a chat interface where the LLM returns structured data:
++ 
++ &#96;&#96;&#96;json
++ {
++   "response": "Here's what I found about your skin type...",
++   "language": "en",
++   "suggestedCasetas": [{"id": "1", "name": "Beach Tent", "number": "42"}],
++   "suggestedMenus": [{"id": "a", "name": "Lunch Special", "price": "€12"}]
++ }
++ &#96;&#96;&#96;
++ 
++ The model wraps this in markdown code fences (because of course it does), and I need to:
++ 
++ 1. Show the &#96;response&#96; text immediately as it streams in
++ 2. Eventually parse the complete JSON for the structured fields
++ 3. Handle the fact that for most of the stream, the JSON is *incomplete*
++ 
++ Standard &#96;JSON.parse()&#96; throws on incomplete input. And waiting for completion defeats the purpose of streaming.
++ 
++ ## The Insight
++ 
++ Here's the trick: for partial display, I don't need to parse the whole JSON. I just need to extract the &#96;response&#96; string value as it grows, character by character.
++ 
++ JSON string values have predictable structure:
++ 
++ - They start with &#96;"&#96;
++ - They end with an unescaped &#96;"&#96;  
++ - Everything in between is content (with escape sequences like &#96;\n&#96;, &#96;\"&#96;, &#96;\uXXXX&#96;)
++ 
++ If I can find &#96;"response"&#96; followed by &#96;:&#96; followed by &#96;"&#96;, I can walk the string character-by-character, handling escapes, and extract whatever's been received so far.
++ 
++ ## The Parser
++ 
++ Here's the implementation. It's TypeScript, deliberately simple, and handles the specific format I need:
++ 
++ &#96;&#96;&#96;typescript
++ /**
++  * Extract the response text from a partial JSON string.
++  * Handles the markdown code fence wrapper and incomplete JSON.
++  */
++ export function extractResponseFromPartialJson(partialText: string): string | null {
++   // Remove markdown code fences if present
++   let json = partialText;
++   
++   // Strip &#96;&#96;&#96;json prefix
++   const jsonStart = json.indexOf('&#96;&#96;&#96;json');
++   if (jsonStart !== -1) {
++     json = json.substring(jsonStart + 7);
++   }
++   
++   // Strip trailing &#96;&#96;&#96; if present
++   const jsonEnd = json.lastIndexOf('&#96;&#96;&#96;');
++   if (jsonEnd !== -1) {
++     json = json.substring(0, jsonEnd);
++   }
++   
++   json = json.trim();
++   
++   if (!json) return null;
++   
++   // Find the "response" field
++   const responseKeyIndex = json.indexOf('"response"');
++   if (responseKeyIndex === -1) return null;
++   
++   // Find the colon after "response"
++   const colonIndex = json.indexOf(':', responseKeyIndex + 10);
++   if (colonIndex === -1) return null;
++   
++   // Find the opening quote of the value
++   const valueStart = json.indexOf('"', colonIndex);
++   if (valueStart === -1) return null;
++   
++   // Extract the string value, handling escape sequences
++   let result = '';
++   let i = valueStart + 1;
++   let escaped = false;
++   
++   while (i &lt; json.length) {
++     const char = json[i];
++     
++     if (escaped) {
++       // Handle escape sequences
++       switch (char) {
++         case 'n': result += '\n'; break;
++         case 'r': result += '\r'; break;
++         case 't': result += '\t'; break;
++         case '"': result += '"'; break;
++         case '\\': result += '\\'; break;
++         case '/': result += '/'; break;
++         case 'b': result += '\b'; break;
++         case 'f': result += '\f'; break;
++         case 'u':
++           // Unicode escape \uXXXX
++           if (i + 4 &lt; json.length) {
++             const hex = json.substring(i + 1, i + 5);
++             const code = parseInt(hex, 16);
++             if (!isNaN(code)) {
++               result += String.fromCharCode(code);
++               i += 4;
++             }
++           }
++           break;
++         default:
++           // Unknown escape, just add the char
++           result += char;
++       }
++       escaped = false;
++     } else if (char === '\\') {
++       escaped = true;
++     } else if (char === '"') {
++       // End of string value - this is the complete response
++       break;
++     } else {
++       result += char;
++     }
++     
++     i++;
++   }
++   
++   return result;
++ }
++ &#96;&#96;&#96;
++ 
++ The key points:
++ 
++ | Aspect | How it's handled |
++ |--------|------------------|
++ | Code fences | Strip &#96;&#96;&#96;&#96; &#96;&#96;&#96;json &#96;&#96;&#96;&#96; prefix and &#96;&#96;&#96;&#96; &#96;&#96;&#96; &#96;&#96;&#96;&#96; suffix |
++ | Field location | Simple &#96;indexOf&#96; for &#96;"response"&#96; |
++ | String parsing | Character-by-character with escape handling |
++ | Incomplete input | Returns whatever's been received so far |
++ | Complete input | Stops at the closing &#96;"&#96; |
++ 
++ ## Completing the Picture
++ 
++ Once the stream finishes, you want the full structured data. That's straightforward:
++ 
++ &#96;&#96;&#96;typescript
++ export interface ParsedResponse {
++   response: string;
++   language?: string;
++   suggestedCasetas?: Array&lt;{ id: string; name: string; number: string }&gt;;
++   suggestedMenus?: Array&lt;{ id: string; name: string; price?: string; casetaId?: string }&gt;;
++ }
++ 
++ export function tryParseCompleteJson(text: string): ParsedResponse | null {
++   // Remove markdown code fences
++   let json = text;
++   
++   const jsonStart = json.indexOf('&#96;&#96;&#96;json');
++   if (jsonStart !== -1) {
++     json = json.substring(jsonStart + 7);
++   }
++   
++   const jsonEnd = json.lastIndexOf('&#96;&#96;&#96;');
++   if (jsonEnd !== -1) {
++     json = json.substring(0, jsonEnd);
++   }
++   
++   json = json.trim();
++   
++   if (!json) return null;
++   
++   try {
++     const parsed = JSON.parse(json);
++     if (typeof parsed.response === 'string') {
++       return {
++         response: parsed.response,
++         language: parsed.language,
++         suggestedCasetas: parsed.suggestedCasetas,
++         suggestedMenus: parsed.suggestedMenus,
++       };
++     }
++   } catch {
++     // JSON not complete yet
++   }
++   
++   return null;
++ }
++ &#96;&#96;&#96;
++ 
++ ## Using It in Practice
++ 
++ Here's the pattern I use in my streaming handler:
++ 
++ &#96;&#96;&#96;typescript
++ let accumulated = '';
++ 
++ for await (const chunk of stream) {
++   accumulated += chunk.text;
++   
++   // Try to show partial response immediately
++   const partial = extractResponseFromPartialJson(accumulated);
++   if (partial) {
++     updateUI(partial);  // User sees text appearing in real-time
++   }
++ }
++ 
++ // Stream complete - parse full structure
++ const complete = tryParseCompleteJson(accumulated);
++ if (complete) {
++   // Now we have language, suggestions, etc.
++   handleStructuredResponse(complete);
++ }
++ &#96;&#96;&#96;
++ 
++ The user sees the response text appearing token-by-token, exactly like a normal chat. But at the end, I get the full structured data for rendering suggestions, detecting language, whatever else the schema includes.
++ 
++ ## Why Not Use a Streaming JSON Library?
++ 
++ There are proper streaming JSON parsers out there. But they're solving a different problem—parsing arbitrarily nested JSON incrementally. That's complex. My needs are simpler:
++ 
++ 1. I only care about one field (&#96;response&#96;)
++ 2. The structure is known and flat
++ 3. The value I need is always a string
++ 4. I'm already handling the stream myself
++ 
++ A 90-line function that does exactly what I need beats a dependency that does everything I don't.
++ 
++ ## The Tradeoffs
++ 
++ This approach is deliberately limited:
++ 
++ **Works for:**
++ - Known JSON structure with a string field you want to stream
++ - Markdown-wrapped JSON (common with LLMs)
++ - Real-time display of text content
++ 
++ **Doesn't handle:**
++ - Nested objects you need to stream
++ - Arrays as the streaming target
++ - Unknown or dynamic schemas
++ - Non-string values
++ 
++ If your needs are more complex, look at something like [partial-json-parser](https://www.npmjs.com/package/partial-json-parser) or build state-machine-based parsing. But for the "show the text while I wait for the full response" use case, this is plenty.
++ 
++ ## The UX Win
++ 
++ Before this, users waited 3-4 seconds staring at nothing while the model generated a full response. Now they see text appearing immediately, exactly like ChatGPT or Claude's native interfaces.
++ 
++ The structured data still arrives at the end—but by then, the user has already read most of the response. The suggestions and metadata feel like a bonus, not something they waited for.
++ 
++ Small change, significant improvement. That's the kind of optimisation I like.
++ 
++ ---
++ 
++ *The full parser code is [available as a Gist](https://gist.github.com/AndyCross/86a29ad97f8f24fb37b61f8bff72f4a0). MIT licensed, copy-paste friendly. Adapt it to your schema and streaming setup.*
++ 
 ```
-Additional data:
-
-```json
-{
-  "codeblockId": "8f1204b4-b162-459e-92c5-0f8db4714099"
-}
-```
-User decision: **accepted**
-
-Status: **loading**
-
 
 </details>
+
 </tool-use>
 
 ---
 
+<think><details><summary>Thought Process</summary>
+The file has been created. Let me verify it looks good by reading it back.</details></think>
 
+---
+
+I've created the new blog post at `content/posts/streaming-json-partial-parser.md`. It follows the same conversational tone as your other posts—first-person, practical, explains the problem before the solution, includes tables for key points, and ends with a reference to your gist.
+
+The post covers:
+- The problem (wanting both structured JSON and streaming UX)
+- The insight (partial string extraction without full JSON parsing)
+- The implementation with code
+- A complete example usage pattern
+- Honest tradeoffs about what it doesn't handle
+- The UX benefit
+
+Want me to adjust the tone, add more detail to any section, or change the tags?
 
 ---
 
