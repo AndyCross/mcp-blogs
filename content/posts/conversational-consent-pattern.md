@@ -195,6 +195,3 @@ Neither system is doing something it's bad at. Sound familiar?
 ---
 
 *If you're working on similar problems—conversational AI, privacy architecture, or the intersection of both—I'd love to hear about it. Find me on the usual channels.*
-
-
-
