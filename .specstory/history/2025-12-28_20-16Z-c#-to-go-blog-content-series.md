@@ -192,22 +192,214 @@ Now I have a great sense of the blog's tone and structure. Let me create the two
 
 <details><summary>Tool use: **write** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/dotnet-to-go-toolchain.md</summary>
 
-Status: **loading**
+**Chunk 1**
+Lines added: 202, lines removed: 1
 
-```markdown
-+++
-title = "You Know .NET, Now Meet the Go Toolchain"
-date = "2024-12-28"
-draft = false
-tags = ["go", "dotnet", "tooling", "csharp"]
-series = ["C# to Go"]
-+++
-
-After twenty-odd years writing C#, I'm learning Go. Not because .NET has failed me—it hasn't—but because some problems want a different shape of solution. Small binaries. Fast startup. Simple deployment. The kind of thing Go does without breaking a sweat.
-
-This is the first post in a series documenting that journey. Not a tutorial (the Go docs are excellent), but an honest account of where my C# muscle memory helps, where it hinders, and what makes Go feel genuinely different rather than just superficially unfamiliar.
-
-Let's start with the toolchain. Because before we write any code, we need to know where everything lives
+```diff
+@@ -1,1 +1,202 @@
+- 
++ +++
++ title = "You Know .NET, Now Meet the Go Toolchain"
++ date = "2024-12-28"
++ draft = false
++ tags = ["go", "dotnet", "tooling", "csharp"]
++ series = ["C# to Go"]
++ +++
++ 
++ After twenty-odd years writing C#, I'm learning Go. Not because .NET has failed me—it hasn't—but because some problems want a different shape of solution. Small binaries. Fast startup. Simple deployment. The kind of thing Go does without breaking a sweat.
++ 
++ This is the first post in a series documenting that journey. Not a tutorial (the Go docs are excellent), but an honest account of where my C# muscle memory helps, where it hinders, and what makes Go feel genuinely different rather than just superficially unfamiliar.
++ 
++ Let's start with the toolchain. Because before we write any code, we need to know where everything lives.
++ 
++ ## The First Surprise: There's Only One Tool
++ 
++ In .NET, you've got &#96;dotnet&#96; for building, running, testing, and package management. Fair enough. But you've also got Visual Studio, Rider, or VS Code doing heavy lifting. MSBuild lurks underneath. NuGet has its own config. The SDK has versions. The runtime has versions. Different platforms have different workloads.
++ 
++ Go has &#96;go&#96;.
++ 
++ That's it. One command. Build, run, test, format, vet, mod management—all through the same tool. There's no separate "SDK" to install per project. No workload selectors. No runtime configuration.
++ 
++ &#96;&#96;&#96;bash
++ go build    # compiles
++ go run      # compiles and runs
++ go test     # runs tests
++ go fmt      # formats code
++ go vet      # static analysis
++ go mod      # dependency management
++ go get      # adds dependencies
++ &#96;&#96;&#96;
++ 
++ Coming from .NET, this feels almost suspiciously simple. Where's the configuration? Where are the project files? Where's the magic?
++ 
++ The answer: there isn't much. And that's the point.
++ 
++ ## Where Your Code Lives
++ 
++ Here's where your C# instincts will immediately try to betray you.
++ 
++ In .NET, you create a solution, add projects, reference other projects, configure output paths, set up different configurations for debug and release... you know the drill. Projects live wherever you put them. References can point anywhere.
++ 
++ Go has opinions.
++ 
++ ### GOPATH (The Old Way)
++ 
++ Originally, Go wanted all your code in a single workspace called &#96;GOPATH&#96;. Everything lived under &#96;$GOPATH/src/&#96;, organised by import path. If you were writing code for GitHub, it literally lived at &#96;$GOPATH/src/github.com/yourname/yourproject&#96;.
++ 
++ This drove people mad. Especially people coming from languages where "put your project wherever you like" is the norm.
++ 
++ ### Modules (The Current Way)
++ 
++ Since Go 1.11, modules freed us from GOPATH. Now a project can live anywhere, and its identity comes from its &#96;go.mod&#96; file rather than its filesystem location.
++ 
++ &#96;&#96;&#96;bash
++ mkdir myproject &amp;&amp; cd myproject
++ go mod init github.com/yourname/myproject
++ &#96;&#96;&#96;
++ 
++ That &#96;go mod init&#96; command creates a &#96;go.mod&#96; file—Go's equivalent of your &#96;.csproj&#96;. We'll dig into that properly in the next post.
++ 
++ The key insight: **the module path is the project's identity**. It's what other code uses to import your packages. Choose it thoughtfully.
++ 
++ ## The Build Model
++ 
++ This is where things get genuinely different, and honestly? It took me a while to stop fighting it.
++ 
++ ### C# Build Mental Model
++ 
++ In .NET, compilation is incremental and complex. MSBuild tracks dependencies between projects. The compiler emits IL. The runtime JITs it (or AOT compiles it, if you're being fancy). Builds produce assemblies. Assemblies reference other assemblies. There's a whole graph of dependencies that lives in your &#96;bin&#96; folder.
++ 
++ ### Go Build Mental Model
++ 
++ Go compiles to machine code. Directly. No IL, no runtime, no JIT. The &#96;go build&#96; command produces a single static binary that you can copy anywhere and run.
++ 
++ &#96;&#96;&#96;bash
++ go build -o myapp
++ ./myapp  # just... runs
++ &#96;&#96;&#96;
++ 
++ No &#96;dotnet&#96; required on the target machine. No runtime version matching. No framework-dependent vs self-contained deployment decisions. Copy the binary, run it. Done.
++ 
++ The tradeoff? Larger binaries than a framework-dependent .NET app (though smaller than self-contained). But the simplicity of deployment is remarkable.
++ 
++ ### Cross-Compilation
++ 
++ Here's something that still delights me. Want to build for Linux from your Mac?
++ 
++ &#96;&#96;&#96;bash
++ GOOS=linux GOARCH=amd64 go build -o myapp-linux
++ &#96;&#96;&#96;
++ 
++ Done. No Docker, no separate SDK installation, no drama. Go's cross-compilation is a first-class citizen, not an afterthought.
++ 
++ ## Project Structure
++ 
++ A minimal Go project looks nothing like a minimal C# project.
++ 
++ ### C# (Minimal API, .NET 8)
++ 
++ &#96;&#96;&#96;
++ MyProject/
++ ├── MyProject.csproj
++ ├── Program.cs
++ ├── appsettings.json
++ ├── appsettings.Development.json
++ ├── Properties/
++ │   └── launchSettings.json
++ └── bin/
++     └── Debug/
++         └── net8.0/
++             └── (loads of stuff)
++ &#96;&#96;&#96;
++ 
++ ### Go
++ 
++ &#96;&#96;&#96;
++ myproject/
++ ├── go.mod
++ └── main.go
++ &#96;&#96;&#96;
++ 
++ That's it. Two files. The &#96;go.mod&#96; declares your module identity and dependencies. The &#96;main.go&#96; contains your code. Build it, get a binary.
++ 
++ No configuration hierarchy. No launch profiles. No bin/obj dance. Just source code and a module definition.
++ 
++ ## The Gotchas (Already)
++ 
++ ### Case Sensitivity Matters
++ 
++ Go uses case to control visibility. Uppercase first letter = exported (public). Lowercase = unexported (internal to the package).
++ 
++ &#96;&#96;&#96;go
++ func ProcessData() {}  // exported, other packages can call this
++ func processData() {}  // unexported, package-private
++ &#96;&#96;&#96;
++ 
++ Your C# brain will want to reach for &#96;public&#96; and &#96;private&#96; keywords. They don't exist in Go. Case *is* the visibility modifier.
++ 
++ ### No Implicit Main Package
++ 
++ In C#, top-level statements let you skip the ceremony. In Go, you always need:
++ 
++ &#96;&#96;&#96;go
++ package main
++ 
++ func main() {
++     // your code
++ }
++ &#96;&#96;&#96;
++ 
++ The &#96;package main&#96; declaration tells Go this is an executable. The &#96;main()&#96; function is the entry point. No variation. No magic. Every Go executable looks like this.
++ 
++ ### File Organisation Isn't Free
++ 
++ In C#, namespaces and folders are loosely coupled. You can have a file in &#96;Services/&#96; that declares &#96;namespace MyApp.Models&#96;. Weird, but legal.
++ 
++ In Go, packages are directories. Every &#96;.go&#96; file in a directory must have the same &#96;package&#96; declaration. Want a different package? Different directory. No exceptions.
++ 
++ This feels restrictive at first. Then you realise it makes codebases significantly easier to navigate. You always know what package a file belongs to—just look at where it lives.
++ 
++ ## What We Haven't Covered
++ 
++ This is just orientation. We haven't touched:
++ 
++ - **How &#96;go.mod&#96; actually works** (next post)
++ - **How packages and imports differ from namespaces**
++ - **The &#96;internal&#96; directory convention**
++ - **Testing conventions**
++ - **The standard library**
++ 
++ All coming. But first, I wanted to establish the basic geography. Where code lives. How it builds. What tools you actually use.
++ 
++ ## The Honest Assessment
++ 
++ After a few weeks with Go's toolchain, here's my take:
++ 
++ **Better than C#:**
++ - Simplicity. One tool, minimal configuration.
++ - Cross-compilation. Effortless.
++ - Build speed. It's genuinely fast.
++ - Deployment. Single binary, no runtime.
++ 
++ **Worse than C#:**
++ - IDE support. Go has good tooling, but it's not Rider/Visual Studio level.
++ - Refactoring. The tools exist, but they're less sophisticated.
++ - Debug experience. It's fine, but not the polished F5 experience you're used to.
++ 
++ **Different, neither better nor worse:**
++ - Project structure. Go's conventions feel strange, then liberating.
++ - Package system. We'll cover this properly, but it's a genuine paradigm shift.
++ 
++ The toolchain isn't trying to be .NET. It's not trying to be "simple .NET" or ".NET but faster". It's a different philosophy: less configuration, more convention, explicit over implicit.
++ 
++ That last one will come up a lot in this series. Go loves explicitness. Coming from C#, where we've spent years making things implicit (top-level statements, global usings, minimal APIs), it takes adjustment.
++ 
++ But there's method to the explicitness. And honestly? I'm starting to appreciate it.
++ 
++ ---
++ 
++ *Next up: go.mod in depth—dependency management without NuGet, and why it's both simpler and more opinionated than you'd expect.*
++ 
 ```
 
 </details>
@@ -216,7 +408,2387 @@ Let's start with the toolchain. Because before we write any code, we need to kno
 
 ---
 
+<tool-use data-tool-type="write" data-tool-name="write">
 
+<details><summary>Tool use: **write** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/dotnet-to-go-modules.md</summary>
+
+**Chunk 1**
+Lines added: 279, lines removed: 1
+
+```diff
+@@ -1,1 +1,279 @@
+- 
++ +++
++ title = "Goodbye .csproj, Hello go.mod"
++ date = "2024-12-28"
++ draft = false
++ tags = ["go", "dotnet", "dependencies", "csharp"]
++ series = ["C# to Go"]
++ +++
++ 
++ Right, let's talk about dependencies. In .NET land, we've got NuGet, &#96;.csproj&#96; files, &#96;PackageReference&#96; elements, version ranges, transitive dependencies, and &#96;packages.lock.json&#96; if we're being careful. It's a mature ecosystem with excellent tooling.
++ 
++ Go does things differently. There's no NuGet. There's no package registry at all, actually. And that sounds mental until you understand why—and discover it works rather well.
++ 
++ ## The go.mod File
++ 
++ Every Go module has a &#96;go.mod&#96; file at its root. Here's a real one:
++ 
++ &#96;&#96;&#96;go
++ module github.com/yourname/yourproject
++ 
++ go 1.22
++ 
++ require (
++     github.com/gin-gonic/gin v1.9.1
++     github.com/stretchr/testify v1.8.4
++ )
++ 
++ require (
++     github.com/bytedance/sonic v1.9.1 // indirect
++     github.com/gabriel-vasile/mimetype v1.4.2 // indirect
++     // ... more indirect dependencies
++ )
++ &#96;&#96;&#96;
++ 
++ Let's break this down.
++ 
++ ### Module Declaration
++ 
++ &#96;&#96;&#96;go
++ module github.com/yourname/yourproject
++ &#96;&#96;&#96;
++ 
++ This is your module's identity—its import path. When someone writes &#96;import "github.com/yourname/yourproject/pkg/whatever"&#96;, Go knows where to find it because of this declaration.
++ 
++ Unlike a &#96;.csproj&#96; where the assembly name is mostly internal, this path is *the* identifier. Choose it thoughtfully.
++ 
++ ### Go Version
++ 
++ &#96;&#96;&#96;go
++ go 1.22
++ &#96;&#96;&#96;
++ 
++ This declares the minimum Go version required. It's not exactly the same as &#96;&lt;TargetFramework&gt;net8.0&lt;/TargetFramework&gt;&#96;—you're not compiling for a specific runtime. You're just saying "this code uses features from Go 1.22, don't try to build it with something older."
++ 
++ ### Dependencies
++ 
++ &#96;&#96;&#96;go
++ require (
++     github.com/gin-gonic/gin v1.9.1
++     github.com/stretchr/testify v1.8.4
++ )
++ &#96;&#96;&#96;
++ 
++ Here's where it gets interesting. These are your direct dependencies—the packages you actually import in your code.
++ 
++ Notice the format: &#96;module-path version&#96;. The version uses semantic versioning prefixed with &#96;v&#96;. No version ranges. No floating versions. Exactly this version, every time.
++ 
++ ### Indirect Dependencies
++ 
++ &#96;&#96;&#96;go
++ require (
++     github.com/bytedance/sonic v1.9.1 // indirect
++ )
++ &#96;&#96;&#96;
++ 
++ The &#96;// indirect&#96; comment marks transitive dependencies—packages that your dependencies need, but you don't import directly. Go tracks these explicitly in &#96;go.mod&#96;.
++ 
++ ## No Central Registry
++ 
++ Here's the thing that confused me coming from NuGet: Go doesn't have a package registry.
++ 
++ NuGet has nuget.org. npm has npmjs.com. Go has... URLs.
++ 
++ When you &#96;go get github.com/gin-gonic/gin&#96;, Go literally fetches from GitHub. The module path isn't an identifier that maps to a registry—it's a resolvable URL (with some clever translation rules).
++ 
++ This means:
++ - No registry account needed to publish
++ - No central point of failure
++ - Dependencies are wherever their code lives
++ 
++ But also:
++ - No central search (though pkg.go.dev indexes public modules)
++ - No private registry without extra setup
++ - Version discovery is... different
++ 
++ ## Adding Dependencies
++ 
++ Here's the workflow comparison:
++ 
++ ### In .NET
++ 
++ &#96;&#96;&#96;bash
++ dotnet add package Newtonsoft.Json --version 13.0.3
++ &#96;&#96;&#96;
++ 
++ Or edit your &#96;.csproj&#96;:
++ 
++ &#96;&#96;&#96;xml
++ &lt;PackageReference Include="Newtonsoft.Json" Version="13.0.3" /&gt;
++ &#96;&#96;&#96;
++ 
++ Then &#96;dotnet restore&#96;.
++ 
++ ### In Go
++ 
++ &#96;&#96;&#96;bash
++ go get github.com/gin-gonic/gin@v1.9.1
++ &#96;&#96;&#96;
++ 
++ Or just import it in your code:
++ 
++ &#96;&#96;&#96;go
++ import "github.com/gin-gonic/gin"
++ &#96;&#96;&#96;
++ 
++ Then run &#96;go mod tidy&#96;. Go will fetch the dependency, resolve versions, and update &#96;go.mod&#96; automatically.
++ 
++ That &#96;go mod tidy&#96; command is your friend. It adds missing dependencies, removes unused ones, and generally keeps your &#96;go.mod&#96; clean. I run it roughly as often as I save files.
++ 
++ ## Version Selection
++ 
++ Go's approach to version selection is refreshingly simple, and it took me a while to appreciate it.
++ 
++ ### The Problem With Version Ranges
++ 
++ In NuGet, you might declare:
++ 
++ &#96;&#96;&#96;xml
++ &lt;PackageReference Include="SomeLib" Version="[1.0, 2.0)" /&gt;
++ &#96;&#96;&#96;
++ 
++ Meaning "any version from 1.0 up to but not including 2.0." The actual version you get depends on what's available, what other packages need, and the resolver's algorithm.
++ 
++ This flexibility is powerful but creates problems:
++ - Different machines might resolve different versions
++ - Lock files become essential
++ - "Works on my machine" is often a version resolution issue
++ 
++ ### Go's Minimum Version Selection
++ 
++ Go uses something called Minimum Version Selection (MVS). The idea: given all the version constraints, pick the *minimum* version that satisfies everything.
++ 
++ If you require &#96;v1.9.1&#96; and a dependency requires &#96;v1.8.0&#96; of the same module, Go picks &#96;v1.9.1&#96;—the minimum version that satisfies both.
++ 
++ No ranges. No "latest compatible." Just: here are the minimums everyone needs, let's use those.
++ 
++ The result? Given the same &#96;go.mod&#96; and &#96;go.sum&#96; files, you'll always get exactly the same versions. No lock file randomness. No surprising upgrades.
++ 
++ ### The go.sum File
++ 
++ Speaking of which—&#96;go.sum&#96; is Go's integrity file:
++ 
++ &#96;&#96;&#96;
++ github.com/gin-gonic/gin v1.9.1 h1:4idEAncQnU5...
++ github.com/gin-gonic/gin v1.9.1/go.mod h1:RdK04...
++ &#96;&#96;&#96;
++ 
++ It contains cryptographic hashes of every dependency. If a module's contents don't match the recorded hash, the build fails.
++ 
++ Commit this file. It's your guarantee of reproducible builds.
++ 
++ ## Updating Dependencies
++ 
++ The version-pinning approach means updates are explicit:
++ 
++ &#96;&#96;&#96;bash
++ # Update a specific dependency
++ go get github.com/gin-gonic/gin@v1.10.0
++ 
++ # Update all dependencies to latest minor/patch
++ go get -u ./...
++ 
++ # Update all dependencies to latest (including major)
++ go get -u=patch ./...
++ &#96;&#96;&#96;
++ 
++ There's no equivalent to NuGet's floating versions. When you want an update, you ask for it specifically. Some find this tedious; I find it clarifying.
++ 
++ ## Major Versions Are Different Modules
++ 
++ Here's where Go does something clever (and initially bewildering).
++ 
++ In semantic versioning, major version bumps signal breaking changes. &#96;v2.0.0&#96; might have a completely different API from &#96;v1.9.0&#96;.
++ 
++ Go handles this by treating major versions as *different modules*:
++ 
++ &#96;&#96;&#96;go
++ // v1.x
++ import "github.com/go-redis/redis/v8"
++ 
++ // v9.x (yes, they jumped)
++ import "github.com/redis/go-redis/v9"
++ &#96;&#96;&#96;
++ 
++ The import path includes the major version. &#96;v2&#96;, &#96;v3&#96;, etc. are literally different modules.
++ 
++ This means:
++ - You can use v1 and v2 of the same library simultaneously (different import paths)
++ - Breaking changes are impossible to accidentally adopt
++ - Library authors must maintain separate module paths for major versions
++ 
++ It's awkward at first. Then you realise you've never had a build broken by an accidental major version upgrade.
++ 
++ ## The Comparison
++ 
++ | Aspect | NuGet/.csproj | Go Modules |
++ |--------|---------------|------------|
++ | Registry | Central (nuget.org) | Distributed (any URL) |
++ | Version syntax | Ranges allowed | Exact versions only |
++ | Resolution | Complex algorithm | Minimum Version Selection |
++ | Lock file | Optional but recommended | go.sum (hashes only) |
++ | Private packages | Private feeds | Various options (GOPROXY) |
++ | Major versions | Same package ID | Different module paths |
++ 
++ ## What Actually Trips You Up
++ 
++ After a few weeks, here's what caught me out:
++ 
++ ### Import Path Confusion
++ 
++ Your IDE might autocomplete an import as &#96;github.com/gin-gonic/gin/v2&#96; when you wanted &#96;v1&#96;. Check your imports when things don't compile.
++ 
++ ### Forgetting go mod tidy
++ 
++ Add an import, wonder why it doesn't work, realise you never fetched the dependency. &#96;go mod tidy&#96;. Learn to love it.
++ 
++ ### Private Repositories
++ 
++ Public modules "just work." Private repos need GOPROXY configuration or GOPRIVATE settings. It's not hard, but it's not automatic either.
++ 
++ ### Vendor Directory
++ 
++ Go can vendor dependencies—copy them into a &#96;vendor/&#96; directory in your project. Some teams mandate this for reproducibility. If you see a vendor directory, know that &#96;go build&#96; will use it by default.
++ 
++ ## The Honest Take
++ 
++ **Things I like better than NuGet:**
++ 
++ - Reproducibility. Same inputs, same outputs, always.
++ - No central registry dependency. Dependencies are just code at URLs.
++ - Major version handling. Breaking changes are structurally isolated.
++ - Simplicity. One file, explicit versions, done.
++ 
++ **Things I miss from NuGet:**
++ 
++ - Proper package search. pkg.go.dev is decent but not nuget.org.
++ - Private feeds. Azure Artifacts, MyGet, etc. are more polished than GOPROXY setup.
++ - .NET's tooling. &#96;dotnet add package&#96; with tab completion is lovely.
++ - Version ranges. Sometimes I *want* "latest patch version" and Go says no.
++ 
++ **Things that are just different:**
++ 
++ - Import paths being URLs. It's not better or worse, just a different model.
++ - go.sum vs lock files. Similar goal, different mechanism.
++ - The vendor directory. Some love it, some ignore it entirely.
++ 
++ ## The Philosophy
++ 
++ There's a reason Go's dependency management feels different: it was designed later, learning from problems with other systems.
++ 
++ The Ruby and Node ecosystems taught us that flexible version resolution leads to "works on my machine" nightmares. Go said: fine, no flexibility. Exact versions always.
++ 
++ The npm left-pad incident taught us that central registries are single points of failure. Go said: fine, no central registry. Your dependencies are wherever their source code lives.
++ 
++ Whether you prefer this philosophy is personal. But understanding *why* Go made these choices helps you work with the system rather than fighting it.
++ 
++ ---
++ 
++ *Next in the series: packages and imports—why Go's package system is nothing like namespaces, and how to stop your C# brain from making it harder than it needs to be.*
++ 
+```
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+I've created both blog posts. Let me verify the hugo server can build these correctly by checking for any issues, and also make sure the frontmatter is correct for the existing blog structure.
+
+Let me check if there's a `series` taxonomy configured in Hugo, since I added that to the frontmatter. Let me look at the hugo.toml and the theme configuration.</details></think>
+
+---
+
+I've created both posts. Let me verify the Hugo build works with these new files and check if the `series` taxonomy needs configuration:
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_cmd">
+<details><summary>Tool use: **run_terminal_cmd** • Run command: cd /Users/andycross/src/personal/mcp-blogs && hugo --quiet 2>&1 | head -30</summary>
+
+```bash
+cd /Users/andycross/src/personal/mcp-blogs && hugo --quiet 2>&1 | head -30
+```
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+The build worked cleanly without any errors. Good - the posts are valid Hugo content. However, I did add a `series` parameter to the frontmatter that might not be configured in the theme. Let me check if the theme handles series or if I should remove that metadata.</details></think>
+
+---
+
+The Hugo build passed cleanly. Let me check if the series taxonomy is configured, and if not, I'll remove it from the frontmatter to keep things clean:
+
+---
+
+<tool-use data-tool-type="search" data-tool-name="grep">
+<details>
+<summary>Tool use: **grep** • Grep for "series" in "/Users/andycross/src/personal/mcp-blogs" • 6 matches</summary>
+
+Output mode: content
+
+
+| File | Content | Line |
+|------|------|------|
+| `./content/posts/dotnet-to-go-modules.md` | `series = ["C# to Go"]` | L6 |
+| `./content/posts/dotnet-to-go-modules.md` | `*Next in the series: packages and imports—why Go's package system is nothing like namespaces, and how to stop your C# brain from making it harder than it needs to be.*` | L278 |
+| `./content/posts/dotnet-to-go-toolchain.md` | `series = ["C# to Go"]` | L6 |
+| `./content/posts/dotnet-to-go-toolchain.md` | `This is the first post in a series documenting that journey. Not a tutorial (the Go docs are excellent), but an honest account of where my C# muscle memory helps, where it hinders, and what makes Go feel genuinely different rather than just superficially unfamiliar.` | L11 |
+| `./content/posts/dotnet-to-go-toolchain.md` | `That last one will come up a lot in this series. Go loves explicitness. Coming from C#, where we've spent years making things implicit (top-level statements, global usings, minimal APIs), it takes adjustment.` | L195 |
+| `./themes/PaperMod/layouts/partials/templates/opengraph.html` | `\{{- range .GetTerms "series" \}}` | L64 |
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+The PaperMod theme does have support for the series taxonomy, so the frontmatter is valid. However, looking at the theme being used (`stepdev` in hugo.toml), let me check if that theme also supports it, or if PaperMod is just a secondary theme included.
+
+Actually looking back at the hugo.toml, the active theme is `stepdev`, not `PaperMod`. Let me check what that theme supports.</details></think>
+
+---
+
+The PaperMod theme has series support, but the active theme is `stepdev`. Let me check if that theme handles series, or if I should just use tags instead:
+
+---
+
+<tool-use data-tool-type="generic" data-tool-name="list_dir">
+<details>
+            <summary>Tool use: **list_dir** • Listed directory, 0 results</summary>
+        
+No results found
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="search" data-tool-name="grep">
+<details>
+<summary>Tool use: **grep** • Grep for "series" in "/Users/andycross/src/personal/mcp-blogs/themes/stepdev" • 0 matches</summary>
+
+Output mode: content
+
+
+_No matches found_
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+The stepdev theme doesn't have series support. The series frontmatter won't break anything, but it also won't do anything useful. I should remove it to keep the posts clean and consistent with the existing blog posts. Let me update both posts to remove the series line.</details></think>
+
+---
+
+The `stepdev` theme doesn't use the series taxonomy, so I'll remove that from the frontmatter to keep the posts clean:
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="search_replace">
+
+<details><summary>Tool use: **search_replace** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/dotnet-to-go-toolchain.md</summary>
+
+**Chunk 1**
+Lines added: undefined, lines removed: 1
+
+```diff
+@@ -4,5 +4,4 @@
+  draft = false
+  tags = ["go", "dotnet", "tooling", "csharp"]
+- series = ["C# to Go"]
+  +++
+  
+```
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="search_replace">
+
+<details><summary>Tool use: **search_replace** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/dotnet-to-go-modules.md</summary>
+
+**Chunk 1**
+Lines added: undefined, lines removed: 1
+
+```diff
+@@ -4,5 +4,4 @@
+  draft = false
+  tags = ["go", "dotnet", "dependencies", "csharp"]
+- series = ["C# to Go"]
+  +++
+  
+```
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+Good, I've removed the series frontmatter. Let me verify the build still works and then present the results to the user.</details></think>
+
+---
+
+Let me verify the build still works and show you the final posts:
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_cmd">
+<details><summary>Tool use: **run_terminal_cmd** • Run command: cd /Users/andycross/src/personal/mcp-blogs && hugo --quiet && echo "Build successful" && ls -la content/posts/*.md | tail -5</summary>
+
+```bash
+cd /Users/andycross/src/personal/mcp-blogs && hugo --quiet && echo "Build successful" && ls -la content/posts/*.md | tail -5
+```
+
+```
+Build successful
+-rw-r--r--  1 andycross  staff   6770 Dec  7 07:09 content/posts/invisible-models-ios-3d-debugging.md
+-rw-r--r--  1 andycross  staff   7161 Dec  3 07:03 content/posts/seven-dollars-and-twenty-five-years.md
+-rw-r--r--  1 andycross  staff   8701 Dec 28 20:16 content/posts/streaming-json-partial-parser.md
+-rw-r--r--  1 andycross  staff  25890 Dec  2 09:41 content/posts/three-js-scenes-from-conversation.md
+-rw-r--r--  1 andycross  staff  14586 Dec 25 08:53 content/posts/worklet-crashes-ios-force-quit.md
+
+```
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+Hmm, the new posts don't show in that listing. Let me check the full list to make sure they're there.</details></think>
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_cmd">
+<details><summary>Tool use: **run_terminal_cmd** • Run command: ls -la /Users/andycross/src/personal/mcp-blogs/content/posts/dotnet-to-go*.md</summary>
+
+```bash
+ls -la /Users/andycross/src/personal/mcp-blogs/content/posts/dotnet-to-go*.md
+```
+
+```
+-rw-r--r--  1 andycross  staff  9548 Dec 28 20:20 /Users/andycross/src/personal/mcp-blogs/content/posts/dotnet-to-go-modules.md
+-rw-r--r--  1 andycross  staff  8133 Dec 28 20:20 /Users/andycross/src/personal/mcp-blogs/content/posts/dotnet-to-go-toolchain.md
+
+```
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+The posts exist. The `-5` in my tail command just didn't show them because they alphabetically come before the ones shown. Let me show the user a preview of the blog locally.</details></think>
+
+---
+
+Both posts are created and the build passes. Here's what I've created:
+
+## New Series: C# to Go
+
+### Post 1: "You Know .NET, Now Meet the Go Toolchain"
+`content/posts/dotnet-to-go-toolchain.md`
+
+Covers:
+- The single `go` command vs .NET's tooling ecosystem
+- Where code lives (GOPATH history → modules)
+- The build model differences (machine code vs IL/JIT)
+- Cross-compilation
+- Project structure comparison
+- Early gotchas: case sensitivity, package declarations, file organisation
+
+### Post 2: "Goodbye .csproj, Hello go.mod"  
+`content/posts/dotnet-to-go-modules.md`
+
+Covers:
+- The `go.mod` file structure
+- No central registry—dependencies are URLs
+- Adding dependencies (`go get` vs `dotnet add package`)
+- Minimum Version Selection vs NuGet's resolution algorithm
+- The `go.sum` file
+- Major versions as different modules
+- Practical gotchas and honest comparison
+
+Both posts follow the tone you specified:
+- **UK English** throughout (organised, behaviour, colour)
+- **Techie informal** voice with first-person plural
+- **Fair to both languages**—no tribal nonsense
+- **Starts with real problems**, not theory
+- **Honest assessments** of what's better, worse, and just different
+- **Tables for genuine comparisons**
+- **Runnable code examples**
+
+Want me to start the local Hugo server so you can preview them?
+
+---
+
+_**User (2025-12-28 20:16Z)**_
+
+Nope, I want to start on the next ones:
+
+
+
+Phase 2 Types & Data
+
+Your Class Is Now a Struct (And That's Fine) — Reference vs value semantics, when you actually miss classes
+Where Did My Properties Go? — Public/private via capitalisation, no getters/setters, embracing bare fields
+Generics: Late to the Party — What Go 1.18+ gives you vs C#'s mature generics, and where you'll feel the gaps
+The Million Dollar Mistake, Differently — Nullable reference types vs Go's nil, and why both languages got burned
+No Enums? No Problem (Sort Of) — iota, const blocks, and faking it until you miss real enums
+
+---
+
+_**Agent (model claude-4.5-opus-high-thinking, mode Agent)**_
+
+<think><details><summary>Thought Process</summary>
+The user wants me to create the next 5 posts in the series, covering Phase 2: Types & Data. Let me create all five posts following the same tone and style as the first two posts and the existing blog content.
+
+The posts are:
+1. Your Class Is Now a Struct (And That's Fine) — Reference vs value semantics, when you actually miss classes
+2. Where Did My Properties Go? — Public/private via capitalisation, no getters/setters, embracing bare fields
+3. Generics: Late to the Party — What Go 1.18+ gives you vs C#'s mature generics, and where you'll feel the gaps
+4. The Million Dollar Mistake, Differently — Nullable reference types vs Go's nil, and why both languages got burned
+5. No Enums? No Problem (Sort Of) — iota, const blocks, and faking it until you miss real enums
+
+I'll write all five posts now with the same tone: UK English, techie informal, first person plural, honest about both languages, starts with real problems.</details></think>
+
+---
+
+I'll create all five posts for Phase 2: Types & Data. Let me write them all now.
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="write">
+
+<details><summary>Tool use: **write** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/dotnet-to-go-structs.md</summary>
+
+**Chunk 1**
+Lines added: 276, lines removed: 1
+
+```diff
+@@ -1,1 +1,276 @@
+- 
++ +++
++ title = "Your Class Is Now a Struct (And That's Fine)"
++ date = "2024-12-29"
++ draft = false
++ tags = ["go", "dotnet", "types", "csharp"]
++ +++
++ 
++ Here's something that'll feel wrong for about a week: Go doesn't have classes. Not "Go has classes but calls them something else"—it genuinely doesn't have them. No inheritance. No class hierarchies. No &#96;virtual&#96; or &#96;override&#96;. No &#96;protected&#96;.
++ 
++ If you've spent years designing C# class hierarchies, this feels like having a limb removed. Then you start writing Go code and realise... you don't actually miss it that much.
++ 
++ Let's dig into why.
++ 
++ ## The Basic Translation
++ 
++ In C#, you'd write:
++ 
++ &#96;&#96;&#96;csharp
++ public class User
++ {
++     public string Name { get; set; }
++     public string Email { get; set; }
++     public DateTime CreatedAt { get; set; }
++     
++     public User(string name, string email)
++     {
++         Name = name;
++         Email = email;
++         CreatedAt = DateTime.UtcNow;
++     }
++     
++     public string DisplayName() =&gt; $"{Name} &lt;{Email}&gt;";
++ }
++ &#96;&#96;&#96;
++ 
++ In Go:
++ 
++ &#96;&#96;&#96;go
++ type User struct {
++     Name      string
++     Email     string
++     CreatedAt time.Time
++ }
++ 
++ func NewUser(name, email string) User {
++     return User{
++         Name:      name,
++         Email:     email,
++         CreatedAt: time.Now().UTC(),
++     }
++ }
++ 
++ func (u User) DisplayName() string {
++     return fmt.Sprintf("%s &lt;%s&gt;", u.Name, u.Email)
++ }
++ &#96;&#96;&#96;
++ 
++ A few things to notice:
++ 
++ 1. **No constructor syntax**—&#96;NewUser&#96; is just a function. By convention, Go uses &#96;NewX&#96; functions, but there's nothing special about them.
++ 2. **Methods are declared separately**—that &#96;func (u User)&#96; syntax attaches a method to the type.
++ 3. **No access modifiers**—capitalisation controls visibility (covered in the next post).
++ 4. **Fields are just fields**—no properties, no getters/setters.
++ 
++ ## Value Semantics by Default
++ 
++ Here's the big one. In C#, classes are reference types. When you pass a &#96;User&#96; to a method, you're passing a reference. Modifications affect the original.
++ 
++ &#96;&#96;&#96;csharp
++ void UpdateEmail(User user)
++ {
++     user.Email = "new@example.com";  // modifies the original
++ }
++ &#96;&#96;&#96;
++ 
++ In Go, structs are value types by default. Pass a struct, you're passing a copy.
++ 
++ &#96;&#96;&#96;go
++ func UpdateEmail(u User) {
++     u.Email = "new@example.com"  // modifies the copy, original unchanged
++ }
++ &#96;&#96;&#96;
++ 
++ If you want reference semantics, you use pointers explicitly:
++ 
++ &#96;&#96;&#96;go
++ func UpdateEmail(u *User) {
++     u.Email = "new@example.com"  // modifies the original via pointer
++ }
++ &#96;&#96;&#96;
++ 
++ This explicitness is jarring at first. In C#, the type itself determines whether you get value or reference semantics (&#96;struct&#96; vs &#96;class&#96;). In Go, the *calling convention* determines it. Same type, different behaviour depending on whether you use &#96;User&#96; or &#96;*User&#96;.
++ 
++ ### When to Use Pointers
++ 
++ The rule of thumb:
++ 
++ | Scenario | Use |
++ |----------|-----|
++ | Method modifies the receiver | &#96;*User&#96; (pointer receiver) |
++ | Struct is large | &#96;*User&#96; (avoid copy overhead) |
++ | You need nil to mean "absent" | &#96;*User&#96; (pointers can be nil) |
++ | Small, immutable data | &#96;User&#96; (value) |
++ | You want copy-on-pass safety | &#96;User&#96; (value) |
++ 
++ In practice, most methods use pointer receivers. It's more consistent, and you don't have to think about whether each method modifies state.
++ 
++ &#96;&#96;&#96;go
++ // Pointer receiver - conventional for most methods
++ func (u *User) UpdateEmail(email string) {
++     u.Email = email
++ }
++ 
++ // Value receiver - acceptable for pure getters on small structs
++ func (u User) DisplayName() string {
++     return fmt.Sprintf("%s &lt;%s&gt;", u.Name, u.Email)
++ }
++ &#96;&#96;&#96;
++ 
++ ## Composition Over Inheritance
++ 
++ Go doesn't have inheritance. Full stop. No &#96;class Admin : User&#96;. No &#96;protected&#96; members. No &#96;virtual&#96; methods.
++ 
++ Instead, Go has embedding—a form of composition that feels almost like inheritance but isn't.
++ 
++ &#96;&#96;&#96;go
++ type Person struct {
++     Name string
++     Age  int
++ }
++ 
++ func (p Person) Greet() string {
++     return fmt.Sprintf("Hello, I'm %s", p.Name)
++ }
++ 
++ type Employee struct {
++     Person          // embedded - not a field name, just the type
++     EmployeeID string
++     Department string
++ }
++ &#96;&#96;&#96;
++ 
++ Now &#96;Employee&#96; has all of &#96;Person&#96;'s fields and methods:
++ 
++ &#96;&#96;&#96;go
++ emp := Employee{
++     Person:     Person{Name: "Alice", Age: 30},
++     EmployeeID: "E123",
++     Department: "Engineering",
++ }
++ 
++ fmt.Println(emp.Name)    // "Alice" - promoted from Person
++ fmt.Println(emp.Greet()) // "Hello, I'm Alice" - method promoted too
++ &#96;&#96;&#96;
++ 
++ This *looks* like inheritance, but it's not:
++ 
++ - No polymorphism—you can't pass an &#96;Employee&#96; where a &#96;Person&#96; is expected
++ - No &#96;override&#96;—if &#96;Employee&#96; defines its own &#96;Greet()&#96;, it shadows &#96;Person.Greet()&#96;
++ - The embedded type is still accessible—&#96;emp.Person.Name&#96; works
++ 
++ ### When You'll Miss Inheritance
++ 
++ Let's be honest: sometimes you'll miss it.
++ 
++ **Template Method Pattern**—In C#, you'd have a base class with a &#96;virtual&#96; method that subclasses override. Go has no direct equivalent. You use interfaces and composition instead, which works but feels more verbose.
++ 
++ **Protected Members**—There's no "visible to derived types" concept. Everything is either exported (public) or unexported (package-private). For library design, this can be limiting.
++ 
++ **Deep Hierarchies**—If your C# design has &#96;Animal -&gt; Mammal -&gt; Dog -&gt; Labrador&#96;, Go will make you rethink that structure entirely. Usually for the better, but the rethinking takes effort.
++ 
++ ## Interfaces Are Implicit
++ 
++ Here's where Go gets genuinely interesting. Interfaces are satisfied implicitly—no &#96;implements&#96; keyword.
++ 
++ In C#:
++ 
++ &#96;&#96;&#96;csharp
++ public interface IGreeter
++ {
++     string Greet();
++ }
++ 
++ public class Person : IGreeter  // explicit implementation
++ {
++     public string Name { get; set; }
++     public string Greet() =&gt; $"Hello, I'm {Name}";
++ }
++ &#96;&#96;&#96;
++ 
++ In Go:
++ 
++ &#96;&#96;&#96;go
++ type Greeter interface {
++     Greet() string
++ }
++ 
++ type Person struct {
++     Name string
++ }
++ 
++ func (p Person) Greet() string {
++     return fmt.Sprintf("Hello, I'm %s", p.Name)
++ }
++ 
++ // Person now implements Greeter - no declaration needed
++ &#96;&#96;&#96;
++ 
++ If a type has the methods an interface requires, it implements that interface. Period. No ceremony.
++ 
++ This has profound implications:
++ 
++ 1. **You can define interfaces after the fact**—create an interface that existing types already satisfy
++ 2. **Small interfaces are encouraged**—the standard library is full of one-method interfaces
++ 3. **Testing is trivial**—any type with the right methods can be substituted
++ 
++ The &#96;io.Reader&#96; interface is the canonical example:
++ 
++ &#96;&#96;&#96;go
++ type Reader interface {
++     Read(p []byte) (n int, err error)
++ }
++ &#96;&#96;&#96;
++ 
++ One method. But files, network connections, byte buffers, HTTP response bodies—they all implement it. Polymorphism without inheritance.
++ 
++ ## The Comparison
++ 
++ | Aspect | C# Classes | Go Structs |
++ |--------|-----------|------------|
++ | Reference/value | Reference by default | Value by default |
++ | Inheritance | Full class inheritance | Embedding (composition) |
++ | Interface implementation | Explicit (&#96;implements&#96;) | Implicit (duck typing) |
++ | Constructors | Special syntax | Convention (&#96;NewX&#96; functions) |
++ | Access modifiers | &#96;public&#96;, &#96;private&#96;, &#96;protected&#96;, &#96;internal&#96; | Exported (capital) or unexported |
++ | Polymorphism | Inheritance + interfaces | Interfaces only |
++ | Method declaration | Inside class body | Separate, attached to type |
++ 
++ ## What I Actually Miss
++ 
++ After a few months, here's my honest assessment:
++ 
++ **Don't miss at all:**
++ - Complex inheritance hierarchies (they were usually a mistake anyway)
++ - The &#96;virtual&#96;/&#96;override&#96; dance
++ - Explicit interface implementation for conflicts
++ 
++ **Sometimes miss:**
++ - &#96;protected&#96; for carefully designed extension points
++ - Abstract classes with partial implementations
++ - The template method pattern (can be done in Go, just clunkier)
++ 
++ **Actively prefer Go's approach:**
++ - Implicit interface satisfaction
++ - Explicit value vs reference choice at call site
++ - Composition via embedding
++ - Small, focused interfaces
++ 
++ The shift from "design your class hierarchy upfront" to "compose small pieces and let interfaces emerge" takes adjustment. But it tends to produce simpler code.
++ 
++ ## The Practical Bit
++ 
++ If you're converting C# code to Go, here's the process I use:
++ 
++ 1. **Start with structs for data**—no methods yet, just fields
++ 2. **Add methods as needed**—use pointer receivers by default
++ 3. **Extract interfaces late**—when you need polymorphism, create the smallest interface that works
++ 4. **Embed for code reuse**—not "inheritance", just "I want those fields and methods too"
++ 5. **Resist the urge to build hierarchies**—if you're thinking "base class", stop and reconsider
++ 
++ The code ends up flatter. More types, shallower relationships. It's different, not worse.
++ 
++ ---
++ 
++ *Next up: visibility and the death of properties—why Go uses capitalisation instead of access modifiers, and why you'll stop missing getters and setters faster than you'd expect.*
++ 
+```
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="write">
+
+<details><summary>Tool use: **write** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/dotnet-to-go-visibility.md</summary>
+
+**Chunk 1**
+Lines added: 299, lines removed: 1
+
+```diff
+@@ -1,1 +1,299 @@
+- 
++ +++
++ title = "Where Did My Properties Go?"
++ date = "2024-12-29"
++ draft = false
++ tags = ["go", "dotnet", "types", "csharp"]
++ +++
++ 
++ Coming from C#, one of the first things you'll notice is that Go structs look... naked. Where are the &#96;{ get; set; }&#96; blocks? Where's &#96;private&#96; and &#96;public&#96;? How do you encapsulate anything?
++ 
++ The answer involves capitalisation, a complete absence of properties, and a philosophy that might make you uncomfortable before it makes you productive.
++ 
++ ## Visibility via Capitalisation
++ 
++ Go has exactly two visibility levels:
++ 
++ - **Exported** (capital first letter): visible outside the package
++ - **Unexported** (lowercase first letter): visible only within the package
++ 
++ That's it. No &#96;public&#96;, &#96;private&#96;, &#96;protected&#96;, &#96;internal&#96;. Just case.
++ 
++ &#96;&#96;&#96;go
++ package user
++ 
++ type User struct {
++     Name  string    // Exported - other packages can access
++     Email string    // Exported
++     hash  string    // unexported - only this package can access
++ }
++ 
++ func (u *User) SetPassword(password string) {
++     u.hash = hashPassword(password)  // can access hash internally
++ }
++ 
++ func hashPassword(p string) string {  // unexported function
++     // ...
++ }
++ &#96;&#96;&#96;
++ 
++ From another package:
++ 
++ &#96;&#96;&#96;go
++ package main
++ 
++ import "myapp/user"
++ 
++ func main() {
++     u := user.User{Name: "Alice", Email: "alice@example.com"}
++     u.SetPassword("secret")  // works - SetPassword is exported
++     
++     // u.hash = "something"  // won't compile - hash is unexported
++ }
++ &#96;&#96;&#96;
++ 
++ ### The Mental Adjustment
++ 
++ In C#, visibility is per-member and you have fine-grained control. In Go, the package is the unit of encapsulation.
++ 
++ | C# | Go Equivalent |
++ |----|---------------|
++ | &#96;public&#96; | Capitalised name |
++ | &#96;private&#96; | Lowercase name |
++ | &#96;protected&#96; | Doesn't exist |
++ | &#96;internal&#96; | Lowercase (package = assembly, roughly) |
++ | &#96;private protected&#96; | Doesn't exist |
++ 
++ The lack of &#96;protected&#96; is the big one. There's no "visible to derived types" because there are no derived types. Embedding doesn't grant special access—embedded types can only access their own unexported members.
++ 
++ ## No Properties, Just Fields
++ 
++ Here's the controversial bit. Go doesn't have properties. No getters. No setters. Just fields.
++ 
++ In C#, you'd write:
++ 
++ &#96;&#96;&#96;csharp
++ public class User
++ {
++     private string _email;
++     
++     public string Email
++     {
++         get =&gt; _email;
++         set
++         {
++             ValidateEmail(value);
++             _email = value.ToLowerInvariant();
++         }
++     }
++ }
++ &#96;&#96;&#96;
++ 
++ In Go, the idiomatic approach is... don't do that:
++ 
++ &#96;&#96;&#96;go
++ type User struct {
++     Email string
++ }
++ &#96;&#96;&#96;
++ 
++ Wait, what about validation? What about normalisation?
++ 
++ Go's answer: if you need to do something when a value changes, make a method for it:
++ 
++ &#96;&#96;&#96;go
++ type User struct {
++     email string  // unexported
++ }
++ 
++ func (u *User) Email() string {
++     return u.email
++ }
++ 
++ func (u *User) SetEmail(email string) error {
++     if !isValidEmail(email) {
++         return errors.New("invalid email")
++     }
++     u.email = strings.ToLower(email)
++     return nil
++ }
++ &#96;&#96;&#96;
++ 
++ This is more verbose than C# properties. Undeniably. You write more code.
++ 
++ But here's the thing: now the call site makes it obvious that something's happening.
++ 
++ &#96;&#96;&#96;go
++ // Caller knows this might fail
++ err := user.SetEmail("alice@example.com")
++ 
++ // vs a property that silently transforms or might panic
++ user.Email = "alice@example.com"  // what does this actually do?
++ &#96;&#96;&#96;
++ 
++ ### When to Use Bare Fields
++ 
++ The Go community's guidance is: **export fields when they're truly just data**.
++ 
++ &#96;&#96;&#96;go
++ // Config is just data, exported fields are fine
++ type Config struct {
++     Host     string
++     Port     int
++     Timeout  time.Duration
++     Debug    bool
++ }
++ 
++ // User has invariants to maintain, unexport fields + methods
++ type User struct {
++     id        int64
++     email     string
++     createdAt time.Time
++ }
++ &#96;&#96;&#96;
++ 
++ This feels wrong to C# developers who've been taught that bare fields are always bad. But Go's standard library is full of exported fields:
++ 
++ &#96;&#96;&#96;go
++ // From net/http
++ type Request struct {
++     Method string
++     URL    *url.URL
++     Header Header
++     Body   io.ReadCloser
++     // ... many more exported fields
++ }
++ &#96;&#96;&#96;
++ 
++ The &#96;http.Request&#96; struct has exported fields because that's what makes sense. You read and modify them directly. No ceremony.
++ 
++ ## The "Getter/Setter" Convention
++ 
++ When you do need accessor methods, Go has a naming convention that'll trip you up:
++ 
++ &#96;&#96;&#96;go
++ // C# instinct - WRONG in Go
++ func (u *User) GetEmail() string { return u.email }
++ func (u *User) SetEmail(e string) { u.email = e }
++ 
++ // Go convention - CORRECT
++ func (u *User) Email() string { return u.email }
++ func (u *User) SetEmail(e string) { u.email = e }
++ &#96;&#96;&#96;
++ 
++ Notice: the getter is just &#96;Email()&#96;, not &#96;GetEmail()&#96;. The setter keeps the &#96;Set&#96; prefix.
++ 
++ This feels inconsistent until you see it in use:
++ 
++ &#96;&#96;&#96;go
++ email := user.Email()          // reads like accessing a value
++ user.SetEmail("new@example.com")  // reads like an action
++ &#96;&#96;&#96;
++ 
++ The asymmetry is intentional. Getting a value should feel like accessing a value. Setting a value should look like you're doing something.
++ 
++ ## The Package as Encapsulation Boundary
++ 
++ Here's where Go's model actually shines: the package is the natural unit of encapsulation.
++ 
++ In C#, you often have one class per file, and you think about encapsulation at the class level. You might have &#96;internal&#96; methods that are really just for one other class in the same assembly.
++ 
++ In Go, all files in a package share the same namespace. Unexported identifiers are visible across all files in the package:
++ 
++ &#96;&#96;&#96;go
++ // user/user.go
++ package user
++ 
++ type User struct {
++     email string
++ }
++ 
++ // user/validation.go  
++ package user
++ 
++ func validateUser(u *User) error {
++     // Can access u.email - same package
++     if u.email == "" {
++         return errors.New("email required")
++     }
++     return nil
++ }
++ &#96;&#96;&#96;
++ 
++ This encourages small, focused packages where the implementation details can be shared freely within the package boundary, but the public API is carefully controlled.
++ 
++ ### The &#96;internal&#96; Directory
++ 
++ Go has one more visibility mechanism: the &#96;internal&#96; directory convention.
++ 
++ &#96;&#96;&#96;
++ myproject/
++ ├── internal/
++ │   └── auth/
++ │       └── token.go    // only importable by myproject and its children
++ ├── api/
++ │   └── handler.go      // can import internal/auth
++ └── main.go             // can import internal/auth
++ &#96;&#96;&#96;
++ 
++ Packages under &#96;internal/&#96; can only be imported by packages rooted at the parent of &#96;internal&#96;. This gives you "internal to this module" visibility without language keywords.
++ 
++ ## Struct Tags
++ 
++ One thing C# attributes do that Go handles differently: metadata on fields. Go uses struct tags:
++ 
++ &#96;&#96;&#96;go
++ type User struct {
++     ID        int64     &#96;json:"id" db:"user_id"&#96;
++     Email     string    &#96;json:"email" db:"email" validate:"required,email"&#96;
++     CreatedAt time.Time &#96;json:"created_at" db:"created_at"&#96;
++ }
++ &#96;&#96;&#96;
++ 
++ These are just strings—the runtime and libraries parse them by convention. The &#96;json&#96; package looks for &#96;json:&#96; tags. Database libraries look for &#96;db:&#96; tags. Validation libraries look for &#96;validate:&#96; tags.
++ 
++ It's less type-safe than C# attributes (no compile-time checking of tag names), but it's simple and works.
++ 
++ ## The Honest Take
++ 
++ After months of Go, here's where I've landed:
++ 
++ **Things I like better than C#:**
++ 
++ - **Simplicity of the model**. Two visibility levels, no exceptions.
++ - **Package-level encapsulation**. Encourages cohesive packages.
++ - **Explicit methods over magic properties**. Call sites are clear about what's happening.
++ - **The &#96;internal&#96; convention**. Solves the "internal to this module" case elegantly.
++ 
++ **Things I miss from C#:**
++ 
++ - **&#96;protected&#96; for library extension**. Sometimes you want "derived types only" access.
++ - **Computed properties**. &#96;user.FullName&#96; is nicer than &#96;user.FullName()&#96; when it's genuinely just a computed value.
++ - **Init-only setters**. Go has no equivalent to &#96;init&#96; for construction-time-only setting.
++ - **Attributes**. Struct tags work but aren't type-safe.
++ 
++ **Things that are just different:**
++ 
++ - **Capitalisation visibility**. Weird for a week, then invisible.
++ - **No &#96;get&#96;/&#96;set&#96; syntax**. More typing, but more explicit.
++ - **Fields vs properties**. Go trusts you to know when bare fields are appropriate.
++ 
++ ## Practical Advice
++ 
++ 1. **Start with exported fields for DTOs**. Structs that just carry data (configs, API responses, database rows) don't need method accessors.
++ 
++ 2. **Use unexported fields when invariants matter**. If setting a value could break something, make it unexported and provide methods.
++ 
++ 3. **Name getters without &#96;Get&#96;**. It's &#96;Email()&#96;, not &#96;GetEmail()&#96;.
++ 
++ 4. **Return errors from setters that validate**. Don't panic, don't silently fail.
++ 
++ 5. **Keep packages small and focused**. The package boundary is your encapsulation tool—make packages that are cohesive enough that sharing unexported identifiers makes sense.
++ 
++ 6. **Use &#96;internal/&#96; for module-private packages**. Better than making everything unexported in a shared package.
++ 
++ The shift from "everything should have properties" to "fields are fine, methods when needed" takes time. But once you stop fighting it, Go code ends up pleasantly straightforward.
++ 
++ ---
++ 
++ *Next up: generics in Go—what we got in Go 1.18, where the gaps are, and why you'll need to adjust your expectations if you're used to C#'s mature generics.*
++ 
+```
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="write">
+
+<details><summary>Tool use: **write** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/dotnet-to-go-generics.md</summary>
+
+**Chunk 1**
+Lines added: 331, lines removed: 1
+
+```diff
+@@ -1,1 +1,331 @@
+- 
++ +++
++ title = "Generics: Late to the Party"
++ date = "2024-12-29"
++ draft = false
++ tags = ["go", "dotnet", "generics", "csharp"]
++ +++
++ 
++ Go shipped generics in version 1.18 (March 2022). C# has had them since 2.0 (November 2005). That's a seventeen-year head start, and it shows.
++ 
++ If you're coming from C# expecting the same power and flexibility, you'll be disappointed. Go's generics are deliberately constrained—they solve the common cases but won't let you build the same abstractions you're used to.
++ 
++ Let's look at what we've got, what's missing, and whether that matters.
++ 
++ ## The Basic Syntax
++ 
++ A generic function in Go:
++ 
++ &#96;&#96;&#96;go
++ func Map[T, U any](items []T, f func(T) U) []U {
++     result := make([]U, len(items))
++     for i, item := range items {
++         result[i] = f(item)
++     }
++     return result
++ }
++ 
++ // Usage
++ numbers := []int{1, 2, 3, 4}
++ squared := Map(numbers, func(n int) int { return n * n })
++ &#96;&#96;&#96;
++ 
++ Compare to C#:
++ 
++ &#96;&#96;&#96;csharp
++ public static IEnumerable&lt;U&gt; Map&lt;T, U&gt;(IEnumerable&lt;T&gt; items, Func&lt;T, U&gt; f)
++ {
++     foreach (var item in items)
++         yield return f(item);
++ }
++ 
++ // Usage  
++ var numbers = new[] { 1, 2, 3, 4 };
++ var squared = Map(numbers, n =&gt; n * n);
++ &#96;&#96;&#96;
++ 
++ The syntax is different but the concept is familiar. Type parameters go in square brackets in Go (&#96;[T, U any]&#96;) rather than angle brackets (&#96;&lt;T, U&gt;&#96;). The &#96;any&#96; is a constraint—more on that shortly.
++ 
++ ## Constraints
++ 
++ Here's where Go's approach diverges. In C#, you constrain type parameters with &#96;where&#96;:
++ 
++ &#96;&#96;&#96;csharp
++ public T Max&lt;T&gt;(T a, T b) where T : IComparable&lt;T&gt;
++ {
++     return a.CompareTo(b) &gt; 0 ? a : b;
++ }
++ &#96;&#96;&#96;
++ 
++ In Go, constraints are interfaces:
++ 
++ &#96;&#96;&#96;go
++ func Max[T cmp.Ordered](a, b T) T {
++     if a &gt; b {
++         return a
++     }
++     return b
++ }
++ &#96;&#96;&#96;
++ 
++ The &#96;cmp.Ordered&#96; constraint (from the standard library) allows the &#96;&gt;&#96; operator. Without it, Go wouldn't know that &#96;T&#96; supports comparison.
++ 
++ ### Built-in Constraints
++ 
++ Go provides some standard constraints in the &#96;constraints&#96; and &#96;cmp&#96; packages:
++ 
++ | Constraint | What it allows |
++ |-----------|----------------|
++ | &#96;any&#96; | Any type (alias for &#96;interface{}&#96;) |
++ | &#96;comparable&#96; | Types that support &#96;==&#96; and &#96;!=&#96; |
++ | &#96;cmp.Ordered&#96; | Types that support &#96;&lt;&#96;, &#96;&gt;&#96;, &#96;&lt;=&#96;, &#96;&gt;=&#96; |
++ | &#96;constraints.Integer&#96; | All integer types |
++ | &#96;constraints.Float&#96; | All float types |
++ | &#96;constraints.Signed&#96; | Signed integers |
++ | &#96;constraints.Unsigned&#96; | Unsigned integers |
++ 
++ ### Custom Constraints
++ 
++ You can define your own constraints as interfaces:
++ 
++ &#96;&#96;&#96;go
++ type Number interface {
++     ~int | ~int64 | ~float64
++ }
++ 
++ func Sum[T Number](items []T) T {
++     var total T
++     for _, item := range items {
++         total += item
++     }
++     return total
++ }
++ &#96;&#96;&#96;
++ 
++ That &#96;~int&#96; syntax means "any type whose underlying type is int". This lets you include type aliases and defined types, not just the primitive itself.
++ 
++ ## Generic Types
++ 
++ Generic structs work as you'd expect:
++ 
++ &#96;&#96;&#96;go
++ type Stack[T any] struct {
++     items []T
++ }
++ 
++ func (s *Stack[T]) Push(item T) {
++     s.items = append(s.items, item)
++ }
++ 
++ func (s *Stack[T]) Pop() (T, bool) {
++     if len(s.items) == 0 {
++         var zero T
++         return zero, false
++     }
++     item := s.items[len(s.items)-1]
++     s.items = s.items[:len(s.items)-1]
++     return item, true
++ }
++ 
++ // Usage
++ stack := &amp;Stack[string]{}
++ stack.Push("hello")
++ value, ok := stack.Pop()
++ &#96;&#96;&#96;
++ 
++ ## Where the Gaps Hurt
++ 
++ Right, here's the honest bit. Go's generics are limited in ways that'll frustrate you coming from C#.
++ 
++ ### No Generic Methods on Non-Generic Types
++ 
++ In C#, you can do this:
++ 
++ &#96;&#96;&#96;csharp
++ public class Converter
++ {
++     public T Convert&lt;T&gt;(string value) { ... }
++ }
++ &#96;&#96;&#96;
++ 
++ In Go, you can't add a generic method to a non-generic type. This doesn't compile:
++ 
++ &#96;&#96;&#96;go
++ type Converter struct{}
++ 
++ // ERROR: method must have no type parameters
++ func (c Converter) Convert[T any](value string) T { ... }
++ &#96;&#96;&#96;
++ 
++ You have to use a generic function instead:
++ 
++ &#96;&#96;&#96;go
++ func Convert[T any](c Converter, value string) T { ... }
++ &#96;&#96;&#96;
++ 
++ It works, but it's clunkier and doesn't chain as nicely.
++ 
++ ### No Specialisation
++ 
++ C# lets you specialise behaviour based on type arguments (with runtime checks or partial specialisation). Go doesn't. You can't do:
++ 
++ &#96;&#96;&#96;go
++ func Process[T any](item T) {
++     // Can't check "if T is string, do this"
++     // Can't have different implementations for different T
++ }
++ &#96;&#96;&#96;
++ 
++ Everything must work uniformly for all types that satisfy the constraint.
++ 
++ ### No Variance
++ 
++ C# has covariance (&#96;out T&#96;) and contravariance (&#96;in T&#96;) for generic interfaces. Go has neither. A &#96;Stack[Dog]&#96; is not a &#96;Stack[Animal]&#96;, even if &#96;Dog&#96; implements &#96;Animal&#96;. Ever.
++ 
++ ### No Arithmetic Constraints (Sort Of)
++ 
++ Want to write a generic sum function? You need to constrain to types that support &#96;+&#96;:
++ 
++ &#96;&#96;&#96;go
++ func Sum[T constraints.Integer | constraints.Float](items []T) T {
++     var total T
++     for _, item := range items {
++         total += item
++     }
++     return total
++ }
++ &#96;&#96;&#96;
++ 
++ This works, but you can't easily extend it to custom numeric types. The constraint system is based on underlying types, not operators.
++ 
++ ### No Default Type Arguments
++ 
++ C# has:
++ 
++ &#96;&#96;&#96;csharp
++ public class Cache&lt;TKey, TValue, TSerializer = JsonSerializer&gt; { }
++ &#96;&#96;&#96;
++ 
++ Go doesn't. Every type parameter must be specified at use sites (though type inference helps for functions).
++ 
++ ## The Standard Library's Generics
++ 
++ Go 1.21+ added generic functions to the standard library. These are genuinely useful:
++ 
++ &#96;&#96;&#96;go
++ import (
++     "maps"
++     "slices"
++ )
++ 
++ // Slices
++ numbers := []int{3, 1, 4, 1, 5, 9}
++ slices.Sort(numbers)
++ found := slices.Contains(numbers, 4)
++ maxVal := slices.Max(numbers)
++ 
++ // Maps  
++ m := map[string]int{"a": 1, "b": 2}
++ keys := maps.Keys(m)    // iterator over keys
++ values := maps.Values(m) // iterator over values
++ maps.Clone(m)           // shallow copy
++ &#96;&#96;&#96;
++ 
++ Before generics, you'd write these loops by hand every time. Now they're type-safe and reusable.
++ 
++ ## When You'll Feel the Gaps
++ 
++ **Building Fluent APIs**
++ 
++ In C#, you might build a fluent configuration API with generic methods:
++ 
++ &#96;&#96;&#96;csharp
++ builder
++     .WithOption&lt;ConnectionOptions&gt;(opts =&gt; opts.Timeout = 30)
++     .WithOption&lt;RetryOptions&gt;(opts =&gt; opts.MaxRetries = 3)
++     .Build();
++ &#96;&#96;&#96;
++ 
++ This pattern is harder in Go because you can't have generic methods. You'd need a different approach—probably top-level functions or a less fluent API.
++ 
++ **Repository Patterns**
++ 
++ The classic &#96;IRepository&lt;T&gt;&#96; with &#96;Find&lt;TKey&gt;&#96; is awkward:
++ 
++ &#96;&#96;&#96;go
++ // This doesn't work - can't have generic method
++ type Repository[T any] interface {
++     Find[K comparable](id K) (T, error)  // ERROR
++ }
++ 
++ // You'd need this instead
++ type Repository[T any, K comparable] interface {
++     Find(id K) (T, error)
++ }
++ &#96;&#96;&#96;
++ 
++ Two type parameters instead of one, threaded through everything.
++ 
++ **LINQ-style Operations**
++ 
++ C# LINQ chains beautifully with generic extension methods:
++ 
++ &#96;&#96;&#96;csharp
++ items.Where(x =&gt; x.Active).Select(x =&gt; x.Name).OrderBy(x =&gt; x).ToList();
++ &#96;&#96;&#96;
++ 
++ Go has no extension methods. You'd write:
++ 
++ &#96;&#96;&#96;go
++ result := slices.Sorted(
++     slices.Collect(
++         Map(
++             Filter(items, func(x Item) bool { return x.Active }),
++             func(x Item) string { return x.Name },
++         ),
++     ),
++ )
++ &#96;&#96;&#96;
++ 
++ Functional, but not as elegant.
++ 
++ ## The Practical Advice
++ 
++ After working with Go's generics, here's how I use them:
++ 
++ **Do use generics for:**
++ - Data structures (stacks, queues, trees, caches)
++ - Collection utilities (map, filter, reduce)
++ - Type-safe wrappers around &#96;interface{}&#96;
++ - Eliminating repetitive code across similar types
++ 
++ **Don't use generics for:**
++ - Everything. Go's non-generic code is often clearer.
++ - Patterns that require generic methods (rethink the design)
++ - Complex type relationships (the constraint syntax gets unwieldy)
++ 
++ **Accept these limitations:**
++ - Write more concrete types, fewer abstractions
++ - Use interfaces for polymorphism, generics for type safety
++ - Sometimes duplicate code is clearer than a generic contortion
++ 
++ ## The Honest Assessment
++ 
++ | Aspect | C# Generics | Go Generics |
++ |--------|------------|-------------|
++ | Maturity | 20 years | 3 years |
++ | Generic methods | Yes | Only on generic types |
++ | Variance | Full (in/out) | None |
++ | Constraints | Rich (interfaces, new(), class, struct) | Interfaces only |
++ | Specialisation | Partial (with runtime checks) | None |
++ | Standard library | Extensive | Growing |
++ 
++ Go's generics are *good enough* for most real-world needs. They eliminate the pre-1.18 pain of &#96;interface{}&#96; everywhere or code generation. But they're not trying to match C#'s power.
++ 
++ The Go team explicitly chose to ship a simpler system first, with room to expand. Whether the gaps will be filled or the community will adapt around them remains to be seen.
++ 
++ For now? Lower your expectations, use generics where they help, and don't twist yourself into knots trying to replicate C# patterns that don't translate well.
++ 
++ ---
++ 
++ *Next up: nil in Go versus nullable reference types in C#—two different approaches to the billion dollar mistake, and why both languages still get caught out.*
++ 
+```
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="write">
+
+<details><summary>Tool use: **write** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/dotnet-to-go-nil.md</summary>
+
+**Chunk 1**
+Lines added: 312, lines removed: 1
+
+```diff
+@@ -1,1 +1,312 @@
+- 
++ +++
++ title = "The Million Dollar Mistake, Differently"
++ date = "2024-12-29"
++ draft = false
++ tags = ["go", "dotnet", "nil", "csharp"]
++ +++
++ 
++ Tony Hoare called null references his "billion dollar mistake." Both C# and Go inherited some form of this mistake, but they've evolved to handle it differently. Neither solution is perfect.
++ 
++ If you're coming from C# 8+ with nullable reference types enabled, Go's approach will feel like stepping backwards. And in some ways, it is. But there's nuance here.
++ 
++ ## The C# Journey
++ 
++ C# started with null everywhere. Any reference type could be null, always. This gave us decades of &#96;NullReferenceException&#96; at runtime.
++ 
++ Then came nullable reference types (NRT) in C# 8:
++ 
++ &#96;&#96;&#96;csharp
++ #nullable enable
++ 
++ public class User
++ {
++     public string Name { get; set; }        // Non-nullable - compiler warns if null
++     public string? MiddleName { get; set; } // Nullable - explicitly marked
++ }
++ 
++ public void Process(User user)
++ {
++     Console.WriteLine(user.Name.Length);    // Safe - compiler knows it's not null
++     Console.WriteLine(user.MiddleName.Length); // Warning! Might be null
++     
++     // Must check first
++     if (user.MiddleName != null)
++     {
++         Console.WriteLine(user.MiddleName.Length); // Now safe
++     }
++ }
++ &#96;&#96;&#96;
++ 
++ The compiler tracks nullability and warns you. It's not perfect—it's still a warning system, not a guarantee—but it catches loads of bugs at compile time.
++ 
++ ## Go's Approach: Everything Is Potentially Nil (But Different)
++ 
++ Go has &#96;nil&#96;, and it works differently depending on the type. Here's the landscape:
++ 
++ | Type | Can be nil? | Zero value |
++ |------|-------------|------------|
++ | Pointers (&#96;*T&#96;) | Yes | &#96;nil&#96; |
++ | Slices | Yes | &#96;nil&#96; (but usable!) |
++ | Maps | Yes | &#96;nil&#96; (but NOT usable for writes) |
++ | Channels | Yes | &#96;nil&#96; |
++ | Interfaces | Yes | &#96;nil&#96; |
++ | Functions | Yes | &#96;nil&#96; |
++ | Structs | No | Zero struct |
++ | Primitives | No | 0, "", false, etc. |
++ 
++ Let's dig into the weird bits.
++ 
++ ### Nil Slices Are Fine
++ 
++ This is the first surprise. A nil slice is usable:
++ 
++ &#96;&#96;&#96;go
++ var s []int    // nil slice
++ len(s)         // 0 - works fine
++ cap(s)         // 0 - works fine
++ s = append(s, 1, 2, 3)  // works fine! Now s is [1, 2, 3]
++ 
++ for _, v := range s { } // works even when nil (iterates zero times)
++ &#96;&#96;&#96;
++ 
++ A nil slice isn't "no slice"—it's an empty slice with no backing array. Most operations work. This is intentional and idiomatic.
++ 
++ ### Nil Maps Are NOT Fine
++ 
++ But a nil map will bite you:
++ 
++ &#96;&#96;&#96;go
++ var m map[string]int  // nil map
++ 
++ v := m["key"]         // works! Returns zero value (0)
++ _, ok := m["key"]     // works! ok is false
++ 
++ m["key"] = 1          // PANIC: assignment to entry in nil map
++ &#96;&#96;&#96;
++ 
++ Reading from a nil map works (returns zero values). Writing to a nil map panics. This inconsistency catches everyone at least once.
++ 
++ Always initialise maps:
++ 
++ &#96;&#96;&#96;go
++ m := make(map[string]int)
++ // or
++ m := map[string]int{}
++ &#96;&#96;&#96;
++ 
++ ### The Interface Nil Trap
++ 
++ This one is genuinely confusing. An interface can be nil in two ways:
++ 
++ &#96;&#96;&#96;go
++ type Writer interface {
++     Write([]byte) (int, error)
++ }
++ 
++ var w Writer = nil     // nil interface - both type and value are nil
++ fmt.Println(w == nil)  // true
++ 
++ var buf *bytes.Buffer = nil  // nil pointer
++ var w2 Writer = buf          // interface with nil concrete value
++ fmt.Println(w2 == nil)       // FALSE!
++ &#96;&#96;&#96;
++ 
++ Wait, what?
++ 
++ An interface value is nil only if both its type and value are nil. If you assign a nil pointer to an interface, the interface has a type (the pointer type) but a nil value. It's not a nil interface.
++ 
++ This causes bugs like:
++ 
++ &#96;&#96;&#96;go
++ func process(w Writer) {
++     if w != nil {
++         w.Write(data)  // might panic! w could be non-nil interface with nil value
++     }
++ }
++ 
++ var buf *bytes.Buffer = nil
++ process(buf)  // passes the nil check, then panics
++ &#96;&#96;&#96;
++ 
++ The fix is to either check the concrete type too, or (better) never assign nil pointers to interfaces.
++ 
++ ## Zero Values as Nullability
++ 
++ Go's approach to handling "absent" values is the zero value:
++ 
++ &#96;&#96;&#96;go
++ type User struct {
++     Name      string
++     Email     string
++     Age       int
++     CreatedAt time.Time
++ }
++ 
++ var u User
++ // u is now {Name: "", Email: "", Age: 0, CreatedAt: zero time}
++ &#96;&#96;&#96;
++ 
++ Every field has a defined zero value. There's no "unset" state—just "set to zero."
++ 
++ This works well for many cases:
++ 
++ &#96;&#96;&#96;go
++ // Empty string often means "not set"
++ if user.Email == "" {
++     // No email provided
++ }
++ 
++ // But what if 0 is a valid age?
++ if user.Age == 0 {
++     // Is this "not set" or "newborn"?
++ }
++ &#96;&#96;&#96;
++ 
++ When you need to distinguish "not set" from "zero value," you have options:
++ 
++ ### Option 1: Pointers
++ 
++ &#96;&#96;&#96;go
++ type User struct {
++     Name  string
++     Age   *int  // nil means not set, *int value means set
++ }
++ 
++ func (u User) HasAge() bool {
++     return u.Age != nil
++ }
++ &#96;&#96;&#96;
++ 
++ This is the closest to C#'s &#96;int?&#96;. But you pay the pointer indirection cost and the nil-checking overhead.
++ 
++ ### Option 2: The "ok" Pattern
++ 
++ &#96;&#96;&#96;go
++ type User struct {
++     name    string
++     nameSet bool
++ }
++ 
++ func (u User) Name() (string, bool) {
++     return u.name, u.nameSet
++ }
++ &#96;&#96;&#96;
++ 
++ Explicit, but verbose.
++ 
++ ### Option 3: Wrapper Types
++ 
++ &#96;&#96;&#96;go
++ import "database/sql"
++ 
++ type User struct {
++     Name sql.NullString
++     Age  sql.NullInt64
++ }
++ 
++ if user.Name.Valid {
++     fmt.Println(user.Name.String)
++ }
++ &#96;&#96;&#96;
++ 
++ The standard library has these for database interop. They're clunky but explicit.
++ 
++ ## Error Handling and Nil
++ 
++ Go's error handling interacts with nil constantly:
++ 
++ &#96;&#96;&#96;go
++ func LoadUser(id string) (*User, error) {
++     // ...
++ }
++ 
++ user, err := LoadUser("123")
++ if err != nil {
++     return nil, err
++ }
++ // Use user - we know it's not nil because no error
++ &#96;&#96;&#96;
++ 
++ The convention is: if &#96;err != nil&#96;, don't trust the other return values. If &#96;err == nil&#96;, the values should be valid.
++ 
++ But this is convention, not enforcement. Nothing stops you from writing:
++ 
++ &#96;&#96;&#96;go
++ return nil, nil  // No user, no error - bad practice!
++ &#96;&#96;&#96;
++ 
++ The compiler won't save you from this. Code review and convention do.
++ 
++ ## What I Miss from C#
++ 
++ **Compile-time nullability tracking.** C#'s NRT warns you when you dereference something that might be null. Go just lets you do it.
++ 
++ **The null-conditional operators.** &#96;user?.Profile?.Address?.City&#96; in C# is a single expression. In Go:
++ 
++ &#96;&#96;&#96;go
++ var city string
++ if user != nil &amp;&amp; user.Profile != nil &amp;&amp; user.Profile.Address != nil {
++     city = user.Profile.Address.City
++ }
++ &#96;&#96;&#96;
++ 
++ **Null-coalescing.** &#96;name ?? "Unknown"&#96; vs:
++ 
++ &#96;&#96;&#96;go
++ name := user.Name
++ if name == "" {
++     name = "Unknown"
++ }
++ &#96;&#96;&#96;
++ 
++ Go 1.22 added some helpers, but nothing as clean.
++ 
++ ## What Go Does Well
++ 
++ **Zero values are useful defaults.** A zero &#96;sync.Mutex&#96; works. A zero &#96;bytes.Buffer&#96; works. You don't need constructor ceremonies for basic types.
++ 
++ **No null reference exceptions.** You get panics on nil pointer dereference, but nil slices, nil channels (blocks forever), and nil maps (read) don't crash.
++ 
++ **Explicit pointer semantics.** When something can be nil, it's a pointer. Value types can't be nil. The type tells you what to expect.
++ 
++ ## The Comparison
++ 
++ | Aspect | C# (with NRT) | Go |
++ |--------|---------------|-----|
++ | Compile-time null tracking | Yes (warnings) | No |
++ | Runtime null safety | NullReferenceException | Panic on nil dereference |
++ | Nullable value types | &#96;int?&#96; / &#96;Nullable&lt;T&gt;&#96; | &#96;*int&#96; or wrapper types |
++ | Zero values | Default to null/zero | Always well-defined |
++ | Null-conditional | &#96;?.&#96;, &#96;??&#96; | Manual checks |
++ | Interface nil trap | No equivalent problem | Yes - be careful |
++ 
++ ## Practical Advice
++ 
++ 1. **Initialise maps eagerly.** Don't leave them nil.
++ 
++ 2. **Never assign nil pointers to interfaces.** Return the zero interface instead:
++    &#96;&#96;&#96;go
++    // Bad
++    var buf *bytes.Buffer = nil
++    return buf
++    
++    // Good
++    return nil
++    &#96;&#96;&#96;
++ 
++ 3. **Use pointers for optional fields sparingly.** Often the zero value is fine for "not set."
++ 
++ 4. **Follow the error convention.** If returning an error, either return good values or nil values, not a mix.
++ 
++ 5. **Check nil before method calls on pointer receivers.** Go lets you call methods on nil receivers, which can work or panic depending on the implementation.
++ 
++ 6. **Accept that the compiler won't catch null dereferences.** Tests and careful coding are your only defence.
++ 
++ The lack of NRT-style static analysis is Go's weakest area compared to modern C#. Tools like &#96;staticcheck&#96; help, but they're not built into the language.
++ 
++ You'll write more nil checks. You'll occasionally miss one. That's the trade-off for Go's simplicity.
++ 
++ ---
++ 
++ *Next up: Go's approach to enums—const blocks, iota, and why you'll miss real enums more than you expected to.*
++ 
+```
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="write">
+
+<details><summary>Tool use: **write** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/dotnet-to-go-enums.md</summary>
+
+**Chunk 1**
+Lines added: 440, lines removed: 1
+
+```diff
+@@ -1,1 +1,440 @@
+- 
++ +++
++ title = "No Enums? No Problem (Sort Of)"
++ date = "2024-12-29"
++ draft = false
++ tags = ["go", "dotnet", "enums", "csharp"]
++ +++
++ 
++ Go doesn't have enums. Not "Go has something enum-like"—it genuinely doesn't have a dedicated enum construct. What it has instead is constants, a clever auto-incrementing keyword called &#96;iota&#96;, and convention.
++ 
++ For simple cases, this works fine. For anything more complex, you'll miss C#'s enums more than you expect.
++ 
++ ## The Basic Pattern
++ 
++ In C#:
++ 
++ &#96;&#96;&#96;csharp
++ public enum Status
++ {
++     Pending,
++     Active,
++     Completed,
++     Cancelled
++ }
++ &#96;&#96;&#96;
++ 
++ In Go:
++ 
++ &#96;&#96;&#96;go
++ type Status int
++ 
++ const (
++     StatusPending Status = iota
++     StatusActive
++     StatusCompleted
++     StatusCancelled
++ )
++ &#96;&#96;&#96;
++ 
++ Let's break this down:
++ 
++ 1. **Define a new type** based on an underlying type (usually &#96;int&#96;)
++ 2. **Create a const block** with values of that type
++ 3. **Use &#96;iota&#96;** to auto-increment values (0, 1, 2, 3...)
++ 
++ The &#96;iota&#96; keyword resets to 0 at each &#96;const&#96; block and increments for each line. It's surprisingly powerful:
++ 
++ &#96;&#96;&#96;go
++ // Skip zero (useful when zero should mean "unset")
++ const (
++     _ Status = iota  // 0 - discarded
++     StatusPending    // 1
++     StatusActive     // 2
++     StatusCompleted  // 3
++     StatusCancelled  // 4
++ )
++ 
++ // Bit flags
++ const (
++     FlagRead  = 1 &lt;&lt; iota  // 1
++     FlagWrite              // 2
++     FlagExec               // 4
++ )
++ 
++ // Custom formula
++ const (
++     KB = 1 &lt;&lt; (10 * (iota + 1))  // 1024
++     MB                           // 1048576
++     GB                           // 1073741824
++ )
++ &#96;&#96;&#96;
++ 
++ ## What's Missing
++ 
++ ### No Exhaustive Switch
++ 
++ In C#, if you switch on an enum and miss a case, the compiler can warn you:
++ 
++ &#96;&#96;&#96;csharp
++ Status status = GetStatus();
++ switch (status)
++ {
++     case Status.Pending: // ...
++     case Status.Active:  // ...
++     // Missing Completed and Cancelled - compiler warning (with newer analyzers)
++ }
++ &#96;&#96;&#96;
++ 
++ In Go, the compiler doesn't care:
++ 
++ &#96;&#96;&#96;go
++ var status Status = getStatus()
++ switch status {
++ case StatusPending:
++     // ...
++ case StatusActive:
++     // ...
++ // Missing cases? Compiler doesn't notice.
++ }
++ &#96;&#96;&#96;
++ 
++ You can use linters like &#96;exhaustive&#96; to catch this, but it's not built in.
++ 
++ ### No Name Resolution
++ 
++ C#'s enums have built-in stringification:
++ 
++ &#96;&#96;&#96;csharp
++ Status.Active.ToString()  // "Active"
++ Enum.Parse&lt;Status&gt;("Active")  // Status.Active
++ &#96;&#96;&#96;
++ 
++ Go's "enums" are just integers. No automatic name mapping:
++ 
++ &#96;&#96;&#96;go
++ fmt.Println(StatusActive)  // prints "1" - not useful
++ 
++ // You have to implement String() yourself
++ func (s Status) String() string {
++     switch s {
++     case StatusPending:
++         return "Pending"
++     case StatusActive:
++         return "Active"
++     case StatusCompleted:
++         return "Completed"
++     case StatusCancelled:
++         return "Cancelled"
++     default:
++         return fmt.Sprintf("Status(%d)", s)
++     }
++ }
++ &#96;&#96;&#96;
++ 
++ This gets tedious. Tools like &#96;stringer&#96; can generate these methods, but it's an extra build step.
++ 
++ ### No Type Safety (Not Really)
++ 
++ C#'s enums prevent you from using arbitrary values:
++ 
++ &#96;&#96;&#96;csharp
++ Status s = (Status)999;  // Compiles but feels wrong
++ // Modern analyzers can warn about this
++ &#96;&#96;&#96;
++ 
++ Go's "enums" are just typed integers. Any int can be cast:
++ 
++ &#96;&#96;&#96;go
++ var s Status = 999  // Perfectly valid, no warning
++ &#96;&#96;&#96;
++ 
++ Nothing stops you from creating invalid values. The type gives you some protection (can't accidentally pass an &#96;int&#96; where &#96;Status&#96; is expected), but it's weak.
++ 
++ ### No Flag Enums with Utility Methods
++ 
++ C#'s &#96;[Flags]&#96; attribute gives you &#96;HasFlag&#96;:
++ 
++ &#96;&#96;&#96;csharp
++ [Flags]
++ public enum Permissions
++ {
++     None = 0,
++     Read = 1,
++     Write = 2,
++     Execute = 4
++ }
++ 
++ var perms = Permissions.Read | Permissions.Write;
++ perms.HasFlag(Permissions.Read)  // true
++ &#96;&#96;&#96;
++ 
++ Go gives you nothing. You do bit manipulation manually:
++ 
++ &#96;&#96;&#96;go
++ const (
++     PermissionNone = 0
++     PermissionRead = 1 &lt;&lt; iota
++     PermissionWrite
++     PermissionExecute
++ )
++ 
++ perms := PermissionRead | PermissionWrite
++ hasRead := perms&amp;PermissionRead != 0  // manual check
++ &#96;&#96;&#96;
++ 
++ Not hard, but not helpful either.
++ 
++ ## Making It Better
++ 
++ Here's how the Go community works around these limitations:
++ 
++ ### The Stringer Tool
++ 
++ Generate &#96;String()&#96; methods automatically:
++ 
++ &#96;&#96;&#96;bash
++ go install golang.org/x/tools/cmd/stringer@latest
++ &#96;&#96;&#96;
++ 
++ Add a generate directive:
++ 
++ &#96;&#96;&#96;go
++ //go:generate stringer -type=Status
++ 
++ type Status int
++ 
++ const (
++     StatusPending Status = iota
++     StatusActive
++     StatusCompleted
++     StatusCancelled
++ )
++ &#96;&#96;&#96;
++ 
++ Run &#96;go generate ./...&#96; and you get a &#96;status_string.go&#96; file with the &#96;String()&#96; method implemented.
++ 
++ ### Validation Methods
++ 
++ Add explicit validation:
++ 
++ &#96;&#96;&#96;go
++ func (s Status) IsValid() bool {
++     switch s {
++     case StatusPending, StatusActive, StatusCompleted, StatusCancelled:
++         return true
++     default:
++         return false
++     }
++ }
++ &#96;&#96;&#96;
++ 
++ ### Slice of All Values
++ 
++ Useful for iteration and testing:
++ 
++ &#96;&#96;&#96;go
++ var AllStatuses = []Status{
++     StatusPending,
++     StatusActive,
++     StatusCompleted,
++     StatusCancelled,
++ }
++ 
++ func (s Status) IsValid() bool {
++     return slices.Contains(AllStatuses, s)
++ }
++ &#96;&#96;&#96;
++ 
++ ### Parse Functions
++ 
++ For deserialisation:
++ 
++ &#96;&#96;&#96;go
++ func ParseStatus(s string) (Status, error) {
++     switch s {
++     case "Pending", "pending":
++         return StatusPending, nil
++     case "Active", "active":
++         return StatusActive, nil
++     case "Completed", "completed":
++         return StatusCompleted, nil
++     case "Cancelled", "cancelled":
++         return StatusCancelled, nil
++     default:
++         return 0, fmt.Errorf("unknown status: %s", s)
++     }
++ }
++ &#96;&#96;&#96;
++ 
++ ### JSON Marshalling
++ 
++ By default, Go's JSON marshaller uses the integer value. You probably want the string:
++ 
++ &#96;&#96;&#96;go
++ func (s Status) MarshalJSON() ([]byte, error) {
++     return json.Marshal(s.String())
++ }
++ 
++ func (s *Status) UnmarshalJSON(data []byte) error {
++     var str string
++     if err := json.Unmarshal(data, &amp;str); err != nil {
++         return err
++     }
++     parsed, err := ParseStatus(str)
++     if err != nil {
++         return err
++     }
++     *s = parsed
++     return nil
++ }
++ &#96;&#96;&#96;
++ 
++ ## A Complete "Enum" Implementation
++ 
++ Here's what a production-ready Go "enum" looks like:
++ 
++ &#96;&#96;&#96;go
++ type Status int
++ 
++ const (
++     StatusPending Status = iota + 1  // start at 1, 0 means "unset"
++     StatusActive
++     StatusCompleted
++     StatusCancelled
++ )
++ 
++ var statusNames = map[Status]string{
++     StatusPending:   "Pending",
++     StatusActive:    "Active",
++     StatusCompleted: "Completed",
++     StatusCancelled: "Cancelled",
++ }
++ 
++ var statusValues = map[string]Status{
++     "Pending":   StatusPending,
++     "Active":    StatusActive,
++     "Completed": StatusCompleted,
++     "Cancelled": StatusCancelled,
++ }
++ 
++ func (s Status) String() string {
++     if name, ok := statusNames[s]; ok {
++         return name
++     }
++     return fmt.Sprintf("Status(%d)", s)
++ }
++ 
++ func ParseStatus(s string) (Status, error) {
++     if v, ok := statusValues[s]; ok {
++         return v, nil
++     }
++     return 0, fmt.Errorf("invalid status: %q", s)
++ }
++ 
++ func (s Status) IsValid() bool {
++     _, ok := statusNames[s]
++     return ok
++ }
++ 
++ func (s Status) MarshalJSON() ([]byte, error) {
++     return json.Marshal(s.String())
++ }
++ 
++ func (s *Status) UnmarshalJSON(data []byte) error {
++     var str string
++     if err := json.Unmarshal(data, &amp;str); err != nil {
++         return err
++     }
++     v, err := ParseStatus(str)
++     if err != nil {
++         return err
++     }
++     *s = v
++     return nil
++ }
++ &#96;&#96;&#96;
++ 
++ Compare that to C#:
++ 
++ &#96;&#96;&#96;csharp
++ public enum Status { Pending, Active, Completed, Cancelled }
++ &#96;&#96;&#96;
++ 
++ Yeah.
++ 
++ ## The Honest Assessment
++ 
++ | Feature | C# Enum | Go "Enum" |
++ |---------|---------|-----------|
++ | Declaration | One line | Const block |
++ | Type safety | Strong | Weak (any int assignable) |
++ | String conversion | Built-in | Manual or generated |
++ | Parsing | Built-in | Manual |
++ | Exhaustive switch | Analyzers available | External linter |
++ | Flag support | &#96;[Flags]&#96; + &#96;HasFlag&#96; | Manual bit ops |
++ | JSON serialisation | Configurable | Manual implementation |
++ | Iteration over values | &#96;Enum.GetValues&#96; | Manual slice |
++ 
++ Go's approach is simpler in concept but more work in practice. For a type you use once, it's fine. For a type used throughout a codebase with JSON APIs, database columns, and validation requirements, you'll write a lot of boilerplate.
++ 
++ ## When to Reach for Alternatives
++ 
++ **String constants instead of int enums:**
++ 
++ &#96;&#96;&#96;go
++ type Status string
++ 
++ const (
++     StatusPending   Status = "pending"
++     StatusActive    Status = "active"
++     StatusCompleted Status = "completed"
++     StatusCancelled Status = "cancelled"
++ )
++ &#96;&#96;&#96;
++ 
++ Pros: Natural JSON serialisation, readable in logs/databases.
++ Cons: More memory, slower comparison, still no exhaustive switch checking.
++ 
++ **Third-party enum packages:**
++ 
++ Libraries like &#96;go-enum&#96; generate all the boilerplate. Worth considering for large projects.
++ 
++ **Interface-based enums:**
++ 
++ &#96;&#96;&#96;go
++ type Status interface {
++     status()  // unexported marker method
++     String() string
++ }
++ 
++ type statusPending struct{}
++ func (statusPending) status() {}
++ func (statusPending) String() string { return "Pending" }
++ 
++ var StatusPending Status = statusPending{}
++ &#96;&#96;&#96;
++ 
++ Type-safe (can't create arbitrary values), but verbose and unusual.
++ 
++ ## Practical Advice
++ 
++ 1. **Use &#96;stringer&#96; for any enum in production code.** The manual &#96;String()&#96; method will fall out of sync.
++ 
++ 2. **Start const values at 1 if zero means "unset."** Or use an explicit &#96;StatusUnknown = 0&#96; value.
++ 
++ 3. **Always add an &#96;IsValid()&#96; method.** Check it at system boundaries (API inputs, database reads).
++ 
++ 4. **Use string-based enums for external APIs.** They're more forgiving and self-documenting.
++ 
++ 5. **Accept the boilerplate.** Fighting it is pointless. Copy-paste or generate.
++ 
++ 6. **Use the &#96;exhaustive&#96; linter.** It's the only way to get switch statement coverage warnings.
++ 
++ Go's lack of proper enums is one of its genuine weaknesses. The workarounds work, but they're workarounds. Every Go developer I know has a personal template or snippet for "proper" enum implementation.
++ 
++ Maybe we'll get real enums eventually. Until then, embrace &#96;iota&#96; and keep your boilerplate consistent.
++ 
++ ---
++ 
++ *That wraps up Phase 2 on types and data. Next we'll move into Phase 3: Functions, Methods, and Interfaces—where Go's composition-over-inheritance philosophy really starts to show its strengths.*
++ 
+```
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+All five posts are written. Let me verify the Hugo build passes with all of them.</details></think>
+
+---
+
+Let me verify the Hugo build passes with all the new posts:
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_cmd">
+<details><summary>Tool use: **run_terminal_cmd** • Run command: cd /Users/andycross/src/personal/mcp-blogs && hugo --quiet && echo "Build successful" && ls -la content/posts/dotnet-to-go*.md</summary>
+
+```bash
+cd /Users/andycross/src/personal/mcp-blogs && hugo --quiet && echo "Build successful" && ls -la content/posts/dotnet-to-go*.md
+```
+
+```
+Build successful
+-rw-r--r--  1 andycross  staff  10096 Dec 28 20:26 content/posts/dotnet-to-go-enums.md
+-rw-r--r--  1 andycross  staff   8877 Dec 28 20:24 content/posts/dotnet-to-go-generics.md
+-rw-r--r--  1 andycross  staff   9547 Dec 28 20:20 content/posts/dotnet-to-go-modules.md
+-rw-r--r--  1 andycross  staff   8502 Dec 28 20:25 content/posts/dotnet-to-go-nil.md
+-rw-r--r--  1 andycross  staff   8749 Dec 28 20:23 content/posts/dotnet-to-go-structs.md
+-rw-r--r--  1 andycross  staff   8132 Dec 28 20:20 content/posts/dotnet-to-go-toolchain.md
+-rw-r--r--  1 andycross  staff   9254 Dec 28 20:23 content/posts/dotnet-to-go-visibility.md
+
+```
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+All seven posts are now created and the build passes. Let me summarize what was created for the user.</details></think>
+
+---
+
+All five Phase 2 posts are created and the Hugo build passes. Here's the complete series so far:
+
+## C# to Go Series
+
+### Phase 1: Getting Oriented (2 posts)
+1. **"You Know .NET, Now Meet the Go Toolchain"** — The `go` command, project structure, build model, cross-compilation
+2. **"Goodbye .csproj, Hello go.mod"** — Dependencies without NuGet, Minimum Version Selection, go.sum
+
+### Phase 2: Types & Data (5 posts)
+3. **"Your Class Is Now a Struct (And That's Fine)"** — Value vs reference semantics, pointers, embedding vs inheritance, implicit interfaces
+4. **"Where Did My Properties Go?"** — Capitalisation visibility, bare fields vs accessors, the `internal/` convention, struct tags
+5. **"Generics: Late to the Party"** — What Go 1.18+ provides, constraints, what's missing (variance, generic methods, specialisation)
+6. **"The Million Dollar Mistake, Differently"** — Nil vs nullable reference types, the interface nil trap, zero values as defaults
+7. **"No Enums? No Problem (Sort Of)"** — `iota`, const blocks, what's missing (exhaustive switch, String()), stringer tool, workarounds
+
+Each post follows the established tone:
+- UK English throughout
+- First person plural for learning together
+- Fair comparisons (not bashing C# or overselling Go)
+- Tables for genuine comparisons
+- Runnable code examples
+- Honest "what I miss" and "what I prefer" sections
+- Practical advice sections
+
+Ready for Phase 3 when you are?
 
 ---
 
