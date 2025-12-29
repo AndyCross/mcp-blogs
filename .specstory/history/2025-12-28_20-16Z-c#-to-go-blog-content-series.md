@@ -2865,26 +2865,436 @@ Good call—this foundational "translation" content should come early in the ser
 
 <details><summary>Tool use: **write** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/dotnet-to-go-phrasebook.md</summary>
 
-Status: **loading**
+**Chunk 1**
+Lines added: 424, lines removed: 1
 
-```markdown
-+++
-title = "The Phrasebook: C# Concepts in Go Terms"
-date = "2024-12-28"
-draft = false
-tags = ["go", "dotnet", "syntax", "csharp"]
-+++
-
-Before we get into the weeds of types and patterns, let's establish some vocabulary. Go uses different names for familiar concepts, and has operators you've never seen. This post is a reference—skim it now, bookmark it for later.
-
-## The Terminology Swap
-
-Your C# brain thinks in certain words. Here's the translation:
-
-| C# Term | Go Term | Notes |
-|---------|---------|-------|
-| `List<T>` | slice | Dynamic array, the workhorse collection |
-| `T[]` (array) | slice (usually) | Go has arrays, but you'll rarely
+```diff
+@@ -1,1 +1,424 @@
+- 
++ +++
++ title = "The Phrasebook: C# Concepts in Go Terms"
++ date = "2024-12-28"
++ draft = false
++ tags = ["go", "dotnet", "syntax", "csharp"]
++ +++
++ 
++ Before we get into the weeds of types and patterns, let's establish some vocabulary. Go uses different names for familiar concepts, and has operators you've never seen. This post is a reference—skim it now, bookmark it for later.
++ 
++ ## The Terminology Swap
++ 
++ Your C# brain thinks in certain words. Here's the translation:
++ 
++ | C# Term | Go Term | Notes |
++ |---------|---------|-------|
++ | &#96;List&lt;T&gt;&#96; | slice | Dynamic array, the workhorse collection |
++ | &#96;T[]&#96; (array) | slice (usually) | Go has arrays, but you'll rarely use them |
++ | &#96;Dictionary&lt;K,V&gt;&#96; | map | &#96;map[string]int&#96; instead of &#96;Dictionary&lt;string, int&gt;&#96; |
++ | namespace | package | But packages are directories, not hierarchies |
++ | &#96;null&#96; | &#96;nil&#96; | Same concept, different spelling |
++ | class | struct | No inheritance, but methods work |
++ | property | field (+ methods) | No get/set syntax |
++ | &#96;var&#96; | &#96;var&#96; or &#96;:=&#96; | Two ways to declare variables |
++ | &#96;async&#96;/&#96;await&#96; | goroutines + channels | Completely different model |
++ | exception | error | Errors are values, not control flow |
++ | &#96;try&#96;/&#96;catch&#96; | &#96;if err != nil&#96; | Explicit checking, no unwinding |
++ | &#96;using&#96; | &#96;defer&#96; | Cleanup runs at function exit |
++ | &#96;lock&#96; | &#96;sync.Mutex&#96; | Manual lock/unlock |
++ | &#96;foreach&#96; | &#96;for range&#96; | Single construct for iteration |
++ | &#96;out&#96;/&#96;ref&#96; | pointers | Explicit &#96;*&#96; and &#96;&amp;&#96; |
++ | LINQ | nothing built-in | Loops, or generics since 1.18 |
++ | extension methods | nothing | Define functions, not methods |
++ | partial class | nothing | All code in the package shares scope |
++ | static class | package-level functions | No class, just functions |
++ 
++ ### Arrays vs Slices
++ 
++ This one catches everyone. In C#, "array" means a fixed-size, contiguous block:
++ 
++ &#96;&#96;&#96;csharp
++ int[] numbers = new int[5];  // fixed size 5
++ &#96;&#96;&#96;
++ 
++ In Go, this is also called an array—but you almost never use them directly:
++ 
++ &#96;&#96;&#96;go
++ var numbers [5]int  // array - fixed size, rarely used
++ &#96;&#96;&#96;
++ 
++ What you use instead is a **slice**—a dynamic view over an array:
++ 
++ &#96;&#96;&#96;go
++ numbers := []int{1, 2, 3, 4, 5}  // slice - this is what you want
++ numbers = append(numbers, 6)     // grows automatically
++ &#96;&#96;&#96;
++ 
++ Think of slices as &#96;List&lt;T&gt;&#96; that happens to have array-like syntax. They grow, shrink, and pass by reference (sort of—the header is copied, but the backing array is shared).
++ 
++ **The rule:** if you're reaching for an array in Go, you probably want a slice.
++ 
++ ### Maps
++ 
++ &#96;Dictionary&lt;K, V&gt;&#96; becomes &#96;map[K]V&#96;. The syntax is inside-out:
++ 
++ &#96;&#96;&#96;csharp
++ // C#
++ var scores = new Dictionary&lt;string, int&gt;
++ {
++     ["Alice"] = 100,
++     ["Bob"] = 85
++ };
++ &#96;&#96;&#96;
++ 
++ &#96;&#96;&#96;go
++ // Go
++ scores := map[string]int{
++     "Alice": 100,
++     "Bob":   85,
++ }
++ &#96;&#96;&#96;
++ 
++ Key differences:
++ - Maps must be initialised before use (nil maps panic on write)
++ - Missing keys return the zero value
++ - Use the two-value form to check existence: &#96;val, ok := m[key]&#96;
++ 
++ &#96;&#96;&#96;go
++ score, exists := scores["Charlie"]
++ if !exists {
++     fmt.Println("Charlie not found")
++ }
++ &#96;&#96;&#96;
++ 
++ ## Operators You Haven't Met
++ 
++ Go has several operators and constructs that don't exist in C#. Here's your cheat sheet.
++ 
++ ### &#96;:=&#96; Short Variable Declaration
++ 
++ This is the one you'll use constantly:
++ 
++ &#96;&#96;&#96;go
++ // These are equivalent
++ var name string = "Alice"
++ name := "Alice"  // type inferred, shorter
++ &#96;&#96;&#96;
++ 
++ The &#96;:=&#96; operator declares AND assigns. It only works inside functions, and only for new variables.
++ 
++ &#96;&#96;&#96;go
++ name := "Alice"
++ name := "Bob"    // ERROR: no new variables on left side
++ name = "Bob"     // OK: just assignment, no declaration
++ &#96;&#96;&#96;
++ 
++ **The gotcha:** &#96;:=&#96; in an inner scope creates a new variable that shadows the outer one:
++ 
++ &#96;&#96;&#96;go
++ name := "Alice"
++ if true {
++     name := "Bob"  // new variable, shadows outer 'name'
++     fmt.Println(name)  // "Bob"
++ }
++ fmt.Println(name)  // "Alice" - outer unchanged!
++ &#96;&#96;&#96;
++ 
++ This is a common source of bugs. Use &#96;=&#96; for assignment when the variable already exists.
++ 
++ ### &#96;_&#96; Blank Identifier
++ 
++ The underscore discards a value. You'll use it constantly because Go requires you to use all declared variables:
++ 
++ &#96;&#96;&#96;go
++ // Ignore the index in a range loop
++ for _, value := range items {
++     fmt.Println(value)
++ }
++ 
++ // Ignore an unwanted return value
++ _, err := doSomething()
++ 
++ // Ignore the second return value (existence check)
++ value, _ := myMap[key]  // don't care if it exists
++ 
++ // Interface compliance check (compile-time)
++ var _ io.Reader = (*MyType)(nil)
++ &#96;&#96;&#96;
++ 
++ ### &#96;&lt;-&#96; Channel Operator
++ 
++ Channels are Go's concurrency primitive. The &#96;&lt;-&#96; operator sends and receives:
++ 
++ &#96;&#96;&#96;go
++ ch := make(chan int)
++ 
++ go func() {
++     ch &lt;- 42  // send 42 into the channel
++ }()
++ 
++ value := &lt;-ch  // receive from the channel
++ fmt.Println(value)  // 42
++ &#96;&#96;&#96;
++ 
++ The arrow points in the direction of data flow. Send: &#96;ch &lt;- value&#96;. Receive: &#96;value := &lt;-ch&#96;.
++ 
++ ### &#96;...&#96; Variadic and Spread
++ 
++ Two related uses for the ellipsis:
++ 
++ **Variadic parameters** (like C#'s &#96;params&#96;):
++ 
++ &#96;&#96;&#96;go
++ func Sum(numbers ...int) int {
++     total := 0
++     for _, n := range numbers {
++         total += n
++     }
++     return total
++ }
++ 
++ Sum(1, 2, 3)  // works
++ Sum(1, 2, 3, 4, 5)  // also works
++ &#96;&#96;&#96;
++ 
++ **Spreading a slice** into variadic arguments:
++ 
++ &#96;&#96;&#96;go
++ numbers := []int{1, 2, 3, 4, 5}
++ Sum(numbers...)  // unpacks the slice
++ &#96;&#96;&#96;
++ 
++ ### &#96;&amp;&#96; and &#96;*&#96; (Pointers)
++ 
++ These exist in C# but you probably haven't used them much. In Go, they're everywhere:
++ 
++ &#96;&#96;&#96;go
++ x := 42
++ p := &amp;x   // p is *int, points to x
++ *p = 100  // dereference: x is now 100
++ &#96;&#96;&#96;
++ 
++ More commonly, you'll see them with structs:
++ 
++ &#96;&#96;&#96;go
++ type User struct {
++     Name string
++ }
++ 
++ u := User{Name: "Alice"}
++ ptr := &amp;u           // *User
++ ptr.Name = "Bob"    // Go auto-dereferences for field access
++ &#96;&#96;&#96;
++ 
++ ### &#96;make()&#96; and &#96;new()&#96;
++ 
++ Two built-in functions for creating things:
++ 
++ **&#96;make()&#96;** is for slices, maps, and channels—types that need initialisation:
++ 
++ &#96;&#96;&#96;go
++ s := make([]int, 0, 10)     // slice with length 0, capacity 10
++ m := make(map[string]int)   // initialised map (not nil!)
++ ch := make(chan int)        // unbuffered channel
++ ch := make(chan int, 10)    // buffered channel, capacity 10
++ &#96;&#96;&#96;
++ 
++ **&#96;new()&#96;** allocates and returns a pointer to the zero value:
++ 
++ &#96;&#96;&#96;go
++ p := new(User)  // *User, pointing to User{}
++ &#96;&#96;&#96;
++ 
++ In practice, you'll use &#96;make()&#96; often and &#96;new()&#96; rarely. The composite literal with &#96;&amp;&#96; is more common:
++ 
++ &#96;&#96;&#96;go
++ p := &amp;User{Name: "Alice"}  // equivalent to new + field assignment
++ &#96;&#96;&#96;
++ 
++ ## The &#96;for&#96; Loop (It's the Only One)
++ 
++ Go has one loop construct: &#96;for&#96;. It does everything.
++ 
++ &#96;&#96;&#96;go
++ // Traditional for loop (like C#)
++ for i := 0; i &lt; 10; i++ {
++     fmt.Println(i)
++ }
++ 
++ // While loop (condition only)
++ for condition {
++     // ...
++ }
++ 
++ // Infinite loop
++ for {
++     // break to exit
++ }
++ 
++ // Range over slice (like foreach)
++ for index, value := range items {
++     fmt.Println(index, value)
++ }
++ 
++ // Range over map
++ for key, value := range myMap {
++     fmt.Println(key, value)
++ }
++ 
++ // Range over string (gives runes, not bytes)
++ for index, char := range "hello" {
++     fmt.Printf("%d: %c\n", index, char)
++ }
++ 
++ // Range over channel
++ for msg := range messages {
++     fmt.Println(msg)  // until channel is closed
++ }
++ &#96;&#96;&#96;
++ 
++ Use &#96;_&#96; to ignore index or value:
++ 
++ &#96;&#96;&#96;go
++ for _, value := range items { }  // ignore index
++ for index := range items { }     // ignore value (just omit it)
++ &#96;&#96;&#96;
++ 
++ ## &#96;defer&#96; Instead of &#96;using&#96;
++ 
++ C#'s &#96;using&#96; statement disposes resources at block exit:
++ 
++ &#96;&#96;&#96;csharp
++ using var file = File.OpenRead("data.txt");
++ // file is disposed when scope exits
++ &#96;&#96;&#96;
++ 
++ Go's &#96;defer&#96; schedules a function call to run when the *function* exits:
++ 
++ &#96;&#96;&#96;go
++ file, err := os.Open("data.txt")
++ if err != nil {
++     return err
++ }
++ defer file.Close()  // runs when this function returns
++ 
++ // use file...
++ &#96;&#96;&#96;
++ 
++ Key differences:
++ - &#96;defer&#96; runs at function exit, not block exit
++ - Multiple defers run in LIFO order (last defer runs first)
++ - Deferred calls capture their arguments when the defer statement executes
++ 
++ &#96;&#96;&#96;go
++ func example() {
++     defer fmt.Println("first")
++     defer fmt.Println("second")
++     defer fmt.Println("third")
++ }
++ // Output: third, second, first
++ &#96;&#96;&#96;
++ 
++ ## Error Handling: &#96;if err != nil&#96;
++ 
++ This is the biggest mental shift. No exceptions, no try/catch. Errors are values.
++ 
++ &#96;&#96;&#96;go
++ file, err := os.Open("data.txt")
++ if err != nil {
++     return fmt.Errorf("failed to open: %w", err)
++ }
++ defer file.Close()
++ 
++ data, err := io.ReadAll(file)
++ if err != nil {
++     return fmt.Errorf("failed to read: %w", err)
++ }
++ &#96;&#96;&#96;
++ 
++ You'll write &#96;if err != nil&#96; hundreds of times. It's verbose. It's explicit. It works.
++ 
++ The &#96;%w&#96; verb wraps errors, preserving the chain for later inspection with &#96;errors.Is()&#96; and &#96;errors.As()&#96;.
++ 
++ ## Multiple Return Values
++ 
++ Go functions can return multiple values. This is how errors are returned:
++ 
++ &#96;&#96;&#96;go
++ func Divide(a, b float64) (float64, error) {
++     if b == 0 {
++         return 0, errors.New("division by zero")
++     }
++     return a / b, nil
++ }
++ 
++ result, err := Divide(10, 2)
++ if err != nil {
++     // handle error
++ }
++ &#96;&#96;&#96;
++ 
++ You can also use named return values:
++ 
++ &#96;&#96;&#96;go
++ func Divide(a, b float64) (result float64, err error) {
++     if b == 0 {
++         err = errors.New("division by zero")
++         return  // returns named values
++     }
++     result = a / b
++     return
++ }
++ &#96;&#96;&#96;
++ 
++ Named returns are sometimes clearer, sometimes not. Use your judgement.
++ 
++ ## Type Assertions and Switches
++ 
++ When you have an &#96;interface{}&#96; (or &#96;any&#96;) and need the concrete type:
++ 
++ &#96;&#96;&#96;go
++ // Type assertion
++ value := something.(string)  // panics if not string
++ 
++ // Safe type assertion
++ value, ok := something.(string)
++ if !ok {
++     // not a string
++ }
++ 
++ // Type switch
++ switch v := something.(type) {
++ case string:
++     fmt.Println("string:", v)
++ case int:
++     fmt.Println("int:", v)
++ default:
++     fmt.Println("unknown type")
++ }
++ &#96;&#96;&#96;
++ 
++ ## Quick Reference Card
++ 
++ Keep this handy until it's automatic:
++ 
++ | When you want to... | C# | Go |
++ |---------------------|-----|-----|
++ | Declare and assign | &#96;var x = 5;&#96; | &#96;x := 5&#96; |
++ | Declare without assign | &#96;int x;&#96; | &#96;var x int&#96; |
++ | Create a list | &#96;new List&lt;int&gt;()&#96; | &#96;[]int{}&#96; or &#96;make([]int, 0)&#96; |
++ | Create a dictionary | &#96;new Dictionary&lt;K,V&gt;()&#96; | &#96;make(map[K]V)&#96; |
++ | Append to list | &#96;list.Add(x)&#96; | &#96;slice = append(slice, x)&#96; |
++ | Get dictionary value | &#96;dict[key]&#96; | &#96;val := m[key]&#96; or &#96;val, ok := m[key]&#96; |
++ | Check key exists | &#96;dict.ContainsKey(k)&#96; | &#96;_, ok := m[k]&#96; |
++ | Iterate collection | &#96;foreach (var x in items)&#96; | &#96;for _, x := range items&#96; |
++ | Null check | &#96;if (x == null)&#96; | &#96;if x == nil&#96; |
++ | String format | &#96;$"Hello {name}"&#96; | &#96;fmt.Sprintf("Hello %s", name)&#96; |
++ | Error handling | &#96;try { } catch { }&#96; | &#96;if err != nil { }&#96; |
++ | Cleanup | &#96;using var x = ...&#96; | &#96;defer x.Close()&#96; |
++ | Async | &#96;await Task.Run(...)&#96; | &#96;go func() { }()&#96; |
++ 
++ ---
++ 
++ *This post is a reference, not a deep dive. We'll cover structs, visibility, and the type system properly in the next posts. But now you've got the vocabulary and the operators—the rest should make more sense.*
++ 
 ```
 
 </details>
@@ -2893,7 +3303,1327 @@ Your C# brain thinks in certain words. Here's the translation:
 
 ---
 
+<think><details><summary>Thought Process</summary>
+Good, let me verify the build works.</details></think>
 
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_cmd">
+<details><summary>Tool use: **run_terminal_cmd** • Run command: cd /Users/andycross/src/personal/mcp-blogs && hugo --quiet && echo "Build successful" && ls -la content/posts/dotnet-to-go*.md | wc -l</summary>
+
+```bash
+cd /Users/andycross/src/personal/mcp-blogs && hugo --quiet && echo "Build successful" && ls -la content/posts/dotnet-to-go*.md | wc -l
+```
+
+```
+Build successful
+       8
+
+```
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+All 8 posts now exist and build successfully. Let me summarize the updated series structure for the user.</details></think>
+
+---
+
+Build passes. Here's the updated series structure with the new post slotted in:
+
+## C# to Go Series (8 posts)
+
+### Phase 1: Getting Oriented
+1. **"You Know .NET, Now Meet the Go Toolchain"** — The `go` command, project structure, build model
+2. **"Goodbye .csproj, Hello go.mod"** — Dependencies without NuGet, Minimum Version Selection
+3. **"The Phrasebook: C# Concepts in Go Terms"** ← **NEW** — Terminology swap (slice, map, nil), new operators (`:=`, `_`, `<-`, `...`), `for range`, `defer`, error handling basics, quick reference card
+
+### Phase 2: Types & Data
+4. **"Your Class Is Now a Struct (And That's Fine)"** — Value vs reference semantics, embedding, interfaces
+5. **"Where Did My Properties Go?"** — Capitalisation visibility, bare fields, struct tags
+6. **"Generics: Late to the Party"** — What Go 1.18+ provides versus C#'s mature generics
+7. **"The Million Dollar Mistake, Differently"** — Nil vs nullable reference types, the interface nil trap
+8. **"No Enums? No Problem (Sort Of)"** — `iota`, const blocks, stringer, workarounds
+
+The Phrasebook post covers:
+- **Terminology:** array→slice, Dictionary→map, null→nil, foreach→for range, using→defer, try/catch→if err != nil
+- **New operators:** `:=` (short declaration), `_` (blank identifier), `<-` (channels), `...` (variadic/spread), `&`/`*` (pointers)
+- **Built-ins:** `make()` vs `new()`, the single `for` loop, `defer` semantics
+- **Quick reference card** at the end for bookmarking
+
+The date is set to 2024-12-28 (same as the first two posts) so it'll sort appropriately. Ready for Phase 3 whenever you are!
+
+---
+
+_**User (2025-12-29 06:27Z)**_
+
+ok the next phase now, phase 3 - Control Flow & Error Handling
+
+if err != nil: Your New Reality — Why exceptions don't exist and how to stop hating explicit errors
+Panic and Recover: The Emergency Exit — When Go devs actually use exceptions (and when they judge you for it)
+The switch Statement You Always Wanted — Type switches, fallthrough weirdness, and expression switching
+
+---
+
+_**Agent (model claude-4.5-opus-high-thinking, mode Agent)**_
+
+<think><details><summary>Thought Process</summary>
+The user wants me to create Phase 3: Control Flow & Error Handling with 3 posts:
+
+1. if err != nil: Your New Reality — Why exceptions don't exist and how to stop hating explicit errors
+2. Panic and Recover: The Emergency Exit — When Go devs actually use exceptions (and when they judge you for it)
+3. The switch Statement You Always Wanted — Type switches, fallthrough weirdness, and expression switching
+
+Let me write all three posts following the same tone and style.</details></think>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="write">
+
+<details><summary>Tool use: **write** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/dotnet-to-go-errors.md</summary>
+
+**Chunk 1**
+Lines added: 374, lines removed: 1
+
+```diff
+@@ -1,1 +1,374 @@
+- 
++ +++
++ title = "if err != nil: Your New Reality"
++ date = "2024-12-30"
++ draft = false
++ tags = ["go", "dotnet", "errors", "csharp"]
++ +++
++ 
++ Let's address the elephant in the room. You're going to write &#96;if err != nil&#96; hundreds of times. Thousands, probably. And for the first week, you're going to hate it.
++ 
++ Coming from C#, where exceptions handle the sad path invisibly, Go's explicit error handling feels like a step backwards. It's verbose. It's repetitive. It clutters your code with what looks like boilerplate.
++ 
++ Then something shifts. You start to see what you're gaining. Let's work through that shift.
++ 
++ ## Why No Exceptions?
++ 
++ C# uses exceptions for error handling:
++ 
++ &#96;&#96;&#96;csharp
++ try
++ {
++     var data = await File.ReadAllTextAsync("config.json");
++     var config = JsonSerializer.Deserialize&lt;Config&gt;(data);
++     await database.Connect(config.ConnectionString);
++ }
++ catch (FileNotFoundException)
++ {
++     logger.Error("Config file missing");
++ }
++ catch (JsonException ex)
++ {
++     logger.Error($"Invalid config: {ex.Message}");
++ }
++ catch (Exception ex)
++ {
++     logger.Error($"Unexpected error: {ex.Message}");
++     throw;
++ }
++ &#96;&#96;&#96;
++ 
++ This looks clean. The happy path is uncluttered. Errors are handled elsewhere.
++ 
++ But there's a hidden cost: **you can't see which lines can fail**. Any line might throw. Any function you call might throw. The &#96;catch&#96; block is disconnected from the code that caused the problem.
++ 
++ Go takes the opposite view: **errors are values, returned like any other value**:
++ 
++ &#96;&#96;&#96;go
++ data, err := os.ReadFile("config.json")
++ if err != nil {
++     return fmt.Errorf("reading config: %w", err)
++ }
++ 
++ var config Config
++ if err := json.Unmarshal(data, &amp;config); err != nil {
++     return fmt.Errorf("parsing config: %w", err)
++ }
++ 
++ if err := database.Connect(config.ConnectionString); err != nil {
++     return fmt.Errorf("connecting to database: %w", err)
++ }
++ &#96;&#96;&#96;
++ 
++ Verbose? Yes. But look at what you can see:
++ 
++ - Every line that can fail is marked with &#96;err :=&#96; or &#96;, err&#96;
++ - You know exactly what error each block handles
++ - The handling is right next to the call that produced the error
++ - No hidden control flow—the code does what it looks like it does
++ 
++ ## The Error Interface
++ 
++ In Go, &#96;error&#96; is just an interface:
++ 
++ &#96;&#96;&#96;go
++ type error interface {
++     Error() string
++ }
++ &#96;&#96;&#96;
++ 
++ Anything with an &#96;Error()&#96; method is an error. This is intentionally simple.
++ 
++ Creating errors:
++ 
++ &#96;&#96;&#96;go
++ import "errors"
++ 
++ // Simple error
++ err := errors.New("something went wrong")
++ 
++ // Formatted error
++ err := fmt.Errorf("failed to load user %d: %w", userID, originalErr)
++ &#96;&#96;&#96;
++ 
++ That &#96;%w&#96; verb is important—it wraps the original error, preserving the chain.
++ 
++ ## The Pattern You'll Write Forever
++ 
++ Here's the basic pattern:
++ 
++ &#96;&#96;&#96;go
++ result, err := doSomething()
++ if err != nil {
++     return fmt.Errorf("doing something: %w", err)
++ }
++ // use result
++ &#96;&#96;&#96;
++ 
++ Variations:
++ 
++ &#96;&#96;&#96;go
++ // When there's no result to use
++ if err := doSomething(); err != nil {
++     return err
++ }
++ 
++ // When you want to handle specific errors
++ if err := doSomething(); err != nil {
++     if errors.Is(err, ErrNotFound) {
++         return defaultValue, nil  // handle gracefully
++     }
++     return zero, err  // propagate others
++ }
++ 
++ // When you need to clean up on error
++ file, err := os.Create("output.txt")
++ if err != nil {
++     return err
++ }
++ defer file.Close()
++ 
++ if err := writeData(file); err != nil {
++     os.Remove("output.txt")  // clean up partial file
++     return fmt.Errorf("writing data: %w", err)
++ }
++ &#96;&#96;&#96;
++ 
++ ## Wrapping Errors Properly
++ 
++ Go 1.13 introduced error wrapping. Use it:
++ 
++ &#96;&#96;&#96;go
++ // BAD: loses the original error
++ if err != nil {
++     return errors.New("failed to connect")
++ }
++ 
++ // BAD: concatenates as string, loses error chain
++ if err != nil {
++     return fmt.Errorf("failed to connect: %s", err)
++ }
++ 
++ // GOOD: wraps the error, preserves the chain
++ if err != nil {
++     return fmt.Errorf("failed to connect: %w", err)
++ }
++ &#96;&#96;&#96;
++ 
++ The &#96;%w&#96; verb creates a chain that can be inspected:
++ 
++ &#96;&#96;&#96;go
++ if errors.Is(err, sql.ErrNoRows) {
++     // somewhere in the chain, there's a sql.ErrNoRows
++ }
++ 
++ var pathErr *os.PathError
++ if errors.As(err, &amp;pathErr) {
++     // somewhere in the chain, there's a *os.PathError
++     fmt.Println(pathErr.Path)
++ }
++ &#96;&#96;&#96;
++ 
++ ## Sentinel Errors
++ 
++ For errors that callers need to check, define package-level sentinel errors:
++ 
++ &#96;&#96;&#96;go
++ package user
++ 
++ var (
++     ErrNotFound     = errors.New("user not found")
++     ErrInvalidEmail = errors.New("invalid email address")
++     ErrDuplicate    = errors.New("user already exists")
++ )
++ 
++ func Find(id string) (*User, error) {
++     // ...
++     if notFound {
++         return nil, ErrNotFound
++     }
++     // ...
++ }
++ &#96;&#96;&#96;
++ 
++ Callers can check:
++ 
++ &#96;&#96;&#96;go
++ user, err := user.Find("123")
++ if errors.Is(err, user.ErrNotFound) {
++     // handle not found specifically
++ }
++ &#96;&#96;&#96;
++ 
++ ## Custom Error Types
++ 
++ When you need more context, create a custom error type:
++ 
++ &#96;&#96;&#96;go
++ type ValidationError struct {
++     Field   string
++     Message string
++ }
++ 
++ func (e *ValidationError) Error() string {
++     return fmt.Sprintf("%s: %s", e.Field, e.Message)
++ }
++ 
++ func ValidateUser(u *User) error {
++     if u.Email == "" {
++         return &amp;ValidationError{Field: "email", Message: "required"}
++     }
++     if !strings.Contains(u.Email, "@") {
++         return &amp;ValidationError{Field: "email", Message: "invalid format"}
++     }
++     return nil
++ }
++ &#96;&#96;&#96;
++ 
++ Callers can extract details:
++ 
++ &#96;&#96;&#96;go
++ if err := ValidateUser(u); err != nil {
++     var valErr *ValidationError
++     if errors.As(err, &amp;valErr) {
++         fmt.Printf("Validation failed on %s: %s\n", valErr.Field, valErr.Message)
++     }
++ }
++ &#96;&#96;&#96;
++ 
++ ## Strategies That Help
++ 
++ ### Early Returns
++ 
++ Embrace early returns. Don't nest error handling:
++ 
++ &#96;&#96;&#96;go
++ // BAD: nested, hard to follow
++ func process() error {
++     data, err := loadData()
++     if err == nil {
++         parsed, err := parseData(data)
++         if err == nil {
++             result, err := transform(parsed)
++             if err == nil {
++                 return save(result)
++             } else {
++                 return err
++             }
++         } else {
++             return err
++         }
++     } else {
++         return err
++     }
++ }
++ 
++ // GOOD: flat, obvious
++ func process() error {
++     data, err := loadData()
++     if err != nil {
++         return fmt.Errorf("loading: %w", err)
++     }
++     
++     parsed, err := parseData(data)
++     if err != nil {
++         return fmt.Errorf("parsing: %w", err)
++     }
++     
++     result, err := transform(parsed)
++     if err != nil {
++         return fmt.Errorf("transforming: %w", err)
++     }
++     
++     return save(result)
++ }
++ &#96;&#96;&#96;
++ 
++ ### Naming Consistency
++ 
++ Keep error variable names consistent within a function:
++ 
++ &#96;&#96;&#96;go
++ // Use 'err' for the standard error variable
++ data, err := load()
++ if err != nil { ... }
++ 
++ result, err := process(data)  // reuse 'err'
++ if err != nil { ... }
++ 
++ // Use descriptive names when you have multiple errors in scope
++ loadErr := load()
++ processErr := process()
++ if loadErr != nil || processErr != nil { ... }
++ &#96;&#96;&#96;
++ 
++ ### The "Must" Pattern
++ 
++ For initialisation code where errors are truly unrecoverable:
++ 
++ &#96;&#96;&#96;go
++ var templates = template.Must(template.ParseGlob("templates/*.html"))
++ var config = MustLoadConfig("config.yaml")
++ 
++ func MustLoadConfig(path string) Config {
++     cfg, err := LoadConfig(path)
++     if err != nil {
++         panic(fmt.Sprintf("loading config: %v", err))
++     }
++     return cfg
++ }
++ &#96;&#96;&#96;
++ 
++ Use &#96;Must&#96; functions sparingly—only for program setup where failure means "can't start."
++ 
++ ## What You're Actually Getting
++ 
++ After the initial frustration wears off, here's what explicit errors give you:
++ 
++ **Visible failure points.** Every line that can fail is marked. No surprises.
++ 
++ **Local reasoning.** You handle errors where they occur. No tracing back through call stacks.
++ 
++ **No performance penalty.** Error returns are just values—no stack unwinding, no runtime cost.
++ 
++ **Forced consideration.** You can't ignore errors accidentally. (Well, you can with &#96;_&#96;, but it's deliberate.)
++ 
++ **Simpler debugging.** When something fails, the error message tells you exactly what happened at each level.
++ 
++ ## The Comparison
++ 
++ | Aspect | C# Exceptions | Go Errors |
++ |--------|--------------|-----------|
++ | Syntax | &#96;try&#96;/&#96;catch&#96;/&#96;throw&#96; | &#96;if err != nil&#96; |
++ | Control flow | Non-local jump | Normal return |
++ | Performance | Cost on throw | No overhead |
++ | Visibility | Hidden failure points | Explicit everywhere |
++ | Ignoring errors | Silent (dangerous) | Requires explicit &#96;_&#96; |
++ | Stack traces | Automatic | Manual (or wrap carefully) |
++ | Recovery | &#96;catch&#96; blocks | Caller decides |
++ 
++ ## The Honest Take
++ 
++ **Things I like better than C#:**
++ 
++ - You can see which calls can fail
++ - Error handling is local and explicit
++ - No surprise exceptions from deep in the stack
++ - Errors are values—you can store, compare, wrap them
++ 
++ **Things I miss from C#:**
++ 
++ - The happy path being uncluttered
++ - Automatic stack traces
++ - &#96;finally&#96; blocks (defer is close but not identical)
++ - Not writing the same three lines a thousand times
++ 
++ **The verdict:**
++ 
++ Go's approach is more verbose but more honest. Once you accept that error handling is part of your code—not something that happens off to the side—the verbosity starts to feel appropriate.
++ 
++ You're not writing boilerplate. You're writing error handling. It just happens to look the same every time because handling errors correctly *is* repetitive.
++ 
++ ---
++ 
++ *Next up: panic and recover—Go's actual exception mechanism, why it exists, and why using it for normal errors will get you judged.*
++ 
+```
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="write">
+
+<details><summary>Tool use: **write** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/dotnet-to-go-panic.md</summary>
+
+**Chunk 1**
+Lines added: 316, lines removed: 1
+
+```diff
+@@ -1,1 +1,316 @@
+- 
++ +++
++ title = "Panic and Recover: The Emergency Exit"
++ date = "2024-12-30"
++ draft = false
++ tags = ["go", "dotnet", "errors", "csharp"]
++ +++
++ 
++ So Go doesn't have exceptions. Except... it kind of does. They're called &#96;panic&#96; and &#96;recover&#96;, and they work almost exactly like throw and catch.
++ 
++ Here's the thing: if you use them like exceptions, other Go developers will judge you. Harshly. Let's understand why they exist, when to use them, and why the judgment is (mostly) deserved.
++ 
++ ## What Panic Does
++ 
++ &#96;panic&#96; stops normal execution and begins unwinding the stack:
++ 
++ &#96;&#96;&#96;go
++ func divide(a, b int) int {
++     if b == 0 {
++         panic("division by zero")
++     }
++     return a / b
++ }
++ 
++ func main() {
++     result := divide(10, 0)  // panics here
++     fmt.Println(result)      // never reached
++ }
++ &#96;&#96;&#96;
++ 
++ Output:
++ 
++ &#96;&#96;&#96;
++ panic: division by zero
++ 
++ goroutine 1 [running]:
++ main.divide(...)
++         /app/main.go:7
++ main.main()
++         /app/main.go:12
++ exit status 2
++ &#96;&#96;&#96;
++ 
++ Sound familiar? It's an unhandled exception with a stack trace.
++ 
++ Deferred functions still run during a panic:
++ 
++ &#96;&#96;&#96;go
++ func riskyOperation() {
++     defer fmt.Println("cleanup runs")  // this executes
++     panic("oh no")
++     fmt.Println("never reached")
++ }
++ &#96;&#96;&#96;
++ 
++ ## What Recover Does
++ 
++ &#96;recover&#96; catches a panic. It only works inside a deferred function:
++ 
++ &#96;&#96;&#96;go
++ func safeOperation() (err error) {
++     defer func() {
++         if r := recover(); r != nil {
++             err = fmt.Errorf("recovered from panic: %v", r)
++         }
++     }()
++     
++     riskyOperation()  // might panic
++     return nil
++ }
++ &#96;&#96;&#96;
++ 
++ If &#96;riskyOperation&#96; panics, &#96;recover()&#96; catches it and we convert it to an error. The function returns normally instead of crashing.
++ 
++ This is literally try/catch:
++ 
++ &#96;&#96;&#96;csharp
++ // C# equivalent
++ try
++ {
++     RiskyOperation();
++ }
++ catch (Exception ex)
++ {
++     return new Error($"recovered from exception: {ex.Message}");
++ }
++ &#96;&#96;&#96;
++ 
++ ## Why Go Developers Judge You
++ 
++ So if panic/recover is just exceptions by another name, why not use them that way?
++ 
++ Because Go's error philosophy is that **errors are expected, panics are not**.
++ 
++ - Errors are things that can reasonably happen: file not found, network timeout, invalid input
++ - Panics are things that *shouldn't* happen: nil pointer dereference, index out of bounds, programmer bugs
++ 
++ When you use panic for normal errors, you're saying "this should never happen" when what you mean is "I didn't want to write &#96;if err != nil&#96;."
++ 
++ The community has strong opinions about this:
++ 
++ &#96;&#96;&#96;go
++ // This will get you judged
++ func ParseConfig(path string) Config {
++     data, err := os.ReadFile(path)
++     if err != nil {
++         panic(err)  // NO - missing file is a normal error
++     }
++     // ...
++ }
++ 
++ // This is fine
++ func MustParseConfig(path string) Config {
++     // "Must" in the name signals this panics
++     // Only use at startup where failure = can't run
++ }
++ &#96;&#96;&#96;
++ 
++ ## When Panic Is Appropriate
++ 
++ Despite the judgment, there are legitimate uses:
++ 
++ ### 1. Truly Unrecoverable Programmer Errors
++ 
++ &#96;&#96;&#96;go
++ func processItem(item *Item) {
++     if item == nil {
++         panic("processItem called with nil item")
++     }
++     // This is a programming error - the caller screwed up
++     // Not a runtime condition we should handle gracefully
++ }
++ &#96;&#96;&#96;
++ 
++ ### 2. Initialisation Failures
++ 
++ &#96;&#96;&#96;go
++ var db = mustConnect()
++ 
++ func mustConnect() *sql.DB {
++     db, err := sql.Open("postgres", os.Getenv("DATABASE_URL"))
++     if err != nil {
++         panic(fmt.Sprintf("database connection failed: %v", err))
++     }
++     return db
++ }
++ &#96;&#96;&#96;
++ 
++ If the program can't start without a database, panicking at init is reasonable. There's nothing useful to do with the error.
++ 
++ ### 3. The "Must" Convention
++ 
++ Standard library examples:
++ 
++ &#96;&#96;&#96;go
++ // template.Must panics if parsing fails
++ var templates = template.Must(template.ParseGlob("*.html"))
++ 
++ // regexp.MustCompile panics if pattern is invalid
++ var emailRegex = regexp.MustCompile(&#96;^[a-z]+@[a-z]+\.[a-z]+$&#96;)
++ &#96;&#96;&#96;
++ 
++ The &#96;Must&#96; prefix tells callers "this panics on error—only use with compile-time constant inputs."
++ 
++ ### 4. Deep Recursion Bailout
++ 
++ Sometimes you're deep in recursion and unwinding through error returns is painful:
++ 
++ &#96;&#96;&#96;go
++ func parse(tokens []Token) (result AST, err error) {
++     defer func() {
++         if r := recover(); r != nil {
++             if parseErr, ok := r.(parseError); ok {
++                 err = parseErr
++             } else {
++                 panic(r)  // re-panic if it's not our error
++             }
++         }
++     }()
++     
++     return parseExpression(tokens), nil
++ }
++ 
++ func parseExpression(tokens []Token) AST {
++     // Deep recursive descent
++     // ...
++     if somethingWrong {
++         panic(parseError{msg: "unexpected token", pos: pos})
++     }
++ }
++ &#96;&#96;&#96;
++ 
++ This is controversial but accepted in parsers and similar deep-recursion scenarios. Note that the panic is recovered at the boundary and converted to an error.
++ 
++ ## The Boundary Pattern
++ 
++ The key pattern: **never let panics escape your package**.
++ 
++ If your code might panic (or call code that might panic), recover at the boundary:
++ 
++ &#96;&#96;&#96;go
++ // Public API - never panics
++ func (s *Service) ProcessRequest(req Request) (Response, error) {
++     defer func() {
++         if r := recover(); r != nil {
++             // Log, maybe alert
++             log.Printf("panic in ProcessRequest: %v", r)
++         }
++     }()
++     
++     return s.doProcess(req)  // internal, might panic
++ }
++ &#96;&#96;&#96;
++ 
++ HTTP handlers often do this:
++ 
++ &#96;&#96;&#96;go
++ func recoveryMiddleware(next http.Handler) http.Handler {
++     return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
++         defer func() {
++             if err := recover(); err != nil {
++                 log.Printf("panic: %v\n%s", err, debug.Stack())
++                 http.Error(w, "Internal Server Error", 500)
++             }
++         }()
++         next.ServeHTTP(w, r)
++     })
++ }
++ &#96;&#96;&#96;
++ 
++ A panic in a handler becomes a 500 response, not a crashed server.
++ 
++ ## Panic Values
++ 
++ Unlike C# where you throw &#96;Exception&#96; objects, you can panic with any value:
++ 
++ &#96;&#96;&#96;go
++ panic("a string")
++ panic(42)
++ panic(errors.New("an error"))
++ panic(MyCustomType{})
++ &#96;&#96;&#96;
++ 
++ When recovering, you get an &#96;interface{}&#96;:
++ 
++ &#96;&#96;&#96;go
++ if r := recover(); r != nil {
++     switch v := r.(type) {
++     case error:
++         log.Printf("error: %v", v)
++     case string:
++         log.Printf("string: %s", v)
++     default:
++         log.Printf("unknown: %v", v)
++     }
++ }
++ &#96;&#96;&#96;
++ 
++ Best practice: panic with &#96;error&#96; values or strings. Makes recovery predictable.
++ 
++ ## Comparison with C#
++ 
++ | Aspect | C# Exceptions | Go Panic/Recover |
++ |--------|---------------|------------------|
++ | Normal errors | Often used | Strongly discouraged |
++ | Programmer bugs | Appropriate | Appropriate |
++ | Syntax | &#96;try&#96;/&#96;catch&#96;/&#96;finally&#96; | &#96;defer&#96;/&#96;recover&#96; |
++ | Stack traces | Automatic | Available via &#96;debug.Stack()&#96; |
++ | Filtering | Catch by type | Check recovered value |
++ | Re-throwing | &#96;throw;&#96; | &#96;panic(r)&#96; |
++ | Custom types | Exception subclasses | Any type (usually error) |
++ | Cultural norm | Expected | Emergency only |
++ 
++ ## The Test Exception
++ 
++ One place where panic is universally accepted: tests.
++ 
++ &#96;&#96;&#96;go
++ func TestSomething(t *testing.T) {
++     result := process(input)
++     
++     if result != expected {
++         t.Fatalf("got %v, want %v", result, expected)  // this panics
++     }
++ }
++ &#96;&#96;&#96;
++ 
++ &#96;t.Fatal&#96; and &#96;t.Fatalf&#96; panic to abort the test. This is fine—tests are the one place where "stop everything" is the right response to failure.
++ 
++ ## The Honest Take
++ 
++ **When I use panic:**
++ - &#96;Must&#96; functions for startup initialisation
++ - Genuinely impossible conditions (defensive programming)
++ - Test assertions via &#96;t.Fatal&#96;
++ 
++ **When I don't use panic:**
++ - File not found
++ - Network errors
++ - Invalid user input
++ - Anything that can reasonably happen at runtime
++ 
++ **The rule I follow:**
++ If I'm tempted to panic, I ask: "Is this a bug in my program, or is this something that could happen in production?" Bugs can panic. Production conditions should return errors.
++ 
++ ## What About Performance?
++ 
++ One argument for panic: "it's faster because you don't have to check errors at every level."
++ 
++ This is technically true but practically irrelevant. Error checking is a comparison and conditional jump. The performance difference is unmeasurable in real code.
++ 
++ Don't let performance justify panic. If you're that performance-sensitive, you're probably not writing Go anyway.
++ 
++ ---
++ 
++ *Coming up: Go's switch statement—more powerful than C#'s, with type switching, expression cases, and some surprises around fallthrough.*
++ 
+```
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="write">
+
+<details><summary>Tool use: **write** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/dotnet-to-go-switch.md</summary>
+
+**Chunk 1**
+Lines added: 432, lines removed: 1
+
+```diff
+@@ -1,1 +1,432 @@
+- 
++ +++
++ title = "The switch Statement You Always Wanted"
++ date = "2024-12-30"
++ draft = false
++ tags = ["go", "dotnet", "control-flow", "csharp"]
++ +++
++ 
++ C#'s switch statement has evolved a lot over the years. Pattern matching, switch expressions, when guards—it's become genuinely powerful. But Go's switch has some tricks that'll make you wish C# worked this way.
++ 
++ Let's look at what Go's switch can do, including the bits that'll trip you up.
++ 
++ ## Basic Switch: No Fallthrough by Default
++ 
++ First surprise: Go switches don't fall through by default.
++ 
++ &#96;&#96;&#96;csharp
++ // C# - falls through if you forget break (historically)
++ switch (day)
++ {
++     case "Monday":
++         Console.WriteLine("Start of week");
++         break;  // required!
++     case "Friday":
++         Console.WriteLine("End of week");
++         break;
++ }
++ &#96;&#96;&#96;
++ 
++ &#96;&#96;&#96;go
++ // Go - no break needed, no fallthrough
++ switch day {
++ case "Monday":
++     fmt.Println("Start of week")
++     // automatically breaks here
++ case "Friday":
++     fmt.Println("End of week")
++ }
++ &#96;&#96;&#96;
++ 
++ This is a genuine improvement. The C# pattern of requiring &#96;break&#96; after every case was a source of bugs for decades. Go's default—exit after each case—matches what you almost always want.
++ 
++ ## Multiple Values Per Case
++ 
++ Want the same code for multiple cases? In C#:
++ 
++ &#96;&#96;&#96;csharp
++ switch (day)
++ {
++     case "Saturday":
++     case "Sunday":
++         Console.WriteLine("Weekend");
++         break;
++ }
++ &#96;&#96;&#96;
++ 
++ In Go:
++ 
++ &#96;&#96;&#96;go
++ switch day {
++ case "Saturday", "Sunday":
++     fmt.Println("Weekend")
++ }
++ &#96;&#96;&#96;
++ 
++ Cleaner. Multiple values in one case clause, comma-separated.
++ 
++ ## No Expression Required
++ 
++ Here's something C# can't do. Go's switch doesn't need an expression:
++ 
++ &#96;&#96;&#96;go
++ switch {
++ case hour &lt; 12:
++     fmt.Println("Good morning")
++ case hour &lt; 17:
++     fmt.Println("Good afternoon")
++ default:
++     fmt.Println("Good evening")
++ }
++ &#96;&#96;&#96;
++ 
++ This is equivalent to an if-else chain but often more readable:
++ 
++ &#96;&#96;&#96;go
++ // Equivalent, but more verbose
++ if hour &lt; 12 {
++     fmt.Println("Good morning")
++ } else if hour &lt; 17 {
++     fmt.Println("Good afternoon")
++ } else {
++     fmt.Println("Good evening")
++ }
++ &#96;&#96;&#96;
++ 
++ I use expressionless switch constantly. It's particularly good for range checks and complex conditions.
++ 
++ ## Fallthrough (When You Actually Want It)
++ 
++ Sometimes you genuinely need fallthrough. Go has a &#96;fallthrough&#96; keyword:
++ 
++ &#96;&#96;&#96;go
++ switch day {
++ case "Thursday":
++     fmt.Println("Almost Friday")
++     fallthrough
++ case "Friday":
++     fmt.Println("Weekend soon!")
++ }
++ 
++ // Thursday prints both lines
++ // Friday prints just "Weekend soon!"
++ &#96;&#96;&#96;
++ 
++ Important: &#96;fallthrough&#96; must be the last statement in a case, and it falls into the next case unconditionally—it doesn't re-evaluate the case expression.
++ 
++ &#96;&#96;&#96;go
++ // This is usually wrong
++ switch x {
++ case 1:
++     fallthrough  // falls into case 2 even if x != 2
++ case 2:
++     doSomething()
++ }
++ &#96;&#96;&#96;
++ 
++ In practice, I rarely use &#96;fallthrough&#96;. Multiple values per case covers most needs.
++ 
++ ## Type Switches
++ 
++ This is where Go's switch shines. You can switch on type:
++ 
++ &#96;&#96;&#96;go
++ func describe(i interface{}) {
++     switch v := i.(type) {
++     case int:
++         fmt.Printf("Integer: %d\n", v)
++     case string:
++         fmt.Printf("String: %s\n", v)
++     case bool:
++         fmt.Printf("Boolean: %t\n", v)
++     case []int:
++         fmt.Printf("Slice of ints: %v\n", v)
++     default:
++         fmt.Printf("Unknown type: %T\n", v)
++     }
++ }
++ &#96;&#96;&#96;
++ 
++ The &#96;v := i.(type)&#96; syntax extracts both the type (for the case matching) and the value (as the correctly typed &#96;v&#96;).
++ 
++ C# has pattern matching now which does something similar:
++ 
++ &#96;&#96;&#96;csharp
++ static void Describe(object o)
++ {
++     switch (o)
++     {
++         case int i:
++             Console.WriteLine($"Integer: {i}");
++             break;
++         case string s:
++             Console.WriteLine($"String: {s}");
++             break;
++         // etc.
++     }
++ }
++ &#96;&#96;&#96;
++ 
++ Go got there first, and the syntax is arguable cleaner.
++ 
++ ### Multiple Types Per Case
++ 
++ &#96;&#96;&#96;go
++ switch v := i.(type) {
++ case int, int32, int64:
++     fmt.Println("Some kind of integer")
++     // Note: v is interface{} here, not a specific int type
++ case string, []byte:
++     fmt.Println("String-like")
++ default:
++     fmt.Printf("Type: %T\n", v)
++ }
++ &#96;&#96;&#96;
++ 
++ When you match multiple types, &#96;v&#96; has type &#96;interface{}&#96; because the compiler can't know which type matched.
++ 
++ ## Initialisation Statements
++ 
++ Like &#96;if&#96;, you can have an initialisation statement:
++ 
++ &#96;&#96;&#96;go
++ switch os := runtime.GOOS; os {
++ case "darwin":
++     fmt.Println("macOS")
++ case "linux":
++     fmt.Println("Linux")
++ default:
++     fmt.Printf("Other: %s\n", os)
++ }
++ // os is not visible here
++ &#96;&#96;&#96;
++ 
++ Keeps the variable scoped to where it's used.
++ 
++ ## Comparing to C#'s Switch Expressions
++ 
++ C# 8 added switch expressions, which are excellent:
++ 
++ &#96;&#96;&#96;csharp
++ var message = day switch
++ {
++     "Monday" =&gt; "Start of week",
++     "Friday" =&gt; "End of week",
++     "Saturday" or "Sunday" =&gt; "Weekend",
++     _ =&gt; "Midweek"
++ };
++ &#96;&#96;&#96;
++ 
++ Go doesn't have switch expressions—switch is always a statement, not an expression. You can't do:
++ 
++ &#96;&#96;&#96;go
++ // This doesn't work in Go
++ message := switch day {
++ case "Monday":
++     "Start of week"
++ // ...
++ }
++ &#96;&#96;&#96;
++ 
++ You have to use a variable:
++ 
++ &#96;&#96;&#96;go
++ var message string
++ switch day {
++ case "Monday":
++     message = "Start of week"
++ case "Friday":
++     message = "End of week"
++ case "Saturday", "Sunday":
++     message = "Weekend"
++ default:
++     message = "Midweek"
++ }
++ &#96;&#96;&#96;
++ 
++ This is one area where C# is genuinely more elegant.
++ 
++ ## When Guards (Sort Of)
++ 
++ C# has &#96;when&#96; guards in pattern matching:
++ 
++ &#96;&#96;&#96;csharp
++ switch (response)
++ {
++     case HttpResponse { StatusCode: var code } when code &gt;= 400:
++         HandleError(code);
++         break;
++ }
++ &#96;&#96;&#96;
++ 
++ Go doesn't have &#96;when&#96;, but expressionless switch achieves similar things:
++ 
++ &#96;&#96;&#96;go
++ switch {
++ case response.StatusCode &gt;= 500:
++     handleServerError(response)
++ case response.StatusCode &gt;= 400:
++     handleClientError(response)
++ case response.StatusCode &gt;= 200:
++     handleSuccess(response)
++ }
++ &#96;&#96;&#96;
++ 
++ Not quite as powerful as full pattern matching, but covers most cases.
++ 
++ ## The Default Case
++ 
++ Go's &#96;default&#96; case can appear anywhere (not just at the end):
++ 
++ &#96;&#96;&#96;go
++ switch day {
++ default:
++     fmt.Println("Weekday")
++ case "Saturday", "Sunday":
++     fmt.Println("Weekend")
++ }
++ &#96;&#96;&#96;
++ 
++ Convention says put it last, but Go doesn't enforce it.
++ 
++ ## Switching on Errors
++ 
++ A common pattern for error handling:
++ 
++ &#96;&#96;&#96;go
++ err := doSomething()
++ switch {
++ case err == nil:
++     // success
++ case errors.Is(err, ErrNotFound):
++     // handle not found
++ case errors.Is(err, ErrPermissionDenied):
++     // handle permission error
++ default:
++     // unknown error
++     return err
++ }
++ &#96;&#96;&#96;
++ 
++ Sometimes cleaner than a chain of if-else-if.
++ 
++ ## The Comparison
++ 
++ | Feature | C# | Go |
++ |---------|-----|-----|
++ | Break required | No (modern) | No |
++ | Fallthrough | By omitting break (legacy) | &#96;fallthrough&#96; keyword |
++ | Multiple values | &#96;case a, b:&#96; (older) or &#96;case a or b:&#96; | &#96;case a, b:&#96; |
++ | Expression switch | Yes (switch expression) | No (statement only) |
++ | Type switching | Pattern matching | &#96;switch v := x.(type)&#96; |
++ | No expression | No | Yes (&#96;switch { case cond: }&#96;) |
++ | When guards | Yes | No (use expressionless switch) |
++ | Init statement | No | Yes |
++ 
++ ## Practical Patterns
++ 
++ ### State Machine
++ 
++ &#96;&#96;&#96;go
++ type State int
++ 
++ const (
++     StateIdle State = iota
++     StateRunning
++     StatePaused
++     StateStopped
++ )
++ 
++ func (s *Machine) handleEvent(event Event) {
++     switch s.state {
++     case StateIdle:
++         switch event {
++         case EventStart:
++             s.state = StateRunning
++         default:
++             // ignore
++         }
++     case StateRunning:
++         switch event {
++         case EventPause:
++             s.state = StatePaused
++         case EventStop:
++             s.state = StateStopped
++         }
++     // etc.
++     }
++ }
++ &#96;&#96;&#96;
++ 
++ ### Command Dispatch
++ 
++ &#96;&#96;&#96;go
++ func handleCommand(cmd string, args []string) error {
++     switch cmd {
++     case "list":
++         return listItems()
++     case "add":
++         if len(args) &lt; 1 {
++             return errors.New("add requires an item name")
++         }
++         return addItem(args[0])
++     case "remove":
++         if len(args) &lt; 1 {
++             return errors.New("remove requires an item name")
++         }
++         return removeItem(args[0])
++     default:
++         return fmt.Errorf("unknown command: %s", cmd)
++     }
++ }
++ &#96;&#96;&#96;
++ 
++ ### Parsing JSON with Type Switch
++ 
++ &#96;&#96;&#96;go
++ func processValue(v interface{}) {
++     switch val := v.(type) {
++     case map[string]interface{}:
++         for k, v := range val {
++             fmt.Printf("Object key: %s\n", k)
++             processValue(v)  // recurse
++         }
++     case []interface{}:
++         for i, item := range val {
++             fmt.Printf("Array index: %d\n", i)
++             processValue(item)  // recurse
++         }
++     case string:
++         fmt.Printf("String: %s\n", val)
++     case float64:  // JSON numbers are float64
++         fmt.Printf("Number: %f\n", val)
++     case bool:
++         fmt.Printf("Boolean: %t\n", val)
++     case nil:
++         fmt.Println("Null")
++     }
++ }
++ &#96;&#96;&#96;
++ 
++ ## The Honest Take
++ 
++ Go's switch is one of the language's better features:
++ 
++ **Things I like:**
++ - No fallthrough by default (prevents bugs)
++ - Expressionless switch for complex conditions
++ - Type switches for working with interfaces
++ - Multiple values per case
++ - Init statements for scoping
++ 
++ **Things C# does better:**
++ - Switch expressions (returning values directly)
++ - Pattern matching with &#96;when&#96; guards
++ - Recursive patterns (&#96;case Person { Age: &gt; 18 }&#96;)
++ 
++ **The verdict:**
++ Go's switch is simpler and covers the common cases elegantly. C#'s switch has more features for complex matching. Use what each language gives you.
++ 
++ ---
++ 
++ *That wraps up Phase 3 on control flow and error handling. Next we'll move into concurrency—goroutines, channels, and why Go's approach to parallelism is fundamentally different from async/await.*
++ 
+```
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+Let me verify the Hugo build passes with all the new posts.</details></think>
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_cmd">
+<details><summary>Tool use: **run_terminal_cmd** • Run command: cd /Users/andycross/src/personal/mcp-blogs && hugo --quiet && echo "Build successful" && ls -la content/posts/dotnet-to-go*.md | wc -l && echo "---" && ls content/posts/dotnet-to-go*.md</summary>
+
+```bash
+cd /Users/andycross/src/personal/mcp-blogs && hugo --quiet && echo "Build successful" && ls -la content/posts/dotnet-to-go*.md | wc -l && echo "---" && ls content/posts/dotnet-to-go*.md
+```
+
+```
+Build successful
+      11
+---
+content/posts/dotnet-to-go-enums.md
+content/posts/dotnet-to-go-errors.md
+content/posts/dotnet-to-go-generics.md
+content/posts/dotnet-to-go-modules.md
+content/posts/dotnet-to-go-nil.md
+content/posts/dotnet-to-go-panic.md
+content/posts/dotnet-to-go-phrasebook.md
+content/posts/dotnet-to-go-structs.md
+content/posts/dotnet-to-go-switch.md
+content/posts/dotnet-to-go-toolchain.md
+content/posts/dotnet-to-go-visibility.md
+
+```
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+All 11 posts are now created and build successfully. Let me summarize the updated series structure for the user.</details></think>
+
+---
+
+All three Phase 3 posts are done. Here's the complete series (11 posts now):
+
+## C# to Go Series
+
+### Phase 1: Getting Oriented
+1. **"You Know .NET, Now Meet the Go Toolchain"** — `go` command, project structure, build model
+2. **"Goodbye .csproj, Hello go.mod"** — Dependencies without NuGet
+3. **"The Phrasebook: C# Concepts in Go Terms"** — Terminology swap, operators, quick reference
+
+### Phase 2: Types & Data
+4. **"Your Class Is Now a Struct (And That's Fine)"** — Value vs reference, embedding, interfaces
+5. **"Where Did My Properties Go?"** — Capitalisation visibility, bare fields
+6. **"Generics: Late to the Party"** — Go 1.18+ vs C#'s mature generics
+7. **"The Million Dollar Mistake, Differently"** — Nil vs nullable reference types
+8. **"No Enums? No Problem (Sort Of)"** — `iota`, const blocks, workarounds
+
+### Phase 3: Control Flow & Error Handling
+9. **"if err != nil: Your New Reality"** — Why no exceptions, error wrapping, sentinel errors, custom error types, strategies for living with explicit errors
+10. **"Panic and Recover: The Emergency Exit"** — When panic is acceptable (`Must` pattern, init, programmer bugs), the boundary pattern, why you'll get judged for using it like exceptions
+11. **"The switch Statement You Always Wanted"** — No fallthrough by default, expressionless switch, type switches, comparing to C#'s pattern matching
+
+The Phase 3 posts cover:
+- The philosophical shift from exceptions to explicit error values
+- `errors.Is()` and `errors.As()` for error inspection
+- The `%w` verb for error wrapping
+- Panic/recover mechanics and when they're appropriate
+- Go's switch being genuinely better in some ways (no break needed, type switches, expressionless form)
+- Where C# is still ahead (switch expressions, pattern matching with when guards)
+
+Ready for Phase 4 (concurrency?) whenever you are!
 
 ---
 
