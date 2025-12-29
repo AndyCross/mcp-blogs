@@ -49,7 +49,36 @@ fmt.Println(*p)  // 42 - dereference to get value
 *p = 100   // x is now 100
 ```
 
-Creating pointers to composite literals:
+Two operators, two meanings:
+
+- `&` means "give me the address of this thing"—where it lives in memory
+- `*` means "follow this address to the thing it points at"—dereferencing
+
+### What's Dereferencing?
+
+If a pointer is an address—"the data lives at memory location 0x1234"—then dereferencing is following that address to get the actual data. It's a bit of a mouthful: "follow the pointer to the thing that is pointed at." That's why we just use a little `*`.
+
+Think of it like a postal address. The pointer `p` is the address on an envelope. Dereferencing `*p` is going to that address and looking at what's actually there.
+
+```go
+x := 42       // x is the value 42, stored somewhere in memory
+p := &x       // p holds the address of x (like "123 Memory Lane")
+              // p itself is *int - "a pointer to an int"
+
+fmt.Println(p)   // prints an address like 0xc000012345
+fmt.Println(*p)  // prints 42 - we followed the address to get the value
+
+*p = 100      // go to that address, change what's stored there
+fmt.Println(x)   // prints 100 - x changed because p points to x
+```
+
+The `*` does double duty in Go (and C):
+- In a type declaration, `*int` means "pointer to int"
+- As an operator, `*p` means "dereference p—follow the pointer"
+
+This is confusing for about a week, then it becomes second nature.
+
+### Creating Pointers
 
 ```go
 // These are equivalent
@@ -85,7 +114,9 @@ user.Name = "Alice"  // works, auto-dereferenced
 user.SetName("Bob")  // works
 ```
 
-This is a genuine quality-of-life improvement over C. You don't need `->` vs `.` confusion. Dot notation works for both values and pointers.
+In C, you'd write `user->Name` for pointer access and `user.Name` for value access. Go just uses dot notation for both and figures it out.
+
+This is a genuine quality-of-life improvement. You don't need `->` vs `.` confusion. Dot notation works for both values and pointers.
 
 ## The Not-Nice Bit: Nil Pointer Panics
 
@@ -95,6 +126,8 @@ C# has `NullReferenceException`. Go has nil pointer panics. Same problem, differ
 var user *User = nil
 fmt.Println(user.Name)  // panic: runtime error: invalid memory address
 ```
+
+When you try to dereference a nil pointer—follow an address that doesn't point anywhere—Go panics. There's nothing at that address to read.
 
 No nullable reference types. No compile-time null safety. Just runtime panics.
 
@@ -120,6 +153,7 @@ The decision tree:
        u.Email = email  // needs to modify the original
    }
    ```
+   Without the pointer, `SetEmail` would modify a copy, and the caller's `User` would be unchanged.
 
 2. **The struct is large**
    ```go

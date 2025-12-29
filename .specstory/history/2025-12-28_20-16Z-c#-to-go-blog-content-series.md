@@ -5647,3 +5647,497 @@ Ready for Phase 5 (concurrency) whenever you want to tackle goroutines vs async/
 
 ---
 
+_**User (2025-12-29 17:28Z)**_
+
+update the one about pointers to detail what dereferencing means, effectively following the pointer to the thing that is pointed at, which is a bit of a mouthful so that's why we use a lil * 
+
+---
+
+_**Agent (model claude-4.5-opus-high-thinking, mode Agent)**_
+
+<think><details><summary>Thought Process</summary>
+The user wants me to update the pointers post to better explain what dereferencing means. The post was deleted according to the context, so I need to rewrite it with the added explanation about dereferencing - "following the pointer to the thing that is pointed at."
+
+Let me rewrite the pointers post with a clearer explanation of dereferencing early on.</details></think>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="write">
+
+<details><summary>Tool use: **write** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/dotnet-to-go-pointers.md</summary>
+
+**Chunk 1**
+Lines added: 292, lines removed: 1
+
+```diff
+@@ -1,1 +1,292 @@
+- 
++ +++
++ title = "Pointers Without the Pain"
++ date = "2024-12-31"
++ draft = false
++ tags = ["go", "dotnet", "memory", "pointers", "csharp"]
++ +++
++ 
++ Right, let's talk about pointers. If you've spent your career in C#, you've probably used pointers approximately never. Maybe you've seen &#96;unsafe&#96; blocks in performance-critical library code. Maybe you've used &#96;ref&#96; and &#96;Span&lt;T&gt;&#96; and felt rather clever about it.
++ 
++ In Go, pointers are everywhere. Every method receiver decision involves them. Every struct-passing decision involves them. You can't hide from them.
++ 
++ The good news: Go's pointers are considerably less terrifying than C's. The bad news: you actually have to think about them now.
++ 
++ ## What C# Hides
++ 
++ C# makes a neat distinction: value types live on the stack (mostly), reference types live on the heap (mostly), and the runtime figures out the details. You don't think about addresses. You don't think about dereferencing. You just use stuff.
++ 
++ &#96;&#96;&#96;csharp
++ var user = new User { Name = "Alice" };  // heap, reference semantics
++ var point = new Point(10, 20);           // stack (probably), value semantics
++ 
++ ProcessUser(user);   // passes reference
++ ProcessPoint(point); // passes copy
++ &#96;&#96;&#96;
++ 
++ The runtime decides where things actually live. The JIT optimises. Escape analysis happens. You don't care.
++ 
++ Go is more... honest? Explicit? Annoying? All three, depending on your mood.
++ 
++ &#96;&#96;&#96;go
++ user := User{Name: "Alice"}   // where does this live? Depends!
++ ptr := &amp;User{Name: "Bob"}     // definitely a pointer
++ 
++ ProcessUser(user)   // passes copy
++ ProcessUser(&amp;user)  // passes pointer
++ ProcessUserPtr(ptr) // passes pointer
++ &#96;&#96;&#96;
++ 
++ You have to think about it. Every time.
++ 
++ ## Go Pointer Basics
++ 
++ The syntax is C-style:
++ 
++ &#96;&#96;&#96;go
++ x := 42
++ p := &amp;x    // p is *int, pointing to x
++ fmt.Println(*p)  // 42 - dereference to get value
++ *p = 100   // x is now 100
++ &#96;&#96;&#96;
++ 
++ Two operators, two meanings:
++ 
++ - &#96;&amp;&#96; means "give me the address of this thing"—where it lives in memory
++ - &#96;*&#96; means "follow this address to the thing it points at"—dereferencing
++ 
++ ### What's Dereferencing?
++ 
++ If a pointer is an address—"the data lives at memory location 0x1234"—then dereferencing is following that address to get the actual data. It's a bit of a mouthful: "follow the pointer to the thing that is pointed at." That's why we just use a little &#96;*&#96;.
++ 
++ Think of it like a postal address. The pointer &#96;p&#96; is the address on an envelope. Dereferencing &#96;*p&#96; is going to that address and looking at what's actually there.
++ 
++ &#96;&#96;&#96;go
++ x := 42       // x is the value 42, stored somewhere in memory
++ p := &amp;x       // p holds the address of x (like "123 Memory Lane")
++               // p itself is *int - "a pointer to an int"
++ 
++ fmt.Println(p)   // prints an address like 0xc000012345
++ fmt.Println(*p)  // prints 42 - we followed the address to get the value
++ 
++ *p = 100      // go to that address, change what's stored there
++ fmt.Println(x)   // prints 100 - x changed because p points to x
++ &#96;&#96;&#96;
++ 
++ The &#96;*&#96; does double duty in Go (and C):
++ - In a type declaration, &#96;*int&#96; means "pointer to int"
++ - As an operator, &#96;*p&#96; means "dereference p—follow the pointer"
++ 
++ This is confusing for about a week, then it becomes second nature.
++ 
++ ### Creating Pointers
++ 
++ &#96;&#96;&#96;go
++ // These are equivalent
++ user := &amp;User{Name: "Alice"}
++ 
++ // vs
++ user := new(User)
++ user.Name = "Alice"
++ 
++ // vs
++ var user User
++ user.Name = "Alice"
++ userPtr := &amp;user
++ &#96;&#96;&#96;
++ 
++ The &#96;&amp;&#96; operator gives you a pointer. The &#96;*&#96; operator dereferences. If you've touched C or C++ at any point, this is familiar.
++ 
++ ## The Nice Bit: Automatic Dereferencing
++ 
++ Unlike C, Go automatically dereferences pointers for field and method access:
++ 
++ &#96;&#96;&#96;go
++ type User struct {
++     Name string
++ }
++ 
++ func (u *User) SetName(name string) {
++     u.Name = name  // not (*u).Name, just u.Name
++ }
++ 
++ user := &amp;User{}
++ user.Name = "Alice"  // works, auto-dereferenced
++ user.SetName("Bob")  // works
++ &#96;&#96;&#96;
++ 
++ In C, you'd write &#96;user-&gt;Name&#96; for pointer access and &#96;user.Name&#96; for value access. Go just uses dot notation for both and figures it out.
++ 
++ This is a genuine quality-of-life improvement. You don't need &#96;-&gt;&#96; vs &#96;.&#96; confusion. Dot notation works for both values and pointers.
++ 
++ ## The Not-Nice Bit: Nil Pointer Panics
++ 
++ C# has &#96;NullReferenceException&#96;. Go has nil pointer panics. Same problem, different name.
++ 
++ &#96;&#96;&#96;go
++ var user *User = nil
++ fmt.Println(user.Name)  // panic: runtime error: invalid memory address
++ &#96;&#96;&#96;
++ 
++ When you try to dereference a nil pointer—follow an address that doesn't point anywhere—Go panics. There's nothing at that address to read.
++ 
++ No nullable reference types. No compile-time null safety. Just runtime panics.
++ 
++ C# 8+ with nullable reference types:
++ 
++ &#96;&#96;&#96;csharp
++ #nullable enable
++ User? user = null;
++ Console.WriteLine(user.Name);  // compiler warning: possible null reference
++ &#96;&#96;&#96;
++ 
++ Go doesn't help you here. You check for nil manually, or you panic at runtime. Welcome to 2009.
++ 
++ ## When to Use Pointers
++ 
++ The decision tree:
++ 
++ **Use pointers when:**
++ 
++ 1. **The method modifies the receiver**
++    &#96;&#96;&#96;go
++    func (u *User) SetEmail(email string) {
++        u.Email = email  // needs to modify the original
++    }
++    &#96;&#96;&#96;
++    Without the pointer, &#96;SetEmail&#96; would modify a copy, and the caller's &#96;User&#96; would be unchanged.
++ 
++ 2. **The struct is large**
++    &#96;&#96;&#96;go
++    type BigStruct struct {
++        Data [1024]byte
++        // ... lots of fields
++    }
++    
++    func Process(b *BigStruct) {  // don't copy 1KB every call
++        // ...
++    }
++    &#96;&#96;&#96;
++ 
++ 3. **You need nil to mean "absent"**
++    &#96;&#96;&#96;go
++    type Config struct {
++        Timeout *time.Duration  // nil means "not set", use default
++    }
++    &#96;&#96;&#96;
++ 
++ 4. **Consistency with other methods on the type**
++    If some methods need pointer receivers, use pointers everywhere for that type. Mixing is legal but confusing.
++ 
++ **Use values when:**
++ 
++ 1. **The data is small and immutable**
++    &#96;&#96;&#96;go
++    type Point struct {
++        X, Y int
++    }
++    
++    func (p Point) Distance(other Point) float64 {
++        // fine to copy two ints
++    }
++    &#96;&#96;&#96;
++ 
++ 2. **You want copy-on-pass safety**
++    Value semantics mean the callee can't modify your data.
++ 
++ 3. **The zero value is useful**
++    &#96;&#96;&#96;go
++    var mu sync.Mutex  // zero Mutex is valid, unlocked
++    &#96;&#96;&#96;
++ 
++ ## The "Everything Is a Pointer Receiver" School
++ 
++ Some Go developers just use pointer receivers everywhere. It's simpler. Consistent. No thinking required.
++ 
++ &#96;&#96;&#96;go
++ func (u *User) Name() string { return u.name }      // pointer receiver
++ func (u *User) SetName(n string) { u.name = n }    // pointer receiver
++ func (u *User) IsActive() bool { return u.active } // pointer receiver
++ &#96;&#96;&#96;
++ 
++ Is this optimal? No. Does it matter? Rarely.
++ 
++ The performance difference between passing a pointer vs a small struct is negligible for most code. Consistency and clarity usually matter more.
++ 
++ ## What You Can't Do
++ 
++ Go's pointers are garbage-collected. You can't:
++ 
++ - Do pointer arithmetic (no &#96;p++&#96; to walk through memory)
++ - Free memory manually (the GC handles it)
++ - Have dangling pointers (the GC keeps referenced memory alive)
++ - Cast pointers to integers (without &#96;unsafe&#96;)
++ 
++ This is why Go pointers are "safe"—they're really just references with explicit syntax. All the scary C stuff is locked behind the &#96;unsafe&#96; package.
++ 
++ ## The &#96;unsafe&#96; Package
++ 
++ Go has an escape hatch:
++ 
++ &#96;&#96;&#96;go
++ import "unsafe"
++ 
++ func scary() {
++     var x int64 = 42
++     ptr := unsafe.Pointer(&amp;x)
++     // Now you can do terrible things
++ }
++ &#96;&#96;&#96;
++ 
++ The &#96;unsafe&#96; package lets you:
++ - Convert between pointer types
++ - Do pointer arithmetic
++ - Access struct padding
++ - Generally shoot yourself in the foot
++ 
++ If you're using &#96;unsafe&#96; outside of extremely low-level code, you're probably doing something wrong. It exists for syscalls, memory-mapped I/O, and interop—not for your web handlers.
++ 
++ ## Comparing to C# &#96;ref&#96; and Pointers
++ 
++ C# has several ways to get pointer-like semantics:
++ 
++ | C# | Go Equivalent | Notes |
++ |-----|---------------|-------|
++ | &#96;ref&#96; parameter | &#96;*T&#96; parameter | Pass by reference |
++ | &#96;in&#96; parameter | &#96;*T&#96; (readonly discipline) | Go has no &#96;const&#96; pointers |
++ | &#96;out&#96; parameter | &#96;*T&#96; or multiple returns | Go prefers multiple returns |
++ | &#96;Span&lt;T&gt;&#96; | Slices | Different semantics, similar purpose |
++ | &#96;unsafe&#96; pointers | &#96;unsafe.Pointer&#96; | Both are escape hatches |
++ | &#96;ref struct&#96; | No equivalent | Go doesn't have stack-only types |
++ 
++ C#'s &#96;ref struct&#96; and &#96;Span&lt;T&gt;&#96; are genuinely more sophisticated than anything Go offers. If you're doing zero-allocation parsing or high-performance buffer manipulation, .NET's tooling is better.
++ 
++ Go's answer is "use slices and let the GC handle it." Less control, simpler mental model, occasionally more allocation.
++ 
++ ## The Honest Take
++ 
++ Look, I'll be straight with you: C#'s memory model is more sophisticated. The runtime does more for you. Nullable reference types catch null bugs at compile time. &#96;Span&lt;T&gt;&#96; gives you safe, zero-copy views into memory. &#96;ref struct&#96; prevents heap allocation entirely.
++ 
++ Go gives you... pointers. The same pointers we've had since the 1970s, except garbage-collected so you can't corrupt memory.
++ 
++ **What Go does better:**
++ - Simpler mental model (it's just pointers)
++ - Explicit about copies vs references
++ - No hidden boxing/unboxing
++ - Can't accidentally capture stack memory (escape analysis handles it)
++ 
++ **What C# does better:**
++ - Nullable reference types
++ - &#96;Span&lt;T&gt;&#96; and memory-safe slicing
++ - &#96;ref struct&#96; for stack-only types  
++ - More escape hatches that are actually usable (&#96;stackalloc&#96;, etc.)
++ - The whole &#96;System.Memory&#96; namespace
++ 
++ **The verdict:**
++ If you're writing performance-critical code where every allocation matters, C# has more tools. If you're writing normal application code, Go's "just use pointers" simplicity is fine.
++ 
++ You'll write &#96;*User&#96; a lot. You'll occasionally forget to check for nil. You'll survive.
++ 
++ ---
++ 
++ *Next up: stack vs heap allocation and escape analysis—Go decides where your variables live, and you don't always get a vote.*
++ 
+```
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+Let me verify the build passes.</details></think>
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_cmd">
+<details><summary>Tool use: **run_terminal_cmd** • Run command: cd /Users/andycross/src/personal/mcp-blogs && hugo --quiet && echo "Build successful"</summary>
+
+```bash
+cd /Users/andycross/src/personal/mcp-blogs && hugo --quiet && echo "Build successful"
+```
+
+```
+Build successful
+
+```
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+Build passed. The pointers post now has a better explanation of dereferencing.</details></think>
+
+---
+
+Done. I've expanded the dereferencing explanation with:
+
+1. **A clear definition**: "following that address to get the actual data"
+2. **The "mouthful" acknowledgment**: explaining why we use `*` instead of saying "follow the pointer to the thing that is pointed at"
+3. **A postal address analogy**: pointer is like an address on an envelope, dereferencing is going to that address
+4. **A worked example** showing the relationship between `x`, `p`, `&x`, and `*p` with comments
+5. **The dual meaning of `*`**: in type declarations (`*int`) vs as an operator (`*p`)
+
+The key addition:
+
+```go
+x := 42       // x is the value 42, stored somewhere in memory
+p := &x       // p holds the address of x (like "123 Memory Lane")
+              // p itself is *int - "a pointer to an int"
+
+fmt.Println(p)   // prints an address like 0xc000012345
+fmt.Println(*p)  // prints 42 - we followed the address to get the value
+
+*p = 100      // go to that address, change what's stored there
+fmt.Println(x)   // prints 100 - x changed because p points to x
+```
+
+---
+
+_**User (2025-12-29 17:28Z)**_
+
+look at the git not staged log, what is with all the deletions?! that's really surprising to me 
+
+---
+
+_**Agent (model claude-4.5-opus-high-thinking, mode Agent)**_
+
+<think><details><summary>Thought Process</summary>
+The user is asking about git status - they're surprised to see deletions in the unstaged changes. Let me check what's going on with git status.</details></think>
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_cmd">
+<details><summary>Tool use: **run_terminal_cmd** • Run command: cd /Users/andycross/src/personal/mcp-blogs && git status</summary>
+
+```bash
+cd /Users/andycross/src/personal/mcp-blogs && git status
+```
+
+```
+On branch main
+Your branch is up to date with 'origin/main'.
+
+Changes not staged for commit:
+  (use "git add/rm &lt;file&gt;..." to update what will be committed)
+  (use "git restore &lt;file&gt;..." to discard changes in working directory)
+	modified:   .specstory/history/2025-12-28_20-16Z-c#-to-go-blog-content-series.md
+	deleted:    content/posts/dotnet-to-go-errors.md
+	deleted:    content/posts/dotnet-to-go-escape-analysis.md
+	deleted:    content/posts/dotnet-to-go-panic.md
+	modified:   content/posts/dotnet-to-go-pointers.md
+	deleted:    content/posts/dotnet-to-go-slices.md
+	deleted:    content/posts/dotnet-to-go-switch.md
+	modified:   content/posts/streaming-json-partial-parser.md
+
+no changes added to commit (use "git add" and/or "git commit -a")
+
+```
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+That's very strange - the files I created are showing as deleted! But wait, looking at the context earlier, the user's `<deleted_files>` section showed those same files. It seems like those files were deleted outside of my actions, perhaps by the user or some other process.
+
+Let me check if those files actually exist on disk:</details></think>
+
+---
+
+That's strange! Let me check if those files actually exist on disk:
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_cmd">
+<details><summary>Tool use: **run_terminal_cmd** • Run command: ls -la /Users/andycross/src/personal/mcp-blogs/content/posts/dotnet-to-go*.md</summary>
+
+```bash
+ls -la /Users/andycross/src/personal/mcp-blogs/content/posts/dotnet-to-go*.md
+```
+
+```
+-rw-r--r--  1 andycross  staff  10095 Dec 28 20:26 /Users/andycross/src/personal/mcp-blogs/content/posts/dotnet-to-go-enums.md
+-rw-r--r--  1 andycross  staff   8876 Dec 28 20:26 /Users/andycross/src/personal/mcp-blogs/content/posts/dotnet-to-go-generics.md
+-rw-r--r--  1 andycross  staff   9547 Dec 28 20:20 /Users/andycross/src/personal/mcp-blogs/content/posts/dotnet-to-go-modules.md
+-rw-r--r--  1 andycross  staff   8501 Dec 28 20:26 /Users/andycross/src/personal/mcp-blogs/content/posts/dotnet-to-go-nil.md
+-rw-r--r--  1 andycross  staff  10755 Dec 29 07:48 /Users/andycross/src/personal/mcp-blogs/content/posts/dotnet-to-go-phrasebook.md
+-rw-r--r--  1 andycross  staff   9789 Dec 29 18:05 /Users/andycross/src/personal/mcp-blogs/content/posts/dotnet-to-go-pointers.md
+-rw-r--r--  1 andycross  staff   8748 Dec 29 07:49 /Users/andycross/src/personal/mcp-blogs/content/posts/dotnet-to-go-structs.md
+-rw-r--r--  1 andycross  staff   8132 Dec 28 20:20 /Users/andycross/src/personal/mcp-blogs/content/posts/dotnet-to-go-toolchain.md
+-rw-r--r--  1 andycross  staff   9253 Dec 28 20:26 /Users/andycross/src/personal/mcp-blogs/content/posts/dotnet-to-go-visibility.md
+
+```
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+Okay, so those 5 files (errors, escape-analysis, panic, slices, switch) were deleted and are no longer on disk. Only 9 files exist now, not 14.
+
+Looking back at the conversation context, I see `<deleted_files>` was in the user's last message before they asked me to update the pointers post. Those files must have been deleted by the user (or they rejected/reverted those changes somehow) between when I created them and when they asked me to update the pointers post.
+
+The files that are missing:
+- dotnet-to-go-errors.md (Phase 3)
+- dotnet-to-go-panic.md (Phase 3)
+- dotnet-to-go-switch.md (Phase 3)
+- dotnet-to-go-escape-analysis.md (Phase 4)
+- dotnet-to-go-slices.md (Phase 4)
+
+So we've lost all of Phase 3 and 2 of the 3 Phase 4 posts. Only the pointers post survived from those batches.
+
+Let me tell the user what happened.</details></think>
+
+---
+
+Ah, I see what happened! Five files are genuinely missing from disk:
+
+**Missing files (were created, now gone):**
+- `dotnet-to-go-errors.md` (Phase 3)
+- `dotnet-to-go-panic.md` (Phase 3)
+- `dotnet-to-go-switch.md` (Phase 3)
+- `dotnet-to-go-escape-analysis.md` (Phase 4)
+- `dotnet-to-go-slices.md` (Phase 4)
+
+**Still exist:**
+- Phase 1: toolchain, modules, phrasebook ✓
+- Phase 2: structs, visibility, generics, nil, enums ✓
+- Phase 4: pointers ✓ (just updated)
+
+It looks like those files were deleted somewhere between when I created them and now. The `<deleted_files>` section showed up in your previous message's context, which suggests they were removed (perhaps you rejected those file creations, or deleted them manually?).
+
+Want me to recreate the missing posts? That would be:
+- **Phase 3** (all 3): errors, panic, switch
+- **Phase 4** (2 of 3): escape-analysis, slices
+
+---
+
