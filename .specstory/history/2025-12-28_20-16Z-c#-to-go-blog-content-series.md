@@ -4627,3 +4627,1023 @@ Ready for Phase 4 (concurrency?) whenever you are!
 
 ---
 
+_**User (2025-12-29 10:33Z)**_
+
+The next three posts are below, let's go write them! Add a little more snark to these ones, not over the top but be a little cynical because this section is where dotnet is reallllly good
+
+
+
+Memory & Pointers
+
+Pointers Without the Pain — What C# hides that Go makes explicit, and why it's less scary than C++
+Stack vs Heap: Go's Escape Analysis — You know ref and Span<T>, now meet Go's approach to allocation
+Slices Are Not Arrays (And Neither Is List<T>) — Capacity, length, backing arrays, and the gotchas that will bite you
+
+---
+
+_**Agent (model claude-4.5-opus-high-thinking, mode Agent)**_
+
+<think><details><summary>Thought Process</summary>
+The user wants three more posts for Phase 4: Memory & Pointers, and they want me to add a bit more snark/cynicism because this is an area where .NET is really strong. So I should be fair but acknowledge that .NET's memory management and abstractions are genuinely excellent, and Go's explicit approach has trade-offs.
+
+Let me write these with a bit more edge - acknowledging that C#/.NET handles a lot of this better in many ways, but explaining what Go does and why.</details></think>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="write">
+
+<details><summary>Tool use: **write** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/dotnet-to-go-pointers.md</summary>
+
+**Chunk 1**
+Lines added: 258, lines removed: 1
+
+```diff
+@@ -1,1 +1,258 @@
+- 
++ +++
++ title = "Pointers Without the Pain"
++ date = "2024-12-31"
++ draft = false
++ tags = ["go", "dotnet", "memory", "pointers", "csharp"]
++ +++
++ 
++ Right, let's talk about pointers. If you've spent your career in C#, you've probably used pointers approximately never. Maybe you've seen &#96;unsafe&#96; blocks in performance-critical library code. Maybe you've used &#96;ref&#96; and &#96;Span&lt;T&gt;&#96; and felt rather clever about it.
++ 
++ In Go, pointers are everywhere. Every method receiver decision involves them. Every struct-passing decision involves them. You can't hide from them.
++ 
++ The good news: Go's pointers are considerably less terrifying than C's. The bad news: you actually have to think about them now.
++ 
++ ## What C# Hides
++ 
++ C# makes a neat distinction: value types live on the stack (mostly), reference types live on the heap (mostly), and the runtime figures out the details. You don't think about addresses. You don't think about dereferencing. You just use stuff.
++ 
++ &#96;&#96;&#96;csharp
++ var user = new User { Name = "Alice" };  // heap, reference semantics
++ var point = new Point(10, 20);           // stack (probably), value semantics
++ 
++ ProcessUser(user);   // passes reference
++ ProcessPoint(point); // passes copy
++ &#96;&#96;&#96;
++ 
++ The runtime decides where things actually live. The JIT optimises. Escape analysis happens. You don't care.
++ 
++ Go is more... honest? Explicit? Annoying? All three, depending on your mood.
++ 
++ &#96;&#96;&#96;go
++ user := User{Name: "Alice"}   // where does this live? Depends!
++ ptr := &amp;User{Name: "Bob"}     // definitely a pointer
++ 
++ ProcessUser(user)   // passes copy
++ ProcessUser(&amp;user)  // passes pointer
++ ProcessUserPtr(ptr) // passes pointer
++ &#96;&#96;&#96;
++ 
++ You have to think about it. Every time.
++ 
++ ## Go Pointer Basics
++ 
++ The syntax is C-style:
++ 
++ &#96;&#96;&#96;go
++ x := 42
++ p := &amp;x    // p is *int, pointing to x
++ fmt.Println(*p)  // 42 - dereference to get value
++ *p = 100   // x is now 100
++ &#96;&#96;&#96;
++ 
++ Creating pointers to composite literals:
++ 
++ &#96;&#96;&#96;go
++ // These are equivalent
++ user := &amp;User{Name: "Alice"}
++ 
++ // vs
++ user := new(User)
++ user.Name = "Alice"
++ 
++ // vs
++ var user User
++ user.Name = "Alice"
++ userPtr := &amp;user
++ &#96;&#96;&#96;
++ 
++ The &#96;&amp;&#96; operator gives you a pointer. The &#96;*&#96; operator dereferences. If you've touched C or C++ at any point, this is familiar.
++ 
++ ## The Nice Bit: Automatic Dereferencing
++ 
++ Unlike C, Go automatically dereferences pointers for field and method access:
++ 
++ &#96;&#96;&#96;go
++ type User struct {
++     Name string
++ }
++ 
++ func (u *User) SetName(name string) {
++     u.Name = name  // not (*u).Name, just u.Name
++ }
++ 
++ user := &amp;User{}
++ user.Name = "Alice"  // works, auto-dereferenced
++ user.SetName("Bob")  // works
++ &#96;&#96;&#96;
++ 
++ This is a genuine quality-of-life improvement over C. You don't need &#96;-&gt;&#96; vs &#96;.&#96; confusion. Dot notation works for both values and pointers.
++ 
++ ## The Not-Nice Bit: Nil Pointer Panics
++ 
++ C# has &#96;NullReferenceException&#96;. Go has nil pointer panics. Same problem, different name.
++ 
++ &#96;&#96;&#96;go
++ var user *User = nil
++ fmt.Println(user.Name)  // panic: runtime error: invalid memory address
++ &#96;&#96;&#96;
++ 
++ No nullable reference types. No compile-time null safety. Just runtime panics.
++ 
++ C# 8+ with nullable reference types:
++ 
++ &#96;&#96;&#96;csharp
++ #nullable enable
++ User? user = null;
++ Console.WriteLine(user.Name);  // compiler warning: possible null reference
++ &#96;&#96;&#96;
++ 
++ Go doesn't help you here. You check for nil manually, or you panic at runtime. Welcome to 2009.
++ 
++ ## When to Use Pointers
++ 
++ The decision tree:
++ 
++ **Use pointers when:**
++ 
++ 1. **The method modifies the receiver**
++    &#96;&#96;&#96;go
++    func (u *User) SetEmail(email string) {
++        u.Email = email  // needs to modify the original
++    }
++    &#96;&#96;&#96;
++ 
++ 2. **The struct is large**
++    &#96;&#96;&#96;go
++    type BigStruct struct {
++        Data [1024]byte
++        // ... lots of fields
++    }
++    
++    func Process(b *BigStruct) {  // don't copy 1KB every call
++        // ...
++    }
++    &#96;&#96;&#96;
++ 
++ 3. **You need nil to mean "absent"**
++    &#96;&#96;&#96;go
++    type Config struct {
++        Timeout *time.Duration  // nil means "not set", use default
++    }
++    &#96;&#96;&#96;
++ 
++ 4. **Consistency with other methods on the type**
++    If some methods need pointer receivers, use pointers everywhere for that type. Mixing is legal but confusing.
++ 
++ **Use values when:**
++ 
++ 1. **The data is small and immutable**
++    &#96;&#96;&#96;go
++    type Point struct {
++        X, Y int
++    }
++    
++    func (p Point) Distance(other Point) float64 {
++        // fine to copy two ints
++    }
++    &#96;&#96;&#96;
++ 
++ 2. **You want copy-on-pass safety**
++    Value semantics mean the callee can't modify your data.
++ 
++ 3. **The zero value is useful**
++    &#96;&#96;&#96;go
++    var mu sync.Mutex  // zero Mutex is valid, unlocked
++    &#96;&#96;&#96;
++ 
++ ## The "Everything Is a Pointer Receiver" School
++ 
++ Some Go developers just use pointer receivers everywhere. It's simpler. Consistent. No thinking required.
++ 
++ &#96;&#96;&#96;go
++ func (u *User) Name() string { return u.name }      // pointer receiver
++ func (u *User) SetName(n string) { u.name = n }    // pointer receiver
++ func (u *User) IsActive() bool { return u.active } // pointer receiver
++ &#96;&#96;&#96;
++ 
++ Is this optimal? No. Does it matter? Rarely.
++ 
++ The performance difference between passing a pointer vs a small struct is negligible for most code. Consistency and clarity usually matter more.
++ 
++ ## What You Can't Do
++ 
++ Go's pointers are garbage-collected. You can't:
++ 
++ - Do pointer arithmetic (no &#96;p++&#96; to walk through memory)
++ - Free memory manually (the GC handles it)
++ - Have dangling pointers (the GC keeps referenced memory alive)
++ - Cast pointers to integers (without &#96;unsafe&#96;)
++ 
++ This is why Go pointers are "safe"—they're really just references with explicit syntax. All the scary C stuff is locked behind the &#96;unsafe&#96; package.
++ 
++ ## The &#96;unsafe&#96; Package
++ 
++ Go has an escape hatch:
++ 
++ &#96;&#96;&#96;go
++ import "unsafe"
++ 
++ func scary() {
++     var x int64 = 42
++     ptr := unsafe.Pointer(&amp;x)
++     // Now you can do terrible things
++ }
++ &#96;&#96;&#96;
++ 
++ The &#96;unsafe&#96; package lets you:
++ - Convert between pointer types
++ - Do pointer arithmetic
++ - Access struct padding
++ - Generally shoot yourself in the foot
++ 
++ If you're using &#96;unsafe&#96; outside of extremely low-level code, you're probably doing something wrong. It exists for syscalls, memory-mapped I/O, and interop—not for your web handlers.
++ 
++ ## Comparing to C# &#96;ref&#96; and Pointers
++ 
++ C# has several ways to get pointer-like semantics:
++ 
++ | C# | Go Equivalent | Notes |
++ |-----|---------------|-------|
++ | &#96;ref&#96; parameter | &#96;*T&#96; parameter | Pass by reference |
++ | &#96;in&#96; parameter | &#96;*T&#96; (readonly discipline) | Go has no &#96;const&#96; pointers |
++ | &#96;out&#96; parameter | &#96;*T&#96; or multiple returns | Go prefers multiple returns |
++ | &#96;Span&lt;T&gt;&#96; | Slices | Different semantics, similar purpose |
++ | &#96;unsafe&#96; pointers | &#96;unsafe.Pointer&#96; | Both are escape hatches |
++ | &#96;ref struct&#96; | No equivalent | Go doesn't have stack-only types |
++ 
++ C#'s &#96;ref struct&#96; and &#96;Span&lt;T&gt;&#96; are genuinely more sophisticated than anything Go offers. If you're doing zero-allocation parsing or high-performance buffer manipulation, .NET's tooling is better.
++ 
++ Go's answer is "use slices and let the GC handle it." Less control, simpler mental model, occasionally more allocation.
++ 
++ ## The Honest Take
++ 
++ Look, I'll be straight with you: C#'s memory model is more sophisticated. The runtime does more for you. Nullable reference types catch null bugs at compile time. &#96;Span&lt;T&gt;&#96; gives you safe, zero-copy views into memory. &#96;ref struct&#96; prevents heap allocation entirely.
++ 
++ Go gives you... pointers. The same pointers we've had since the 1970s, except garbage-collected so you can't corrupt memory.
++ 
++ **What Go does better:**
++ - Simpler mental model (it's just pointers)
++ - Explicit about copies vs references
++ - No hidden boxing/unboxing
++ - Can't accidentally capture stack memory (escape analysis handles it)
++ 
++ **What C# does better:**
++ - Nullable reference types
++ - &#96;Span&lt;T&gt;&#96; and memory-safe slicing
++ - &#96;ref struct&#96; for stack-only types  
++ - More escape hatches that are actually usable (&#96;stackalloc&#96;, etc.)
++ - The whole &#96;System.Memory&#96; namespace
++ 
++ **The verdict:**
++ If you're writing performance-critical code where every allocation matters, C# has more tools. If you're writing normal application code, Go's "just use pointers" simplicity is fine.
++ 
++ You'll write &#96;*User&#96; a lot. You'll occasionally forget to check for nil. You'll survive.
++ 
++ ---
++ 
++ *Next up: stack vs heap allocation and escape analysis—Go decides where your variables live, and you don't always get a vote.*
++ 
+```
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="write">
+
+<details><summary>Tool use: **write** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/dotnet-to-go-escape-analysis.md</summary>
+
+**Chunk 1**
+Lines added: 306, lines removed: 1
+
+```diff
+@@ -1,1 +1,306 @@
+- 
++ +++
++ title = "Stack vs Heap: Go's Escape Analysis"
++ date = "2024-12-31"
++ draft = false
++ tags = ["go", "dotnet", "memory", "performance", "csharp"]
++ +++
++ 
++ In C#, you mostly don't think about where variables live. Value types go on the stack (usually). Reference types go on the heap (always). The runtime and JIT make optimisations. You trust the process.
++ 
++ In Go, you still mostly don't think about it—but for different reasons. Go decides where things live at compile time through something called escape analysis. And sometimes it makes choices that'll surprise you.
++ 
++ ## The C# Mental Model
++ 
++ C#'s rules are pretty clear:
++ 
++ &#96;&#96;&#96;csharp
++ void Example()
++ {
++     int x = 42;           // stack - value type, local variable
++     Point p = new(1, 2);  // stack - value type (assuming Point is a struct)
++     
++     var user = new User(); // heap - reference type, always
++     var boxed = (object)x; // heap - boxing allocates
++ }
++ &#96;&#96;&#96;
++ 
++ Value types on stack (unless boxed, captured in closures, or part of a heap object). Reference types on heap. Simple.
++ 
++ .NET has more tricks now—&#96;stackalloc&#96;, &#96;Span&lt;T&gt;&#96;, &#96;ref struct&#96;—but the basic model is straightforward.
++ 
++ ## Go's Escape Analysis
++ 
++ Go doesn't have value types vs reference types in the C# sense. Structs can live on the stack or heap. The compiler decides based on whether the value "escapes" the function.
++ 
++ &#96;&#96;&#96;go
++ func stackAllocation() {
++     x := 42           // stack (probably)
++     user := User{}    // stack (probably)
++     process(&amp;user)    // might change things...
++ }
++ 
++ func heapAllocation() *User {
++     user := User{}    // heap - returned pointer escapes
++     return &amp;user
++ }
++ &#96;&#96;&#96;
++ 
++ The key insight: **if a pointer to something outlives the function, it must be on the heap**. Go figures this out at compile time.
++ 
++ ## Seeing Escape Analysis
++ 
++ You can ask the compiler what it's doing:
++ 
++ &#96;&#96;&#96;bash
++ go build -gcflags="-m" ./...
++ &#96;&#96;&#96;
++ 
++ Output looks like:
++ 
++ &#96;&#96;&#96;
++ ./main.go:10:2: moved to heap: user
++ ./main.go:15:9: &amp;Config{...} escapes to heap
++ ./main.go:20:2: result does not escape
++ &#96;&#96;&#96;
++ 
++ This is genuinely useful for performance work. You can see exactly what's allocating.
++ 
++ ## What Makes Things Escape
++ 
++ ### Returning Pointers
++ 
++ &#96;&#96;&#96;go
++ func newUser() *User {
++     u := User{Name: "Alice"}  // escapes - returned pointer
++     return &amp;u
++ }
++ &#96;&#96;&#96;
++ 
++ The &#96;&amp;u&#96; pointer is returned, so &#96;u&#96; must outlive the function. Heap.
++ 
++ ### Storing in Interface Values
++ 
++ &#96;&#96;&#96;go
++ func example() {
++     var w io.Writer = &amp;bytes.Buffer{}  // escapes - interface storage
++ }
++ &#96;&#96;&#96;
++ 
++ Interface values often cause heap allocation because the compiler can't always prove the lifetime.
++ 
++ ### Closures Capturing Variables
++ 
++ &#96;&#96;&#96;go
++ func example() {
++     x := 42
++     f := func() {
++         fmt.Println(x)  // x escapes - captured by closure
++     }
++     go f()
++ }
++ &#96;&#96;&#96;
++ 
++ Closures that outlive the function (like goroutines) force captures to the heap.
++ 
++ ### Too Large for Stack
++ 
++ &#96;&#96;&#96;go
++ func example() {
++     data := make([]byte, 10*1024*1024)  // 10MB - escapes due to size
++ }
++ &#96;&#96;&#96;
++ 
++ Very large allocations go to the heap regardless of escape.
++ 
++ ### Pointer Stored in Slice or Map
++ 
++ &#96;&#96;&#96;go
++ func example() {
++     users := make([]*User, 0)
++     u := User{Name: "Alice"}
++     users = append(users, &amp;u)  // u escapes - pointer stored in slice
++ }
++ &#96;&#96;&#96;
++ 
++ ## What Stays on the Stack
++ 
++ ### Local Variables Not Referenced
++ 
++ &#96;&#96;&#96;go
++ func example() {
++     x := 42          // stack
++     y := x + 1       // stack
++     fmt.Println(y)   // y's value copied to Println, y stays on stack
++ }
++ &#96;&#96;&#96;
++ 
++ ### Pointers That Don't Escape
++ 
++ &#96;&#96;&#96;go
++ func process(u *User) {
++     u.Name = "modified"  // u doesn't escape, caller's stack
++ }
++ 
++ func example() {
++     user := User{}
++     process(&amp;user)  // user can stay on stack - &amp;user doesn't escape process
++ }
++ &#96;&#96;&#96;
++ 
++ The compiler traces through calls to see if pointers ultimately escape.
++ 
++ ## Comparing to .NET
++ 
++ Here's where I get cynical: .NET's approach is more sophisticated and gives you more control.
++ 
++ ### &#96;stackalloc&#96;
++ 
++ &#96;&#96;&#96;csharp
++ Span&lt;byte&gt; buffer = stackalloc byte[1024];
++ // Guaranteed stack allocation, zero heap involvement
++ &#96;&#96;&#96;
++ 
++ Go can't do this. You can't force stack allocation. The compiler decides.
++ 
++ ### &#96;ref struct&#96;
++ 
++ &#96;&#96;&#96;csharp
++ ref struct Parser 
++ {
++     private Span&lt;char&gt; _buffer;
++     // Can ONLY live on stack, compiler enforced
++ }
++ &#96;&#96;&#96;
++ 
++ Go has no equivalent. You can't declare "this type must never be heap-allocated."
++ 
++ ### &#96;Span&lt;T&gt;&#96; Without Allocation
++ 
++ &#96;&#96;&#96;csharp
++ void Process(ReadOnlySpan&lt;char&gt; text)
++ {
++     var slice = text[10..20];  // no allocation, just pointer arithmetic
++ }
++ &#96;&#96;&#96;
++ 
++ Go slices are similar but the escape analysis is less predictable.
++ 
++ ### What .NET Gets Right
++ 
++ The JIT can do escape analysis too, and it can make different decisions at runtime based on actual usage patterns. Go's compile-time analysis is conservative—it heap-allocates when unsure.
++ 
++ &#96;&#96;&#96;csharp
++ // .NET JIT might stack-allocate this if it proves the object doesn't escape
++ var temp = new StringBuilder();
++ temp.Append("hello");
++ return temp.ToString();
++ // StringBuilder might be optimised away entirely
++ &#96;&#96;&#96;
++ 
++ Go's compiler is good, but it doesn't have runtime profile-guided optimisation.
++ 
++ ## The Practical Impact
++ 
++ Does this matter? Sometimes.
++ 
++ For most code—web handlers, CLI tools, data processing—the GC is fast enough that escape analysis is academic. Things allocate, they get collected, life goes on.
++ 
++ For hot paths processing millions of events per second, allocation pressure matters. And here's the uncomfortable truth: **Go gives you less control than C#**.
++ 
++ You can't say "put this on the stack." You can't create stack-only types. You can write code that the compiler *will* stack-allocate, but you're working with the compiler, not commanding it.
++ 
++ ### Tricks That Help
++ 
++ **Sync.Pool for reusable objects:**
++ 
++ &#96;&#96;&#96;go
++ var bufferPool = sync.Pool{
++     New: func() interface{} {
++         return make([]byte, 4096)
++     },
++ }
++ 
++ func process() {
++     buf := bufferPool.Get().([]byte)
++     defer bufferPool.Put(buf)
++     // use buf...
++ }
++ &#96;&#96;&#96;
++ 
++ This doesn't avoid allocation—it reuses allocations. Different problem, similar goal.
++ 
++ **Passing values instead of pointers for small structs:**
++ 
++ &#96;&#96;&#96;go
++ // This might heap-allocate due to interface
++ func process(r io.Reader) { ... }
++ 
++ // This won't heap-allocate
++ func processBytes(data []byte) { ... }
++ &#96;&#96;&#96;
++ 
++ Sometimes avoiding interfaces avoids allocation. But you lose flexibility.
++ 
++ **Preallocating slices:**
++ 
++ &#96;&#96;&#96;go
++ // Might grow and reallocate multiple times
++ results := make([]Result, 0)
++ 
++ // Single allocation if you know the size
++ results := make([]Result, 0, expectedSize)
++ &#96;&#96;&#96;
++ 
++ ## The Honest Take
++ 
++ I'll be blunt: if you're coming from .NET and you care deeply about allocation control, Go will frustrate you.
++ 
++ .NET gives you:
++ - &#96;stackalloc&#96; for explicit stack allocation
++ - &#96;ref struct&#96; for stack-only types
++ - &#96;Span&lt;T&gt;&#96; for zero-allocation slicing
++ - &#96;ArrayPool&lt;T&gt;&#96; for buffer reuse with a clean API
++ - Object pooling with sophisticated lifetime management
++ - JIT optimisations that can eliminate allocations entirely
++ 
++ Go gives you:
++ - Escape analysis that usually does the right thing
++ - &#96;sync.Pool&#96; for object reuse (but with interface{} boxing before 1.18)
++ - The ability to check what escapes with compiler flags
++ - A fast garbage collector that makes most of this not matter
++ 
++ **When Go's approach works:**
++ - You're building services with reasonable latency requirements
++ - You're not processing millions of messages per second per core
++ - You value simplicity over maximum control
++ - You're okay trading some performance for less complexity
++ 
++ **When you'll miss .NET:**
++ - Sub-millisecond latency requirements
++ - Zero-GC paths are necessary
++ - You need guaranteed stack allocation
++ - High-frequency trading, game engines, real-time systems
++ 
++ For 90% of software, Go's escape analysis is fine. The GC is good. You won't notice. For the other 10%, .NET genuinely has better tools.
++ 
++ ## Checking Your Allocations
++ 
++ Profile before optimising:
++ 
++ &#96;&#96;&#96;bash
++ # Run benchmarks with allocation stats
++ go test -bench=. -benchmem
++ 
++ # Trace allocations
++ go tool pprof -alloc_space profile.out
++ 
++ # See escape decisions
++ go build -gcflags="-m -m" ./...  # extra -m for more detail
++ &#96;&#96;&#96;
++ 
++ Know what's actually allocating before you fight the compiler.
++ 
++ ---
++ 
++ *Next up: slices in depth—they're not arrays, they're not List&lt;T&gt;, and the gotchas around capacity, length, and shared backing arrays will bite you eventually.*
++ 
+```
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="write">
+
+<details><summary>Tool use: **write** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/dotnet-to-go-slices.md</summary>
+
+**Chunk 1**
+Lines added: 301, lines removed: 1
+
+```diff
+@@ -1,1 +1,301 @@
+- 
++ +++
++ title = "Slices Are Not Arrays (And Neither Is List&lt;T&gt;)"
++ date = "2024-12-31"
++ draft = false
++ tags = ["go", "dotnet", "memory", "slices", "csharp"]
++ +++
++ 
++ Every C# developer coming to Go makes the same mistake: they see &#96;[]int&#96; and think "array" or "list." It's neither. It's a slice, and it has semantics that will bite you if you don't understand them.
++ 
++ This is one of those Go concepts that seems simple until it isn't. Let's dig in.
++ 
++ ## What a Slice Actually Is
++ 
++ A slice is a struct with three fields:
++ 
++ &#96;&#96;&#96;go
++ // Conceptually:
++ type slice struct {
++     array *T   // pointer to underlying array
++     len   int  // number of elements in use
++     cap   int  // total capacity of underlying array
++ }
++ &#96;&#96;&#96;
++ 
++ When you create a slice, you're creating this header. The actual data lives in a backing array somewhere.
++ 
++ &#96;&#96;&#96;go
++ s := []int{1, 2, 3, 4, 5}
++ // s.array -&gt; [1, 2, 3, 4, 5, _, _, _]  (backing array, might have extra capacity)
++ // s.len = 5
++ // s.cap = 5 (or more)
++ &#96;&#96;&#96;
++ 
++ This is fundamentally different from both C# arrays and &#96;List&lt;T&gt;&#96;.
++ 
++ ## The C# Mental Model (And Why It's Wrong Here)
++ 
++ **C# arrays** are fixed-size, directly hold their data:
++ 
++ &#96;&#96;&#96;csharp
++ int[] arr = new int[5];
++ // arr IS the array, fixed size, done
++ &#96;&#96;&#96;
++ 
++ **C# List&lt;T&gt;** wraps an array with growth semantics:
++ 
++ &#96;&#96;&#96;csharp
++ var list = new List&lt;int&gt; { 1, 2, 3 };
++ list.Add(4);  // might reallocate internally
++ // But list is a reference type - you always work with the same list object
++ &#96;&#96;&#96;
++ 
++ **Go slices** are value types that point to arrays:
++ 
++ &#96;&#96;&#96;go
++ s := []int{1, 2, 3}
++ s = append(s, 4)  // might return a NEW slice header pointing to NEW array
++ &#96;&#96;&#96;
++ 
++ That last line is where people get burned. &#96;append&#96; might modify the backing array in place, or it might allocate a new array and return a slice pointing to it. **You must use the return value.**
++ 
++ ## The append Trap
++ 
++ This looks fine:
++ 
++ &#96;&#96;&#96;go
++ func addItem(items []int, item int) {
++     items = append(items, item)
++ }
++ 
++ func main() {
++     s := []int{1, 2, 3}
++     addItem(s, 4)
++     fmt.Println(s)  // [1 2 3] - item wasn't added!
++ }
++ &#96;&#96;&#96;
++ 
++ The slice header is passed by value. &#96;append&#96; creates a new header (possibly pointing to a new array), but that new header only exists inside &#96;addItem&#96;. The caller's &#96;s&#96; is unchanged.
++ 
++ Fixes:
++ 
++ &#96;&#96;&#96;go
++ // Option 1: Return the new slice
++ func addItem(items []int, item int) []int {
++     return append(items, item)
++ }
++ 
++ s = addItem(s, 4)  // use the return value
++ 
++ // Option 2: Use a pointer to slice (less common)
++ func addItem(items *[]int, item int) {
++     *items = append(*items, item)
++ }
++ 
++ addItem(&amp;s, 4)
++ &#96;&#96;&#96;
++ 
++ In C#, this wouldn't be a problem—&#96;List&lt;T&gt;&#96; is a reference type:
++ 
++ &#96;&#96;&#96;csharp
++ void AddItem(List&lt;int&gt; items, int item) {
++     items.Add(item);  // modifies the actual list
++ }
++ &#96;&#96;&#96;
++ 
++ Go's slice is not a reference type. It's a value type that contains a pointer. Subtle but critical difference.
++ 
++ ## Shared Backing Arrays (The Real Gotcha)
++ 
++ Here's where it gets properly dangerous:
++ 
++ &#96;&#96;&#96;go
++ original := []int{1, 2, 3, 4, 5}
++ slice1 := original[1:3]  // [2, 3]
++ slice2 := original[2:4]  // [3, 4]
++ 
++ slice1[1] = 999  // modify slice1
++ 
++ fmt.Println(original)  // [1 2 999 4 5]
++ fmt.Println(slice1)    // [2 999]
++ fmt.Println(slice2)    // [999 4]
++ &#96;&#96;&#96;
++ 
++ All three slices share the same backing array. Modify one, you modify them all.
++ 
++ This is nothing like C#:
++ 
++ &#96;&#96;&#96;csharp
++ var original = new int[] { 1, 2, 3, 4, 5 };
++ var slice = original[1..3];  // creates a NEW array in C# 8+
++ slice[1] = 999;
++ Console.WriteLine(string.Join(", ", original));  // 1, 2, 3, 4, 5 - unchanged
++ &#96;&#96;&#96;
++ 
++ C# ranges create copies. Go slices share memory. Neither is wrong, but they're completely different behaviours.
++ 
++ ### The Capacity Gotcha
++ 
++ It gets worse. When you slice, you might have hidden capacity:
++ 
++ &#96;&#96;&#96;go
++ original := []int{1, 2, 3, 4, 5}
++ slice := original[1:3]  // [2, 3], but capacity is 4!
++ 
++ fmt.Println(len(slice))  // 2
++ fmt.Println(cap(slice))  // 4 - can see elements 1-4 of original
++ 
++ slice = append(slice, 999)  // doesn't allocate new array - overwrites original!
++ 
++ fmt.Println(original)  // [1 2 3 999 5] - element 3 (index 3) was overwritten
++ &#96;&#96;&#96;
++ 
++ The &#96;append&#96; saw capacity, used it, and stomped on data that logically wasn't part of &#96;slice&#96; but physically was in the backing array.
++ 
++ To prevent this:
++ 
++ &#96;&#96;&#96;go
++ // Limit capacity when slicing
++ slice := original[1:3:3]  // [low:high:max] - capacity is high-low = 2
++ 
++ // Or copy explicitly
++ slice := make([]int, 2)
++ copy(slice, original[1:3])
++ &#96;&#96;&#96;
++ 
++ ## Length vs Capacity
++ 
++ This distinction doesn't exist in &#96;List&lt;T&gt;&#96; (internally it does, but you don't see it):
++ 
++ &#96;&#96;&#96;go
++ s := make([]int, 3, 10)  // length 3, capacity 10
++ fmt.Println(len(s))  // 3
++ fmt.Println(cap(s))  // 10
++ 
++ s[0] = 1  // OK
++ s[5] = 1  // panic: index out of range - len is 3!
++ 
++ s = s[:cap(s)]  // extend slice to full capacity
++ s[5] = 1        // now OK
++ &#96;&#96;&#96;
++ 
++ Length is how many elements are accessible. Capacity is how many could be before reallocation. This is an implementation detail that Go exposes and expects you to understand.
++ 
++ ## nil vs Empty Slice
++ 
++ Oh good, more nil pain:
++ 
++ &#96;&#96;&#96;go
++ var s1 []int          // nil slice
++ s2 := []int{}         // empty slice
++ s3 := make([]int, 0)  // empty slice
++ 
++ fmt.Println(s1 == nil)  // true
++ fmt.Println(s2 == nil)  // false
++ fmt.Println(s3 == nil)  // false
++ 
++ // But they all behave the same for most operations
++ fmt.Println(len(s1), len(s2), len(s3))  // 0 0 0
++ &#96;&#96;&#96;
++ 
++ A nil slice and an empty slice are functionally equivalent for &#96;len&#96;, &#96;cap&#96;, &#96;append&#96;, and &#96;range&#96;. But they're not equal to each other, and some JSON encoders treat them differently.
++ 
++ &#96;&#96;&#96;go
++ json.Marshal(s1)  // might produce "null"
++ json.Marshal(s2)  // produces "[]"
++ &#96;&#96;&#96;
++ 
++ Wonderful.
++ 
++ ## Patterns That Help
++ 
++ ### Always Capture append's Return
++ 
++ &#96;&#96;&#96;go
++ s = append(s, item)  // always assign back
++ &#96;&#96;&#96;
++ 
++ ### Copy When Returning Subslices
++ 
++ &#96;&#96;&#96;go
++ func getSubset(data []int) []int {
++     subset := data[10:20]
++     
++     // Bad: caller might have data, mutating subset affects data
++     return subset
++     
++     // Good: caller gets independent slice
++     result := make([]int, len(subset))
++     copy(result, subset)
++     return result
++ }
++ &#96;&#96;&#96;
++ 
++ ### Preallocate When Size Is Known
++ 
++ &#96;&#96;&#96;go
++ // Might reallocate multiple times
++ results := []int{}
++ for _, item := range items {
++     results = append(results, transform(item))
++ }
++ 
++ // Single allocation
++ results := make([]int, 0, len(items))
++ for _, item := range items {
++     results = append(results, transform(item))
++ }
++ 
++ // Or even better, known length
++ results := make([]int, len(items))
++ for i, item := range items {
++     results[i] = transform(item)
++ }
++ &#96;&#96;&#96;
++ 
++ ### Use the Three-Index Slice for Safety
++ 
++ &#96;&#96;&#96;go
++ // Dangerous: slice might have hidden capacity
++ sub := data[a:b]
++ 
++ // Safe: capacity is limited
++ sub := data[a:b:b]
++ &#96;&#96;&#96;
++ 
++ ## The Comparison
++ 
++ | Aspect | C# Array | C# List&lt;T&gt; | Go Slice |
++ |--------|----------|------------|----------|
++ | Fixed size | Yes | No | No |
++ | Reference type | Yes | Yes | No (value type with pointer) |
++ | Slicing copies | Yes (ranges) | N/A | No (shares memory) |
++ | append semantics | N/A | Add modifies list | Returns new header |
++ | Hidden capacity | No | Yes (internal) | Yes (exposed) |
++ | nil vs empty | null vs new int[0] | null vs new List | Different behaviours |
++ 
++ ## The Honest Take
++ 
++ Slices are Go's most footgun-laden feature. They look simple, they have subtle semantics, and the gotchas aren't obvious until you've been bitten.
++ 
++ **What Go gets right:**
++ - Efficient memory sharing when you want it
++ - Clear distinction between length and capacity
++ - &#96;append&#96; is convenient (when used correctly)
++ - No boxing, good cache locality
++ 
++ **What C# does better:**
++ - &#96;List&lt;T&gt;&#96; is a reference type—modifications are visible everywhere
++ - Range slicing copies by default—no surprise aliasing
++ - &#96;Span&lt;T&gt;&#96; gives you explicit no-copy semantics when you want them
++ - You don't have to remember the three-index slice syntax
++ 
++ **The verdict:**
++ Slices are powerful and efficient. They're also a sharp tool that will cut you. Every Go developer has been bitten by shared backing arrays or forgotten &#96;append&#96; returns.
++ 
++ My advice: be paranoid about slice aliasing. Copy when returning subslices. Always use the return value of &#96;append&#96;. And when something mutates unexpectedly, check your slices first.
++ 
++ ---
++ 
++ *That wraps up the memory section. Next we'll move into concurrency—goroutines, channels, and why Go's approach is fundamentally different from async/await.*
++ 
+```
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+Let me verify the build works with all these new posts.</details></think>
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_cmd">
+<details><summary>Tool use: **run_terminal_cmd** • Run command: cd /Users/andycross/src/personal/mcp-blogs && hugo --quiet && echo "Build successful" && ls content/posts/dotnet-to-go*.md | wc -l && echo "---" && ls -la content/posts/dotnet-to-go*.md</summary>
+
+```bash
+cd /Users/andycross/src/personal/mcp-blogs && hugo --quiet && echo "Build successful" && ls content/posts/dotnet-to-go*.md | wc -l && echo "---" && ls -la content/posts/dotnet-to-go*.md
+```
+
+```
+Build successful
+      14
+---
+-rw-r--r--  1 andycross  staff  10095 Dec 28 20:26 content/posts/dotnet-to-go-enums.md
+-rw-r--r--  1 andycross  staff   9266 Dec 29 07:53 content/posts/dotnet-to-go-errors.md
+-rw-r--r--  1 andycross  staff   8268 Dec 29 15:26 content/posts/dotnet-to-go-escape-analysis.md
+-rw-r--r--  1 andycross  staff   8876 Dec 28 20:26 content/posts/dotnet-to-go-generics.md
+-rw-r--r--  1 andycross  staff   9547 Dec 28 20:20 content/posts/dotnet-to-go-modules.md
+-rw-r--r--  1 andycross  staff   8501 Dec 28 20:26 content/posts/dotnet-to-go-nil.md
+-rw-r--r--  1 andycross  staff   8319 Dec 29 07:53 content/posts/dotnet-to-go-panic.md
+-rw-r--r--  1 andycross  staff  10755 Dec 29 07:48 content/posts/dotnet-to-go-phrasebook.md
+-rw-r--r--  1 andycross  staff   8107 Dec 29 15:25 content/posts/dotnet-to-go-pointers.md
+-rw-r--r--  1 andycross  staff   8294 Dec 29 15:27 content/posts/dotnet-to-go-slices.md
+-rw-r--r--  1 andycross  staff   8748 Dec 29 07:49 content/posts/dotnet-to-go-structs.md
+-rw-r--r--  1 andycross  staff   9594 Dec 29 07:53 content/posts/dotnet-to-go-switch.md
+-rw-r--r--  1 andycross  staff   8132 Dec 28 20:20 content/posts/dotnet-to-go-toolchain.md
+-rw-r--r--  1 andycross  staff   9253 Dec 28 20:26 content/posts/dotnet-to-go-visibility.md
+
+```
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+All 14 posts build successfully. Let me summarize the updated series structure for the user.</details></think>
+
+---
+
+All three Memory & Pointers posts are done. 14 posts total now, with appropriate snark about .NET's superiority in this area. Here's the updated series:
+
+## C# to Go Series (14 posts)
+
+### Phase 1: Getting Oriented
+1. **"You Know .NET, Now Meet the Go Toolchain"**
+2. **"Goodbye .csproj, Hello go.mod"**
+3. **"The Phrasebook: C# Concepts in Go Terms"**
+
+### Phase 2: Types & Data
+4. **"Your Class Is Now a Struct (And That's Fine)"**
+5. **"Where Did My Properties Go?"**
+6. **"Generics: Late to the Party"**
+7. **"The Million Dollar Mistake, Differently"**
+8. **"No Enums? No Problem (Sort Of)"**
+
+### Phase 3: Control Flow & Error Handling
+9. **"if err != nil: Your New Reality"**
+10. **"Panic and Recover: The Emergency Exit"**
+11. **"The switch Statement You Always Wanted"**
+
+### Phase 4: Memory & Pointers ← **NEW**
+12. **"Pointers Without the Pain"** — What C# hides, automatic dereferencing, nil panics, when to use pointers, acknowledging that nullable reference types are better
+13. **"Stack vs Heap: Go's Escape Analysis"** — Compile-time decisions, what escapes, the `-gcflags="-m"` trick, lamenting the lack of `stackalloc`, `ref struct`, and `Span<T>`
+14. **"Slices Are Not Arrays (And Neither Is List<T>)"** — The append trap, shared backing arrays, the three-index slice, capacity gotchas, why this is Go's most footgun-laden feature
+
+Key themes in the memory posts:
+- Honest acknowledgment that .NET has better tools (`Span<T>`, `ref struct`, nullable references, `stackalloc`)
+- Go gives you less control but a simpler mental model
+- The slice semantics will absolutely bite you
+- Escape analysis is good but you can't force stack allocation
+
+Ready for Phase 5 (concurrency) whenever you want to tackle goroutines vs async/await!
+
+---
+
