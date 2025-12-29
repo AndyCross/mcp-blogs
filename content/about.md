@@ -11,11 +11,16 @@ These days I'm particularly interested in the intersection of AI and developer t
 
 I'm also an entrepreneur, having founded and run tech businesses over the years. That means I occasionally write about the business side of things too—startups, product thinking, and the messy reality of turning ideas into something sustainable.
 
+I've had a few awards in my life, which I'm thankful for but no longer maintain; Microsoft MVP and Regional Director. I do limited work in the Microsoft domain following a sale of a company I ran that was a Microsoft Partner of note. 
+
 ## What's this blog about?
 
-Mostly MCP servers, AI tooling, and honest takes on things that could be better. I try to write about stuff I'm actually building rather than abstract theory—expect code, working examples, and candid assessments of what works and what doesn't.
+Mostly Programming, MCP servers, AI tooling, and honest takes on things that could be better. I try to write about stuff I'm actually building rather than abstract theory—expect code, working examples, and candid assessments of what works and what doesn't.
+
+## What's in the name?
+
+I started thinking about developer tooling that brought AI and devs closer together. I wanted AIs to have the experience of DAP, setting breakpoints and stepping into functions. As of writing, this is still very hard to achieve. Hopefully one day I will have a post that covers it!
 
 ## Get in touch
 
 Best way to reach me is through GitHub. Always happy to chat about this stuff.
-
