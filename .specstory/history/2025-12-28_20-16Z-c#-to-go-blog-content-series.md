@@ -2792,3 +2792,108 @@ Ready for Phase 3 when you are?
 
 ---
 
+_**User (2025-12-29 06:27Z)**_
+
+We need to enhance one of the earlier posts, or inject a new one, which helps understand two key things
+
+1) arrays are slices, dictionaries are maps ---- what are the key terminology changes that trip you up coming from c#
+2) what are the new operators that you have to get ready for (:= for instance) 
+
+---
+
+_**Agent (model claude-4.5-opus-high-thinking, mode Agent)**_
+
+<think><details><summary>Thought Process</summary>
+The user wants me to either enhance an existing post or create a new one that covers:
+1. Terminology changes (arrays→slices, Dictionary→map, etc.)
+2. New operators (:=, etc.)
+
+Looking at the current series structure:
+- Phase 1: Toolchain, Modules
+- Phase 2: Structs, Visibility, Generics, Nil, Enums
+
+This content feels like it should come early - it's foundational "getting oriented" material. It could either:
+1. Be injected into the first post (toolchain)
+2. Become a new post between Phase 1 and Phase 2
+
+I think a new post makes more sense - this is substantial enough content to stand alone, and it's really about "the basics that trip you up" before you even get to types in depth. It could be titled something like "The Phrasebook: C# to Go Terminology and Syntax".
+
+Let me create a new post that fits between the toolchain/modules posts and the types posts. This should cover:
+
+Terminology:
+- array → slice (and actual arrays exist but are rare)
+- List<T> → slice
+- Dictionary<K,V> → map
+- namespace → package
+- null → nil
+- class → struct
+- interface (explicit) → interface (implicit)
+- property → field + methods
+- var → var (but also :=)
+- async/await → goroutines/channels
+- event → channels
+- LINQ → no equivalent (loops or generics)
+- exception → error
+- try/catch → if err != nil
+- using → defer
+- lock → sync.Mutex
+- foreach → for range
+- out/ref → pointers
+
+Operators:
+- := short variable declaration
+- & address-of (like C#)
+- * dereference (like C#)
+- <- channel send/receive
+- ... variadic and slice unpacking
+- range keyword in for loops
+- _ blank identifier
+- := vs = 
+
+
+- make() and new() are crucial memory allocation functions in Go
+
+I'll explore make() and new() as key memory allocation mechanisms. make() is specifically for creating slices, maps, and channels, initializing their internal data structures. new() allocates memory for a type and returns a pointer, zeroing out the memory. These functions handle different memory initialization scenarios, providing precise control over how Go allocates and prepares memory for various data structures.</details></think>
+
+---
+
+Good call—this foundational "translation" content should come early in the series. I'll create a new post that slots in between the toolchain posts and the types posts. It's substantial enough to stand alone as a "phrasebook" reference.
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="write">
+
+<details><summary>Tool use: **write** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/dotnet-to-go-phrasebook.md</summary>
+
+Status: **loading**
+
+```markdown
++++
+title = "The Phrasebook: C# Concepts in Go Terms"
+date = "2024-12-28"
+draft = false
+tags = ["go", "dotnet", "syntax", "csharp"]
++++
+
+Before we get into the weeds of types and patterns, let's establish some vocabulary. Go uses different names for familiar concepts, and has operators you've never seen. This post is a reference—skim it now, bookmark it for later.
+
+## The Terminology Swap
+
+Your C# brain thinks in certain words. Here's the translation:
+
+| C# Term | Go Term | Notes |
+|---------|---------|-------|
+| `List<T>` | slice | Dynamic array, the workhorse collection |
+| `T[]` (array) | slice (usually) | Go has arrays, but you'll rarely
+```
+
+</details>
+
+</tool-use>
+
+---
+
+
+
+---
+
