@@ -6141,3 +6141,1966 @@ Want me to recreate the missing posts? That would be:
 
 ---
 
+_**User (2025-12-29 17:28Z)**_
+
+use git to pull them back
+
+---
+
+_**Agent (model claude-4.5-opus-high-thinking, mode Agent)**_
+
+<think><details><summary>Thought Process</summary>
+The user wants me to restore the deleted files from git. Since they show as "deleted" in the unstaged changes, I can use `git restore` to bring them back.</details></think>
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_cmd">
+<details><summary>Tool use: **run_terminal_cmd** • Run command: cd /Users/andycross/src/personal/mcp-blogs && git restore content/posts/dotnet-to-go-errors.md content/posts/dotnet-to-go-escape-analysis.md content/posts/dotnet-to-go-panic.md content/posts/dotnet-to-go-slices.md content/posts/dotnet-to-go-switch.md</summary>
+
+```bash
+cd /Users/andycross/src/personal/mcp-blogs && git restore content/posts/dotnet-to-go-errors.md content/posts/dotnet-to-go-escape-analysis.md content/posts/dotnet-to-go-panic.md content/posts/dotnet-to-go-slices.md content/posts/dotnet-to-go-switch.md
+```
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+Let me verify all the files are back.</details></think>
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_cmd">
+<details><summary>Tool use: **run_terminal_cmd** • Run command: cd /Users/andycross/src/personal/mcp-blogs && ls content/posts/dotnet-to-go*.md | wc -l && echo "---" && ls content/posts/dotnet-to-go*.md</summary>
+
+```bash
+cd /Users/andycross/src/personal/mcp-blogs && ls content/posts/dotnet-to-go*.md | wc -l && echo "---" && ls content/posts/dotnet-to-go*.md
+```
+
+```
+      14
+---
+content/posts/dotnet-to-go-enums.md
+content/posts/dotnet-to-go-errors.md
+content/posts/dotnet-to-go-escape-analysis.md
+content/posts/dotnet-to-go-generics.md
+content/posts/dotnet-to-go-modules.md
+content/posts/dotnet-to-go-nil.md
+content/posts/dotnet-to-go-panic.md
+content/posts/dotnet-to-go-phrasebook.md
+content/posts/dotnet-to-go-pointers.md
+content/posts/dotnet-to-go-slices.md
+content/posts/dotnet-to-go-structs.md
+content/posts/dotnet-to-go-switch.md
+content/posts/dotnet-to-go-toolchain.md
+content/posts/dotnet-to-go-visibility.md
+
+```
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+All 14 files are restored. Let me verify the build still passes.</details></think>
+
+---
+
+All 14 posts restored. Let me verify the build still works:
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_cmd">
+<details><summary>Tool use: **run_terminal_cmd** • Run command: cd /Users/andycross/src/personal/mcp-blogs && hugo --quiet && echo "Build successful" && git status --short</summary>
+
+```bash
+cd /Users/andycross/src/personal/mcp-blogs && hugo --quiet && echo "Build successful" && git status --short
+```
+
+```
+Build successful
+ M .specstory/history/2025-12-28_20-16Z-c#-to-go-blog-content-series.md
+ M content/posts/dotnet-to-go-pointers.md
+ M content/posts/streaming-json-partial-parser.md
+
+```
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+All 14 posts are back, the build passes, and the only modifications now are:- The pointers post (which I updated with the dereferencing explanation)- Some specstory file (internal tracking)- streaming-json-partial-parser (not sure why that's modified, but it's unrelated to our work)No more deletions showing.</details></think>
+
+---
+
+All sorted. 14 posts back, build passes, and git status now only shows modifications (no deletions):
+
+- `dotnet-to-go-pointers.md` — the dereferencing explanation we just added
+- Two other modified files unrelated to the series
+
+Ready to continue with Phase 5 (concurrency) whenever you like!
+
+---
+
+_**User (2025-12-29 17:28Z)**_
+
+here's our concurrency list, let's go!
+
+Concurrency
+
+Async/Await vs Goroutines: A Mindset Shift — Why Go's model feels backwards until it clicks
+Channels: The sync You Didn't Know You Wanted — Producer/consumer patterns without BlockingCollection
+select: Multiplexing Like a Pro — Handling multiple channels, timeouts, and cancellation
+Mutexes and WaitGroups: When Channels Aren't the Answer — sync package deep-dive for C# devs who know their locks
+Context Is King — Cancellation tokens, but make it Go
+
+---
+
+_**Agent (model claude-4.5-opus-high-thinking, mode Agent)**_
+
+<think><details><summary>Thought Process</summary>
+The user wants me to create the 5 concurrency posts. This is where Go genuinely shines compared to C#'s async/await model in many ways, so I should be fair but also highlight where Go's model is genuinely elegant. Let me write all 5 posts.</details></think>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="write">
+
+<details><summary>Tool use: **write** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/dotnet-to-go-goroutines.md</summary>
+
+**Chunk 1**
+Lines added: 298, lines removed: 1
+
+```diff
+@@ -1,1 +1,298 @@
+- 
++ +++
++ title = "Async/Await vs Goroutines: A Mindset Shift"
++ date = "2025-01-01"
++ draft = false
++ tags = ["go", "dotnet", "concurrency", "async", "csharp"]
++ +++
++ 
++ Here's the thing about Go's concurrency model: it's going to feel backwards. You've spent years learning that async operations need &#96;async&#96; keywords, &#96;await&#96; expressions, &#96;Task&lt;T&gt;&#96; return types, and careful thought about which thread you're on.
++ 
++ Go throws all of that out. Any function can be concurrent. There's no special syntax. No coloured functions. No async/await virus spreading through your codebase.
++ 
++ It feels wrong until suddenly it doesn't.
++ 
++ ## The C# Model: Async All the Way Down
++ 
++ In C#, concurrency is opt-in and explicit:
++ 
++ &#96;&#96;&#96;csharp
++ public async Task&lt;User&gt; GetUserAsync(int id)
++ {
++     var response = await _httpClient.GetAsync($"/users/{id}");
++     var json = await response.Content.ReadAsStringAsync();
++     return JsonSerializer.Deserialize&lt;User&gt;(json);
++ }
++ 
++ public async Task ProcessUsersAsync()
++ {
++     var user1 = await GetUserAsync(1);
++     var user2 = await GetUserAsync(2);
++     // Sequential - second waits for first
++ }
++ &#96;&#96;&#96;
++ 
++ Want parallel execution?
++ 
++ &#96;&#96;&#96;csharp
++ public async Task ProcessUsersAsync()
++ {
++     var task1 = GetUserAsync(1);
++     var task2 = GetUserAsync(2);
++     var users = await Task.WhenAll(task1, task2);
++     // Parallel - both run concurrently
++ }
++ &#96;&#96;&#96;
++ 
++ This model is explicit, type-safe, and viral—once you have an async function, everything that calls it tends to become async too.
++ 
++ ## The Go Model: Just... Go
++ 
++ Go's approach is radically simpler:
++ 
++ &#96;&#96;&#96;go
++ func GetUser(id int) (*User, error) {
++     resp, err := http.Get(fmt.Sprintf("/users/%d", id))
++     if err != nil {
++         return nil, err
++     }
++     defer resp.Body.Close()
++     
++     var user User
++     if err := json.NewDecoder(resp.Body).Decode(&amp;user); err != nil {
++         return nil, err
++     }
++     return &amp;user, nil
++ }
++ &#96;&#96;&#96;
++ 
++ Notice: no async keyword. No special return type. It's just a function.
++ 
++ Want to run it concurrently? Add the &#96;go&#96; keyword:
++ 
++ &#96;&#96;&#96;go
++ go GetUser(1)  // runs in background, returns immediately
++ go GetUser(2)  // also runs in background
++ &#96;&#96;&#96;
++ 
++ That's it. Any function can be spawned as a goroutine. No syntax changes to the function itself.
++ 
++ ## What's a Goroutine?
++ 
++ A goroutine is a lightweight thread managed by Go's runtime. Think of it as a Task that's:
++ 
++ - **Cheaper**: Goroutines start with ~2KB stack (vs ~1MB for OS threads)
++ - **Multiplexed**: Go's scheduler runs thousands of goroutines on a few OS threads
++ - **Implicit**: No &#96;Task.Run()&#96; ceremony—just &#96;go f()&#96;
++ 
++ &#96;&#96;&#96;go
++ func main() {
++     for i := 0; i &lt; 10000; i++ {
++         go func(n int) {
++             fmt.Println(n)
++         }(i)
++     }
++     time.Sleep(time.Second)  // wait for goroutines (crude, we'll fix this)
++ }
++ &#96;&#96;&#96;
++ 
++ Spawning 10,000 goroutines is fine. Spawning 10,000 OS threads would kill your machine.
++ 
++ ## The Problem: Getting Results Back
++ 
++ Here's where things get interesting. When you &#96;go&#96; a function, you can't get its return value:
++ 
++ &#96;&#96;&#96;go
++ result := go GetUser(1)  // DOESN'T WORK - go doesn't return anything
++ &#96;&#96;&#96;
++ 
++ The &#96;go&#96; keyword fires and forgets. If you need results, you need **channels**—which we'll cover properly in the next post. For now, here's a taste:
++ 
++ &#96;&#96;&#96;go
++ func main() {
++     results := make(chan *User, 2)
++     
++     go func() {
++         user, _ := GetUser(1)
++         results &lt;- user
++     }()
++     
++     go func() {
++         user, _ := GetUser(2)
++         results &lt;- user
++     }()
++     
++     user1 := &lt;-results
++     user2 := &lt;-results
++     fmt.Println(user1, user2)
++ }
++ &#96;&#96;&#96;
++ 
++ More verbose than &#96;Task.WhenAll&#96;? Yes. More flexible? Also yes. But we're getting ahead of ourselves.
++ 
++ ## No Coloured Functions
++ 
++ This is the big philosophical difference. In C#, functions are "coloured":
++ 
++ - **Red functions** (&#96;async&#96;): Can use &#96;await&#96;, return &#96;Task&lt;T&gt;&#96;
++ - **Blue functions** (sync): Can't use &#96;await&#96;, return &#96;T&#96; directly
++ - Red can call blue, but blue calling red is awkward
++ 
++ This leads to the "async all the way down" pattern. One async function at the bottom of your call stack, and suddenly everything above it needs to be async too.
++ 
++ Go doesn't have coloured functions. Every function is the same colour:
++ 
++ &#96;&#96;&#96;go
++ // These are identical in signature
++ func DoSyncThing() error { ... }
++ func DoAsyncThing() error { ... }  // might internally use goroutines
++ 
++ // Caller doesn't know or care
++ err := DoSyncThing()
++ err = DoAsyncThing()
++ &#96;&#96;&#96;
++ 
++ The caller decides whether to run something concurrently:
++ 
++ &#96;&#96;&#96;go
++ DoSyncThing()      // blocking
++ go DoSyncThing()   // concurrent
++ 
++ DoAsyncThing()     // blocking (waits for internal goroutines)
++ go DoAsyncThing()  // concurrent
++ &#96;&#96;&#96;
++ 
++ ## Blocking Is Fine
++ 
++ In C#, blocking an async operation is a code smell:
++ 
++ &#96;&#96;&#96;csharp
++ // DON'T DO THIS - can deadlock, wastes threads
++ var result = GetUserAsync(1).Result;
++ &#96;&#96;&#96;
++ 
++ In Go, blocking is the default and it's fine:
++ 
++ &#96;&#96;&#96;go
++ // Totally normal
++ user, err := GetUser(1)
++ &#96;&#96;&#96;
++ 
++ Why? Because Go's scheduler is cooperative. When a goroutine blocks on I/O, the scheduler runs other goroutines on the same OS thread. You're not tying up a thread pool thread—you're just pausing one goroutine.
++ 
++ This is why Go doesn't need async/await. Blocking calls don't waste resources because the runtime handles the multiplexing.
++ 
++ ## When This Feels Better
++ 
++ **Simple concurrent operations:**
++ 
++ &#96;&#96;&#96;go
++ // Go
++ go sendEmail(user)
++ go updateAnalytics(event)
++ go notifySlack(message)
++ // All three run concurrently, fire-and-forget
++ &#96;&#96;&#96;
++ 
++ &#96;&#96;&#96;csharp
++ // C# equivalent
++ _ = Task.Run(() =&gt; SendEmailAsync(user));
++ _ = Task.Run(() =&gt; UpdateAnalyticsAsync(event));
++ _ = Task.Run(() =&gt; NotifySlackAsync(message));
++ // More ceremony, and those discards feel wrong
++ &#96;&#96;&#96;
++ 
++ **CPU-bound parallelism:**
++ 
++ &#96;&#96;&#96;go
++ // Go
++ for _, item := range items {
++     go process(item)
++ }
++ &#96;&#96;&#96;
++ 
++ &#96;&#96;&#96;csharp
++ // C#
++ Parallel.ForEach(items, item =&gt; Process(item));
++ // Or
++ await Task.WhenAll(items.Select(item =&gt; ProcessAsync(item)));
++ &#96;&#96;&#96;
++ 
++ Both work, but Go's is more uniform—same syntax for I/O-bound and CPU-bound concurrency.
++ 
++ ## When C# Feels Better
++ 
++ **Structured async flow:**
++ 
++ &#96;&#96;&#96;csharp
++ var user = await GetUserAsync(id);
++ var orders = await GetOrdersAsync(user.Id);
++ var summary = await BuildSummaryAsync(user, orders);
++ return summary;
++ &#96;&#96;&#96;
++ 
++ This sequential async flow is clean in C#. In Go, you'd write the same thing without any special syntax—which is fine, but you don't get the visual markers of "this is I/O."
++ 
++ **Parallel with results:**
++ 
++ &#96;&#96;&#96;csharp
++ var tasks = ids.Select(id =&gt; GetUserAsync(id));
++ var users = await Task.WhenAll(tasks);
++ &#96;&#96;&#96;
++ 
++ Go requires more scaffolding for this pattern (channels, WaitGroups). We'll cover it, but it's more code.
++ 
++ **Cancellation:**
++ 
++ C#'s &#96;CancellationToken&#96; integrates beautifully with async/await. Go's &#96;context.Context&#96; is similar but more manual. We'll cover this in a later post.
++ 
++ ## The Mental Shift
++ 
++ Here's what took me time to internalise:
++ 
++ 1. **Functions don't need to declare their concurrency potential**. Any function can be &#96;go&#96;'d.
++ 
++ 2. **Blocking is fine**. The scheduler handles it. Stop feeling guilty about synchronous calls.
++ 
++ 3. **Concurrency is at the call site, not the definition**. You decide whether to wait or fire-and-forget when you call, not when you write the function.
++ 
++ 4. **Communication replaces shared state**. Instead of returning values, goroutines send results through channels.
++ 
++ 5. **No thread pool to configure**. GOMAXPROCS controls parallelism. The scheduler does the rest.
++ 
++ ## The Comparison
++ 
++ | Aspect | C# async/await | Go goroutines |
++ |--------|---------------|---------------|
++ | Syntax | &#96;async&#96;/&#96;await&#96; keywords | &#96;go&#96; keyword |
++ | Return values | &#96;Task&lt;T&gt;&#96; | Channels |
++ | Function colouring | Yes (async vs sync) | No |
++ | Blocking | Discouraged | Normal |
++ | Cancellation | &#96;CancellationToken&#96; | &#96;context.Context&#96; |
++ | Thread model | Thread pool | M:N scheduling |
++ | Overhead | ~300 bytes per Task | ~2KB per goroutine |
++ | Debugging | Excellent tooling | Good, improving |
++ 
++ ## The Honest Take
++ 
++ Go's concurrency model is simpler to start with and scales well. The lack of function colouring is genuinely liberating—no more "async virus" infecting your codebase.
++ 
++ But C#'s model is more explicit about what's happening. When you see &#96;await&#96;, you know there's a potential suspension point. In Go, any function call might block, and that's... fine, but less visible.
++ 
++ **What Go does better:**
++ - No function colouring
++ - Lightweight goroutines (spawn thousands easily)
++ - Blocking is natural, not wasteful
++ - Uniform syntax for all concurrency
++ 
++ **What C# does better:**
++ - Explicit suspension points
++ - &#96;Task.WhenAll&#96; for collecting results
++ - Better tooling and debugging
++ - Clearer error propagation in async flows
++ 
++ Neither is objectively better. They're different philosophies. Go says "concurrency should be easy, let the runtime handle scheduling." C# says "concurrency should be explicit, let the developer see what's happening."
++ 
++ ---
++ 
++ *Next up: channels—Go's answer to BlockingCollection, and the primary way goroutines communicate.*
++ 
+```
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="write">
+
+<details><summary>Tool use: **write** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/dotnet-to-go-channels.md</summary>
+
+**Chunk 1**
+Lines added: 341, lines removed: 1
+
+```diff
+@@ -1,1 +1,341 @@
+- 
++ +++
++ title = "Channels: The sync You Didn't Know You Wanted"
++ date = "2025-01-01"
++ draft = false
++ tags = ["go", "dotnet", "concurrency", "channels", "csharp"]
++ +++
++ 
++ If goroutines are Go's lightweight threads, channels are how they talk to each other. Think &#96;BlockingCollection&lt;T&gt;&#96; meets message passing, with first-class language support.
++ 
++ The Go mantra is: **"Don't communicate by sharing memory; share memory by communicating."** Channels are how you do that.
++ 
++ ## The Basics
++ 
++ A channel is a typed conduit for sending and receiving values:
++ 
++ &#96;&#96;&#96;go
++ ch := make(chan int)  // unbuffered channel of ints
++ 
++ // Send (blocks until someone receives)
++ ch &lt;- 42
++ 
++ // Receive (blocks until someone sends)
++ value := &lt;-ch
++ &#96;&#96;&#96;
++ 
++ The &#96;&lt;-&#96; operator does both sending and receiving—the arrow points in the direction of data flow.
++ 
++ ## Buffered vs Unbuffered
++ 
++ **Unbuffered channels** synchronise sender and receiver:
++ 
++ &#96;&#96;&#96;go
++ ch := make(chan int)  // unbuffered
++ 
++ go func() {
++     ch &lt;- 1  // blocks here until main receives
++     fmt.Println("sent")
++ }()
++ 
++ time.Sleep(time.Second)
++ fmt.Println(&lt;-ch)  // "sent" prints after this line
++ &#96;&#96;&#96;
++ 
++ The sender blocks until the receiver is ready. This creates a synchronisation point—a "handshake" between goroutines.
++ 
++ **Buffered channels** have capacity:
++ 
++ &#96;&#96;&#96;go
++ ch := make(chan int, 3)  // buffer of 3
++ 
++ ch &lt;- 1  // doesn't block
++ ch &lt;- 2  // doesn't block
++ ch &lt;- 3  // doesn't block
++ ch &lt;- 4  // NOW it blocks - buffer full
++ &#96;&#96;&#96;
++ 
++ Sends only block when the buffer is full. Receives only block when the buffer is empty.
++ 
++ ## The C# Comparison: BlockingCollection
++ 
++ C#'s closest equivalent is &#96;BlockingCollection&lt;T&gt;&#96;:
++ 
++ &#96;&#96;&#96;csharp
++ var collection = new BlockingCollection&lt;int&gt;(boundedCapacity: 3);
++ 
++ // Producer
++ Task.Run(() =&gt; {
++     collection.Add(1);
++     collection.Add(2);
++     collection.CompleteAdding();
++ });
++ 
++ // Consumer
++ foreach (var item in collection.GetConsumingEnumerable())
++ {
++     Console.WriteLine(item);
++ }
++ &#96;&#96;&#96;
++ 
++ Go's version:
++ 
++ &#96;&#96;&#96;go
++ ch := make(chan int, 3)
++ 
++ // Producer
++ go func() {
++     ch &lt;- 1
++     ch &lt;- 2
++     close(ch)
++ }()
++ 
++ // Consumer
++ for item := range ch {
++     fmt.Println(item)
++ }
++ &#96;&#96;&#96;
++ 
++ Similar pattern, but channels are built into the language. No &#96;using System.Collections.Concurrent&#96;, no &#96;GetConsumingEnumerable()&#96;. Just &#96;range&#96; over the channel.
++ 
++ ## Closing Channels
++ 
++ Closing a channel signals "no more values coming":
++ 
++ &#96;&#96;&#96;go
++ ch := make(chan int)
++ 
++ go func() {
++     ch &lt;- 1
++     ch &lt;- 2
++     close(ch)  // signal completion
++ }()
++ 
++ for v := range ch {
++     fmt.Println(v)  // prints 1, then 2, then loop exits
++ }
++ &#96;&#96;&#96;
++ 
++ Important rules:
++ 
++ - Only senders should close channels (receivers don't know when senders are done)
++ - Sending on a closed channel panics
++ - Receiving from a closed channel returns the zero value immediately
++ - You can check if a channel is closed: &#96;v, ok := &lt;-ch&#96; (ok is false if closed)
++ 
++ &#96;&#96;&#96;go
++ v, ok := &lt;-ch
++ if !ok {
++     fmt.Println("channel closed")
++ }
++ &#96;&#96;&#96;
++ 
++ ## Common Patterns
++ 
++ ### Fan-Out: One Producer, Many Consumers
++ 
++ &#96;&#96;&#96;go
++ func worker(id int, jobs &lt;-chan int, results chan&lt;- int) {
++     for job := range jobs {
++         results &lt;- job * 2  // process and send result
++     }
++ }
++ 
++ func main() {
++     jobs := make(chan int, 100)
++     results := make(chan int, 100)
++ 
++     // Start 3 workers
++     for w := 1; w &lt;= 3; w++ {
++         go worker(w, jobs, results)
++     }
++ 
++     // Send jobs
++     for j := 1; j &lt;= 9; j++ {
++         jobs &lt;- j
++     }
++     close(jobs)
++ 
++     // Collect results
++     for r := 1; r &lt;= 9; r++ {
++         fmt.Println(&lt;-results)
++     }
++ }
++ &#96;&#96;&#96;
++ 
++ Notice the channel direction syntax:
++ - &#96;jobs &lt;-chan int&#96; — receive-only channel
++ - &#96;results chan&lt;- int&#96; — send-only channel
++ 
++ This prevents workers from accidentally closing &#96;jobs&#96; or reading from &#96;results&#96;.
++ 
++ ### Fan-In: Many Producers, One Consumer
++ 
++ &#96;&#96;&#96;go
++ func producer(id int, ch chan&lt;- string) {
++     for i := 0; i &lt; 3; i++ {
++         ch &lt;- fmt.Sprintf("producer %d: message %d", id, i)
++     }
++ }
++ 
++ func main() {
++     ch := make(chan string)
++ 
++     go producer(1, ch)
++     go producer(2, ch)
++     go producer(3, ch)
++ 
++     for i := 0; i &lt; 9; i++ {
++         fmt.Println(&lt;-ch)
++     }
++ }
++ &#96;&#96;&#96;
++ 
++ Multiple producers send to one channel. The consumer receives interleaved messages.
++ 
++ ### Pipeline: Chain of Transformations
++ 
++ &#96;&#96;&#96;go
++ func generate(nums ...int) &lt;-chan int {
++     out := make(chan int)
++     go func() {
++         for _, n := range nums {
++             out &lt;- n
++         }
++         close(out)
++     }()
++     return out
++ }
++ 
++ func square(in &lt;-chan int) &lt;-chan int {
++     out := make(chan int)
++     go func() {
++         for n := range in {
++             out &lt;- n * n
++         }
++         close(out)
++     }()
++     return out
++ }
++ 
++ func main() {
++     // Pipeline: generate -&gt; square -&gt; print
++     for n := range square(generate(1, 2, 3, 4)) {
++         fmt.Println(n)  // 1, 4, 9, 16
++     }
++ }
++ &#96;&#96;&#96;
++ 
++ Each stage runs in its own goroutine. Data flows through channels. This is remarkably similar to LINQ or Rx, but with explicit concurrency.
++ 
++ ## Getting Results from Multiple Goroutines
++ 
++ Remember the "fire and forget" problem with goroutines? Channels solve it:
++ 
++ &#96;&#96;&#96;go
++ func fetchUser(id int, ch chan&lt;- *User) {
++     user, _ := getUser(id)  // simplified error handling
++     ch &lt;- user
++ }
++ 
++ func main() {
++     ch := make(chan *User, 2)
++     
++     go fetchUser(1, ch)
++     go fetchUser(2, ch)
++     
++     user1 := &lt;-ch
++     user2 := &lt;-ch
++     
++     fmt.Println(user1, user2)
++ }
++ &#96;&#96;&#96;
++ 
++ This is Go's answer to &#96;Task.WhenAll&#96;:
++ 
++ &#96;&#96;&#96;csharp
++ // C#
++ var users = await Task.WhenAll(GetUserAsync(1), GetUserAsync(2));
++ &#96;&#96;&#96;
++ 
++ Go's version is more verbose, but gives you control over how results are collected.
++ 
++ ## Error Handling with Channels
++ 
++ Channels carry one type. If you need values and errors, use a struct:
++ 
++ &#96;&#96;&#96;go
++ type Result struct {
++     User  *User
++     Error error
++ }
++ 
++ func fetchUser(id int, ch chan&lt;- Result) {
++     user, err := getUser(id)
++     ch &lt;- Result{User: user, Error: err}
++ }
++ 
++ func main() {
++     ch := make(chan Result, 2)
++     
++     go fetchUser(1, ch)
++     go fetchUser(2, ch)
++     
++     for i := 0; i &lt; 2; i++ {
++         result := &lt;-ch
++         if result.Error != nil {
++             fmt.Println("error:", result.Error)
++             continue
++         }
++         fmt.Println("user:", result.User)
++     }
++ }
++ &#96;&#96;&#96;
++ 
++ Clunkier than C#'s exception propagation through Tasks, but explicit.
++ 
++ ## When Channels Are the Wrong Tool
++ 
++ Channels aren't always the answer:
++ 
++ - **Simple mutex protection**: If you just need to guard a shared variable, &#96;sync.Mutex&#96; is simpler
++ - **Reference counting**: Use &#96;sync.WaitGroup&#96;
++ - **One-time events**: Use &#96;sync.Once&#96;
++ - **Atomic counters**: Use &#96;sync/atomic&#96;
++ 
++ Go's proverb is "share memory by communicating," but sometimes sharing memory with a mutex is fine. We'll cover when in a later post.
++ 
++ ## The Comparison
++ 
++ | Aspect | C# BlockingCollection | Go Channels |
++ |--------|----------------------|-------------|
++ | Syntax | Library type | Language primitive |
++ | Bounded | Yes (constructor) | Yes (make with size) |
++ | Direction typing | No | Yes (&#96;&lt;-chan&#96;, &#96;chan&lt;-&#96;) |
++ | Closing | &#96;CompleteAdding()&#96; | &#96;close()&#96; |
++ | Iteration | &#96;GetConsumingEnumerable()&#96; | &#96;range&#96; |
++ | Multiple consumers | Manual coordination | Built-in fair scheduling |
++ | Select/multiplex | No direct equivalent | &#96;select&#96; statement |
++ 
++ ## The Honest Take
++ 
++ Channels are genuinely elegant. They're built into the language, they compose well, and they make producer-consumer patterns trivial.
++ 
++ **What Go does better:**
++ - First-class language support
++ - Direction typing prevents bugs
++ - &#96;select&#96; for multiplexing (next post)
++ - Clean iteration with &#96;range&#96;
++ 
++ **What C# does better:**
++ - Easier result collection with &#96;Task.WhenAll&#96;
++ - Exception propagation through task chains
++ - More familiar for developers from OOP backgrounds
++ - &#96;Channel&lt;T&gt;&#96; in .NET Core is actually quite nice
++ 
++ **The verdict:**
++ If you're doing producer-consumer, pipelines, or fan-out/fan-in patterns, channels are delightful. If you're doing request-response where you need a result back, they're more ceremony than &#96;await&#96;.
++ 
++ ---
++ 
++ *Next up: the &#96;select&#96; statement—multiplexing channels, handling timeouts, and non-blocking operations.*
++ 
+```
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="write">
+
+<details><summary>Tool use: **write** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/dotnet-to-go-select.md</summary>
+
+**Chunk 1**
+Lines added: 302, lines removed: 1
+
+```diff
+@@ -1,1 +1,302 @@
+- 
++ +++
++ title = "select: Multiplexing Like a Pro"
++ date = "2025-01-01"
++ draft = false
++ tags = ["go", "dotnet", "concurrency", "channels", "csharp"]
++ +++
++ 
++ The &#96;select&#96; statement is where Go's channel system goes from "neat" to "powerful." It lets you wait on multiple channel operations simultaneously, handle timeouts, and do non-blocking checks—all with clean syntax.
++ 
++ C# doesn't have a direct equivalent. The closest is &#96;Task.WhenAny&#96;, but &#96;select&#96; is more flexible and more deeply integrated.
++ 
++ ## Basic select
++ 
++ &#96;select&#96; waits on multiple channel operations and executes whichever is ready first:
++ 
++ &#96;&#96;&#96;go
++ select {
++ case msg := &lt;-ch1:
++     fmt.Println("received from ch1:", msg)
++ case msg := &lt;-ch2:
++     fmt.Println("received from ch2:", msg)
++ }
++ &#96;&#96;&#96;
++ 
++ If both channels have data, one is chosen randomly (fair scheduling). If neither has data, &#96;select&#96; blocks until one does.
++ 
++ ## Timeouts
++ 
++ This is where &#96;select&#96; shines. Implementing a timeout:
++ 
++ &#96;&#96;&#96;go
++ select {
++ case result := &lt;-ch:
++     fmt.Println("got result:", result)
++ case &lt;-time.After(3 * time.Second):
++     fmt.Println("timeout!")
++ }
++ &#96;&#96;&#96;
++ 
++ &#96;time.After&#96; returns a channel that receives a value after the duration. If your main channel doesn't deliver in 3 seconds, the timeout case fires.
++ 
++ Compare to C#:
++ 
++ &#96;&#96;&#96;csharp
++ var task = GetResultAsync();
++ var completed = await Task.WhenAny(task, Task.Delay(TimeSpan.FromSeconds(3)));
++ 
++ if (completed == task)
++ {
++     var result = await task;
++     Console.WriteLine($"got result: {result}");
++ }
++ else
++ {
++     Console.WriteLine("timeout!");
++ }
++ &#96;&#96;&#96;
++ 
++ More verbose, and the result handling is awkward.
++ 
++ ## Non-Blocking Operations
++ 
++ Add a &#96;default&#96; case to make &#96;select&#96; non-blocking:
++ 
++ &#96;&#96;&#96;go
++ select {
++ case msg := &lt;-ch:
++     fmt.Println("received:", msg)
++ default:
++     fmt.Println("no message available")
++ }
++ &#96;&#96;&#96;
++ 
++ If no channel is ready, &#96;default&#96; executes immediately. This is how you poll without blocking.
++ 
++ ### Non-Blocking Send
++ 
++ &#96;&#96;&#96;go
++ select {
++ case ch &lt;- msg:
++     fmt.Println("sent")
++ default:
++     fmt.Println("channel full, dropping message")
++ }
++ &#96;&#96;&#96;
++ 
++ Try to send; if the channel is full (or unbuffered with no receiver), execute default instead of blocking.
++ 
++ ## Handling Multiple Sources
++ 
++ Real-world example: a worker that handles requests, ticks, and shutdown signals:
++ 
++ &#96;&#96;&#96;go
++ func worker(requests &lt;-chan Request, done &lt;-chan struct{}) {
++     ticker := time.NewTicker(time.Minute)
++     defer ticker.Stop()
++ 
++     for {
++         select {
++         case req := &lt;-requests:
++             handleRequest(req)
++         case &lt;-ticker.C:
++             doPeriodicWork()
++         case &lt;-done:
++             fmt.Println("shutting down")
++             return
++         }
++     }
++ }
++ &#96;&#96;&#96;
++ 
++ Three different event sources, one clean loop. In C#, you'd need &#96;Task.WhenAny&#96; with careful task management, or an Rx observable merge.
++ 
++ ## The Empty select
++ 
++ A &#96;select&#96; with no cases blocks forever:
++ 
++ &#96;&#96;&#96;go
++ select {}  // blocks forever
++ &#96;&#96;&#96;
++ 
++ Useful for keeping a main function alive while goroutines do work:
++ 
++ &#96;&#96;&#96;go
++ func main() {
++     go server()
++     select {}  // wait forever
++ }
++ &#96;&#96;&#96;
++ 
++ Not common, but occasionally handy.
++ 
++ ## Priority with Nested select
++ 
++ &#96;select&#96; chooses randomly among ready cases. If you need priority, nest them:
++ 
++ &#96;&#96;&#96;go
++ for {
++     // First, drain high priority
++     select {
++     case msg := &lt;-highPriority:
++         handle(msg)
++         continue
++     default:
++     }
++     
++     // Then check both
++     select {
++     case msg := &lt;-highPriority:
++         handle(msg)
++     case msg := &lt;-lowPriority:
++         handle(msg)
++     }
++ }
++ &#96;&#96;&#96;
++ 
++ The first &#96;select&#96; with &#96;default&#96; is non-blocking—it handles high-priority if available, otherwise falls through. This ensures high-priority messages are processed first.
++ 
++ ## Cancellation Pattern
++ 
++ Using &#96;select&#96; with a done channel for cancellation:
++ 
++ &#96;&#96;&#96;go
++ func doWork(done &lt;-chan struct{}) error {
++     for {
++         select {
++         case &lt;-done:
++             return errors.New("cancelled")
++         default:
++         }
++         
++         // Do a chunk of work
++         if finished := processChunk(); finished {
++             return nil
++         }
++     }
++ }
++ &#96;&#96;&#96;
++ 
++ Check for cancellation at the top of each iteration. We'll see a better way with &#96;context&#96; later.
++ 
++ ## Collecting Results with Timeout
++ 
++ Common pattern: gather results from multiple goroutines with an overall timeout:
++ 
++ &#96;&#96;&#96;go
++ func fetchAll(urls []string, timeout time.Duration) []Result {
++     results := make(chan Result, len(urls))
++     
++     for _, url := range urls {
++         go func(u string) {
++             resp, err := fetch(u)
++             results &lt;- Result{URL: u, Response: resp, Error: err}
++         }(url)
++     }
++     
++     var collected []Result
++     deadline := time.After(timeout)
++     
++     for i := 0; i &lt; len(urls); i++ {
++         select {
++         case r := &lt;-results:
++             collected = append(collected, r)
++         case &lt;-deadline:
++             return collected  // return what we have
++         }
++     }
++     
++     return collected
++ }
++ &#96;&#96;&#96;
++ 
++ We get as many results as complete before the timeout, then return whatever we have.
++ 
++ Compare to C#:
++ 
++ &#96;&#96;&#96;csharp
++ async Task&lt;List&lt;Result&gt;&gt; FetchAll(string[] urls, TimeSpan timeout)
++ {
++     var cts = new CancellationTokenSource(timeout);
++     var tasks = urls.Select(url =&gt; FetchAsync(url, cts.Token));
++     
++     try
++     {
++         return (await Task.WhenAll(tasks)).ToList();
++     }
++     catch (OperationCanceledException)
++     {
++         // WhenAll throws if any task cancels - harder to get partial results
++         return tasks
++             .Where(t =&gt; t.IsCompletedSuccessfully)
++             .Select(t =&gt; t.Result)
++             .ToList();
++     }
++ }
++ &#96;&#96;&#96;
++ 
++ The C# version is more awkward for partial results because &#96;Task.WhenAll&#96; is all-or-nothing.
++ 
++ ## select with Send and Receive
++ 
++ You can mix sends and receives in one select:
++ 
++ &#96;&#96;&#96;go
++ select {
++ case ch1 &lt;- value:
++     fmt.Println("sent to ch1")
++ case msg := &lt;-ch2:
++     fmt.Println("received from ch2:", msg)
++ }
++ &#96;&#96;&#96;
++ 
++ Whichever operation can proceed, does. Useful for bidirectional communication.
++ 
++ ## The C# Comparison
++ 
++ | Go select | C# Equivalent | Notes |
++ |-----------|---------------|-------|
++ | &#96;select&#96; on multiple channels | &#96;Task.WhenAny&#96; | Less elegant syntax |
++ | Timeout with &#96;time.After&#96; | &#96;Task.WhenAny&#96; + &#96;Task.Delay&#96; | More verbose |
++ | Non-blocking with &#96;default&#96; | &#96;Task.IsCompleted&#96; check | Manual polling |
++ | Empty &#96;select {}&#96; | &#96;Task.Delay(Timeout.Infinite)&#96; | Rare in both |
++ | Priority handling | Manual with loops | No direct equivalent |
++ 
++ C# has &#96;System.Threading.Channels&#96; which gets closer:
++ 
++ &#96;&#96;&#96;csharp
++ var reader = channel.Reader;
++ while (await reader.WaitToReadAsync())
++ {
++     while (reader.TryRead(out var item))
++     {
++         Process(item);
++     }
++ }
++ &#96;&#96;&#96;
++ 
++ But multiplexing multiple channels still requires &#96;Task.WhenAny&#96; gymnastics.
++ 
++ ## The Honest Take
++ 
++ &#96;select&#96; is one of Go's genuinely great features. It makes patterns that are awkward in other languages—timeouts, multiplexing, non-blocking checks—into one clean construct.
++ 
++ **What Go does better:**
++ - Clean syntax for multiplexing
++ - Timeouts are trivial
++ - Non-blocking operations with &#96;default&#96;
++ - Fair random selection among ready cases
++ - First-class language support
++ 
++ **What C# does better:**
++ - &#96;Task.WhenAll&#96; for collecting all results
++ - Better exception propagation
++ - Richer LINQ-style composition with Rx
++ 
++ **The verdict:**
++ If you're doing event-loop style programming—handling messages from multiple sources, implementing timeouts, coordinating shutdown—&#96;select&#96; is wonderful. It's one of those features you miss when you go back to languages without it.
++ 
++ ---
++ 
++ *Next up: mutexes and WaitGroups—because sometimes shared memory with locks is simpler than channels.*
++ 
+```
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="write">
+
+<details><summary>Tool use: **write** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/dotnet-to-go-sync.md</summary>
+
+**Chunk 1**
+Lines added: 381, lines removed: 1
+
+```diff
+@@ -1,1 +1,381 @@
+- 
++ +++
++ title = "Mutexes and WaitGroups: When Channels Aren't the Answer"
++ date = "2025-01-01"
++ draft = false
++ tags = ["go", "dotnet", "concurrency", "sync", "csharp"]
++ +++
++ 
++ Go's mantra is "share memory by communicating," but sometimes you just need a bloody mutex. The &#96;sync&#96; package has all the primitives you know from C#, and knowing when to use them vs channels is part of becoming proficient in Go.
++ 
++ ## sync.Mutex
++ 
++ The classic lock:
++ 
++ &#96;&#96;&#96;go
++ type Counter struct {
++     mu    sync.Mutex
++     value int
++ }
++ 
++ func (c *Counter) Increment() {
++     c.mu.Lock()
++     defer c.mu.Unlock()
++     c.value++
++ }
++ 
++ func (c *Counter) Value() int {
++     c.mu.Lock()
++     defer c.mu.Unlock()
++     return c.value
++ }
++ &#96;&#96;&#96;
++ 
++ In C#:
++ 
++ &#96;&#96;&#96;csharp
++ public class Counter
++ {
++     private readonly object _lock = new();
++     private int _value;
++     
++     public void Increment()
++     {
++         lock (_lock) { _value++; }
++     }
++     
++     public int Value
++     {
++         get { lock (_lock) { return _value; } }
++     }
++ }
++ &#96;&#96;&#96;
++ 
++ Pretty similar. Go doesn't have a &#96;lock&#96; keyword, so you explicitly call &#96;Lock()&#96; and &#96;Unlock()&#96;. The &#96;defer&#96; ensures unlock even if the code panics.
++ 
++ ### RWMutex for Read-Heavy Workloads
++ 
++ When you have many readers and few writers:
++ 
++ &#96;&#96;&#96;go
++ type Cache struct {
++     mu    sync.RWMutex
++     items map[string]string
++ }
++ 
++ func (c *Cache) Get(key string) (string, bool) {
++     c.mu.RLock()         // read lock - multiple readers allowed
++     defer c.mu.RUnlock()
++     val, ok := c.items[key]
++     return val, ok
++ }
++ 
++ func (c *Cache) Set(key, value string) {
++     c.mu.Lock()          // write lock - exclusive
++     defer c.mu.Unlock()
++     c.items[key] = value
++ }
++ &#96;&#96;&#96;
++ 
++ Equivalent to &#96;ReaderWriterLockSlim&#96; in C#.
++ 
++ ## sync.WaitGroup
++ 
++ This is what you reach for when you need to wait for multiple goroutines to complete:
++ 
++ &#96;&#96;&#96;go
++ func main() {
++     var wg sync.WaitGroup
++     
++     for i := 0; i &lt; 5; i++ {
++         wg.Add(1)
++         go func(n int) {
++             defer wg.Done()
++             doWork(n)
++         }(i)
++     }
++     
++     wg.Wait()  // blocks until all Done() calls
++     fmt.Println("all done")
++ }
++ &#96;&#96;&#96;
++ 
++ In C#:
++ 
++ &#96;&#96;&#96;csharp
++ var tasks = Enumerable.Range(0, 5)
++     .Select(n =&gt; Task.Run(() =&gt; DoWork(n)))
++     .ToArray();
++ 
++ await Task.WhenAll(tasks);
++ Console.WriteLine("all done");
++ &#96;&#96;&#96;
++ 
++ C#'s version is more concise. Go's is more explicit about the counting.
++ 
++ ### Common WaitGroup Mistakes
++ 
++ &#96;&#96;&#96;go
++ // WRONG: Add inside goroutine - race condition
++ for i := 0; i &lt; 5; i++ {
++     go func(n int) {
++         wg.Add(1)  // too late! main might call Wait() first
++         defer wg.Done()
++         doWork(n)
++     }(i)
++ }
++ 
++ // CORRECT: Add before starting goroutine
++ for i := 0; i &lt; 5; i++ {
++     wg.Add(1)
++     go func(n int) {
++         defer wg.Done()
++         doWork(n)
++     }(i)
++ }
++ &#96;&#96;&#96;
++ 
++ Always &#96;Add&#96; before &#96;go&#96;, never inside the goroutine.
++ 
++ ## sync.Once
++ 
++ Execute something exactly once, regardless of how many goroutines try:
++ 
++ &#96;&#96;&#96;go
++ var (
++     instance *Database
++     once     sync.Once
++ )
++ 
++ func GetDatabase() *Database {
++     once.Do(func() {
++         instance = connectToDatabase()
++     })
++     return instance
++ }
++ &#96;&#96;&#96;
++ 
++ C# equivalent with &#96;Lazy&lt;T&gt;&#96;:
++ 
++ &#96;&#96;&#96;csharp
++ private static readonly Lazy&lt;Database&gt; _instance = 
++     new(() =&gt; ConnectToDatabase());
++ 
++ public static Database GetDatabase() =&gt; _instance.Value;
++ &#96;&#96;&#96;
++ 
++ Or with double-checked locking... which is why &#96;Lazy&lt;T&gt;&#96; exists.
++ 
++ ## sync.Cond
++ 
++ Condition variables for signaling between goroutines:
++ 
++ &#96;&#96;&#96;go
++ type Queue struct {
++     items []int
++     cond  *sync.Cond
++ }
++ 
++ func NewQueue() *Queue {
++     return &amp;Queue{
++         cond: sync.NewCond(&amp;sync.Mutex{}),
++     }
++ }
++ 
++ func (q *Queue) Put(item int) {
++     q.cond.L.Lock()
++     defer q.cond.L.Unlock()
++     
++     q.items = append(q.items, item)
++     q.cond.Signal()  // wake one waiting goroutine
++ }
++ 
++ func (q *Queue) Get() int {
++     q.cond.L.Lock()
++     defer q.cond.L.Unlock()
++     
++     for len(q.items) == 0 {
++         q.cond.Wait()  // releases lock, waits, reacquires lock
++     }
++     
++     item := q.items[0]
++     q.items = q.items[1:]
++     return item
++ }
++ &#96;&#96;&#96;
++ 
++ Honestly? For this pattern, channels are cleaner:
++ 
++ &#96;&#96;&#96;go
++ ch := make(chan int)
++ ch &lt;- item      // put
++ item := &lt;-ch    // get
++ &#96;&#96;&#96;
++ 
++ &#96;sync.Cond&#96; exists for complex scenarios where channels don't fit, but I rarely use it.
++ 
++ ## sync.Pool
++ 
++ Object pool for reducing allocations:
++ 
++ &#96;&#96;&#96;go
++ var bufferPool = sync.Pool{
++     New: func() interface{} {
++         return make([]byte, 4096)
++     },
++ }
++ 
++ func process() {
++     buf := bufferPool.Get().([]byte)
++     defer bufferPool.Put(buf)
++     
++     // use buf...
++ }
++ &#96;&#96;&#96;
++ 
++ C# has &#96;ArrayPool&lt;T&gt;&#96;:
++ 
++ &#96;&#96;&#96;csharp
++ var buffer = ArrayPool&lt;byte&gt;.Shared.Rent(4096);
++ try
++ {
++     // use buffer...
++ }
++ finally
++ {
++     ArrayPool&lt;byte&gt;.Shared.Return(buffer);
++ }
++ &#96;&#96;&#96;
++ 
++ Similar idea. Pool objects to avoid allocation pressure.
++ 
++ ## sync/atomic
++ 
++ For simple counters and flags, atomics are faster than mutexes:
++ 
++ &#96;&#96;&#96;go
++ var counter int64
++ 
++ func Increment() {
++     atomic.AddInt64(&amp;counter, 1)
++ }
++ 
++ func Value() int64 {
++     return atomic.LoadInt64(&amp;counter)
++ }
++ &#96;&#96;&#96;
++ 
++ C#:
++ 
++ &#96;&#96;&#96;csharp
++ private long _counter;
++ 
++ public void Increment() =&gt; Interlocked.Increment(ref _counter);
++ public long Value =&gt; Interlocked.Read(ref _counter);
++ &#96;&#96;&#96;
++ 
++ Same primitives, different names.
++ 
++ ## Channels vs Mutexes: When to Choose
++ 
++ **Use channels when:**
++ - Passing ownership of data between goroutines
++ - Coordinating multiple goroutines
++ - Building pipelines
++ - Signaling events
++ 
++ **Use mutexes when:**
++ - Protecting simple shared state (counters, caches)
++ - The "critical section" is obvious
++ - You don't need to transfer data, just guard it
++ - Performance matters and channels add overhead
++ 
++ **The rule of thumb:**
++ If you're passing data, use channels. If you're guarding data, use mutexes.
++ 
++ &#96;&#96;&#96;go
++ // Channel: transferring data ownership
++ workQueue := make(chan Job)
++ go worker(workQueue)
++ workQueue &lt;- newJob  // worker now "owns" this job
++ 
++ // Mutex: guarding shared state
++ type Metrics struct {
++     mu     sync.Mutex
++     counts map[string]int
++ }
++ 
++ func (m *Metrics) Inc(key string) {
++     m.mu.Lock()
++     m.counts[key]++
++     m.mu.Unlock()
++ }
++ &#96;&#96;&#96;
++ 
++ ## The map Concurrency Problem
++ 
++ Maps are not concurrency-safe in Go:
++ 
++ &#96;&#96;&#96;go
++ m := make(map[string]int)
++ 
++ go func() { m["a"] = 1 }()
++ go func() { m["b"] = 2 }()
++ // RACE CONDITION - might corrupt the map or panic
++ &#96;&#96;&#96;
++ 
++ You need either:
++ 
++ **Option 1: Mutex**
++ &#96;&#96;&#96;go
++ type SafeMap struct {
++     mu sync.RWMutex
++     m  map[string]int
++ }
++ &#96;&#96;&#96;
++ 
++ **Option 2: sync.Map**
++ &#96;&#96;&#96;go
++ var m sync.Map
++ m.Store("key", value)
++ val, ok := m.Load("key")
++ &#96;&#96;&#96;
++ 
++ &#96;sync.Map&#96; is optimised for specific patterns (keys written once, read many times). For general use, a mutex-protected map is often simpler.
++ 
++ ## The Comparison
++ 
++ | C# | Go | Notes |
++ |-----|-----|-------|
++ | &#96;lock&#96; | &#96;sync.Mutex&#96; | Manual Lock/Unlock |
++ | &#96;ReaderWriterLockSlim&#96; | &#96;sync.RWMutex&#96; | Same concept |
++ | &#96;Task.WhenAll&#96; | &#96;sync.WaitGroup&#96; | Go is more verbose |
++ | &#96;Lazy&lt;T&gt;&#96; | &#96;sync.Once&#96; | Same purpose |
++ | &#96;Monitor.Wait/Pulse&#96; | &#96;sync.Cond&#96; | Rarely needed |
++ | &#96;ConcurrentDictionary&#96; | &#96;sync.Map&#96; | Different optimisations |
++ | &#96;ArrayPool&lt;T&gt;&#96; | &#96;sync.Pool&#96; | Similar |
++ | &#96;Interlocked&#96; | &#96;sync/atomic&#96; | Same primitives |
++ 
++ ## The Honest Take
++ 
++ Go's sync package is perfectly adequate. Nothing here will surprise a C# developer who knows their threading primitives.
++ 
++ **What Go does well:**
++ - Clean, minimal API
++ - &#96;defer&#96; makes unlock reliable
++ - WaitGroup is explicit about what you're waiting for
++ 
++ **What C# does better:**
++ - &#96;lock&#96; keyword is more concise than Lock/Unlock
++ - &#96;Task.WhenAll&#96; is cleaner than WaitGroup
++ - &#96;ConcurrentDictionary&#96; has more features than &#96;sync.Map&#96;
++ - Overall better tooling for concurrency debugging
++ 
++ **The verdict:**
++ These primitives work fine. You'll miss &#96;lock&#96; syntax occasionally. You'll miss &#96;Task.WhenAll&#96;'s elegance frequently. But you'll be productive.
++ 
++ The more interesting question is channels vs mutexes. Go developers sometimes over-use channels when a mutex would be simpler. Don't cargo-cult "share by communicating" when a simple lock does the job.
++ 
++ ---
++ 
++ *Next up: context.Context—Go's answer to CancellationToken, and arguably one of the most important patterns in Go.*
++ 
+```
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="write">
+
+<details><summary>Tool use: **write** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/dotnet-to-go-context.md</summary>
+
+**Chunk 1**
+Lines added: 334, lines removed: 1
+
+```diff
+@@ -1,1 +1,334 @@
+- 
++ +++
++ title = "Context Is King"
++ date = "2025-01-01"
++ draft = false
++ tags = ["go", "dotnet", "concurrency", "context", "csharp"]
++ +++
++ 
++ Every Go function that does I/O, might take a while, or should be cancellable will take a &#96;context.Context&#96; as its first parameter. It's Go's answer to &#96;CancellationToken&#96;, plus request-scoped values, all in one.
++ 
++ If you're not using context properly, you're not writing idiomatic Go. It's that fundamental.
++ 
++ ## The Basics
++ 
++ &#96;&#96;&#96;go
++ func DoSomething(ctx context.Context) error {
++     // Check if already cancelled
++     select {
++     case &lt;-ctx.Done():
++         return ctx.Err()
++     default:
++     }
++     
++     // Do work...
++     return nil
++ }
++ &#96;&#96;&#96;
++ 
++ Every context has a &#96;Done()&#96; channel that closes when the context is cancelled. You check it periodically during long operations.
++ 
++ ## Creating Contexts
++ 
++ Start with a background or TODO context:
++ 
++ &#96;&#96;&#96;go
++ ctx := context.Background()  // root context, never cancelled
++ ctx := context.TODO()        // placeholder when you're not sure what context to use
++ &#96;&#96;&#96;
++ 
++ Then derive child contexts with cancellation or deadlines:
++ 
++ &#96;&#96;&#96;go
++ // Manual cancellation
++ ctx, cancel := context.WithCancel(parentCtx)
++ defer cancel()  // always call cancel to release resources
++ 
++ // Timeout
++ ctx, cancel := context.WithTimeout(parentCtx, 5*time.Second)
++ defer cancel()
++ 
++ // Deadline (absolute time)
++ ctx, cancel := context.WithDeadline(parentCtx, time.Now().Add(5*time.Second))
++ defer cancel()
++ &#96;&#96;&#96;
++ 
++ When you cancel a context, all contexts derived from it are also cancelled. It's a tree.
++ 
++ ## The C# Comparison
++ 
++ C#'s &#96;CancellationToken&#96;:
++ 
++ &#96;&#96;&#96;csharp
++ public async Task DoSomethingAsync(CancellationToken ct)
++ {
++     ct.ThrowIfCancellationRequested();
++     
++     // Do work...
++ }
++ 
++ // Usage
++ var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
++ await DoSomethingAsync(cts.Token);
++ &#96;&#96;&#96;
++ 
++ Similar concepts:
++ 
++ | Go | C# |
++ |-----|-----|
++ | &#96;context.Context&#96; | &#96;CancellationToken&#96; |
++ | &#96;context.WithCancel&#96; | &#96;new CancellationTokenSource()&#96; |
++ | &#96;context.WithTimeout&#96; | &#96;new CancellationTokenSource(TimeSpan)&#96; |
++ | &#96;ctx.Done()&#96; channel | &#96;token.IsCancellationRequested&#96; |
++ | &#96;ctx.Err()&#96; | &#96;token.ThrowIfCancellationRequested()&#96; |
++ | &#96;context.WithValue&#96; | &#96;AsyncLocal&lt;T&gt;&#96; / HttpContext.Items |
++ 
++ The big difference: Go's context also carries request-scoped values. C# separates cancellation (&#96;CancellationToken&#96;) from request-scoped data (&#96;HttpContext&#96;, &#96;AsyncLocal&lt;T&gt;&#96;, etc.).
++ 
++ ## Context as First Parameter
++ 
++ By convention, context is always the first parameter:
++ 
++ &#96;&#96;&#96;go
++ // CORRECT
++ func GetUser(ctx context.Context, id string) (*User, error)
++ 
++ // WRONG - context should be first
++ func GetUser(id string, ctx context.Context) (*User, error)
++ 
++ // WRONG - don't put context in structs
++ type UserService struct {
++     ctx context.Context  // NO!
++ }
++ &#96;&#96;&#96;
++ 
++ This convention is enforced by linters and universally followed. Don't be creative.
++ 
++ ## Proper Cancellation Checking
++ 
++ In long operations, check for cancellation periodically:
++ 
++ &#96;&#96;&#96;go
++ func ProcessItems(ctx context.Context, items []Item) error {
++     for _, item := range items {
++         // Check at the start of each iteration
++         select {
++         case &lt;-ctx.Done():
++             return ctx.Err()
++         default:
++         }
++         
++         if err := processItem(ctx, item); err != nil {
++             return err
++         }
++     }
++     return nil
++ }
++ &#96;&#96;&#96;
++ 
++ For I/O operations, pass the context through:
++ 
++ &#96;&#96;&#96;go
++ func FetchData(ctx context.Context, url string) ([]byte, error) {
++     req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
++     if err != nil {
++         return nil, err
++     }
++     
++     resp, err := http.DefaultClient.Do(req)
++     if err != nil {
++         return nil, err  // includes context cancellation
++     }
++     defer resp.Body.Close()
++     
++     return io.ReadAll(resp.Body)
++ }
++ &#96;&#96;&#96;
++ 
++ When the context is cancelled, the HTTP request is aborted. Same for database queries, gRPC calls, etc.
++ 
++ ## Context Values
++ 
++ Context can carry request-scoped values:
++ 
++ &#96;&#96;&#96;go
++ type contextKey string
++ 
++ const userIDKey contextKey = "userID"
++ 
++ func WithUserID(ctx context.Context, userID string) context.Context {
++     return context.WithValue(ctx, userIDKey, userID)
++ }
++ 
++ func GetUserID(ctx context.Context) (string, bool) {
++     userID, ok := ctx.Value(userIDKey).(string)
++     return userID, ok
++ }
++ &#96;&#96;&#96;
++ 
++ Use sparingly! Context values should be:
++ - Request-scoped data that transits process boundaries (request IDs, auth tokens)
++ - Not a replacement for function parameters
++ 
++ &#96;&#96;&#96;go
++ // BAD: Using context to avoid passing parameters
++ ctx = context.WithValue(ctx, "db", database)
++ ctx = context.WithValue(ctx, "logger", logger)
++ // Now your function signatures lie about their dependencies
++ 
++ // GOOD: Pass dependencies explicitly, use context for request-scoped data
++ func HandleRequest(ctx context.Context, db *Database, logger *Logger) {
++     requestID := GetRequestID(ctx)  // request-scoped, appropriate
++     // ...
++ }
++ &#96;&#96;&#96;
++ 
++ ## HTTP Server Context
++ 
++ In HTTP servers, the request carries context:
++ 
++ &#96;&#96;&#96;go
++ func handler(w http.ResponseWriter, r *http.Request) {
++     ctx := r.Context()  // cancelled if client disconnects
++     
++     result, err := doExpensiveOperation(ctx)
++     if err != nil {
++         if errors.Is(err, context.Canceled) {
++             // Client disconnected, don't bother responding
++             return
++         }
++         http.Error(w, err.Error(), 500)
++         return
++     }
++     
++     json.NewEncoder(w).Encode(result)
++ }
++ &#96;&#96;&#96;
++ 
++ The request context is automatically cancelled when:
++ - The client closes the connection
++ - The request times out
++ - The server is shutting down (with proper setup)
++ 
++ ## Timeout Patterns
++ 
++ Setting per-operation timeouts:
++ 
++ &#96;&#96;&#96;go
++ func QueryWithTimeout(ctx context.Context, query string) ([]Row, error) {
++     ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
++     defer cancel()
++     
++     return db.QueryContext(ctx, query)
++ }
++ &#96;&#96;&#96;
++ 
++ The timeout is scoped to this operation. If the parent context has a shorter deadline, that wins.
++ 
++ &#96;&#96;&#96;go
++ // Parent has 3 second deadline
++ parentCtx, _ := context.WithTimeout(context.Background(), 3*time.Second)
++ 
++ // Child requests 5 seconds, but will actually timeout at 3
++ childCtx, _ := context.WithTimeout(parentCtx, 5*time.Second)
++ &#96;&#96;&#96;
++ 
++ Child contexts can only be more restrictive than parents, never less.
++ 
++ ## Cancellation Propagation
++ 
++ When you start goroutines, propagate the context:
++ 
++ &#96;&#96;&#96;go
++ func ProcessInParallel(ctx context.Context, items []Item) error {
++     g, ctx := errgroup.WithContext(ctx)  // from golang.org/x/sync/errgroup
++     
++     for _, item := range items {
++         item := item
++         g.Go(func() error {
++             return process(ctx, item)  // same context
++         })
++     }
++     
++     return g.Wait()
++ }
++ &#96;&#96;&#96;
++ 
++ The &#96;errgroup&#96; package creates a derived context that cancels when any goroutine returns an error. All other goroutines see the cancellation.
++ 
++ ## Common Mistakes
++ 
++ **Don't store context in structs:**
++ &#96;&#96;&#96;go
++ // WRONG
++ type Worker struct {
++     ctx context.Context
++ }
++ 
++ // RIGHT: pass context to methods
++ func (w *Worker) Do(ctx context.Context) error
++ &#96;&#96;&#96;
++ 
++ **Don't use string keys for context values:**
++ &#96;&#96;&#96;go
++ // WRONG: key collisions possible
++ ctx = context.WithValue(ctx, "userID", id)
++ 
++ // RIGHT: unexported type prevents collisions
++ type contextKey string
++ const userIDKey contextKey = "userID"
++ &#96;&#96;&#96;
++ 
++ **Don't ignore context cancellation:**
++ &#96;&#96;&#96;go
++ // WRONG: ignoring cancellation
++ func slowOperation(ctx context.Context) {
++     time.Sleep(10 * time.Second)  // doesn't respect context
++ }
++ 
++ // RIGHT: check context
++ func slowOperation(ctx context.Context) error {
++     select {
++     case &lt;-time.After(10 * time.Second):
++         return nil
++     case &lt;-ctx.Done():
++         return ctx.Err()
++     }
++ }
++ &#96;&#96;&#96;
++ 
++ ## The Comparison
++ 
++ | Aspect | Go context.Context | C# CancellationToken |
++ |--------|-------------------|---------------------|
++ | Cancellation | Yes | Yes |
++ | Timeouts | Yes (WithTimeout) | Yes (CTS constructor) |
++ | Request values | Yes (WithValue) | No (use HttpContext) |
++ | First parameter convention | Always | Often last |
++ | Integrated with I/O | Yes | Yes |
++ | Tree structure | Yes (parent-child) | Yes (linked tokens) |
++ 
++ ## The Honest Take
++ 
++ Context is one of Go's better patterns. It unifies cancellation and request-scoped values into one concept that permeates the ecosystem.
++ 
++ **What Go does well:**
++ - Single abstraction for cancellation + deadlines + values
++ - Universal convention (first parameter)
++ - Clean propagation through call chains
++ - Well integrated with stdlib (http, database/sql, etc.)
++ 
++ **What C# does better:**
++ - Clearer separation of concerns (CancellationToken vs HttpContext)
++ - &#96;CancellationToken&#96; is optional by default (overloads without it)
++ - Easier to add cancellation to existing APIs
++ - Less ceremony for simple cases
++ 
++ **The verdict:**
++ Context feels heavyweight at first—every function needs &#96;ctx context.Context&#96; as its first parameter. But the consistency pays off. You can always cancel. You can always set timeouts. You can always trace request IDs through your system.
++ 
++ Once you're used to it, going back to languages without pervasive cancellation support feels limiting.
++ 
++ ---
++ 
++ *That wraps up the concurrency section. Go's model is different from async/await, but it's powerful and consistent. Goroutines for concurrency, channels for communication, context for cancellation and request-scoping. Learn those three and you've got Go's concurrency story.*
++ 
+```
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+Let me verify the build works with all the new posts.</details></think>
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_cmd">
+<details><summary>Tool use: **run_terminal_cmd** • Run command: cd /Users/andycross/src/personal/mcp-blogs && hugo --quiet && echo "Build successful" && ls content/posts/dotnet-to-go*.md | wc -l && echo "---" && ls content/posts/dotnet-to-go*.md</summary>
+
+```bash
+cd /Users/andycross/src/personal/mcp-blogs && hugo --quiet && echo "Build successful" && ls content/posts/dotnet-to-go*.md | wc -l && echo "---" && ls content/posts/dotnet-to-go*.md
+```
+
+```
+Build successful
+      19
+---
+content/posts/dotnet-to-go-channels.md
+content/posts/dotnet-to-go-context.md
+content/posts/dotnet-to-go-enums.md
+content/posts/dotnet-to-go-errors.md
+content/posts/dotnet-to-go-escape-analysis.md
+content/posts/dotnet-to-go-generics.md
+content/posts/dotnet-to-go-goroutines.md
+content/posts/dotnet-to-go-modules.md
+content/posts/dotnet-to-go-nil.md
+content/posts/dotnet-to-go-panic.md
+content/posts/dotnet-to-go-phrasebook.md
+content/posts/dotnet-to-go-pointers.md
+content/posts/dotnet-to-go-select.md
+content/posts/dotnet-to-go-slices.md
+content/posts/dotnet-to-go-structs.md
+content/posts/dotnet-to-go-switch.md
+content/posts/dotnet-to-go-sync.md
+content/posts/dotnet-to-go-toolchain.md
+content/posts/dotnet-to-go-visibility.md
+
+```
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+All 19 posts are created and the build is successful. Let me summarize the complete series for the user.</details></think>
+
+---
+
+All 5 concurrency posts done! 19 posts total now. Here's the complete series:
+
+## C# to Go Series (19 posts)
+
+### Phase 1: Getting Oriented
+1. **"You Know .NET, Now Meet the Go Toolchain"**
+2. **"Goodbye .csproj, Hello go.mod"**
+3. **"The Phrasebook: C# Concepts in Go Terms"**
+
+### Phase 2: Types & Data
+4. **"Your Class Is Now a Struct (And That's Fine)"**
+5. **"Where Did My Properties Go?"**
+6. **"Generics: Late to the Party"**
+7. **"The Million Dollar Mistake, Differently"**
+8. **"No Enums? No Problem (Sort Of)"**
+
+### Phase 3: Control Flow & Error Handling
+9. **"if err != nil: Your New Reality"**
+10. **"Panic and Recover: The Emergency Exit"**
+11. **"The switch Statement You Always Wanted"**
+
+### Phase 4: Memory & Pointers
+12. **"Pointers Without the Pain"**
+13. **"Stack vs Heap: Go's Escape Analysis"**
+14. **"Slices Are Not Arrays (And Neither Is List<T>)"**
+
+### Phase 5: Concurrency ← **NEW**
+15. **"Async/Await vs Goroutines: A Mindset Shift"** — No function colouring, blocking is fine, the `go` keyword, why it feels backwards then clicks
+16. **"Channels: The sync You Didn't Know You Wanted"** — Buffered vs unbuffered, closing, fan-out/fan-in, pipelines, comparison to BlockingCollection
+17. **"select: Multiplexing Like a Pro"** — Waiting on multiple channels, timeouts with `time.After`, non-blocking with `default`, the pattern C# doesn't have
+18. **"Mutexes and WaitGroups: When Channels Aren't the Answer"** — sync package deep-dive, when to use locks vs channels, the map concurrency problem
+19. **"Context Is King"** — Cancellation, timeouts, request-scoped values, the first-parameter convention, why it's everywhere
+
+The concurrency section highlights where Go genuinely shines:
+- No async/await virus (no coloured functions)
+- `select` is cleaner than `Task.WhenAny` gymnastics
+- Goroutines are cheaper than Tasks
+- Context unifies cancellation + timeouts + request values
+
+But also acknowledges where C# is better:
+- `Task.WhenAll` is more elegant than WaitGroup
+- `lock` keyword beats manual Lock/Unlock
+- Better debugging tooling
+- Clearer separation of concerns
+
+---
+
