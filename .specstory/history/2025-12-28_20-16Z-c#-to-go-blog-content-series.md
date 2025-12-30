@@ -9208,3 +9208,1863 @@ That's Phase 1 complete! Ready for more whenever you are.
 
 ---
 
+_**User (2025-12-30 00:39Z)**_
+
+Phase 2: The Ecosystem
+Project Structure & Modules
+
+Organising a Real Project — Package design, internal folders, and avoiding circular dependencies
+Multi-Module Repos: Monorepo Thinking — When one go.mod isn't enough
+
+Testing
+
+Testing Without a Framework — Built-in testing, table-driven tests, and why you might not miss xUnit
+Mocking in a Language Without Mockito — Interfaces, fakes, and when to reach for testify
+Benchmarks and Profiling Out of the Box — go test -bench and pprof for the performance-curious
+
+---
+
+_**Agent (model claude-4.5-opus-high-thinking, mode Agent)**_
+
+<think><details><summary>Thought Process</summary>
+The user wants me to create Phase 2 of the ecosystem posts - 5 posts covering:
+
+1. Organising a Real Project — Package design, internal folders, and avoiding circular dependencies
+2. Multi-Module Repos: Monorepo Thinking — When one go.mod isn't enough
+3. Testing Without a Framework — Built-in testing, table-driven tests, and why you might not miss xUnit
+4. Mocking in a Language Without Mockito — Interfaces, fakes, and when to reach for testify
+5. Benchmarks and Profiling Out of the Box — go test -bench and pprof for the performance-curious
+
+Let me write all 5 posts with the established tone - casual, technical, fair to both languages.</details></think>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="write">
+
+<details><summary>Tool use: **write** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/dotnet-to-go-project-structure.md</summary>
+
+**Chunk 1**
+Lines added: 338, lines removed: 1
+
+```diff
+@@ -1,1 +1,338 @@
+- 
++ +++
++ title = "Organising a Real Project"
++ date = "2025-01-03"
++ draft = false
++ tags = ["go", "dotnet", "project-structure", "packages", "csharp"]
++ +++
++ 
++ So you've got the basics. You can write Go code. Now you need to organise it into something that won't become a tangled mess in six months.
++ 
++ Go has opinions about project structure. Some are enforced by the compiler. Some are conventions so universal they might as well be enforced. Coming from .NET's solution/project/namespace hierarchy, Go's flat package model takes adjustment.
++ 
++ Let's figure out how to structure a real project.
++ 
++ ## The Mental Model Shift
++ 
++ In C#, you think in layers:
++ 
++ &#96;&#96;&#96;
++ Solution (MySolution.sln)
++   └── Project (MyApp.csproj)
++         └── Namespace (MyApp.Services)
++               └── Class (UserService.cs)
++ &#96;&#96;&#96;
++ 
++ In Go, it's flatter:
++ 
++ &#96;&#96;&#96;
++ Module (go.mod)
++   └── Package (directory)
++         └── Files (*.go)
++ &#96;&#96;&#96;
++ 
++ There's no solution concept. No &#96;.csproj&#96; files. A module is a collection of packages, and packages are directories. That's it.
++ 
++ ## Package Basics
++ 
++ A package is a directory. Every &#96;.go&#96; file in that directory must have the same &#96;package&#96; declaration:
++ 
++ &#96;&#96;&#96;
++ myproject/
++ ├── go.mod
++ ├── main.go           // package main
++ └── user/
++     ├── user.go       // package user
++     └── validation.go // package user (same package!)
++ &#96;&#96;&#96;
++ 
++ All files in &#96;user/&#96; share the same package namespace. They can access each other's unexported (lowercase) identifiers. It's like they're all one file, split for organisation.
++ 
++ ### Package vs Directory Name
++ 
++ By convention, the package name matches the directory name:
++ 
++ &#96;&#96;&#96;go
++ // In directory "user/"
++ package user  // matches directory name
++ &#96;&#96;&#96;
++ 
++ You *can* name them differently, but don't. It confuses everyone.
++ 
++ ### Importing
++ 
++ Import paths are relative to the module root:
++ 
++ &#96;&#96;&#96;go
++ // go.mod says: module github.com/myname/myproject
++ 
++ import "github.com/myname/myproject/user"
++ 
++ func main() {
++     u := user.New("Alice")  // user is the package name
++ }
++ &#96;&#96;&#96;
++ 
++ ## A Real Project Layout
++ 
++ Here's a layout that works for most non-trivial projects:
++ 
++ &#96;&#96;&#96;
++ myproject/
++ ├── go.mod
++ ├── go.sum
++ ├── main.go                 // or cmd/myapp/main.go
++ ├── internal/
++ │   ├── config/
++ │   │   └── config.go
++ │   ├── database/
++ │   │   ├── database.go
++ │   │   └── migrations.go
++ │   └── handlers/
++ │       ├── user.go
++ │       └── product.go
++ ├── pkg/
++ │   └── validation/
++ │       └── validation.go
++ └── api/
++     └── openapi.yaml
++ &#96;&#96;&#96;
++ 
++ Let's break this down.
++ 
++ ### &#96;internal/&#96; — The Privacy Fence
++ 
++ The &#96;internal&#96; directory is magic. The Go compiler enforces that packages under &#96;internal/&#96; can only be imported by code rooted at the parent of &#96;internal/&#96;.
++ 
++ &#96;&#96;&#96;
++ myproject/
++ ├── internal/
++ │   └── secret/       // only myproject can import this
++ └── cmd/
++     └── myapp/
++         └── main.go   // can import internal/secret
++ &#96;&#96;&#96;
++ 
++ If someone else imports your module, they *cannot* import &#96;internal/secret&#96;. The compiler refuses.
++ 
++ This is Go's answer to &#96;internal&#96; visibility in C#. Use it for implementation details you don't want to be part of your public API.
++ 
++ ### &#96;pkg/&#96; — Exportable Packages (Convention)
++ 
++ The &#96;pkg/&#96; directory is purely convention (not enforced). It signals "these packages are intended for external use."
++ 
++ &#96;&#96;&#96;
++ myproject/
++ ├── internal/         // private
++ └── pkg/              // public (by convention)
++     └── validation/   // anyone can import this
++ &#96;&#96;&#96;
++ 
++ Some projects skip &#96;pkg/&#96; and put public packages at the root. Both are fine. Just be consistent.
++ 
++ ### &#96;cmd/&#96; — Multiple Binaries
++ 
++ If your module produces multiple executables:
++ 
++ &#96;&#96;&#96;
++ myproject/
++ ├── cmd/
++ │   ├── server/
++ │   │   └── main.go   // builds to 'server' binary
++ │   └── cli/
++ │       └── main.go   // builds to 'cli' binary
++ └── internal/
++     └── shared/       // shared by both
++ &#96;&#96;&#96;
++ 
++ Build with:
++ 
++ &#96;&#96;&#96;bash
++ go build ./cmd/server
++ go build ./cmd/cli
++ &#96;&#96;&#96;
++ 
++ ### No &#96;src/&#96; Directory
++ 
++ Coming from Java or older Go (GOPATH era), you might want a &#96;src/&#96; directory. Don't. Modern Go modules don't use it. Put your code at the root.
++ 
++ ## Avoiding Circular Dependencies
++ 
++ Go doesn't allow circular imports. If package A imports package B, package B cannot import package A. The compiler rejects it.
++ 
++ This is different from C#, where circular references between projects are blocked but classes within a project can reference each other freely.
++ 
++ ### The Problem
++ 
++ &#96;&#96;&#96;
++ myproject/
++ ├── user/
++ │   └── user.go       // imports "myproject/order"
++ └── order/
++     └── order.go      // imports "myproject/user" - COMPILE ERROR
++ &#96;&#96;&#96;
++ 
++ ### Solutions
++ 
++ **1. Extract shared types to a third package:**
++ 
++ &#96;&#96;&#96;
++ myproject/
++ ├── user/
++ │   └── user.go       // imports "myproject/models"
++ ├── order/
++ │   └── order.go      // imports "myproject/models"
++ └── models/
++     └── models.go     // shared types, imports neither
++ &#96;&#96;&#96;
++ 
++ **2. Use interfaces at boundaries:**
++ 
++ &#96;&#96;&#96;go
++ // order/order.go
++ package order
++ 
++ type UserGetter interface {
++     GetUser(id string) (*User, error)
++ }
++ 
++ type OrderService struct {
++     users UserGetter  // interface, not concrete user.Service
++ }
++ &#96;&#96;&#96;
++ 
++ Now &#96;order&#96; doesn't import &#96;user&#96;. It depends on an interface that &#96;user.Service&#96; happens to implement.
++ 
++ **3. Merge packages:**
++ 
++ Sometimes the cycle means the packages are too closely related to be separate. Merge them.
++ 
++ ## Package Design Principles
++ 
++ ### Small, Focused Packages
++ 
++ Go encourages small packages with clear responsibilities. Not one giant &#96;utils&#96; package.
++ 
++ &#96;&#96;&#96;
++ // BAD
++ utils/
++ ├── string_helpers.go
++ ├── http_helpers.go
++ ├── database_helpers.go
++ └── random_stuff.go
++ 
++ // BETTER
++ stringutil/
++     └── stringutil.go
++ httputil/
++     └── httputil.go
++ database/
++     └── helpers.go
++ &#96;&#96;&#96;
++ 
++ ### Name Packages by What They Provide
++ 
++ Package names should be nouns describing what they provide:
++ 
++ &#96;&#96;&#96;
++ // GOOD
++ http, json, user, config, database
++ 
++ // BAD  
++ helpers, utils, common, misc
++ &#96;&#96;&#96;
++ 
++ ### Avoid Stutter
++ 
++ The package name is part of the identifier when used:
++ 
++ &#96;&#96;&#96;go
++ // BAD - stutters
++ user.UserService
++ http.HTTPClient
++ config.ConfigLoader
++ 
++ // GOOD - no stutter
++ user.Service
++ http.Client
++ config.Loader
++ &#96;&#96;&#96;
++ 
++ ### One Package, One Purpose
++ 
++ Each package should have a single, clear purpose. If you're struggling to name it, it might be doing too much.
++ 
++ ## Comparing to C# Project Structure
++ 
++ | C# | Go |
++ |-----|-----|
++ | Solution (&#96;.sln&#96;) | Module (&#96;go.mod&#96;) |
++ | Project (&#96;.csproj&#96;) | Package (directory) |
++ | Namespace | Package |
++ | &#96;internal&#96; modifier | &#96;internal/&#96; directory |
++ | Folder structure | Package structure (folders = packages) |
++ | Circular project refs blocked | Circular imports blocked |
++ | Multiple assemblies | Multiple packages |
++ | Multiple executables | &#96;cmd/&#96; subdirectories |
++ 
++ ## A Practical Example
++ 
++ Let's say you're building an API server. Here's how I'd structure it:
++ 
++ &#96;&#96;&#96;
++ myapi/
++ ├── go.mod
++ ├── go.sum
++ ├── main.go                      // entry point, wires things up
++ ├── internal/
++ │   ├── api/
++ │   │   ├── router.go            // HTTP routing
++ │   │   ├── middleware.go        // auth, logging, etc.
++ │   │   └── handlers/
++ │   │       ├── users.go
++ │   │       └── products.go
++ │   ├── domain/
++ │   │   ├── user.go              // User type and business logic
++ │   │   └── product.go
++ │   ├── repository/
++ │   │   ├── user_repo.go         // database operations
++ │   │   └── product_repo.go
++ │   └── config/
++ │       └── config.go
++ ├── pkg/
++ │   └── response/
++ │       └── response.go          // shared API response types
++ └── migrations/
++     └── 001_initial.sql
++ &#96;&#96;&#96;
++ 
++ - &#96;internal/&#96; keeps implementation details private
++ - &#96;domain/&#96; has business types with no external dependencies
++ - &#96;repository/&#96; handles persistence
++ - &#96;api/handlers/&#96; maps HTTP to domain operations
++ - &#96;pkg/response/&#96; is a utility others could use
++ 
++ ## The Honest Take
++ 
++ Go's package system is simpler than C#'s project/namespace hierarchy. That simplicity is mostly good—less configuration, clearer structure.
++ 
++ **What Go does better:**
++ - &#96;internal/&#96; is enforced by the compiler, not convention
++ - No &#96;.csproj&#96; files to manage
++ - Package = directory is clear and simple
++ - Forced to avoid circular dependencies
++ 
++ **What C# does better:**
++ - Namespaces can span multiple assemblies
++ - More flexibility in organisation
++ - Better tooling for refactoring package structure
++ - Multiple classes per file without namespace issues
++ 
++ **The verdict:**
++ Go's constraints push you toward better design. No circular dependencies means you think about boundaries upfront. &#96;internal/&#96; enforced by the compiler means you actually use it.
++ 
++ It's more restrictive, but those restrictions prevent the spaghetti that large C# solutions sometimes become.
++ 
++ ---
++ 
++ *Next up: multi-module repos—when you need more than one &#96;go.mod&#96; and how to think about monorepo structure in Go.*
++ 
+```
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="write">
+
+<details><summary>Tool use: **write** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/dotnet-to-go-monorepo.md</summary>
+
+**Chunk 1**
+Lines added: 251, lines removed: 1
+
+```diff
+@@ -1,1 +1,251 @@
+- 
++ +++
++ title = "Multi-Module Repos: Monorepo Thinking"
++ date = "2025-01-03"
++ draft = false
++ tags = ["go", "dotnet", "modules", "monorepo", "csharp"]
++ +++
++ 
++ Most Go projects have one &#96;go.mod&#96; file at the root. One module, one version, simple. But what happens when your repo grows? When you have shared libraries, multiple services, and teams stepping on each other's toes?
++ 
++ You need multiple modules. And Go's support for this is... functional. Not beautiful, but functional.
++ 
++ ## When One Module Isn't Enough
++ 
++ Stick with one module when you can. But consider multiple modules when:
++ 
++ **Independent versioning matters:**
++ Your repo has a shared library (&#96;pkg/auth&#96;) and two services (&#96;cmd/api&#96;, &#96;cmd/worker&#96;). Library changes shouldn't force service releases.
++ 
++ **Different dependency needs:**
++ One service needs a heavy dependency (ML framework, database driver) that others don't need.
++ 
++ **Teams need isolation:**
++ Different teams own different parts of the repo and want independent build/test/release cycles.
++ 
++ ## The Multi-Module Layout
++ 
++ Here's what a multi-module repo looks like:
++ 
++ &#96;&#96;&#96;
++ mycompany/
++ ├── go.work              // workspace file (Go 1.18+)
++ ├── services/
++ │   ├── api/
++ │   │   ├── go.mod       // module github.com/mycompany/services/api
++ │   │   ├── go.sum
++ │   │   └── main.go
++ │   └── worker/
++ │       ├── go.mod       // module github.com/mycompany/services/worker
++ │       ├── go.sum
++ │       └── main.go
++ └── libs/
++     ├── auth/
++     │   ├── go.mod       // module github.com/mycompany/libs/auth
++     │   ├── go.sum
++     │   └── auth.go
++     └── database/
++         ├── go.mod       // module github.com/mycompany/libs/database
++         ├── go.sum
++         └── database.go
++ &#96;&#96;&#96;
++ 
++ Each directory with a &#96;go.mod&#96; is an independent module. They can be versioned, released, and depended upon separately.
++ 
++ ## Go Workspaces
++ 
++ Before Go 1.18, working with multiple modules in one repo was painful. You'd constantly be editing &#96;go.mod&#96; files to use &#96;replace&#96; directives during development, then removing them before commit.
++ 
++ Go 1.18 introduced **workspaces**. Create a &#96;go.work&#96; file at the root:
++ 
++ &#96;&#96;&#96;go
++ // go.work
++ go 1.22
++ 
++ use (
++     ./services/api
++     ./services/worker
++     ./libs/auth
++     ./libs/database
++ )
++ &#96;&#96;&#96;
++ 
++ Now Go commands understand the whole repo:
++ 
++ &#96;&#96;&#96;bash
++ # From repo root
++ go build ./...      # builds all modules
++ go test ./...       # tests all modules
++ go mod tidy         # tidies all modules
++ &#96;&#96;&#96;
++ 
++ The &#96;go.work&#96; file is for local development. Don't commit it (add to &#96;.gitignore&#96;). Each module should work independently for CI/CD and consumers.
++ 
++ ## Cross-Module Dependencies
++ 
++ Modules in the same repo can depend on each other:
++ 
++ &#96;&#96;&#96;go
++ // services/api/go.mod
++ module github.com/mycompany/services/api
++ 
++ go 1.22
++ 
++ require (
++     github.com/mycompany/libs/auth v0.2.0
++     github.com/mycompany/libs/database v0.1.5
++ )
++ &#96;&#96;&#96;
++ 
++ For published modules, this just works—Go fetches from the module proxy.
++ 
++ For local development without &#96;go.work&#96;, you'd need &#96;replace&#96; directives:
++ 
++ &#96;&#96;&#96;go
++ // services/api/go.mod (during local dev only)
++ replace github.com/mycompany/libs/auth =&gt; ../../libs/auth
++ replace github.com/mycompany/libs/database =&gt; ../../libs/database
++ &#96;&#96;&#96;
++ 
++ Workspaces make &#96;replace&#96; unnecessary for local work.
++ 
++ ## Versioning Strategy
++ 
++ Each module is versioned independently. The repo might look like:
++ 
++ &#96;&#96;&#96;
++ libs/auth           v0.2.0, v0.2.1, v0.3.0
++ libs/database       v0.1.0, v0.1.5
++ services/api        v1.0.0, v1.1.0
++ services/worker     v1.0.0
++ &#96;&#96;&#96;
++ 
++ Use git tags to version modules:
++ 
++ &#96;&#96;&#96;bash
++ git tag libs/auth/v0.3.0
++ git push origin libs/auth/v0.3.0
++ &#96;&#96;&#96;
++ 
++ The tag format &#96;path/vX.Y.Z&#96; tells Go which module the version applies to.
++ 
++ ## Comparing to .NET
++ 
++ C#'s approach to monorepos is different:
++ 
++ | Aspect | .NET | Go |
++ |--------|------|-----|
++ | Project file | &#96;.csproj&#96; per project | &#96;go.mod&#96; per module |
++ | Solution | &#96;.sln&#96; groups projects | &#96;go.work&#96; for workspace |
++ | Local references | &#96;&lt;ProjectReference&gt;&#96; | &#96;replace&#96; or &#96;go.work&#96; |
++ | Versioning | NuGet packages | Module versions (git tags) |
++ | Build all | &#96;dotnet build MySolution.sln&#96; | &#96;go build ./...&#96; |
++ | Private packages | Private NuGet feed | Private GOPROXY or replace |
++ 
++ .NET's solution file is more mature for multi-project scenarios. &#96;go.work&#96; is newer and simpler.
++ 
++ ## The Practical Workflow
++ 
++ ### Adding a New Module
++ 
++ &#96;&#96;&#96;bash
++ mkdir -p services/newservice
++ cd services/newservice
++ go mod init github.com/mycompany/services/newservice
++ &#96;&#96;&#96;
++ 
++ Add to &#96;go.work&#96;:
++ 
++ &#96;&#96;&#96;go
++ use (
++     // ... existing
++     ./services/newservice
++ )
++ &#96;&#96;&#96;
++ 
++ ### Depending on a Local Module
++ 
++ In your module's code:
++ 
++ &#96;&#96;&#96;go
++ import "github.com/mycompany/libs/auth"
++ &#96;&#96;&#96;
++ 
++ Then run:
++ 
++ &#96;&#96;&#96;bash
++ go get github.com/mycompany/libs/auth@latest
++ # or specific version
++ go get github.com/mycompany/libs/auth@v0.2.0
++ &#96;&#96;&#96;
++ 
++ ### Releasing a Module
++ 
++ 1. Make your changes
++ 2. Update version in dependents' &#96;go.mod&#96; files
++ 3. Commit everything
++ 4. Tag the module: &#96;git tag libs/auth/v0.3.0&#96;
++ 5. Push: &#96;git push origin libs/auth/v0.3.0&#96;
++ 
++ ### CI/CD Considerations
++ 
++ Your CI shouldn't use &#96;go.work&#96;—it should test each module independently:
++ 
++ &#96;&#96;&#96;yaml
++ # Example GitHub Actions
++ jobs:
++   test-auth:
++     runs-on: ubuntu-latest
++     steps:
++       - uses: actions/checkout@v4
++       - working-directory: libs/auth
++         run: go test ./...
++ 
++   test-api:
++     runs-on: ubuntu-latest
++     steps:
++       - uses: actions/checkout@v4
++       - working-directory: services/api
++         run: go test ./...
++ &#96;&#96;&#96;
++ 
++ Each module builds and tests in isolation.
++ 
++ ## When NOT to Multi-Module
++ 
++ Multi-module adds complexity. Avoid it if:
++ 
++ - Your code is tightly coupled anyway
++ - You don't need independent versioning
++ - You're the only developer
++ - The repo isn't that big yet
++ 
++ Start with one module. Split when you feel the pain.
++ 
++ ## The Honest Take
++ 
++ Go workspaces solved the biggest pain point (local development), but multi-module repos are still more work than single modules.
++ 
++ **What Go does okay:**
++ - Workspaces make local dev tolerable
++ - Independent versioning is powerful
++ - Module isolation is clear
++ 
++ **What's still awkward:**
++ - Tag-based versioning for paths is clunky (&#96;libs/auth/v0.3.0&#96;)
++ - No solution-level dependency management
++ - CI needs to understand module structure
++ - Tooling is module-centric, not repo-centric
++ 
++ **What .NET does better:**
++ - Solution files coordinate multiple projects elegantly
++ - Project references just work
++ - NuGet versioning is more flexible
++ - Better IDE support for multi-project workflows
++ 
++ **The verdict:**
++ If you need multi-module, Go can do it. But it's not as polished as .NET's multi-project experience. Keep your module count low, use workspaces for local dev, and accept some ceremony around releases.
++ 
++ ---
++ 
++ *Next up: testing in Go—why the built-in testing package might be all you need, and why you might not miss xUnit.*
++ 
+```
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="write">
+
+<details><summary>Tool use: **write** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/dotnet-to-go-testing.md</summary>
+
+**Chunk 1**
+Lines added: 323, lines removed: 1
+
+```diff
+@@ -1,1 +1,323 @@
+- 
++ +++
++ title = "Testing Without a Framework"
++ date = "2025-01-03"
++ draft = false
++ tags = ["go", "dotnet", "testing", "csharp"]
++ +++
++ 
++ In C#, you pick a test framework: xUnit, NUnit, MSTest. You install packages. You learn attributes. You configure test runners.
++ 
++ In Go, you run &#96;go test&#96;. That's it. There's one testing approach, it's built in, and it's been there since the beginning.
++ 
++ This felt limiting at first. "Where are my attributes? Where's my dependency injection? Where's my &#96;[Theory]&#96; with &#96;[InlineData]&#96;?" Then I wrote some tests and realised: Go's simplicity is the point.
++ 
++ ## The Basics
++ 
++ Test files end in &#96;_test.go&#96;. Test functions start with &#96;Test&#96;:
++ 
++ &#96;&#96;&#96;go
++ // math.go
++ package math
++ 
++ func Add(a, b int) int {
++     return a + b
++ }
++ 
++ // math_test.go
++ package math
++ 
++ import "testing"
++ 
++ func TestAdd(t *testing.T) {
++     result := Add(2, 3)
++     if result != 5 {
++         t.Errorf("Add(2, 3) = %d; want 5", result)
++     }
++ }
++ &#96;&#96;&#96;
++ 
++ Run with:
++ 
++ &#96;&#96;&#96;bash
++ go test
++ go test -v           # verbose output
++ go test ./...        # all packages
++ go test -run TestAdd # specific test
++ &#96;&#96;&#96;
++ 
++ No attributes. No framework imports. Just a function that takes &#96;*testing.T&#96;.
++ 
++ ## Comparing to xUnit
++ 
++ Here's the same test in xUnit:
++ 
++ &#96;&#96;&#96;csharp
++ public class MathTests
++ {
++     [Fact]
++     public void Add_TwoNumbers_ReturnsSum()
++     {
++         var result = Math.Add(2, 3);
++         Assert.Equal(5, result);
++     }
++ }
++ &#96;&#96;&#96;
++ 
++ Go's version is more verbose in the assertion (&#96;if&#96; + &#96;t.Errorf&#96; vs &#96;Assert.Equal&#96;), but there's no class wrapper, no attribute, no dependency on a test framework package.
++ 
++ ## The testing.T Type
++ 
++ The &#96;*testing.T&#96; parameter is your test context. Key methods:
++ 
++ &#96;&#96;&#96;go
++ func TestSomething(t *testing.T) {
++     t.Log("informational message")      // only shown with -v
++     t.Error("test failed but continue") // marks fail, continues
++     t.Fatal("test failed, stop now")    // marks fail, stops this test
++     t.Skip("skipping this test")        // skips test
++     
++     // Formatted versions
++     t.Logf("value is %d", 42)
++     t.Errorf("got %d, want %d", actual, expected)
++     t.Fatalf("unexpected error: %v", err)
++ }
++ &#96;&#96;&#96;
++ 
++ No assertion library needed. You write &#96;if&#96; statements and call &#96;t.Error&#96; or &#96;t.Fatal&#96;.
++ 
++ ## Table-Driven Tests
++ 
++ This is Go's answer to &#96;[Theory]&#96; with &#96;[InlineData]&#96;. Instead of attributes, you use a slice of test cases:
++ 
++ &#96;&#96;&#96;go
++ func TestAdd(t *testing.T) {
++     tests := []struct {
++         name     string
++         a, b     int
++         expected int
++     }{
++         {"positive numbers", 2, 3, 5},
++         {"negative numbers", -1, -1, -2},
++         {"zero", 0, 0, 0},
++         {"mixed", -5, 10, 5},
++     }
++ 
++     for _, tt := range tests {
++         t.Run(tt.name, func(t *testing.T) {
++             result := Add(tt.a, tt.b)
++             if result != tt.expected {
++                 t.Errorf("Add(%d, %d) = %d; want %d", tt.a, tt.b, result, tt.expected)
++             }
++         })
++     }
++ }
++ &#96;&#96;&#96;
++ 
++ &#96;t.Run&#96; creates a subtest. Each case runs independently, shows up separately in output, and can be run individually:
++ 
++ &#96;&#96;&#96;bash
++ go test -run TestAdd/positive_numbers
++ &#96;&#96;&#96;
++ 
++ Compare to xUnit:
++ 
++ &#96;&#96;&#96;csharp
++ [Theory]
++ [InlineData(2, 3, 5)]
++ [InlineData(-1, -1, -2)]
++ [InlineData(0, 0, 0)]
++ [InlineData(-5, 10, 5)]
++ public void Add_VariousInputs_ReturnsExpected(int a, int b, int expected)
++ {
++     Assert.Equal(expected, Math.Add(a, b));
++ }
++ &#96;&#96;&#96;
++ 
++ xUnit is more concise. Go's version is more explicit and doesn't require learning attribute syntax. Personal preference.
++ 
++ ## Test Setup and Teardown
++ 
++ No &#96;[SetUp]&#96; or &#96;[TearDown]&#96; attributes. Use regular functions:
++ 
++ &#96;&#96;&#96;go
++ func TestWithSetup(t *testing.T) {
++     // Setup
++     db := setupTestDatabase()
++     defer db.Close()  // Teardown
++     
++     // Test
++     result := QueryUsers(db)
++     if len(result) != 0 {
++         t.Error("expected empty database")
++     }
++ }
++ &#96;&#96;&#96;
++ 
++ For shared setup across tests, use &#96;TestMain&#96;:
++ 
++ &#96;&#96;&#96;go
++ var testDB *Database
++ 
++ func TestMain(m *testing.M) {
++     // Setup before all tests
++     testDB = setupTestDatabase()
++     
++     // Run tests
++     code := m.Run()
++     
++     // Teardown after all tests
++     testDB.Close()
++     
++     os.Exit(code)
++ }
++ 
++ func TestSomething(t *testing.T) {
++     // testDB is available
++ }
++ &#96;&#96;&#96;
++ 
++ &#96;TestMain&#96; is the entry point for the test binary. It's like a test fixture that wraps all tests.
++ 
++ ## Parallel Tests
++ 
++ Run tests in parallel:
++ 
++ &#96;&#96;&#96;go
++ func TestParallel1(t *testing.T) {
++     t.Parallel()
++     // This test can run alongside other parallel tests
++ }
++ 
++ func TestParallel2(t *testing.T) {
++     t.Parallel()
++     // So can this one
++ }
++ &#96;&#96;&#96;
++ 
++ &#96;t.Parallel()&#96; marks a test as safe to run concurrently. Go runs parallel tests up to &#96;GOMAXPROCS&#96; simultaneously.
++ 
++ ## Test Coverage
++ 
++ Built in:
++ 
++ &#96;&#96;&#96;bash
++ go test -cover                     # show coverage percentage
++ go test -coverprofile=coverage.out # generate profile
++ go tool cover -html=coverage.out   # view in browser
++ &#96;&#96;&#96;
++ 
++ No third-party tools needed. Coverage is a first-class feature.
++ 
++ ## Subtests for Organisation
++ 
++ Group related tests:
++ 
++ &#96;&#96;&#96;go
++ func TestUser(t *testing.T) {
++     t.Run("Create", func(t *testing.T) {
++         t.Run("valid input", func(t *testing.T) { ... })
++         t.Run("missing name", func(t *testing.T) { ... })
++         t.Run("invalid email", func(t *testing.T) { ... })
++     })
++     
++     t.Run("Update", func(t *testing.T) {
++         t.Run("existing user", func(t *testing.T) { ... })
++         t.Run("non-existent user", func(t *testing.T) { ... })
++     })
++ }
++ &#96;&#96;&#96;
++ 
++ Run specific groups:
++ 
++ &#96;&#96;&#96;bash
++ go test -run TestUser/Create
++ go test -run TestUser/Create/valid_input
++ &#96;&#96;&#96;
++ 
++ ## Helper Functions
++ 
++ Mark a function as a test helper so errors report the caller's line:
++ 
++ &#96;&#96;&#96;go
++ func assertEqual(t *testing.T, got, want int) {
++     t.Helper()  // errors will show caller's line number
++     if got != want {
++         t.Errorf("got %d, want %d", got, want)
++     }
++ }
++ 
++ func TestSomething(t *testing.T) {
++     assertEqual(t, Add(2, 2), 4)  // error shows this line, not assertEqual
++ }
++ &#96;&#96;&#96;
++ 
++ ## What About Assertions?
++ 
++ Go's standard library has no assertion functions. You write:
++ 
++ &#96;&#96;&#96;go
++ if result != expected {
++     t.Errorf("got %v, want %v", result, expected)
++ }
++ &#96;&#96;&#96;
++ 
++ Instead of:
++ 
++ &#96;&#96;&#96;csharp
++ Assert.Equal(expected, result);
++ &#96;&#96;&#96;
++ 
++ This is verbose. Many people use the &#96;testify&#96; package for assertions:
++ 
++ &#96;&#96;&#96;go
++ import "github.com/stretchr/testify/assert"
++ 
++ func TestAdd(t *testing.T) {
++     assert.Equal(t, 5, Add(2, 3))
++     assert.NotNil(t, somePointer)
++     assert.Contains(t, "hello world", "world")
++ }
++ &#96;&#96;&#96;
++ 
++ Testify is popular, but some Go developers consider it unnecessary. The standard approach works fine; it's just more typing.
++ 
++ ## The Comparison
++ 
++ | Feature | xUnit/NUnit | Go testing |
++ |---------|-------------|------------|
++ | Test discovery | Attributes | Naming convention (&#96;Test*&#96;) |
++ | Assertions | Rich library | Manual or testify |
++ | Parameterised tests | &#96;[Theory]&#96; | Table-driven |
++ | Setup/Teardown | Attributes | Manual or &#96;TestMain&#96; |
++ | Parallel | &#96;[Collection]&#96; | &#96;t.Parallel()&#96; |
++ | Coverage | Third-party or VS | Built-in |
++ | Mocking | Moq, NSubstitute | Interfaces + manual |
++ | Test runner | Separate tool | &#96;go test&#96; |
++ 
++ ## The Honest Take
++ 
++ Go's testing is simpler but more manual. You write more code per test, but there's less framework magic to understand.
++ 
++ **What Go does better:**
++ - Zero dependencies for basic testing
++ - Coverage built in
++ - &#96;go test&#96; just works
++ - Table-driven tests are powerful
++ - No framework version conflicts
++ 
++ **What C# does better:**
++ - Rich assertion libraries
++ - Better IDE integration (Test Explorer)
++ - More flexible parameterised tests
++ - Better test output formatting
++ - Mature mocking ecosystem
++ 
++ **The verdict:**
++ For simple unit tests, Go's built-in testing is fine. You'll write more boilerplate, but you'll spend zero time configuring frameworks.
++ 
++ For complex test scenarios, you might miss xUnit's features. But honestly? Most tests are simple. Go's approach handles them perfectly well.
++ 
++ ---
++ 
++ *Next up: mocking in Go—interfaces, hand-written fakes, and when to reach for testify/mock.*
++ 
+```
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="write">
+
+<details><summary>Tool use: **write** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/dotnet-to-go-mocking.md</summary>
+
+**Chunk 1**
+Lines added: 338, lines removed: 1
+
+```diff
+@@ -1,1 +1,338 @@
+- 
++ +++
++ title = "Mocking in a Language Without Mockito"
++ date = "2025-01-03"
++ draft = false
++ tags = ["go", "dotnet", "testing", "mocking", "csharp"]
++ +++
++ 
++ In C#, you reach for Moq or NSubstitute without thinking. Interface? Mock it. Verify calls? Easy. Set up return values? One line.
++ 
++ Go doesn't have a standard mocking framework. There's no reflection-based proxy generation. No &#96;Mock&lt;IUserService&gt;()&#96;. The Go way is more manual, and that's... actually fine? Let me explain.
++ 
++ ## The C# Approach
++ 
++ You've done this a thousand times:
++ 
++ &#96;&#96;&#96;csharp
++ public interface IUserRepository
++ {
++     User GetById(int id);
++     void Save(User user);
++ }
++ 
++ [Fact]
++ public void ProcessUser_CallsRepository()
++ {
++     var mockRepo = new Mock&lt;IUserRepository&gt;();
++     mockRepo.Setup(r =&gt; r.GetById(1)).Returns(new User { Id = 1, Name = "Alice" });
++     
++     var service = new UserService(mockRepo.Object);
++     service.Process(1);
++     
++     mockRepo.Verify(r =&gt; r.GetById(1), Times.Once);
++ }
++ &#96;&#96;&#96;
++ 
++ Clean, expressive, powerful. Moq generates a proxy class at runtime that implements the interface and records calls.
++ 
++ ## The Go Approach: Hand-Written Fakes
++ 
++ Go doesn't have reflection-based mocking (well, it does, but it's not idiomatic). Instead, you write your own test doubles:
++ 
++ &#96;&#96;&#96;go
++ type UserRepository interface {
++     GetByID(id int) (*User, error)
++     Save(user *User) error
++ }
++ 
++ // Fake implementation for testing
++ type FakeUserRepo struct {
++     Users map[int]*User
++     SaveCalled bool
++     SavedUser *User
++ }
++ 
++ func (f *FakeUserRepo) GetByID(id int) (*User, error) {
++     user, ok := f.Users[id]
++     if !ok {
++         return nil, ErrNotFound
++     }
++     return user, nil
++ }
++ 
++ func (f *FakeUserRepo) Save(user *User) error {
++     f.SaveCalled = true
++     f.SavedUser = user
++     return nil
++ }
++ &#96;&#96;&#96;
++ 
++ Then in your test:
++ 
++ &#96;&#96;&#96;go
++ func TestProcessUser(t *testing.T) {
++     repo := &amp;FakeUserRepo{
++         Users: map[int]*User{
++             1: {ID: 1, Name: "Alice"},
++         },
++     }
++     
++     service := NewUserService(repo)
++     service.Process(1)
++     
++     if !repo.SaveCalled {
++         t.Error("expected Save to be called")
++     }
++ }
++ &#96;&#96;&#96;
++ 
++ More code. More manual work. But you control everything, and there's no magic.
++ 
++ ## Why Go Developers Accept This
++ 
++ Three reasons:
++ 
++ **1. Interfaces are small**
++ 
++ Go's implicit interfaces encourage tiny interfaces. One or two methods. Writing a fake for a two-method interface is trivial.
++ 
++ &#96;&#96;&#96;go
++ type Saver interface {
++     Save(user *User) error
++ }
++ 
++ // Fake is one function
++ type FakeSaver struct {
++     Err error
++ }
++ 
++ func (f *FakeSaver) Save(user *User) error {
++     return f.Err
++ }
++ &#96;&#96;&#96;
++ 
++ Compare to C#'s larger interfaces with 10+ methods. Moq saves significant effort there.
++ 
++ **2. Fakes are reusable**
++ 
++ You write the fake once, use it everywhere. Put it in a &#96;testing&#96; package or &#96;_test.go&#96; file:
++ 
++ &#96;&#96;&#96;go
++ // In repository/testing.go or repository/fake_test.go
++ type FakeUserRepo struct { ... }
++ &#96;&#96;&#96;
++ 
++ Now all tests can use it. The upfront cost pays off.
++ 
++ **3. Explicit is better than magic**
++ 
++ Go's philosophy. When a test fails, you can see exactly what the fake does. No proxy magic. No setup/verify DSL to decode.
++ 
++ ## The testify/mock Package
++ 
++ If you really want Moq-style mocking, testify provides it:
++ 
++ &#96;&#96;&#96;go
++ import "github.com/stretchr/testify/mock"
++ 
++ type MockUserRepo struct {
++     mock.Mock
++ }
++ 
++ func (m *MockUserRepo) GetByID(id int) (*User, error) {
++     args := m.Called(id)
++     if args.Get(0) == nil {
++         return nil, args.Error(1)
++     }
++     return args.Get(0).(*User), args.Error(1)
++ }
++ 
++ func (m *MockUserRepo) Save(user *User) error {
++     args := m.Called(user)
++     return args.Error(0)
++ }
++ &#96;&#96;&#96;
++ 
++ Then use it:
++ 
++ &#96;&#96;&#96;go
++ func TestProcessUser(t *testing.T) {
++     repo := new(MockUserRepo)
++     repo.On("GetByID", 1).Return(&amp;User{ID: 1, Name: "Alice"}, nil)
++     repo.On("Save", mock.Anything).Return(nil)
++     
++     service := NewUserService(repo)
++     service.Process(1)
++     
++     repo.AssertCalled(t, "Save", mock.Anything)
++ }
++ &#96;&#96;&#96;
++ 
++ Closer to Moq, but you still write the mock struct manually. testify handles the setup/verification plumbing.
++ 
++ ## Generated Mocks: mockgen and mockery
++ 
++ Tools can generate mock implementations:
++ 
++ **mockgen** (from gomock):
++ 
++ &#96;&#96;&#96;bash
++ mockgen -source=repository.go -destination=mock_repository.go
++ &#96;&#96;&#96;
++ 
++ **mockery**:
++ 
++ &#96;&#96;&#96;bash
++ mockery --name=UserRepository
++ &#96;&#96;&#96;
++ 
++ These generate the boilerplate. You still use them manually in tests.
++ 
++ ## Patterns for Effective Fakes
++ 
++ ### Function Fields
++ 
++ For simple cases, use function fields:
++ 
++ &#96;&#96;&#96;go
++ type FakeNotifier struct {
++     NotifyFunc func(userID int, message string) error
++ }
++ 
++ func (f *FakeNotifier) Notify(userID int, message string) error {
++     if f.NotifyFunc != nil {
++         return f.NotifyFunc(userID, message)
++     }
++     return nil
++ }
++ &#96;&#96;&#96;
++ 
++ In tests:
++ 
++ &#96;&#96;&#96;go
++ notifier := &amp;FakeNotifier{
++     NotifyFunc: func(userID int, message string) error {
++         if userID != 1 {
++             t.Errorf("unexpected userID: %d", userID)
++         }
++         return nil
++     },
++ }
++ &#96;&#96;&#96;
++ 
++ Inline behaviour per test. No shared state.
++ 
++ ### Recording Calls
++ 
++ Track what was called:
++ 
++ &#96;&#96;&#96;go
++ type FakeNotifier struct {
++     Calls []NotifyCall
++ }
++ 
++ type NotifyCall struct {
++     UserID  int
++     Message string
++ }
++ 
++ func (f *FakeNotifier) Notify(userID int, message string) error {
++     f.Calls = append(f.Calls, NotifyCall{userID, message})
++     return nil
++ }
++ &#96;&#96;&#96;
++ 
++ Then assert:
++ 
++ &#96;&#96;&#96;go
++ if len(notifier.Calls) != 1 {
++     t.Errorf("expected 1 call, got %d", len(notifier.Calls))
++ }
++ if notifier.Calls[0].UserID != 1 {
++     t.Errorf("wrong userID: %d", notifier.Calls[0].UserID)
++ }
++ &#96;&#96;&#96;
++ 
++ ### Error Injection
++ 
++ Make errors configurable:
++ 
++ &#96;&#96;&#96;go
++ type FakeRepo struct {
++     GetErr  error
++     SaveErr error
++ }
++ 
++ func (f *FakeRepo) GetByID(id int) (*User, error) {
++     if f.GetErr != nil {
++         return nil, f.GetErr
++     }
++     return &amp;User{ID: id}, nil
++ }
++ &#96;&#96;&#96;
++ 
++ Test error paths:
++ 
++ &#96;&#96;&#96;go
++ repo := &amp;FakeRepo{GetErr: sql.ErrNoRows}
++ // test handles error correctly
++ &#96;&#96;&#96;
++ 
++ ## The Comparison
++ 
++ | Feature | Moq/NSubstitute | Go Fakes | testify/mock |
++ |---------|-----------------|----------|--------------|
++ | Boilerplate | None | Manual | Some |
++ | Setup syntax | Fluent | Manual | Method calls |
++ | Verification | Built-in | Manual | Built-in |
++ | Type safety | Good | Excellent | Okay (strings) |
++ | Debugging | Proxy magic | Clear code | Some magic |
++ | Learning curve | Moderate | Low | Low |
++ | Generation | Not needed | Optional | Optional |
++ 
++ ## When to Use What
++ 
++ **Hand-written fakes when:**
++ - Interface is small (1-3 methods)
++ - You need the fake in multiple tests
++ - You want maximum clarity
++ - You prefer no dependencies
++ 
++ **testify/mock when:**
++ - Interface is larger
++ - You need verification of call counts/order
++ - You're comfortable with the DSL
++ - You want Moq-like experience
++ 
++ **Generated mocks when:**
++ - Interface is large and changes frequently
++ - You have many interfaces to mock
++ - You want consistency across the codebase
++ 
++ ## The Honest Take
++ 
++ I thought I'd miss Moq. I don't, really.
++ 
++ **What Go does better:**
++ - No mock magic to debug
++ - Fakes are real code you can step through
++ - Small interfaces mean small fakes
++ - No framework dependency
++ 
++ **What C# does better:**
++ - Zero boilerplate for any interface
++ - Powerful verification syntax
++ - Better for large interfaces
++ - Established patterns and tooling
++ 
++ **The verdict:**
++ Go's approach is more work for each interface, but that work is simple and debuggable. If you design with small interfaces (as Go encourages), the fake-writing burden is minimal.
++ 
++ Start with hand-written fakes. Reach for testify/mock if you find yourself writing the same patterns repeatedly. Use generated mocks for genuinely large interfaces.
++ 
++ The bigger lesson: good interface design reduces mocking complexity in any language. Go just makes that more obvious.
++ 
++ ---
++ 
++ *Next up: benchmarks and profiling—&#96;go test -bench&#96; and pprof for understanding where your performance actually goes.*
++ 
+```
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="write">
+
+<details><summary>Tool use: **write** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/dotnet-to-go-benchmarks.md</summary>
+
+**Chunk 1**
+Lines added: 349, lines removed: 1
+
+```diff
+@@ -1,1 +1,349 @@
+- 
++ +++
++ title = "Benchmarks and Profiling Out of the Box"
++ date = "2025-01-03"
++ draft = false
++ tags = ["go", "dotnet", "testing", "performance", "benchmarks", "csharp"]
++ +++
++ 
++ Here's something that surprised me: Go has built-in benchmarking. No BenchmarkDotNet to install. No configuration. Write a function, run &#96;go test -bench&#96;, get numbers.
++ 
++ And profiling? Also built in. CPU profiles, memory profiles, blocking profiles—all from the standard toolchain.
++ 
++ Coming from .NET where you install BenchmarkDotNet for proper benchmarks and a separate profiler for profiling, Go's integrated approach is refreshing.
++ 
++ ## Writing Benchmarks
++ 
++ Benchmark functions start with &#96;Benchmark&#96; and take &#96;*testing.B&#96;:
++ 
++ &#96;&#96;&#96;go
++ func BenchmarkAdd(b *testing.B) {
++     for i := 0; i &lt; b.N; i++ {
++         Add(2, 3)
++     }
++ }
++ &#96;&#96;&#96;
++ 
++ That &#96;b.N&#96; is key. The framework controls it, running your code enough times to get stable measurements.
++ 
++ Run with:
++ 
++ &#96;&#96;&#96;bash
++ go test -bench=.                    # all benchmarks
++ go test -bench=BenchmarkAdd         # specific benchmark
++ go test -bench=. -benchtime=5s      # run for 5 seconds
++ go test -bench=. -count=10          # run 10 times
++ &#96;&#96;&#96;
++ 
++ Output:
++ 
++ &#96;&#96;&#96;
++ BenchmarkAdd-8    1000000000    0.3192 ns/op
++ &#96;&#96;&#96;
++ 
++ Translation: on 8 cores, ran 1 billion iterations, each took ~0.32 nanoseconds.
++ 
++ ## Comparing to BenchmarkDotNet
++ 
++ In C#, you'd write:
++ 
++ &#96;&#96;&#96;csharp
++ [Benchmark]
++ public int Add() =&gt; Math.Add(2, 3);
++ &#96;&#96;&#96;
++ 
++ Then run the benchmark project. BenchmarkDotNet gives you beautiful output, statistical analysis, memory diagnostics, multiple runtimes...
++ 
++ Go's benchmarks are simpler. Less analysis, less ceremony, faster feedback.
++ 
++ ## Benchmarking with Setup
++ 
++ Don't include setup in the measured loop:
++ 
++ &#96;&#96;&#96;go
++ func BenchmarkParse(b *testing.B) {
++     data := loadTestData()  // setup, not measured
++     
++     b.ResetTimer()  // start timing from here
++     
++     for i := 0; i &lt; b.N; i++ {
++         Parse(data)
++     }
++ }
++ &#96;&#96;&#96;
++ 
++ &#96;b.ResetTimer()&#96; excludes setup time from measurements.
++ 
++ ## Memory Benchmarks
++ 
++ Track allocations:
++ 
++ &#96;&#96;&#96;bash
++ go test -bench=. -benchmem
++ &#96;&#96;&#96;
++ 
++ Output:
++ 
++ &#96;&#96;&#96;
++ BenchmarkParse-8    50000    32145 ns/op    4096 B/op    12 allocs/op
++ &#96;&#96;&#96;
++ 
++ Now you see: 4096 bytes allocated per operation, 12 separate allocations.
++ 
++ You can also report memory in code:
++ 
++ &#96;&#96;&#96;go
++ func BenchmarkAllocations(b *testing.B) {
++     b.ReportAllocs()
++     for i := 0; i &lt; b.N; i++ {
++         _ = make([]byte, 1024)
++     }
++ }
++ &#96;&#96;&#96;
++ 
++ ## Benchmark Comparison
++ 
++ Compare different implementations:
++ 
++ &#96;&#96;&#96;go
++ func BenchmarkConcatPlus(b *testing.B) {
++     for i := 0; i &lt; b.N; i++ {
++         s := "hello" + " " + "world"
++         _ = s
++     }
++ }
++ 
++ func BenchmarkConcatBuilder(b *testing.B) {
++     for i := 0; i &lt; b.N; i++ {
++         var sb strings.Builder
++         sb.WriteString("hello")
++         sb.WriteString(" ")
++         sb.WriteString("world")
++         _ = sb.String()
++     }
++ }
++ &#96;&#96;&#96;
++ 
++ Run both:
++ 
++ &#96;&#96;&#96;bash
++ go test -bench=BenchmarkConcat
++ &#96;&#96;&#96;
++ 
++ Use &#96;benchstat&#96; for statistical comparison:
++ 
++ &#96;&#96;&#96;bash
++ go install golang.org/x/perf/cmd/benchstat@latest
++ 
++ go test -bench=. -count=10 &gt; old.txt
++ # make changes
++ go test -bench=. -count=10 &gt; new.txt
++ 
++ benchstat old.txt new.txt
++ &#96;&#96;&#96;
++ 
++ Output shows whether changes are statistically significant.
++ 
++ ## Sub-Benchmarks
++ 
++ Test different sizes:
++ 
++ &#96;&#96;&#96;go
++ func BenchmarkSort(b *testing.B) {
++     sizes := []int{10, 100, 1000, 10000}
++     
++     for _, size := range sizes {
++         b.Run(fmt.Sprintf("size=%d", size), func(b *testing.B) {
++             data := generateData(size)
++             b.ResetTimer()
++             
++             for i := 0; i &lt; b.N; i++ {
++                 sort.Ints(data)
++             }
++         })
++     }
++ }
++ &#96;&#96;&#96;
++ 
++ Output:
++ 
++ &#96;&#96;&#96;
++ BenchmarkSort/size=10-8       5000000     234 ns/op
++ BenchmarkSort/size=100-8       500000    3456 ns/op
++ BenchmarkSort/size=1000-8       30000   45678 ns/op
++ BenchmarkSort/size=10000-8       2000  678901 ns/op
++ &#96;&#96;&#96;
++ 
++ ## CPU Profiling
++ 
++ Generate a CPU profile:
++ 
++ &#96;&#96;&#96;bash
++ go test -bench=. -cpuprofile=cpu.prof
++ &#96;&#96;&#96;
++ 
++ Analyse with pprof:
++ 
++ &#96;&#96;&#96;bash
++ go tool pprof cpu.prof
++ &#96;&#96;&#96;
++ 
++ Interactive commands:
++ 
++ &#96;&#96;&#96;
++ (pprof) top           # hottest functions
++ (pprof) top --cum     # including callees
++ (pprof) list FuncName # source annotation
++ (pprof) web           # open graph in browser
++ &#96;&#96;&#96;
++ 
++ Or the web UI:
++ 
++ &#96;&#96;&#96;bash
++ go tool pprof -http=:8080 cpu.prof
++ &#96;&#96;&#96;
++ 
++ Opens a browser with flame graphs, call graphs, source annotations.
++ 
++ ## Memory Profiling
++ 
++ Generate memory profiles:
++ 
++ &#96;&#96;&#96;bash
++ go test -bench=. -memprofile=mem.prof
++ &#96;&#96;&#96;
++ 
++ Analyse:
++ 
++ &#96;&#96;&#96;bash
++ go tool pprof mem.prof
++ (pprof) top           # biggest allocators
++ (pprof) list FuncName # source with allocation sizes
++ &#96;&#96;&#96;
++ 
++ Two views:
++ 
++ &#96;&#96;&#96;bash
++ go tool pprof -alloc_space mem.prof  # total bytes allocated
++ go tool pprof -inuse_space mem.prof  # bytes in use at snapshot
++ &#96;&#96;&#96;
++ 
++ ## Runtime Profiling
++ 
++ For running applications (not benchmarks):
++ 
++ &#96;&#96;&#96;go
++ import (
++     "net/http"
++     _ "net/http/pprof"  // side-effect import
++ )
++ 
++ func main() {
++     go func() {
++         http.ListenAndServe("localhost:6060", nil)
++     }()
++     
++     // your application
++ }
++ &#96;&#96;&#96;
++ 
++ Now you can:
++ 
++ &#96;&#96;&#96;bash
++ go tool pprof http://localhost:6060/debug/pprof/profile?seconds=30
++ go tool pprof http://localhost:6060/debug/pprof/heap
++ go tool pprof http://localhost:6060/debug/pprof/goroutine
++ &#96;&#96;&#96;
++ 
++ Profile a live application without restarting.
++ 
++ ## The Comparison
++ 
++ | Feature | BenchmarkDotNet | Go Benchmarks |
++ |---------|-----------------|---------------|
++ | Setup | NuGet + project | Built-in |
++ | Statistical analysis | Extensive | Basic (use benchstat) |
++ | Memory tracking | Detailed | Good |
++ | Profiling integration | Separate tools | Built-in |
++ | Output format | Beautiful | Functional |
++ | Multiple runtimes | Yes | No (just Go) |
++ | Configuration | Attributes | Code |
++ 
++ ## Practical Tips
++ 
++ ### Avoid Compiler Optimisation
++ 
++ The compiler might optimise away unused results:
++ 
++ &#96;&#96;&#96;go
++ // BAD: compiler might skip the work
++ func BenchmarkBad(b *testing.B) {
++     for i := 0; i &lt; b.N; i++ {
++         Add(2, 3)  // result unused, might be optimised away
++     }
++ }
++ 
++ // GOOD: use the result
++ var result int
++ 
++ func BenchmarkGood(b *testing.B) {
++     var r int
++     for i := 0; i &lt; b.N; i++ {
++         r = Add(2, 3)
++     }
++     result = r  // prevent optimisation
++ }
++ &#96;&#96;&#96;
++ 
++ ### Benchmark What Matters
++ 
++ Don't benchmark trivial operations:
++ 
++ &#96;&#96;&#96;go
++ // Pointless: measures loop overhead more than Add
++ func BenchmarkTrivial(b *testing.B) {
++     for i := 0; i &lt; b.N; i++ {
++         _ = 2 + 3
++     }
++ }
++ &#96;&#96;&#96;
++ 
++ Benchmark real workloads with realistic data sizes.
++ 
++ ### Profile Before Optimising
++ 
++ Don't guess. Profile first:
++ 
++ &#96;&#96;&#96;bash
++ go test -bench=SlowFunction -cpuprofile=cpu.prof
++ go tool pprof -http=:8080 cpu.prof
++ &#96;&#96;&#96;
++ 
++ Find the actual bottleneck. Often it's not where you'd expect.
++ 
++ ## The Honest Take
++ 
++ Go's built-in benchmarking is one of its genuinely great features. Zero setup, good enough for most needs.
++ 
++ **What Go does better:**
++ - Zero dependencies for benchmarking
++ - Integrated profiling
++ - pprof is excellent
++ - Quick feedback loop
++ - Live application profiling is easy
++ 
++ **What BenchmarkDotNet does better:**
++ - More rigorous statistical analysis
++ - Better output formatting
++ - Multiple runtime comparison
++ - More configuration options
++ - Memory diagnostics are more detailed
++ 
++ **The verdict:**
++ For day-to-day "is this fast enough?" benchmarking, Go's built-in tools are excellent. For publishing performance claims or deep analysis, BenchmarkDotNet is more thorough.
++ 
++ But Go wins on the "I can just do this" factor. No packages to install. No project to configure. Write a function, run a command, get numbers. That low friction means you actually benchmark things.
++ 
++ ---
++ 
++ *That wraps up Phase 2 on the ecosystem—project structure, testing, mocking, and benchmarking. These are the tools you'll use every day. Go's approach is consistently simpler than .NET's, with trade-offs in power and flexibility. But for most work, simpler is better.*
++ 
+```
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+Let me verify the build works with all the new posts.</details></think>
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_cmd">
+<details><summary>Tool use: **run_terminal_cmd** • Run command: cd /Users/andycross/src/personal/mcp-blogs && hugo --quiet && echo "Build successful" && ls content/posts/dotnet-to-go*.md | wc -l && echo "---" && ls content/posts/dotnet-to-go*.md</summary>
+
+```bash
+cd /Users/andycross/src/personal/mcp-blogs && hugo --quiet && echo "Build successful" && ls content/posts/dotnet-to-go*.md | wc -l && echo "---" && ls content/posts/dotnet-to-go*.md
+```
+
+```
+Build successful
+      27
+---
+content/posts/dotnet-to-go-any.md
+content/posts/dotnet-to-go-benchmarks.md
+content/posts/dotnet-to-go-channels.md
+content/posts/dotnet-to-go-composition.md
+content/posts/dotnet-to-go-context.md
+content/posts/dotnet-to-go-enums.md
+content/posts/dotnet-to-go-errors.md
+content/posts/dotnet-to-go-escape-analysis.md
+content/posts/dotnet-to-go-generics.md
+content/posts/dotnet-to-go-goroutines.md
+content/posts/dotnet-to-go-interfaces.md
+content/posts/dotnet-to-go-mocking.md
+content/posts/dotnet-to-go-modules.md
+content/posts/dotnet-to-go-monorepo.md
+content/posts/dotnet-to-go-nil.md
+content/posts/dotnet-to-go-panic.md
+content/posts/dotnet-to-go-phrasebook.md
+content/posts/dotnet-to-go-pointers.md
+content/posts/dotnet-to-go-project-structure.md
+content/posts/dotnet-to-go-select.md
+content/posts/dotnet-to-go-slices.md
+content/posts/dotnet-to-go-structs.md
+content/posts/dotnet-to-go-switch.md
+content/posts/dotnet-to-go-sync.md
+content/posts/dotnet-to-go-testing.md
+content/posts/dotnet-to-go-toolchain.md
+content/posts/dotnet-to-go-visibility.md
+
+```
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+All 27 posts are done and the build passes. Let me summarize the complete series for the user.</details></think>
+
+---
+
+All 5 Phase 2 Ecosystem posts done! **27 posts total now.** Here's the complete series:
+
+## C# to Go Series (27 posts)
+
+### Phase 1: The Fundamentals
+
+**Getting Oriented (3)**
+1. "You Know .NET, Now Meet the Go Toolchain"
+2. "Goodbye .csproj, Hello go.mod"
+3. "The Phrasebook: C# Concepts in Go Terms"
+
+**Types & Data (5)**
+4. "Your Class Is Now a Struct (And That's Fine)"
+5. "Where Did My Properties Go?"
+6. "Generics: Late to the Party"
+7. "The Million Dollar Mistake, Differently"
+8. "No Enums? No Problem (Sort Of)"
+
+**Control Flow & Error Handling (3)**
+9. "if err != nil: Your New Reality"
+10. "Panic and Recover: The Emergency Exit"
+11. "The switch Statement You Always Wanted"
+
+**Memory & Pointers (3)**
+12. "Pointers Without the Pain"
+13. "Stack vs Heap: Go's Escape Analysis"
+14. "Slices Are Not Arrays (And Neither Is List<T>)"
+
+**Concurrency (5)**
+15. "Async/Await vs Goroutines: A Mindset Shift"
+16. "Channels: The sync You Didn't Know You Wanted"
+17. "select: Multiplexing Like a Pro"
+18. "Mutexes and WaitGroups: When Channels Aren't the Answer"
+19. "Context Is King"
+
+**Interfaces & Composition (3)**
+20. "Implicit Interfaces: Scary Then Brilliant"
+21. "Composition Over Inheritance (For Real This Time)"
+22. "The Empty Interface and Type Assertions"
+
+---
+
+### Phase 2: The Ecosystem ← **NEW**
+
+**Project Structure & Modules (2)**
+23. **"Organising a Real Project"** — Package design, `internal/` enforcement, avoiding circular dependencies, the flat structure mental model
+24. **"Multi-Module Repos: Monorepo Thinking"** — `go.work` workspaces, cross-module dependencies, versioning with path-prefixed tags
+
+**Testing (3)**
+25. **"Testing Without a Framework"** — Built-in `testing` package, `*testing.T`, table-driven tests, subtests, coverage, `TestMain`
+26. **"Mocking in a Language Without Mockito"** — Hand-written fakes, function fields, testify/mock, generated mocks, why small interfaces make this bearable
+27. **"Benchmarks and Profiling Out of the Box"** — `go test -bench`, `-benchmem`, CPU/memory profiling with pprof, comparing to BenchmarkDotNet
+
+That's a proper comprehensive series! Ready for Phase 3 (Deployment) whenever you want to tackle containers, cloud, and CI/CD!
+
+---
+
+_**User (2025-12-30 00:39Z)**_
+
+actually we have these to do before we get to deployment
+
+Common Patterns & Libraries
+
+HTTP Services: net/http vs ASP.NET Core — Handlers, middleware, and routers without the ceremony
+JSON: struct Tags and the Marshal Dance — Newtonsoft this is not
+Configuration Without IOptions<T> — Viper, envconfig, and keeping it simple
+Logging: slog and the Structured Logging Story — From ILogger to Go's new standard
+Database Access: database/sql vs Entity Framework — Connection pooling, scanning rows, and missing your ORM
+GORM and Friends: When You Do Want an ORM — Trade-offs for C# devs used to EF Core
+
+Tooling
+
+Linting and Formatting: gofmt Is Non-Negotiable — golangci-lint, staticcheck, and embracing enforced style
+Generate All the Things — go generate, code generation patterns, and why Go devs love it
+Debugging: Delve vs Visual Studio's Comfort — Getting productive with dlv and your IDE
+
+---
+
+_**Agent (model claude-4.5-opus-high-thinking, mode Agent)**_
+
+<think><details><summary>Thought Process</summary>
+The user wants me to create 9 more posts before</details></think>
+
+---
+
