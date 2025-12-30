@@ -8104,3 +8104,1107 @@ But also acknowledges where C# is better:
 
 ---
 
+_**User (2025-12-30 00:36Z)**_
+
+This is the end of the full phase 1: 
+
+let's go!
+
+Interfaces & Composition
+
+Implicit Interfaces: Scary Then Brilliant — No implements keyword, duck typing done right
+Composition Over Inheritance (For Real This Time) — Embedding, delegation, and why you won't miss base classes
+The Empty Interface and Type Assertions — interface{}, any, and when you're basically back to object
+
+keep the tone, we're getting a bit more difficult so feel free to be more casual at times
+
+Explain things that are new to dotnet devs, maybe embeddings etc, need some defitnion
+
+---
+
+_**Agent (model claude-4.5-opus-high-thinking, mode Agent)**_
+
+<think><details><summary>Thought Process</summary>
+The user wants me to create 3 posts for the Interfaces & Composition section. They want me to:
+1. Keep the tone but be more casual at times since it's getting more difficult
+2. Explain things that are new to .NET devs, like embedding - give proper definitions
+
+Let me write these posts with good explanations of Go-specific concepts like embedding, implicit interfaces, etc.</details></think>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="write">
+
+<details><summary>Tool use: **write** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/dotnet-to-go-interfaces.md</summary>
+
+**Chunk 1**
+Lines added: 250, lines removed: 1
+
+```diff
+@@ -1,1 +1,250 @@
+- 
++ +++
++ title = "Implicit Interfaces: Scary Then Brilliant"
++ date = "2025-01-02"
++ draft = false
++ tags = ["go", "dotnet", "interfaces", "csharp"]
++ +++
++ 
++ Here's a sentence that'll make every C# developer uncomfortable: Go interfaces don't require an &#96;implements&#96; keyword. You never explicitly declare that a type implements an interface. If your type has the right methods, it implements the interface. Automatically. Implicitly.
++ 
++ This sounds like chaos. It felt like chaos to me for the first week. Then it clicked, and now C#'s explicit interface declarations feel like unnecessary paperwork.
++ 
++ ## The C# Way: Explicit Declaration
++ 
++ In C#, implementing an interface is a contract you sign explicitly:
++ 
++ &#96;&#96;&#96;csharp
++ public interface IWriter
++ {
++     void Write(byte[] data);
++ }
++ 
++ public class FileWriter : IWriter  // explicit declaration
++ {
++     public void Write(byte[] data)
++     {
++         // write to file
++     }
++ }
++ &#96;&#96;&#96;
++ 
++ The &#96;: IWriter&#96; is required. Without it, &#96;FileWriter&#96; doesn't implement &#96;IWriter&#96;, even if it has a matching &#96;Write&#96; method. The compiler enforces this contract.
++ 
++ ## The Go Way: Implicit Satisfaction
++ 
++ Go flips this around:
++ 
++ &#96;&#96;&#96;go
++ type Writer interface {
++     Write(p []byte) (n int, err error)
++ }
++ 
++ type FileWriter struct {
++     // fields
++ }
++ 
++ func (f *FileWriter) Write(p []byte) (n int, err error) {
++     // write to file
++     return len(p), nil
++ }
++ 
++ // FileWriter now implements Writer. No declaration needed.
++ &#96;&#96;&#96;
++ 
++ There's no &#96;implements Writer&#96; anywhere. The &#96;FileWriter&#96; type has a method &#96;Write(p []byte) (n int, err error)&#96;, which matches the &#96;Writer&#96; interface's signature. Therefore, &#96;FileWriter&#96; implements &#96;Writer&#96;. Done.
++ 
++ This is called **structural typing** or, less formally, **duck typing**: if it walks like a duck and quacks like a duck, it's a duck. If your type has the methods an interface requires, it implements that interface.
++ 
++ ## Why This Is Actually Good
++ 
++ I know, I know. "But how do I know what interfaces my type implements?" "What if I accidentally implement something?" "How do I document my intent?"
++ 
++ Let me address these, because they were my exact objections.
++ 
++ ### You Can Define Interfaces After the Fact
++ 
++ This is the killer feature. In C#, if you want an interface, you design it upfront, or you go back and modify all implementing types when you add one later.
++ 
++ In Go, you can define an interface that existing types already satisfy:
++ 
++ &#96;&#96;&#96;go
++ // You wrote this last month
++ type Database struct { ... }
++ func (db *Database) Query(sql string) ([]Row, error) { ... }
++ func (db *Database) Exec(sql string) error { ... }
++ 
++ // Today you want to test something that uses Database
++ type Querier interface {
++     Query(sql string) ([]Row, error)
++ }
++ 
++ // Database already implements Querier. No changes needed.
++ func ProcessData(q Querier) { ... }
++ &#96;&#96;&#96;
++ 
++ You created a new interface. &#96;Database&#96; implements it without any modification. Your production code doesn't change. Your tests can use a mock &#96;Querier&#96;. Beautiful.
++ 
++ In C#, you'd need to go back and add &#96;: IQuerier&#96; to &#96;Database&#96;. That's a code change, a new commit, potentially a new deployment—all for what should be a refactoring detail.
++ 
++ ### Small Interfaces Are Encouraged
++ 
++ Go's standard library is full of tiny interfaces:
++ 
++ &#96;&#96;&#96;go
++ type Reader interface {
++     Read(p []byte) (n int, err error)
++ }
++ 
++ type Writer interface {
++     Write(p []byte) (n int, err error)
++ }
++ 
++ type Closer interface {
++     Close() error
++ }
++ &#96;&#96;&#96;
++ 
++ One method each. Dozens of types implement &#96;Reader&#96;—files, network connections, HTTP response bodies, byte buffers, compression streams. They don't know about each other. They just happen to have a &#96;Read&#96; method.
++ 
++ This leads to highly composable code. Functions take the smallest interface they need:
++ 
++ &#96;&#96;&#96;go
++ func Copy(dst Writer, src Reader) (int64, error)
++ &#96;&#96;&#96;
++ 
++ Anything readable to anything writable. Files to network. Network to memory. Whatever. If it has the methods, it works.
++ 
++ In C#, you'd need &#96;IReadable&#96; and &#96;IWritable&#96; interfaces defined somewhere, and every type would need to explicitly implement them. The friction means you'd probably just use concrete types or create fat interfaces.
++ 
++ ### Accidental Implementation Is Rare
++ 
++ "But what if I accidentally implement an interface I didn't mean to?"
++ 
++ In practice, this almost never happens. Interfaces in Go tend to have method names specific to their purpose. The odds that your &#96;type Banana struct{}&#96; accidentally has a method &#96;func (b Banana) Read(p []byte) (int, error)&#96; are slim.
++ 
++ And if it does? So what? If your banana can be read from, maybe someone will find a creative use for that. The type system isn't going to explode.
++ 
++ ## Checking Interface Satisfaction
++ 
++ If you want to verify at compile time that a type implements an interface, use this pattern:
++ 
++ &#96;&#96;&#96;go
++ var _ Writer = (*FileWriter)(nil)
++ &#96;&#96;&#96;
++ 
++ This declares an anonymous variable of type &#96;Writer&#96; and assigns a nil &#96;*FileWriter&#96; to it. If &#96;*FileWriter&#96; doesn't implement &#96;Writer&#96;, compilation fails.
++ 
++ The variable is discarded (assigned to &#96;_&#96;), so there's no runtime cost. It's purely a compile-time check.
++ 
++ &#96;&#96;&#96;go
++ // In your file, somewhere near the type definition
++ var _ io.Reader = (*MyReader)(nil)
++ var _ io.Writer = (*MyWriter)(nil)
++ var _ http.Handler = (*MyHandler)(nil)
++ &#96;&#96;&#96;
++ 
++ This is the Go equivalent of declaring intent. Use it when the interface implementation is non-obvious or contractually important.
++ 
++ ## Interface Values: Two Components
++ 
++ Here's something C# developers don't think about: an interface value in Go has two components:
++ 
++ 1. **The type**: what concrete type is stored
++ 2. **The value**: the actual data
++ 
++ &#96;&#96;&#96;go
++ var w Writer
++ fmt.Printf("type: %T, value: %v\n", w, w)
++ // type: &lt;nil&gt;, value: &lt;nil&gt;
++ 
++ w = &amp;FileWriter{}
++ fmt.Printf("type: %T, value: %v\n", w, w)
++ // type: *main.FileWriter, value: &amp;{...}
++ &#96;&#96;&#96;
++ 
++ This matters because of the nil interface trap we covered earlier. An interface is only &#96;nil&#96; when both type and value are nil. Assign a nil pointer and the type is set, so the interface isn't nil.
++ 
++ ## Interfaces on Values vs Pointers
++ 
++ Methods can have value receivers or pointer receivers. This affects interface implementation:
++ 
++ &#96;&#96;&#96;go
++ type Speaker interface {
++     Speak() string
++ }
++ 
++ type Dog struct{ Name string }
++ 
++ // Value receiver
++ func (d Dog) Speak() string {
++     return "Woof!"
++ }
++ 
++ var s Speaker
++ s = Dog{Name: "Rex"}   // OK - Dog implements Speaker
++ s = &amp;Dog{Name: "Rex"}  // OK - *Dog also implements Speaker (Go is helpful here)
++ &#96;&#96;&#96;
++ 
++ But watch what happens with pointer receivers:
++ 
++ &#96;&#96;&#96;go
++ type Cat struct{ Name string }
++ 
++ // Pointer receiver
++ func (c *Cat) Speak() string {
++     return "Meow!"
++ }
++ 
++ var s Speaker
++ s = &amp;Cat{Name: "Whiskers"}  // OK - *Cat implements Speaker
++ s = Cat{Name: "Whiskers"}   // ERROR - Cat does NOT implement Speaker
++ &#96;&#96;&#96;
++ 
++ Why? Because you can always get a pointer from a value (&#96;&amp;cat&#96;), but you can't always get an addressable value from a pointer. Go is strict about this.
++ 
++ **The rule**: if any method has a pointer receiver, use pointers with that interface.
++ 
++ ## Comparing to C# Interface Features
++ 
++ | Feature | C# | Go |
++ |---------|-----|-----|
++ | Explicit implementation | Required (&#96;: IInterface&#96;) | Not possible |
++ | Implicit implementation | Not possible | Automatic |
++ | Default methods | Yes (C# 8+) | No |
++ | Static methods | Yes (C# 11) | No |
++ | Properties | Yes | No (use methods) |
++ | Generic interfaces | Yes | Yes (Go 1.18+) |
++ | Explicit interface implementation | Yes (&#96;IFoo.Bar()&#96;) | No |
++ | Covariance/contravariance | Yes (&#96;out&#96;/&#96;in&#96;) | No |
++ 
++ Go interfaces are simpler. That simplicity is the point.
++ 
++ ## The Honest Take
++ 
++ Implicit interfaces felt wrong. "How will I know what my type implements?" "How will I communicate intent?"
++ 
++ Then I realised: the caller defines what it needs. The implementer just provides capabilities. If those match, great. If not, no harm done.
++ 
++ **What Go does better:**
++ - Define interfaces at the point of use, not declaration
++ - Small, composable interfaces are natural
++ - No ceremony—just write the methods
++ - Retroactive interface satisfaction
++ - Decouples interface from implementation completely
++ 
++ **What C# does better:**
++ - Clear documentation of intent (&#96;: IInterface&#96;)
++ - IDE "go to implementations" is easier
++ - Explicit interface implementation for conflicts
++ - Default interface methods
++ - Richer interface features (properties, statics)
++ 
++ **The verdict:**
++ Once you stop thinking "I need to declare my interfaces upfront" and start thinking "I'll define an interface when I need the abstraction," Go's approach makes beautiful sense. It's just a different philosophy.
++ 
++ The interface belongs to the consumer, not the producer. That inversion takes time to internalise, but it's powerful.
++ 
++ ---
++ 
++ *Next up: composition via embedding—Go's alternative to inheritance, and why you really won't miss base classes.*
++ 
+```
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="write">
+
+<details><summary>Tool use: **write** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/dotnet-to-go-composition.md</summary>
+
+**Chunk 1**
+Lines added: 344, lines removed: 1
+
+```diff
+@@ -1,1 +1,344 @@
+- 
++ +++
++ title = "Composition Over Inheritance (For Real This Time)"
++ date = "2025-01-02"
++ draft = false
++ tags = ["go", "dotnet", "composition", "embedding", "csharp"]
++ +++
++ 
++ We've all heard "favour composition over inheritance." We've all nodded sagely. And then we've all written class hierarchies three levels deep because, well, it's right there and it's easy.
++ 
++ Go doesn't give you the choice. There's no inheritance. Zero. You can't extend a type. You can't override methods. There's no &#96;virtual&#96;, no &#96;abstract&#96;, no &#96;base&#96;.
++ 
++ Instead, Go has **embedding**—a form of composition that feels almost like inheritance but isn't. And after using it for a while, I genuinely don't miss base classes.
++ 
++ ## What Is Embedding?
++ 
++ Embedding is when you include one type inside another without giving it a field name:
++ 
++ &#96;&#96;&#96;go
++ type Person struct {
++     Name string
++     Age  int
++ }
++ 
++ type Employee struct {
++     Person              // embedded - no field name
++     EmployeeID string
++     Department string
++ }
++ &#96;&#96;&#96;
++ 
++ Notice: &#96;Person&#96; is listed without a name. It's not &#96;person Person&#96;, just &#96;Person&#96;. That's embedding.
++ 
++ What does this give you? The embedded type's fields and methods are **promoted** to the outer type:
++ 
++ &#96;&#96;&#96;go
++ emp := Employee{
++     Person:     Person{Name: "Alice", Age: 30},
++     EmployeeID: "E123",
++     Department: "Engineering",
++ }
++ 
++ // These all work:
++ fmt.Println(emp.Name)        // "Alice" - promoted from Person
++ fmt.Println(emp.Age)         // 30 - promoted from Person
++ fmt.Println(emp.EmployeeID)  // "E123" - direct field
++ fmt.Println(emp.Person.Name) // "Alice" - explicit access still works
++ &#96;&#96;&#96;
++ 
++ The &#96;Employee&#96; type didn't "inherit" from &#96;Person&#96;. It *contains* a &#96;Person&#96; and Go conveniently promotes its members.
++ 
++ ## Methods Are Promoted Too
++ 
++ If &#96;Person&#96; has methods, &#96;Employee&#96; gets them:
++ 
++ &#96;&#96;&#96;go
++ func (p Person) Greet() string {
++     return fmt.Sprintf("Hi, I'm %s", p.Name)
++ }
++ 
++ emp := Employee{Person: Person{Name: "Alice"}}
++ fmt.Println(emp.Greet())  // "Hi, I'm Alice"
++ &#96;&#96;&#96;
++ 
++ The method is promoted. You call it on &#96;Employee&#96;, but it executes as if called on the embedded &#96;Person&#96;. 
++ 
++ This looks like inheritance. But there's a crucial difference.
++ 
++ ## It's Not Inheritance: The Receiver Stays the Same
++ 
++ In inheritance, an overridden method in a subclass can access &#96;this&#96;/&#96;self&#96; as the subclass type. That's polymorphism.
++ 
++ In embedding, the method's receiver is still the embedded type:
++ 
++ &#96;&#96;&#96;go
++ type Person struct {
++     Name string
++ }
++ 
++ func (p Person) Introduce() string {
++     return fmt.Sprintf("I am %s", p.Name)
++ }
++ 
++ type Employee struct {
++     Person
++     Title string
++ }
++ 
++ // This is NOT overriding - it's shadowing
++ func (e Employee) Introduce() string {
++     return fmt.Sprintf("I am %s, %s", e.Name, e.Title)
++ }
++ &#96;&#96;&#96;
++ 
++ If &#96;Person.Introduce()&#96; called another method, that call wouldn't magically dispatch to &#96;Employee&#96;'s version:
++ 
++ &#96;&#96;&#96;go
++ func (p Person) FullIntro() string {
++     return p.Introduce() + ". Nice to meet you!"  // calls Person.Introduce, always
++ }
++ 
++ emp := Employee{Person: Person{Name: "Alice"}, Title: "Engineer"}
++ fmt.Println(emp.FullIntro())  // "I am Alice. Nice to meet you!"
++ // Not "I am Alice, Engineer. Nice to meet you!"
++ &#96;&#96;&#96;
++ 
++ There's no dynamic dispatch based on the outer type. The embedded &#96;Person&#96; doesn't know it's inside an &#96;Employee&#96;. It just does its thing.
++ 
++ This is composition, not inheritance. It's a feature, not a limitation.
++ 
++ ## Multiple Embedding
++ 
++ You can embed multiple types:
++ 
++ &#96;&#96;&#96;go
++ type Reader struct { ... }
++ func (r Reader) Read(p []byte) (int, error) { ... }
++ 
++ type Writer struct { ... }
++ func (w Writer) Write(p []byte) (int, error) { ... }
++ 
++ type ReadWriter struct {
++     Reader
++     Writer
++ }
++ 
++ // ReadWriter now has both Read and Write methods
++ &#96;&#96;&#96;
++ 
++ This is like implementing multiple interfaces, except you're getting actual implementations, not just contracts.
++ 
++ If there are conflicts (both embedded types have a method with the same name), you get a compile error when you try to call the ambiguous method. You resolve it by calling explicitly:
++ 
++ &#96;&#96;&#96;go
++ rw.Reader.SomeMethod()  // explicit disambiguation
++ rw.Writer.SomeMethod()
++ &#96;&#96;&#96;
++ 
++ ## Embedding Interfaces
++ 
++ You can also embed interfaces in interfaces:
++ 
++ &#96;&#96;&#96;go
++ type Reader interface {
++     Read(p []byte) (n int, err error)
++ }
++ 
++ type Writer interface {
++     Write(p []byte) (n int, err error)
++ }
++ 
++ type ReadWriter interface {
++     Reader  // embedded
++     Writer  // embedded
++ }
++ &#96;&#96;&#96;
++ 
++ This is just interface composition. &#96;ReadWriter&#96; requires both &#96;Read&#96; and &#96;Write&#96; methods.
++ 
++ And you can embed interfaces in structs:
++ 
++ &#96;&#96;&#96;go
++ type MyHandler struct {
++     http.Handler  // embedded interface
++ }
++ &#96;&#96;&#96;
++ 
++ Now &#96;MyHandler&#96; has a field of type &#96;http.Handler&#96;, and its methods are promoted. You can create a &#96;MyHandler&#96; with any &#96;http.Handler&#96; implementation.
++ 
++ This is useful for decorating or wrapping behaviour.
++ 
++ ## The "Delegation" Pattern
++ 
++ Want to wrap something and override specific behaviour? Embed and shadow:
++ 
++ &#96;&#96;&#96;go
++ type LoggingWriter struct {
++     io.Writer  // embedded interface
++ }
++ 
++ func (lw LoggingWriter) Write(p []byte) (n int, err error) {
++     log.Printf("writing %d bytes", len(p))
++     return lw.Writer.Write(p)  // delegate to embedded
++ }
++ &#96;&#96;&#96;
++ 
++ &#96;LoggingWriter&#96; embeds an &#96;io.Writer&#96;. It has its own &#96;Write&#96; method that logs then delegates. Everything else passes through unchanged.
++ 
++ Use it like:
++ 
++ &#96;&#96;&#96;go
++ file, _ := os.Create("output.txt")
++ logged := LoggingWriter{Writer: file}
++ logged.Write([]byte("hello"))  // logs then writes
++ &#96;&#96;&#96;
++ 
++ This is the decorator pattern, but simple and type-safe.
++ 
++ ## Comparing to C# Inheritance
++ 
++ Let's see the same concept in C#:
++ 
++ &#96;&#96;&#96;csharp
++ public class Person
++ {
++     public string Name { get; set; }
++     public virtual string Greet() =&gt; $"Hi, I'm {Name}";
++ }
++ 
++ public class Employee : Person
++ {
++     public string EmployeeID { get; set; }
++     public override string Greet() =&gt; $"Hi, I'm {Name}, employee {EmployeeID}";
++ }
++ &#96;&#96;&#96;
++ 
++ With inheritance, &#96;Employee&#96; IS-A &#96;Person&#96;. Polymorphism works. Override methods get called even when accessed through a base reference.
++ 
++ &#96;&#96;&#96;csharp
++ Person p = new Employee { Name = "Alice", EmployeeID = "E123" };
++ Console.WriteLine(p.Greet());  // "Hi, I'm Alice, employee E123" - polymorphic!
++ &#96;&#96;&#96;
++ 
++ Go's embedding doesn't do this. &#96;Employee&#96; HAS-A &#96;Person&#96;. No polymorphism. No override resolution.
++ 
++ ## When You'll Miss Inheritance
++ 
++ Let's be honest: there are patterns that inheritance handles elegantly.
++ 
++ **Template Method Pattern:**
++ 
++ &#96;&#96;&#96;csharp
++ public abstract class DataProcessor
++ {
++     public void Process()
++     {
++         var data = LoadData();
++         var transformed = Transform(data);  // subclass provides this
++         Save(transformed);
++     }
++     
++     protected abstract object Transform(object data);
++ }
++ &#96;&#96;&#96;
++ 
++ In Go, you'd use an interface:
++ 
++ &#96;&#96;&#96;go
++ type Transformer interface {
++     Transform(data any) any
++ }
++ 
++ type DataProcessor struct {
++     transformer Transformer
++ }
++ 
++ func (dp *DataProcessor) Process() {
++     data := dp.LoadData()
++     transformed := dp.transformer.Transform(data)
++     dp.Save(transformed)
++ }
++ &#96;&#96;&#96;
++ 
++ More explicit, arguably clearer, but more code.
++ 
++ **Protected Members:**
++ 
++ C# has &#96;protected&#96;—visible to derived classes. Go has nothing like this. Everything is either exported (public) or unexported (package-private).
++ 
++ If you want controlled extension points, you design them explicitly with interfaces, not protected methods.
++ 
++ ## When Embedding Shines
++ 
++ **Extending functionality without modification:**
++ 
++ &#96;&#96;&#96;go
++ type CountingReader struct {
++     io.Reader
++     count int
++ }
++ 
++ func (cr *CountingReader) Read(p []byte) (n int, err error) {
++     n, err = cr.Reader.Read(p)
++     cr.count += n
++     return
++ }
++ &#96;&#96;&#96;
++ 
++ Wrap any reader. Count bytes. Original reader unchanged.
++ 
++ **Combining capabilities:**
++ 
++ &#96;&#96;&#96;go
++ type Server struct {
++     http.Server       // get all http.Server fields and methods
++     Logger *log.Logger
++     Metrics *Metrics
++ }
++ &#96;&#96;&#96;
++ 
++ Your server has everything &#96;http.Server&#96; has, plus your additions.
++ 
++ **Implementing interfaces via delegation:**
++ 
++ &#96;&#96;&#96;go
++ type DB struct {
++     pool *sql.DB  // not embedded, private
++ }
++ 
++ // Expose only what you want
++ func (db *DB) Query(q string) (*sql.Rows, error) {
++     return db.pool.Query(q)
++ }
++ &#96;&#96;&#96;
++ 
++ Control the surface area. Don't embed if you don't want to expose everything.
++ 
++ ## The Honest Take
++ 
++ I was skeptical. "Composition over inheritance" sounded like coping. Then I used Go for six months and realised: I don't miss inheritance. Not really.
++ 
++ **What Go does better:**
++ - Forces you to think about composition
++ - No fragile base class problem
++ - No diamond inheritance nightmare
++ - Clear delegation chain
++ - Easy to wrap and extend behaviour
++ 
++ **What C# does better:**
++ - Polymorphism when you actually need it
++ - Template method pattern
++ - Protected members for controlled extension
++ - Clearer "IS-A" relationships in domain modelling
++ 
++ **The verdict:**
++ Inheritance is a sharp tool. It's powerful when used well and creates brittle, tangled hierarchies when used poorly. Go removes the temptation.
++ 
++ Embedding plus interfaces gives you most of what you need. The rest can be solved with explicit design patterns. You'll write more code sometimes, but it'll be clearer code.
++ 
++ And honestly? Those deep inheritance hierarchies you built in C#? They probably shouldn't have been inheritance anyway.
++ 
++ ---
++ 
++ *Next up: the empty interface and type assertions—when you're basically back to &#96;object&#96;, and how to work with Go's dynamic typing escape hatch.*
++ 
+```
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="write">
+
+<details><summary>Tool use: **write** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/dotnet-to-go-any.md</summary>
+
+**Chunk 1**
+Lines added: 329, lines removed: 1
+
+```diff
+@@ -1,1 +1,329 @@
+- 
++ +++
++ title = "The Empty Interface and Type Assertions"
++ date = "2025-01-02"
++ draft = false
++ tags = ["go", "dotnet", "interfaces", "any", "csharp"]
++ +++
++ 
++ Go has a type called &#96;any&#96;. Before Go 1.18, it was written &#96;interface{}&#96;. Same thing, nicer name. And it's basically Go's version of &#96;object&#96;—the type that can hold anything.
++ 
++ Every type in Go implements &#96;any&#96; because &#96;any&#96; has no methods. Zero requirements means universal satisfaction. And that means when you use &#96;any&#96;, you're opting out of the type system.
++ 
++ Let's talk about when that's okay, when it's not, and how to get your types back when you need them.
++ 
++ ## What Is &#96;any&#96; / &#96;interface{}&#96;?
++ 
++ An empty interface is an interface with no methods:
++ 
++ &#96;&#96;&#96;go
++ interface{}  // the old syntax
++ any          // alias added in Go 1.18, same thing
++ &#96;&#96;&#96;
++ 
++ Since there are no required methods, every type satisfies this interface. Everything is an &#96;any&#96;.
++ 
++ &#96;&#96;&#96;go
++ var x any
++ 
++ x = 42              // int
++ x = "hello"         // string
++ x = []int{1, 2, 3}  // slice
++ x = struct{}{}      // empty struct
++ x = nil             // nil
++ &#96;&#96;&#96;
++ 
++ All valid. &#96;any&#96; is the universal container.
++ 
++ ## The C# Equivalent: &#96;object&#96;
++ 
++ C#'s &#96;object&#96; is the same idea:
++ 
++ &#96;&#96;&#96;csharp
++ object x;
++ x = 42;
++ x = "hello";
++ x = new List&lt;int&gt; { 1, 2, 3 };
++ &#96;&#96;&#96;
++ 
++ Both languages have this escape hatch for "I don't know the type at compile time." Both languages encourage you to avoid it when possible.
++ 
++ ## Why &#96;any&#96; Exists
++ 
++ Sometimes you genuinely don't know the type:
++ 
++ **JSON with unknown structure:**
++ 
++ &#96;&#96;&#96;go
++ var data any
++ json.Unmarshal(rawBytes, &amp;data)
++ // data is now map[string]any or []any or a primitive
++ &#96;&#96;&#96;
++ 
++ **Generic containers before Go had generics:**
++ 
++ &#96;&#96;&#96;go
++ // Before Go 1.18
++ type Stack struct {
++     items []interface{}
++ }
++ 
++ func (s *Stack) Push(item interface{}) {
++     s.items = append(s.items, item)
++ }
++ &#96;&#96;&#96;
++ 
++ **Function parameters that accept anything:**
++ 
++ &#96;&#96;&#96;go
++ func Println(a ...any) (n int, err error)
++ &#96;&#96;&#96;
++ 
++ &#96;fmt.Println&#96; takes &#96;any&#96; because it prints anything.
++ 
++ ## Type Assertions: Getting Types Back
++ 
++ When you have an &#96;any&#96; and need the actual type, you use a **type assertion**:
++ 
++ &#96;&#96;&#96;go
++ var x any = "hello"
++ 
++ s := x.(string)  // assert x is a string
++ fmt.Println(s)   // "hello"
++ &#96;&#96;&#96;
++ 
++ The syntax is &#96;value.(Type)&#96;. It says "I believe this &#96;any&#96; contains a &#96;Type&#96;, give it to me."
++ 
++ ### The Danger: Panics
++ 
++ If you're wrong, it panics:
++ 
++ &#96;&#96;&#96;go
++ var x any = 42
++ s := x.(string)  // panic: interface conversion: int is not string
++ &#96;&#96;&#96;
++ 
++ This is like an invalid cast exception in C#:
++ 
++ &#96;&#96;&#96;csharp
++ object x = 42;
++ string s = (string)x;  // InvalidCastException
++ &#96;&#96;&#96;
++ 
++ ### The Safe Way: Comma-OK Idiom
++ 
++ Always use the two-value form in real code:
++ 
++ &#96;&#96;&#96;go
++ var x any = 42
++ 
++ s, ok := x.(string)
++ if !ok {
++     fmt.Println("x is not a string")
++ } else {
++     fmt.Println(s)
++ }
++ &#96;&#96;&#96;
++ 
++ If the assertion fails, &#96;ok&#96; is &#96;false&#96; and &#96;s&#96; is the zero value of &#96;string&#96;. No panic.
++ 
++ This is like C#'s &#96;as&#96; operator plus null check:
++ 
++ &#96;&#96;&#96;csharp
++ object x = 42;
++ if (x is string s)
++ {
++     Console.WriteLine(s);
++ }
++ else
++ {
++     Console.WriteLine("x is not a string");
++ }
++ &#96;&#96;&#96;
++ 
++ ## Type Switches: Handling Multiple Types
++ 
++ When you need to handle different types, use a type switch:
++ 
++ &#96;&#96;&#96;go
++ func describe(x any) {
++     switch v := x.(type) {
++     case int:
++         fmt.Printf("int: %d\n", v)
++     case string:
++         fmt.Printf("string: %s\n", v)
++     case bool:
++         fmt.Printf("bool: %t\n", v)
++     case []int:
++         fmt.Printf("slice of ints: %v\n", v)
++     default:
++         fmt.Printf("unknown type: %T\n", v)
++     }
++ }
++ &#96;&#96;&#96;
++ 
++ The &#96;x.(type)&#96; syntax only works in a switch. Each case binds &#96;v&#96; to the correctly typed value.
++ 
++ This is cleaner than chained type assertions:
++ 
++ &#96;&#96;&#96;go
++ // DON'T do this
++ if i, ok := x.(int); ok {
++     // ...
++ } else if s, ok := x.(string); ok {
++     // ...
++ } else if b, ok := x.(bool); ok {
++     // ...
++ }
++ 
++ // DO this
++ switch v := x.(type) {
++ case int:
++     // v is int
++ case string:
++     // v is string
++ case bool:
++     // v is bool
++ }
++ &#96;&#96;&#96;
++ 
++ ## Working with JSON
++ 
++ This is where &#96;any&#96; shows up most in real code. JSON decoding into unknown structures:
++ 
++ &#96;&#96;&#96;go
++ func processJSON(raw []byte) error {
++     var data any
++     if err := json.Unmarshal(raw, &amp;data); err != nil {
++         return err
++     }
++     
++     return walkJSON(data)
++ }
++ 
++ func walkJSON(v any) error {
++     switch val := v.(type) {
++     case map[string]any:
++         for key, value := range val {
++             fmt.Printf("key: %s\n", key)
++             walkJSON(value)
++         }
++     case []any:
++         for i, item := range val {
++             fmt.Printf("index: %d\n", i)
++             walkJSON(item)
++         }
++     case string:
++         fmt.Printf("string: %s\n", val)
++     case float64:  // JSON numbers are float64
++         fmt.Printf("number: %f\n", val)
++     case bool:
++         fmt.Printf("bool: %t\n", val)
++     case nil:
++         fmt.Println("null")
++     }
++     return nil
++ }
++ &#96;&#96;&#96;
++ 
++ JSON objects become &#96;map[string]any&#96;. Arrays become &#96;[]any&#96;. Numbers are always &#96;float64&#96; (JSON doesn't distinguish int from float).
++ 
++ ## The Performance Cost
++ 
++ There's overhead to &#96;any&#96;. The interface value stores two pointers (type and value), and type assertions have runtime cost.
++ 
++ For hot paths, you want concrete types:
++ 
++ &#96;&#96;&#96;go
++ // Slower - any with type assertion
++ func processAny(x any) {
++     if n, ok := x.(int); ok {
++         // work with n
++     }
++ }
++ 
++ // Faster - concrete type
++ func processInt(n int) {
++     // work with n
++ }
++ &#96;&#96;&#96;
++ 
++ With generics in Go 1.18+, you often don't need &#96;any&#96;:
++ 
++ &#96;&#96;&#96;go
++ // Before generics
++ func Contains(slice []any, item any) bool { ... }
++ 
++ // With generics - type safe, no assertions needed
++ func Contains[T comparable](slice []T, item T) bool { ... }
++ &#96;&#96;&#96;
++ 
++ ## When to Use &#96;any&#96;
++ 
++ **Legitimate uses:**
++ 
++ - JSON/YAML with unknown structure
++ - Reflection-based code
++ - Interfacing with dynamic systems
++ - Printf-style variadic functions
++ 
++ **Code smells:**
++ 
++ - Using &#96;any&#96; to avoid thinking about types
++ - &#96;map[string]any&#96; as a "flexible" data structure (define a struct)
++ - &#96;any&#96; parameters when a specific interface would work
++ - Type assertions scattered throughout code
++ 
++ ## Comparing to C#
++ 
++ | Aspect | Go &#96;any&#96; | C# &#96;object&#96; |
++ |--------|----------|-------------|
++ | Boxing value types | No (pointers stored) | Yes |
++ | Type assertion | &#96;x.(Type)&#96; | &#96;(Type)x&#96; or &#96;x as Type&#96; |
++ | Safe assertion | &#96;v, ok := x.(Type)&#96; | &#96;x is Type v&#96; |
++ | Type switch | &#96;switch v := x.(type)&#96; | &#96;switch (x)&#96; with patterns |
++ | Performance cost | Yes | Yes (especially boxing) |
++ 
++ C# has better pattern matching:
++ 
++ &#96;&#96;&#96;csharp
++ object x = GetSomething();
++ var result = x switch
++ {
++     int i =&gt; $"int: {i}",
++     string s =&gt; $"string: {s}",
++     IEnumerable&lt;int&gt; list =&gt; $"list with {list.Count()} items",
++     { } obj =&gt; $"object: {obj}",
++     null =&gt; "null"
++ };
++ &#96;&#96;&#96;
++ 
++ Go's type switch is simpler but less powerful.
++ 
++ ## The Honest Take
++ 
++ &#96;any&#96; is an escape hatch. Sometimes you need it. Most of the time, you don't.
++ 
++ **What Go does okay:**
++ - Clear syntax for type assertions
++ - Type switches are readable
++ - No boxing for value types (unlike C#)
++ 
++ **What C# does better:**
++ - Richer pattern matching
++ - &#96;is&#96; and &#96;as&#96; operators are more intuitive
++ - Better tooling for discovering what types you'll encounter
++ 
++ **What both should make you do:**
++ - Reach for generics first
++ - Define concrete interfaces where possible
++ - Use &#96;any&#96; only at boundaries (JSON parsing, reflection, interop)
++ 
++ **The verdict:**
++ Every time you write &#96;any&#96;, ask yourself: "Do I really not know the type here?" Often you do know it, or you could define an interface that captures what you need.
++ 
++ &#96;any&#96; is the "I give up" of Go's type system. Sometimes giving up is appropriate. A well-designed API rarely needs it.
++ 
++ ---
++ 
++ *That wraps up the interfaces and composition section. Go's approach is simpler than C#'s—implicit interfaces, embedding instead of inheritance, and a minimal &#96;any&#96; type for the truly dynamic cases. It's less powerful in some ways, but the constraints push you toward cleaner designs.*
++ 
+```
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+Let me verify the build works with all the new posts.</details></think>
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_cmd">
+<details><summary>Tool use: **run_terminal_cmd** • Run command: cd /Users/andycross/src/personal/mcp-blogs && hugo --quiet && echo "Build successful" && ls content/posts/dotnet-to-go*.md | wc -l && echo "---" && ls content/posts/dotnet-to-go*.md</summary>
+
+```bash
+cd /Users/andycross/src/personal/mcp-blogs && hugo --quiet && echo "Build successful" && ls content/posts/dotnet-to-go*.md | wc -l && echo "---" && ls content/posts/dotnet-to-go*.md
+```
+
+```
+Build successful
+      22
+---
+content/posts/dotnet-to-go-any.md
+content/posts/dotnet-to-go-channels.md
+content/posts/dotnet-to-go-composition.md
+content/posts/dotnet-to-go-context.md
+content/posts/dotnet-to-go-enums.md
+content/posts/dotnet-to-go-errors.md
+content/posts/dotnet-to-go-escape-analysis.md
+content/posts/dotnet-to-go-generics.md
+content/posts/dotnet-to-go-goroutines.md
+content/posts/dotnet-to-go-interfaces.md
+content/posts/dotnet-to-go-modules.md
+content/posts/dotnet-to-go-nil.md
+content/posts/dotnet-to-go-panic.md
+content/posts/dotnet-to-go-phrasebook.md
+content/posts/dotnet-to-go-pointers.md
+content/posts/dotnet-to-go-select.md
+content/posts/dotnet-to-go-slices.md
+content/posts/dotnet-to-go-structs.md
+content/posts/dotnet-to-go-switch.md
+content/posts/dotnet-to-go-sync.md
+content/posts/dotnet-to-go-toolchain.md
+content/posts/dotnet-to-go-visibility.md
+
+```
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+All 22 posts are done and the build passes. Let me summarize the complete series for the user.</details></think>
+
+---
+
+All 3 Interfaces & Composition posts done! 22 posts total now. Here's the complete series:
+
+## C# to Go Series (22 posts)
+
+### Phase 1: Getting Oriented (3)
+1. "You Know .NET, Now Meet the Go Toolchain"
+2. "Goodbye .csproj, Hello go.mod"
+3. "The Phrasebook: C# Concepts in Go Terms"
+
+### Phase 2: Types & Data (5)
+4. "Your Class Is Now a Struct (And That's Fine)"
+5. "Where Did My Properties Go?"
+6. "Generics: Late to the Party"
+7. "The Million Dollar Mistake, Differently"
+8. "No Enums? No Problem (Sort Of)"
+
+### Phase 3: Control Flow & Error Handling (3)
+9. "if err != nil: Your New Reality"
+10. "Panic and Recover: The Emergency Exit"
+11. "The switch Statement You Always Wanted"
+
+### Phase 4: Memory & Pointers (3)
+12. "Pointers Without the Pain"
+13. "Stack vs Heap: Go's Escape Analysis"
+14. "Slices Are Not Arrays (And Neither Is List<T>)"
+
+### Phase 5: Concurrency (5)
+15. "Async/Await vs Goroutines: A Mindset Shift"
+16. "Channels: The sync You Didn't Know You Wanted"
+17. "select: Multiplexing Like a Pro"
+18. "Mutexes and WaitGroups: When Channels Aren't the Answer"
+19. "Context Is King"
+
+### Phase 6: Interfaces & Composition ← **NEW** (3)
+20. **"Implicit Interfaces: Scary Then Brilliant"** — No implements keyword, structural typing, defining interfaces after the fact, the compile-time satisfaction check (`var _ Writer = (*MyType)(nil)`), value vs pointer receivers with interfaces
+21. **"Composition Over Inheritance (For Real This Time)"** — What embedding actually is (fields without names), method promotion, why it's NOT inheritance (receiver stays the same), multiple embedding, the decorator/delegation pattern
+22. **"The Empty Interface and Type Assertions"** — `any` / `interface{}` as Go's `object`, type assertions (`x.(Type)`), the comma-ok idiom, type switches, when `any` is legitimate vs a code smell
+
+Key definitions included:
+- **Embedding**: Including a type without a field name, promoting its methods and fields
+- **Structural typing**: If it has the methods, it implements the interface
+- **Type assertion**: Extracting a concrete type from an interface value
+- **Method promotion**: Embedded type's methods become available on the outer type
+
+That's Phase 1 complete! Ready for more whenever you are.
+
+---
+
