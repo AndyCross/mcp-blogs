@@ -11064,7 +11064,7059 @@ Debugging: Delve vs Visual Studio's Comfort — Getting productive with dlv and 
 _**Agent (model claude-4.5-opus-high-thinking, mode Agent)**_
 
 <think><details><summary>Thought Process</summary>
-The user wants me to create 9 more posts before</details></think>
+The user wants me to create 9 more posts before deployment - 6 for Common Patterns & Libraries and 3 for Tooling. Let me write all 9 posts.</details></think>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="write">
+
+<details><summary>Tool use: **write** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/dotnet-to-go-http.md</summary>
+
+**Chunk 1**
+Lines added: 347, lines removed: 1
+
+```diff
+@@ -1,1 +1,347 @@
+- 
++ +++
++ title = "HTTP Services: net/http vs ASP.NET Core"
++ date = "2025-01-04"
++ draft = false
++ tags = ["go", "dotnet", "http", "web", "csharp"]
++ +++
++ 
++ ASP.NET Core is a sophisticated web framework. Dependency injection, middleware pipelines, model binding, routing with attributes, OpenAPI generation... it does a lot for you.
++ 
++ Go's &#96;net/http&#96; is a standard library package. It does HTTP. That's about it.
++ 
++ This sounds like a step down. It is, in some ways. But there's power in simplicity, and Go's HTTP story is more capable than it first appears.
++ 
++ ## The Simplest Server
++ 
++ Go:
++ 
++ &#96;&#96;&#96;go
++ package main
++ 
++ import (
++     "fmt"
++     "net/http"
++ )
++ 
++ func main() {
++     http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
++         fmt.Fprintf(w, "Hello, World!")
++     })
++     
++     http.ListenAndServe(":8080", nil)
++ }
++ &#96;&#96;&#96;
++ 
++ C# minimal API:
++ 
++ &#96;&#96;&#96;csharp
++ var app = WebApplication.Create();
++ app.MapGet("/", () =&gt; "Hello, World!");
++ app.Run();
++ &#96;&#96;&#96;
++ 
++ C#'s is shorter. But Go's has zero dependencies, zero configuration, and zero framework magic.
++ 
++ ## Handlers: The Building Block
++ 
++ In ASP.NET Core, you have controllers, minimal API delegates, or Razor Pages. In Go, you have handlers.
++ 
++ A handler is anything that implements &#96;http.Handler&#96;:
++ 
++ &#96;&#96;&#96;go
++ type Handler interface {
++     ServeHTTP(ResponseWriter, *Request)
++ }
++ &#96;&#96;&#96;
++ 
++ One method. That's it.
++ 
++ &#96;&#96;&#96;go
++ type HelloHandler struct {
++     greeting string
++ }
++ 
++ func (h HelloHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
++     fmt.Fprintf(w, "%s, visitor!", h.greeting)
++ }
++ 
++ func main() {
++     http.Handle("/hello", HelloHandler{greeting: "Welcome"})
++     http.ListenAndServe(":8080", nil)
++ }
++ &#96;&#96;&#96;
++ 
++ Or use &#96;http.HandlerFunc&#96; for simpler cases:
++ 
++ &#96;&#96;&#96;go
++ http.HandleFunc("/hello", func(w http.ResponseWriter, r *http.Request) {
++     fmt.Fprintf(w, "Hello!")
++ })
++ &#96;&#96;&#96;
++ 
++ ## Request and Response
++ 
++ The &#96;*http.Request&#96; contains everything about the incoming request:
++ 
++ &#96;&#96;&#96;go
++ func handler(w http.ResponseWriter, r *http.Request) {
++     // Method
++     method := r.Method  // "GET", "POST", etc.
++     
++     // URL and path
++     path := r.URL.Path
++     query := r.URL.Query().Get("id")
++     
++     // Headers
++     contentType := r.Header.Get("Content-Type")
++     
++     // Body
++     body, _ := io.ReadAll(r.Body)
++     defer r.Body.Close()
++     
++     // Form data
++     r.ParseForm()
++     name := r.FormValue("name")
++     
++     // Context (for cancellation, deadlines, values)
++     ctx := r.Context()
++ }
++ &#96;&#96;&#96;
++ 
++ The &#96;http.ResponseWriter&#96; is how you respond:
++ 
++ &#96;&#96;&#96;go
++ func handler(w http.ResponseWriter, r *http.Request) {
++     // Set headers (before writing body)
++     w.Header().Set("Content-Type", "application/json")
++     
++     // Set status code (before writing body)
++     w.WriteHeader(http.StatusCreated)
++     
++     // Write body
++     w.Write([]byte(&#96;{"status": "ok"}&#96;))
++     
++     // Or use fmt
++     fmt.Fprintf(w, &#96;{"id": %d}&#96;, 123)
++ }
++ &#96;&#96;&#96;
++ 
++ Order matters: headers and status must be set before writing the body.
++ 
++ ## Routing: The Weak Spot
++ 
++ Go 1.22 improved the standard library router significantly:
++ 
++ &#96;&#96;&#96;go
++ mux := http.NewServeMux()
++ 
++ mux.HandleFunc("GET /users", listUsers)
++ mux.HandleFunc("POST /users", createUser)
++ mux.HandleFunc("GET /users/{id}", getUser)      // path parameters!
++ mux.HandleFunc("DELETE /users/{id}", deleteUser)
++ 
++ http.ListenAndServe(":8080", mux)
++ &#96;&#96;&#96;
++ 
++ Access path parameters:
++ 
++ &#96;&#96;&#96;go
++ func getUser(w http.ResponseWriter, r *http.Request) {
++     id := r.PathValue("id")  // Go 1.22+
++     // ...
++ }
++ &#96;&#96;&#96;
++ 
++ Before 1.22, you needed a third-party router. Many projects still use them:
++ 
++ **chi** — lightweight, idiomatic:
++ &#96;&#96;&#96;go
++ r := chi.NewRouter()
++ r.Get("/users/{id}", getUser)
++ &#96;&#96;&#96;
++ 
++ **gorilla/mux** — feature-rich (now maintained by community):
++ &#96;&#96;&#96;go
++ r := mux.NewRouter()
++ r.HandleFunc("/users/{id}", getUser).Methods("GET")
++ &#96;&#96;&#96;
++ 
++ **gin** — fast, popular, framework-like:
++ &#96;&#96;&#96;go
++ r := gin.Default()
++ r.GET("/users/:id", getUser)
++ &#96;&#96;&#96;
++ 
++ If you're starting fresh with Go 1.22+, try the standard library first.
++ 
++ ## Middleware
++ 
++ Middleware in Go is just a function that wraps a handler:
++ 
++ &#96;&#96;&#96;go
++ func loggingMiddleware(next http.Handler) http.Handler {
++     return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
++         start := time.Now()
++         next.ServeHTTP(w, r)
++         log.Printf("%s %s %v", r.Method, r.URL.Path, time.Since(start))
++     })
++ }
++ 
++ func authMiddleware(next http.Handler) http.Handler {
++     return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
++         token := r.Header.Get("Authorization")
++         if !isValidToken(token) {
++             http.Error(w, "Unauthorized", http.StatusUnauthorized)
++             return
++         }
++         next.ServeHTTP(w, r)
++     })
++ }
++ &#96;&#96;&#96;
++ 
++ Chain them:
++ 
++ &#96;&#96;&#96;go
++ handler := loggingMiddleware(authMiddleware(myHandler))
++ http.Handle("/api/", handler)
++ &#96;&#96;&#96;
++ 
++ Compare to ASP.NET Core:
++ 
++ &#96;&#96;&#96;csharp
++ app.UseLogging();
++ app.UseAuthentication();
++ app.MapControllers();
++ &#96;&#96;&#96;
++ 
++ Go's is more manual but the pattern is explicit.
++ 
++ ## Comparing to ASP.NET Core
++ 
++ | Feature | ASP.NET Core | Go net/http |
++ |---------|--------------|-------------|
++ | DI | Built-in | Manual or wire |
++ | Routing | Attribute or minimal | Method + path (1.22+) |
++ | Model binding | Automatic | Manual (JSON decode) |
++ | Validation | DataAnnotations | Manual or validator lib |
++ | Middleware | Pipeline | Function wrapping |
++ | OpenAPI | Swashbuckle | Third-party (swag, etc.) |
++ | Auth | Identity, policies | Manual or third-party |
++ | Config | IConfiguration | Environment or libs |
++ 
++ ASP.NET Core does more out of the box. Go makes you build it yourself or choose libraries.
++ 
++ ## A Realistic Handler
++ 
++ Here's what a real handler looks like:
++ 
++ &#96;&#96;&#96;go
++ type UserHandler struct {
++     repo UserRepository
++ }
++ 
++ func (h *UserHandler) GetUser(w http.ResponseWriter, r *http.Request) {
++     id := r.PathValue("id")
++     
++     user, err := h.repo.FindByID(r.Context(), id)
++     if err != nil {
++         if errors.Is(err, ErrNotFound) {
++             http.Error(w, "User not found", http.StatusNotFound)
++             return
++         }
++         http.Error(w, "Internal error", http.StatusInternalServerError)
++         return
++     }
++     
++     w.Header().Set("Content-Type", "application/json")
++     json.NewEncoder(w).Encode(user)
++ }
++ 
++ func (h *UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
++     var input CreateUserRequest
++     if err := json.NewDecoder(r.Body).Decode(&amp;input); err != nil {
++         http.Error(w, "Invalid JSON", http.StatusBadRequest)
++         return
++     }
++     
++     // Validation
++     if input.Email == "" {
++         http.Error(w, "Email required", http.StatusBadRequest)
++         return
++     }
++     
++     user, err := h.repo.Create(r.Context(), input)
++     if err != nil {
++         http.Error(w, "Failed to create user", http.StatusInternalServerError)
++         return
++     }
++     
++     w.Header().Set("Content-Type", "application/json")
++     w.WriteHeader(http.StatusCreated)
++     json.NewEncoder(w).Encode(user)
++ }
++ &#96;&#96;&#96;
++ 
++ More code than an ASP.NET Core controller. But you can see exactly what's happening.
++ 
++ ## Graceful Shutdown
++ 
++ Something ASP.NET Core handles automatically that Go requires explicitly:
++ 
++ &#96;&#96;&#96;go
++ func main() {
++     srv := &amp;http.Server{
++         Addr:    ":8080",
++         Handler: router,
++     }
++     
++     go func() {
++         if err := srv.ListenAndServe(); err != http.ErrServerClosed {
++             log.Fatalf("listen: %v", err)
++         }
++     }()
++     
++     // Wait for interrupt signal
++     quit := make(chan os.Signal, 1)
++     signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
++     &lt;-quit
++     
++     // Graceful shutdown with timeout
++     ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
++     defer cancel()
++     
++     if err := srv.Shutdown(ctx); err != nil {
++         log.Fatalf("shutdown: %v", err)
++     }
++     
++     log.Println("Server stopped")
++ }
++ &#96;&#96;&#96;
++ 
++ ## The Honest Take
++ 
++ ASP.NET Core is a full-featured web framework. Go's &#96;net/http&#96; is a building block.
++ 
++ **What Go does better:**
++ - Simple mental model
++ - No framework lock-in
++ - Explicit control over everything
++ - Very fast startup
++ - Small binaries
++ 
++ **What ASP.NET Core does better:**
++ - Batteries included
++ - Model binding and validation
++ - Authentication/authorization
++ - OpenAPI generation
++ - Richer middleware ecosystem
++ 
++ **The verdict:**
++ For simple services, &#96;net/http&#96; is delightfully straightforward. For complex APIs with lots of endpoints, validation, and documentation needs, you'll either write a lot of code or reach for a framework like Gin or Echo.
++ 
++ Neither is wrong. Go gives you the choice that ASP.NET Core makes for you.
++ 
++ ---
++ 
++ *Next up: JSON handling—struct tags, marshalling, and why it's more manual than Newtonsoft.*
++ 
+```
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="write">
+
+<details><summary>Tool use: **write** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/dotnet-to-go-json.md</summary>
+
+**Chunk 1**
+Lines added: 323, lines removed: 1
+
+```diff
+@@ -1,1 +1,323 @@
+- 
++ +++
++ title = "JSON: Struct Tags and the Marshal Dance"
++ date = "2025-01-04"
++ draft = false
++ tags = ["go", "dotnet", "json", "serialization", "csharp"]
++ +++
++ 
++ In C#, you add &#96;[JsonProperty("name")]&#96; or rely on naming conventions. The serializer figures out the rest. Newtonsoft.Json has been battle-tested for over a decade, and System.Text.Json is catching up fast.
++ 
++ Go's &#96;encoding/json&#96; is simpler. Not worse, necessarily, but definitely more manual. And it has quirks that'll catch you out.
++ 
++ ## The Basics
++ 
++ Go uses **struct tags** to control JSON field names:
++ 
++ &#96;&#96;&#96;go
++ type User struct {
++     ID        int       &#96;json:"id"&#96;
++     FirstName string    &#96;json:"first_name"&#96;
++     Email     string    &#96;json:"email"&#96;
++     CreatedAt time.Time &#96;json:"created_at"&#96;
++ }
++ &#96;&#96;&#96;
++ 
++ Those backtick strings are struct tags. The &#96;json&#96; key tells the JSON encoder how to handle each field.
++ 
++ Marshal to JSON:
++ 
++ &#96;&#96;&#96;go
++ user := User{ID: 1, FirstName: "Alice", Email: "alice@example.com"}
++ data, err := json.Marshal(user)
++ // {"id":1,"first_name":"Alice","email":"alice@example.com","created_at":"0001-01-01T00:00:00Z"}
++ &#96;&#96;&#96;
++ 
++ Unmarshal from JSON:
++ 
++ &#96;&#96;&#96;go
++ var user User
++ err := json.Unmarshal([]byte(&#96;{"id":1,"first_name":"Alice"}&#96;), &amp;user)
++ &#96;&#96;&#96;
++ 
++ ## Struct Tag Options
++ 
++ The &#96;json&#96; tag supports several options:
++ 
++ &#96;&#96;&#96;go
++ type User struct {
++     ID       int    &#96;json:"id"&#96;                    // rename to "id"
++     Name     string &#96;json:"name,omitempty"&#96;        // omit if empty
++     Password string &#96;json:"-"&#96;                     // never include
++     Email    string &#96;json:"email,omitempty"&#96;       // rename + omit if empty
++     internal string                                 // unexported, always ignored
++ }
++ &#96;&#96;&#96;
++ 
++ | Tag | Effect |
++ |-----|--------|
++ | &#96;json:"name"&#96; | Field appears as "name" in JSON |
++ | &#96;json:",omitempty"&#96; | Omit if zero value |
++ | &#96;json:"-"&#96; | Never marshal/unmarshal |
++ | &#96;json:"-,"&#96; | Field literally named "-" (rare) |
++ 
++ ## The omitempty Gotcha
++ 
++ &#96;omitempty&#96; omits **zero values**. This catches people:
++ 
++ &#96;&#96;&#96;go
++ type Response struct {
++     Count int  &#96;json:"count,omitempty"&#96;
++     Found bool &#96;json:"found,omitempty"&#96;
++ }
++ 
++ r := Response{Count: 0, Found: false}
++ data, _ := json.Marshal(r)
++ // {} — both fields omitted because they're zero values!
++ &#96;&#96;&#96;
++ 
++ If zero is a meaningful value, don't use &#96;omitempty&#96;. Or use a pointer:
++ 
++ &#96;&#96;&#96;go
++ type Response struct {
++     Count *int  &#96;json:"count,omitempty"&#96;  // nil omitted, 0 included
++     Found *bool &#96;json:"found,omitempty"&#96;
++ }
++ &#96;&#96;&#96;
++ 
++ ## Encoding and Decoding Streams
++ 
++ For HTTP handlers, use encoders/decoders instead of Marshal/Unmarshal:
++ 
++ &#96;&#96;&#96;go
++ // Reading request body
++ func handler(w http.ResponseWriter, r *http.Request) {
++     var input CreateUserRequest
++     if err := json.NewDecoder(r.Body).Decode(&amp;input); err != nil {
++         http.Error(w, "Invalid JSON", http.StatusBadRequest)
++         return
++     }
++     
++     // ... process ...
++     
++     // Writing response
++     w.Header().Set("Content-Type", "application/json")
++     json.NewEncoder(w).Encode(response)
++ }
++ &#96;&#96;&#96;
++ 
++ More efficient than reading the body into a byte slice first.
++ 
++ ## Custom Marshalling
++ 
++ Implement &#96;json.Marshaler&#96; and &#96;json.Unmarshaler&#96; for custom behaviour:
++ 
++ &#96;&#96;&#96;go
++ type Status int
++ 
++ const (
++     StatusPending Status = iota
++     StatusActive
++     StatusCompleted
++ )
++ 
++ func (s Status) MarshalJSON() ([]byte, error) {
++     var str string
++     switch s {
++     case StatusPending:
++         str = "pending"
++     case StatusActive:
++         str = "active"
++     case StatusCompleted:
++         str = "completed"
++     default:
++         str = "unknown"
++     }
++     return json.Marshal(str)
++ }
++ 
++ func (s *Status) UnmarshalJSON(data []byte) error {
++     var str string
++     if err := json.Unmarshal(data, &amp;str); err != nil {
++         return err
++     }
++     switch str {
++     case "pending":
++         *s = StatusPending
++     case "active":
++         *s = StatusActive
++     case "completed":
++         *s = StatusCompleted
++     default:
++         return fmt.Errorf("unknown status: %s", str)
++     }
++     return nil
++ }
++ &#96;&#96;&#96;
++ 
++ Now &#96;Status&#96; marshals as a string:
++ 
++ &#96;&#96;&#96;go
++ type Order struct {
++     ID     int    &#96;json:"id"&#96;
++     Status Status &#96;json:"status"&#96;
++ }
++ 
++ order := Order{ID: 1, Status: StatusActive}
++ data, _ := json.Marshal(order)
++ // {"id":1,"status":"active"}
++ &#96;&#96;&#96;
++ 
++ ## Handling Unknown Fields
++ 
++ By default, Go ignores unknown JSON fields:
++ 
++ &#96;&#96;&#96;go
++ var user User
++ json.Unmarshal([]byte(&#96;{"id":1,"unknown_field":"ignored"}&#96;), &amp;user)
++ // No error, unknown_field silently ignored
++ &#96;&#96;&#96;
++ 
++ To catch unknown fields, use a decoder:
++ 
++ &#96;&#96;&#96;go
++ dec := json.NewDecoder(r.Body)
++ dec.DisallowUnknownFields()
++ if err := dec.Decode(&amp;user); err != nil {
++     // Error if unknown fields present
++ }
++ &#96;&#96;&#96;
++ 
++ ## Working with Dynamic JSON
++ 
++ When you don't know the structure, use &#96;map[string]any&#96; or &#96;any&#96;:
++ 
++ &#96;&#96;&#96;go
++ var data map[string]any
++ json.Unmarshal(rawJSON, &amp;data)
++ 
++ // Access fields
++ name := data["name"].(string)  // type assertion needed
++ &#96;&#96;&#96;
++ 
++ Or use &#96;json.RawMessage&#96; to defer parsing:
++ 
++ &#96;&#96;&#96;go
++ type Event struct {
++     Type    string          &#96;json:"type"&#96;
++     Payload json.RawMessage &#96;json:"payload"&#96;  // parse later
++ }
++ 
++ var event Event
++ json.Unmarshal(data, &amp;event)
++ 
++ // Now parse payload based on type
++ switch event.Type {
++ case "user_created":
++     var payload UserCreatedPayload
++     json.Unmarshal(event.Payload, &amp;payload)
++ }
++ &#96;&#96;&#96;
++ 
++ ## Comparing to C#
++ 
++ | Feature | System.Text.Json | Go encoding/json |
++ |---------|------------------|------------------|
++ | Attribute/Tag syntax | &#96;[JsonPropertyName]&#96; | Struct tags |
++ | Naming policy | JsonNamingPolicy | Manual per-field |
++ | Ignore null | &#96;[JsonIgnore]&#96; + conditions | &#96;omitempty&#96; (but for zero values) |
++ | Custom converters | JsonConverter | Marshaler/Unmarshaler interfaces |
++ | Unknown fields | Configurable | Ignored by default |
++ | Streaming | Yes | Yes (Encoder/Decoder) |
++ | Performance | Very good | Good |
++ | Source generators | Yes (AOT-friendly) | No |
++ 
++ C# has more configuration options. Go is more explicit but less flexible.
++ 
++ ## Common Patterns
++ 
++ ### Response Wrappers
++ 
++ &#96;&#96;&#96;go
++ type APIResponse[T any] struct {
++     Data  T      &#96;json:"data,omitempty"&#96;
++     Error string &#96;json:"error,omitempty"&#96;
++ }
++ 
++ func respondJSON[T any](w http.ResponseWriter, status int, data T) {
++     w.Header().Set("Content-Type", "application/json")
++     w.WriteHeader(status)
++     json.NewEncoder(w).Encode(APIResponse[T]{Data: data})
++ }
++ 
++ func respondError(w http.ResponseWriter, status int, message string) {
++     w.Header().Set("Content-Type", "application/json")
++     w.WriteHeader(status)
++     json.NewEncoder(w).Encode(APIResponse[any]{Error: message})
++ }
++ &#96;&#96;&#96;
++ 
++ ### Embedded Structs for Composition
++ 
++ &#96;&#96;&#96;go
++ type Timestamps struct {
++     CreatedAt time.Time &#96;json:"created_at"&#96;
++     UpdatedAt time.Time &#96;json:"updated_at"&#96;
++ }
++ 
++ type User struct {
++     ID   int    &#96;json:"id"&#96;
++     Name string &#96;json:"name"&#96;
++     Timestamps
++ }
++ 
++ // JSON: {"id":1,"name":"Alice","created_at":"...","updated_at":"..."}
++ &#96;&#96;&#96;
++ 
++ Embedded struct fields are flattened.
++ 
++ ### Different Input/Output Types
++ 
++ &#96;&#96;&#96;go
++ // For creating
++ type CreateUserRequest struct {
++     Name  string &#96;json:"name"&#96;
++     Email string &#96;json:"email"&#96;
++ }
++ 
++ // For responses (includes computed fields)
++ type UserResponse struct {
++     ID        int       &#96;json:"id"&#96;
++     Name      string    &#96;json:"name"&#96;
++     Email     string    &#96;json:"email"&#96;
++     CreatedAt time.Time &#96;json:"created_at"&#96;
++ }
++ &#96;&#96;&#96;
++ 
++ Don't try to use one struct for everything. Separate request and response types.
++ 
++ ## The Honest Take
++ 
++ Go's JSON handling is straightforward but manual. You write more code, but there's less magic.
++ 
++ **What Go does well:**
++ - Simple and predictable
++ - Struct tags are readable
++ - Custom marshalling is easy
++ - Streaming encoders/decoders
++ 
++ **What C# does better:**
++ - Naming policies (automatic camelCase)
++ - Source generators for performance
++ - More attribute options
++ - Better handling of null vs missing
++ - &#96;System.Text.Json&#96; is very fast
++ 
++ **The verdict:**
++ You'll miss automatic naming policies. You'll write more struct tags than you want to. But Go's JSON handling works fine for most cases.
++ 
++ For complex JSON needs (polymorphic types, extensive customization), consider third-party libraries like &#96;easyjson&#96; (fast, generated) or &#96;jsoniter&#96; (drop-in replacement, more features).
++ 
++ ---
++ 
++ *Next up: configuration—how to load config without IOptions&lt;T&gt; and why simplicity wins.*
++ 
+```
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="write">
+
+<details><summary>Tool use: **write** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/dotnet-to-go-config.md</summary>
+
+**Chunk 1**
+Lines added: 334, lines removed: 1
+
+```diff
+@@ -1,1 +1,334 @@
+- 
++ +++
++ title = "Configuration Without IOptions&lt;T&gt;"
++ date = "2025-01-04"
++ draft = false
++ tags = ["go", "dotnet", "configuration", "csharp"]
++ +++
++ 
++ In ASP.NET Core, configuration is a whole subsystem. &#96;IConfiguration&#96;, &#96;IOptions&lt;T&gt;&#96;, &#96;IOptionsSnapshot&lt;T&gt;&#96;, &#96;IOptionsMonitor&lt;T&gt;&#96;, multiple providers, hot reload, dependency injection integration... It's sophisticated. Maybe too sophisticated.
++ 
++ Go doesn't have a standard configuration library. The community uses environment variables, simple file parsing, or third-party libraries. It's less powerful and often exactly what you need.
++ 
++ ## The Simplest Approach: Environment Variables
++ 
++ The Go standard library makes environment variables easy:
++ 
++ &#96;&#96;&#96;go
++ port := os.Getenv("PORT")
++ if port == "" {
++     port = "8080"
++ }
++ 
++ dbURL := os.Getenv("DATABASE_URL")
++ if dbURL == "" {
++     log.Fatal("DATABASE_URL required")
++ }
++ &#96;&#96;&#96;
++ 
++ That's it. No configuration provider chain. No dependency injection. Just read the environment.
++ 
++ For typed values:
++ 
++ &#96;&#96;&#96;go
++ timeout, err := strconv.Atoi(os.Getenv("TIMEOUT_SECONDS"))
++ if err != nil {
++     timeout = 30  // default
++ }
++ 
++ debug := os.Getenv("DEBUG") == "true"
++ &#96;&#96;&#96;
++ 
++ ## Struct-Based Configuration
++ 
++ Most projects define a config struct:
++ 
++ &#96;&#96;&#96;go
++ type Config struct {
++     Port        string
++     DatabaseURL string
++     Debug       bool
++     Timeout     time.Duration
++ }
++ 
++ func LoadConfig() (*Config, error) {
++     port := os.Getenv("PORT")
++     if port == "" {
++         port = "8080"
++     }
++     
++     dbURL := os.Getenv("DATABASE_URL")
++     if dbURL == "" {
++         return nil, errors.New("DATABASE_URL required")
++     }
++     
++     debug := os.Getenv("DEBUG") == "true"
++     
++     timeout := 30 * time.Second
++     if t := os.Getenv("TIMEOUT"); t != "" {
++         d, err := time.ParseDuration(t)
++         if err != nil {
++             return nil, fmt.Errorf("invalid TIMEOUT: %w", err)
++         }
++         timeout = d
++     }
++     
++     return &amp;Config{
++         Port:        port,
++         DatabaseURL: dbURL,
++         Debug:       debug,
++         Timeout:     timeout,
++     }, nil
++ }
++ &#96;&#96;&#96;
++ 
++ Then in main:
++ 
++ &#96;&#96;&#96;go
++ func main() {
++     cfg, err := LoadConfig()
++     if err != nil {
++         log.Fatalf("config error: %v", err)
++     }
++     
++     server := NewServer(cfg)
++     server.Run()
++ }
++ &#96;&#96;&#96;
++ 
++ No interfaces. No DI. Pass the config struct to things that need it.
++ 
++ ## envconfig: Less Boilerplate
++ 
++ The &#96;envconfig&#96; package reduces repetition:
++ 
++ &#96;&#96;&#96;go
++ import "github.com/kelseyhightower/envconfig"
++ 
++ type Config struct {
++     Port        string        &#96;envconfig:"PORT" default:"8080"&#96;
++     DatabaseURL string        &#96;envconfig:"DATABASE_URL" required:"true"&#96;
++     Debug       bool          &#96;envconfig:"DEBUG" default:"false"&#96;
++     Timeout     time.Duration &#96;envconfig:"TIMEOUT" default:"30s"&#96;
++ }
++ 
++ func LoadConfig() (*Config, error) {
++     var cfg Config
++     if err := envconfig.Process("", &amp;cfg); err != nil {
++         return nil, err
++     }
++     return &amp;cfg, nil
++ }
++ &#96;&#96;&#96;
++ 
++ Struct tags define environment variable names, defaults, and requirements. Much cleaner.
++ 
++ ## Viper: The Kitchen Sink
++ 
++ If you need file-based config, multiple formats, or hot reload, Viper is the standard choice:
++ 
++ &#96;&#96;&#96;go
++ import "github.com/spf13/viper"
++ 
++ func LoadConfig() (*Config, error) {
++     viper.SetConfigName("config")
++     viper.SetConfigType("yaml")
++     viper.AddConfigPath(".")
++     viper.AddConfigPath("/etc/myapp/")
++     
++     // Environment variables override file
++     viper.AutomaticEnv()
++     viper.SetEnvPrefix("MYAPP")
++     
++     // Defaults
++     viper.SetDefault("port", "8080")
++     viper.SetDefault("timeout", "30s")
++     
++     if err := viper.ReadInConfig(); err != nil {
++         if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
++             return nil, err
++         }
++         // Config file not found, continue with env vars and defaults
++     }
++     
++     var cfg Config
++     if err := viper.Unmarshal(&amp;cfg); err != nil {
++         return nil, err
++     }
++     
++     return &amp;cfg, nil
++ }
++ &#96;&#96;&#96;
++ 
++ config.yaml:
++ 
++ &#96;&#96;&#96;yaml
++ port: "8080"
++ database_url: "postgres://localhost/myapp"
++ debug: false
++ timeout: "30s"
++ &#96;&#96;&#96;
++ 
++ Viper is powerful but adds complexity. Use it when you need it.
++ 
++ ## Comparing to .NET
++ 
++ | Feature | .NET IConfiguration | Go |
++ |---------|---------------------|-----|
++ | Multiple sources | Built-in | Viper or manual |
++ | Environment variables | Provider | &#96;os.Getenv&#96; |
++ | JSON/YAML files | Providers | Viper or manual |
++ | Strong typing | &#96;IOptions&lt;T&gt;&#96; | Struct + unmarshal |
++ | Validation | Data annotations | Manual or validator |
++ | Hot reload | &#96;IOptionsMonitor&lt;T&gt;&#96; | Viper.WatchConfig |
++ | DI integration | Built-in | Manual |
++ | Secrets | User secrets, Key Vault | Env vars, external |
++ 
++ .NET's configuration system is more integrated. Go's is simpler but less cohesive.
++ 
++ ## Configuration Patterns
++ 
++ ### Environment-Specific Loading
++ 
++ &#96;&#96;&#96;go
++ func LoadConfig() (*Config, error) {
++     env := os.Getenv("APP_ENV")
++     if env == "" {
++         env = "development"
++     }
++     
++     // Base config
++     cfg := Config{
++         Port:    "8080",
++         Debug:   false,
++         Timeout: 30 * time.Second,
++     }
++     
++     // Environment overrides
++     switch env {
++     case "production":
++         cfg.Debug = false
++     case "development":
++         cfg.Debug = true
++     }
++     
++     // Env vars override everything
++     if port := os.Getenv("PORT"); port != "" {
++         cfg.Port = port
++     }
++     // ... more overrides
++     
++     return &amp;cfg, nil
++ }
++ &#96;&#96;&#96;
++ 
++ ### Validation
++ 
++ &#96;&#96;&#96;go
++ func (c *Config) Validate() error {
++     if c.DatabaseURL == "" {
++         return errors.New("database_url is required")
++     }
++     if c.Port == "" {
++         return errors.New("port is required")
++     }
++     if c.Timeout &lt;= 0 {
++         return errors.New("timeout must be positive")
++     }
++     return nil
++ }
++ 
++ func LoadConfig() (*Config, error) {
++     cfg := &amp;Config{...}
++     // ... load values ...
++     
++     if err := cfg.Validate(); err != nil {
++         return nil, fmt.Errorf("config validation: %w", err)
++     }
++     
++     return cfg, nil
++ }
++ &#96;&#96;&#96;
++ 
++ ### Immutable Config
++ 
++ Make config read-only after loading:
++ 
++ &#96;&#96;&#96;go
++ type Config struct {
++     port        string
++     databaseURL string
++ }
++ 
++ func (c *Config) Port() string        { return c.port }
++ func (c *Config) DatabaseURL() string { return c.databaseURL }
++ 
++ func LoadConfig() *Config {
++     return &amp;Config{
++         port:        os.Getenv("PORT"),
++         databaseURL: os.Getenv("DATABASE_URL"),
++     }
++ }
++ &#96;&#96;&#96;
++ 
++ Unexported fields + getter methods = immutable from outside the package.
++ 
++ ## What About IOptions&lt;T&gt;?
++ 
++ .NET's &#96;IOptions&lt;T&gt;&#96; pattern has benefits:
++ - Strongly typed configuration sections
++ - Validation on startup
++ - Hot reload with &#96;IOptionsMonitor&lt;T&gt;&#96;
++ - Clean injection into services
++ 
++ Go's equivalent is just... passing a struct:
++ 
++ &#96;&#96;&#96;go
++ // .NET
++ public class MyService
++ {
++     public MyService(IOptions&lt;DatabaseConfig&gt; options)
++     {
++         _connectionString = options.Value.ConnectionString;
++     }
++ }
++ 
++ // Go
++ type MyService struct {
++     connString string
++ }
++ 
++ func NewMyService(cfg *Config) *MyService {
++     return &amp;MyService{connString: cfg.DatabaseURL}
++ }
++ &#96;&#96;&#96;
++ 
++ Less ceremony in Go. But also less framework support if you want validation, hot reload, or named options.
++ 
++ ## The Honest Take
++ 
++ Go's configuration story is simpler. Whether that's better depends on your needs.
++ 
++ **What Go does well:**
++ - Environment variables are trivial
++ - No framework to learn
++ - Full control over loading logic
++ - Fast startup (no config system initialization)
++ 
++ **What .NET does better:**
++ - Integrated with DI
++ - Multiple providers out of the box
++ - Better hot reload story
++ - Options validation built-in
++ - Secrets management
++ 
++ **The verdict:**
++ For microservices that read environment variables and a config file, Go's approach is fine. &#96;envconfig&#96; handles 90% of cases.
++ 
++ For complex applications with layered configuration, validation requirements, and hot reload, you'll either use Viper or miss .NET's configuration system.
++ 
++ Start simple. Environment variables and &#96;envconfig&#96; get you far. Reach for Viper when you actually need its features.
++ 
++ ---
++ 
++ *Next up: logging with slog—Go's new structured logging standard and how it compares to ILogger.*
++ 
+```
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="write">
+
+<details><summary>Tool use: **write** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/dotnet-to-go-logging.md</summary>
+
+**Chunk 1**
+Lines added: 290, lines removed: 1
+
+```diff
+@@ -1,1 +1,290 @@
+- 
++ +++
++ title = "Logging: slog and the Structured Logging Story"
++ date = "2025-01-04"
++ draft = false
++ tags = ["go", "dotnet", "logging", "slog", "csharp"]
++ +++
++ 
++ For years, Go's logging story was "use the &#96;log&#96; package or pick a third-party library." The standard &#96;log&#96; package is basic—no levels, no structure, no context. Everyone used zerolog, zap, or logrus.
++ 
++ Then Go 1.21 shipped &#96;log/slog&#96;. Finally, structured logging in the standard library. And it's actually good.
++ 
++ ## The Old Way: log Package
++ 
++ Go's original &#96;log&#96; package:
++ 
++ &#96;&#96;&#96;go
++ import "log"
++ 
++ log.Println("server starting")
++ log.Printf("listening on port %d", 8080)
++ log.Fatal("failed to connect")  // logs and calls os.Exit(1)
++ &#96;&#96;&#96;
++ 
++ Output:
++ 
++ &#96;&#96;&#96;
++ 2025/01/04 10:30:00 server starting
++ 2025/01/04 10:30:00 listening on port 8080
++ &#96;&#96;&#96;
++ 
++ No levels. No structure. Just text. Fine for simple programs, inadequate for production.
++ 
++ ## The New Way: slog
++ 
++ Go 1.21's &#96;log/slog&#96; package:
++ 
++ &#96;&#96;&#96;go
++ import "log/slog"
++ 
++ slog.Info("server starting")
++ slog.Info("listening", "port", 8080)
++ slog.Error("failed to connect", "error", err, "host", hostname)
++ &#96;&#96;&#96;
++ 
++ Default text output:
++ 
++ &#96;&#96;&#96;
++ 2025/01/04 10:30:00 INFO server starting
++ 2025/01/04 10:30:00 INFO listening port=8080
++ 2025/01/04 10:30:00 ERROR failed to connect error="connection refused" host="db.example.com"
++ &#96;&#96;&#96;
++ 
++ Or JSON:
++ 
++ &#96;&#96;&#96;go
++ logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
++ slog.SetDefault(logger)
++ &#96;&#96;&#96;
++ 
++ &#96;&#96;&#96;json
++ {"time":"2025-01-04T10:30:00Z","level":"INFO","msg":"listening","port":8080}
++ &#96;&#96;&#96;
++ 
++ ## Log Levels
++ 
++ slog has four levels:
++ 
++ &#96;&#96;&#96;go
++ slog.Debug("detailed debugging info")
++ slog.Info("normal operation")
++ slog.Warn("something unexpected")
++ slog.Error("something failed")
++ &#96;&#96;&#96;
++ 
++ Set the minimum level:
++ 
++ &#96;&#96;&#96;go
++ opts := &amp;slog.HandlerOptions{
++     Level: slog.LevelDebug,  // show Debug and above
++ }
++ logger := slog.New(slog.NewJSONHandler(os.Stdout, opts))
++ &#96;&#96;&#96;
++ 
++ ## Structured Attributes
++ 
++ Add key-value pairs to log entries:
++ 
++ &#96;&#96;&#96;go
++ // Alternating key-value pairs
++ slog.Info("user created", "user_id", userID, "email", email)
++ 
++ // Or use slog.Attr for type safety
++ slog.Info("user created",
++     slog.Int("user_id", userID),
++     slog.String("email", email),
++     slog.Time("created_at", time.Now()),
++ )
++ &#96;&#96;&#96;
++ 
++ ## Logger with Context
++ 
++ Add attributes that appear in every log entry:
++ 
++ &#96;&#96;&#96;go
++ logger := slog.Default().With(
++     "service", "user-api",
++     "version", "1.2.3",
++ )
++ 
++ logger.Info("request received")
++ // {"time":"...","level":"INFO","msg":"request received","service":"user-api","version":"1.2.3"}
++ &#96;&#96;&#96;
++ 
++ Or create child loggers:
++ 
++ &#96;&#96;&#96;go
++ func handleRequest(r *http.Request) {
++     requestID := r.Header.Get("X-Request-ID")
++     log := slog.Default().With("request_id", requestID)
++     
++     log.Info("processing request")
++     // ... later
++     log.Info("request complete")  // both have request_id
++ }
++ &#96;&#96;&#96;
++ 
++ ## Comparing to ILogger
++ 
++ C#'s &#96;ILogger&#96;:
++ 
++ &#96;&#96;&#96;csharp
++ _logger.LogInformation("User created: {UserId} {Email}", userId, email);
++ &#96;&#96;&#96;
++ 
++ Go's slog:
++ 
++ &#96;&#96;&#96;go
++ slog.Info("user created", "user_id", userID, "email", email)
++ &#96;&#96;&#96;
++ 
++ Similar structured logging. Different syntax.
++ 
++ | Feature | ILogger | slog |
++ |---------|---------|------|
++ | Structured logging | Yes | Yes |
++ | Log levels | 6 (Trace-Critical) | 4 (Debug-Error) |
++ | Scopes | &#96;BeginScope()&#96; | &#96;With()&#96; |
++ | DI integration | Built-in | Manual |
++ | Providers | Many built-in | Handlers (fewer) |
++ | Message templates | &#96;{Named}&#96; placeholders | Key-value pairs |
++ | Log categories | Type-based | Manual grouping |
++ 
++ ## Using slog with HTTP Context
++ 
++ Pass loggers through context:
++ 
++ &#96;&#96;&#96;go
++ type ctxKey struct{}
++ 
++ func WithLogger(ctx context.Context, logger *slog.Logger) context.Context {
++     return context.WithValue(ctx, ctxKey{}, logger)
++ }
++ 
++ func FromContext(ctx context.Context) *slog.Logger {
++     if logger, ok := ctx.Value(ctxKey{}).(*slog.Logger); ok {
++         return logger
++     }
++     return slog.Default()
++ }
++ &#96;&#96;&#96;
++ 
++ Middleware to add request context:
++ 
++ &#96;&#96;&#96;go
++ func loggingMiddleware(next http.Handler) http.Handler {
++     return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
++         logger := slog.Default().With(
++             "request_id", r.Header.Get("X-Request-ID"),
++             "method", r.Method,
++             "path", r.URL.Path,
++         )
++         
++         ctx := WithLogger(r.Context(), logger)
++         next.ServeHTTP(w, r.WithContext(ctx))
++     })
++ }
++ 
++ // In handlers
++ func handler(w http.ResponseWriter, r *http.Request) {
++     log := FromContext(r.Context())
++     log.Info("processing")  // includes request context
++ }
++ &#96;&#96;&#96;
++ 
++ ## Custom Handlers
++ 
++ slog uses handlers for output. Write your own:
++ 
++ &#96;&#96;&#96;go
++ type PrettyHandler struct {
++     slog.Handler
++     w io.Writer
++ }
++ 
++ func (h *PrettyHandler) Handle(ctx context.Context, r slog.Record) error {
++     // Custom formatting
++     fmt.Fprintf(h.w, "[%s] %s: %s\n",
++         r.Time.Format("15:04:05"),
++         r.Level,
++         r.Message,
++     )
++     r.Attrs(func(a slog.Attr) bool {
++         fmt.Fprintf(h.w, "  %s=%v\n", a.Key, a.Value)
++         return true
++     })
++     return nil
++ }
++ &#96;&#96;&#96;
++ 
++ Or wrap existing handlers for filtering, sampling, etc.
++ 
++ ## Third-Party Integration
++ 
++ slog plays well with existing libraries:
++ 
++ **Output to zerolog:**
++ &#96;&#96;&#96;go
++ // zerolog adapter available
++ &#96;&#96;&#96;
++ 
++ **Output to zap:**
++ &#96;&#96;&#96;go
++ // zapslog adapter available
++ &#96;&#96;&#96;
++ 
++ You can use slog's API with your preferred backend.
++ 
++ ## Performance Considerations
++ 
++ slog is designed for production:
++ 
++ &#96;&#96;&#96;go
++ // Avoid allocation if level disabled
++ if slog.Default().Enabled(ctx, slog.LevelDebug) {
++     slog.Debug("expensive operation", "data", expensiveComputation())
++ }
++ &#96;&#96;&#96;
++ 
++ Or use &#96;LogAttrs&#96; for zero-allocation logging:
++ 
++ &#96;&#96;&#96;go
++ slog.Default().LogAttrs(ctx, slog.LevelInfo, "event",
++     slog.String("key", value),
++     slog.Int("count", n),
++ )
++ &#96;&#96;&#96;
++ 
++ ## The Honest Take
++ 
++ slog is a welcome addition. Not as mature as the third-party options, but good enough for most uses.
++ 
++ **What slog does well:**
++ - Standard library (no dependencies)
++ - Good API design
++ - Structured by default
++ - Handler abstraction for extensibility
++ 
++ **What ILogger does better:**
++ - More log levels
++ - Richer ecosystem
++ - DI integration
++ - Better provider options (Application Insights, Seq, etc.)
++ - Message templates with semantic meaning
++ 
++ **What third-party Go loggers do better:**
++ - zerolog: extremely fast, zero allocation
++ - zap: battle-tested, rich features
++ - Both: more production-proven
++ 
++ **The verdict:**
++ For new projects, slog is a solid choice. It's in the standard library, it's structured, it works.
++ 
++ For high-performance logging or specific output requirements, zerolog or zap might still be better.
++ 
++ If you're coming from ILogger, you'll find slog familiar but simpler. Fewer features, but the core functionality is there.
++ 
++ ---
++ 
++ *Next up: database access with database/sql—raw SQL, connection pooling, and missing your ORM.*
++ 
+```
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="write">
+
+<details><summary>Tool use: **write** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/dotnet-to-go-database.md</summary>
+
+**Chunk 1**
+Lines added: 293, lines removed: 1
+
+```diff
+@@ -1,1 +1,293 @@
+- 
++ +++
++ title = "Database Access: database/sql vs Entity Framework"
++ date = "2025-01-04"
++ draft = false
++ tags = ["go", "dotnet", "database", "sql", "csharp"]
++ +++
++ 
++ Entity Framework is an ORM. It maps objects to tables, generates SQL, tracks changes, handles migrations. You can build entire applications barely writing SQL.
++ 
++ Go's &#96;database/sql&#96; is a thin abstraction over database drivers. You write SQL. You scan results into structs. There's no change tracking, no LINQ, no automatic migrations.
++ 
++ This is going to feel like stepping back twenty years. But there's value in the simplicity.
++ 
++ ## The Basics
++ 
++ Connect to a database:
++ 
++ &#96;&#96;&#96;go
++ import (
++     "database/sql"
++     _ "github.com/lib/pq"  // PostgreSQL driver
++ )
++ 
++ db, err := sql.Open("postgres", "postgres://user:pass@localhost/mydb?sslmode=disable")
++ if err != nil {
++     log.Fatal(err)
++ }
++ defer db.Close()
++ 
++ // Verify connection
++ if err := db.Ping(); err != nil {
++     log.Fatal(err)
++ }
++ &#96;&#96;&#96;
++ 
++ The &#96;sql.Open&#96; doesn't actually connect—it just validates the connection string. &#96;Ping&#96; makes the actual connection.
++ 
++ ## Querying
++ 
++ Single row:
++ 
++ &#96;&#96;&#96;go
++ var user User
++ err := db.QueryRowContext(ctx, 
++     "SELECT id, name, email FROM users WHERE id = $1", 
++     userID,
++ ).Scan(&amp;user.ID, &amp;user.Name, &amp;user.Email)
++ 
++ if err == sql.ErrNoRows {
++     return nil, ErrNotFound
++ }
++ if err != nil {
++     return nil, fmt.Errorf("query user: %w", err)
++ }
++ &#96;&#96;&#96;
++ 
++ Multiple rows:
++ 
++ &#96;&#96;&#96;go
++ rows, err := db.QueryContext(ctx, "SELECT id, name, email FROM users")
++ if err != nil {
++     return nil, err
++ }
++ defer rows.Close()
++ 
++ var users []User
++ for rows.Next() {
++     var u User
++     if err := rows.Scan(&amp;u.ID, &amp;u.Name, &amp;u.Email); err != nil {
++         return nil, err
++     }
++     users = append(users, u)
++ }
++ 
++ if err := rows.Err(); err != nil {
++     return nil, err
++ }
++ &#96;&#96;&#96;
++ 
++ Note the explicit &#96;rows.Close()&#96; and &#96;rows.Err()&#96; checks. Nothing is automatic.
++ 
++ ## Executing Statements
++ 
++ Insert, update, delete:
++ 
++ &#96;&#96;&#96;go
++ result, err := db.ExecContext(ctx,
++     "INSERT INTO users (name, email) VALUES ($1, $2)",
++     name, email,
++ )
++ if err != nil {
++     return err
++ }
++ 
++ id, _ := result.LastInsertId()      // not all drivers support this
++ affected, _ := result.RowsAffected()
++ &#96;&#96;&#96;
++ 
++ ## Scanning Structs
++ 
++ You scan columns into variables one by one. This is tedious:
++ 
++ &#96;&#96;&#96;go
++ // Manual scanning
++ rows.Scan(&amp;u.ID, &amp;u.Name, &amp;u.Email, &amp;u.CreatedAt, &amp;u.UpdatedAt)
++ &#96;&#96;&#96;
++ 
++ If your SELECT has 15 columns, you write 15 arguments.
++ 
++ Libraries like &#96;sqlx&#96; help:
++ 
++ &#96;&#96;&#96;go
++ import "github.com/jmoiron/sqlx"
++ 
++ type User struct {
++     ID        int       &#96;db:"id"&#96;
++     Name      string    &#96;db:"name"&#96;
++     Email     string    &#96;db:"email"&#96;
++     CreatedAt time.Time &#96;db:"created_at"&#96;
++ }
++ 
++ // sqlx scans by struct tag
++ var users []User
++ err := db.SelectContext(ctx, &amp;users, "SELECT * FROM users")
++ 
++ var user User
++ err := db.GetContext(ctx, &amp;user, "SELECT * FROM users WHERE id = $1", id)
++ &#96;&#96;&#96;
++ 
++ &#96;sqlx&#96; is &#96;database/sql&#96; with convenience methods. It's not an ORM—still raw SQL—but much less boilerplate.
++ 
++ ## Transactions
++ 
++ &#96;&#96;&#96;go
++ tx, err := db.BeginTx(ctx, nil)
++ if err != nil {
++     return err
++ }
++ defer tx.Rollback()  // no-op if committed
++ 
++ _, err = tx.ExecContext(ctx, "UPDATE accounts SET balance = balance - $1 WHERE id = $2", amount, fromID)
++ if err != nil {
++     return err
++ }
++ 
++ _, err = tx.ExecContext(ctx, "UPDATE accounts SET balance = balance + $1 WHERE id = $2", amount, toID)
++ if err != nil {
++     return err
++ }
++ 
++ return tx.Commit()
++ &#96;&#96;&#96;
++ 
++ The &#96;defer tx.Rollback()&#96; is safe—it does nothing if already committed.
++ 
++ ## Connection Pooling
++ 
++ &#96;sql.DB&#96; is a connection pool. Configure it:
++ 
++ &#96;&#96;&#96;go
++ db.SetMaxOpenConns(25)              // max concurrent connections
++ db.SetMaxIdleConns(5)               // max idle connections
++ db.SetConnMaxLifetime(5 * time.Minute)  // max connection age
++ db.SetConnMaxIdleTime(1 * time.Minute)  // max idle time
++ &#96;&#96;&#96;
++ 
++ This is built in. EF Core has connection pooling too, but you rarely configure it.
++ 
++ ## Comparing to Entity Framework
++ 
++ | Feature | Entity Framework | database/sql |
++ |---------|------------------|--------------|
++ | Query language | LINQ | Raw SQL |
++ | Mapping | Automatic (conventions/attributes) | Manual or sqlx |
++ | Change tracking | Yes | No |
++ | Migrations | EF Migrations | External tools |
++ | Connection pooling | Built-in | Built-in |
++ | Transactions | DbContext/SaveChanges | Explicit Begin/Commit |
++ | Lazy loading | Supported | No |
++ | Relationships | Navigation properties | Manual joins |
++ | Learning curve | Higher | Lower (if you know SQL) |
++ 
++ ## The Repository Pattern
++ 
++ Without an ORM, you write repositories manually:
++ 
++ &#96;&#96;&#96;go
++ type UserRepository struct {
++     db *sql.DB
++ }
++ 
++ func (r *UserRepository) FindByID(ctx context.Context, id int) (*User, error) {
++     var u User
++     err := r.db.QueryRowContext(ctx,
++         "SELECT id, name, email, created_at FROM users WHERE id = $1",
++         id,
++     ).Scan(&amp;u.ID, &amp;u.Name, &amp;u.Email, &amp;u.CreatedAt)
++     
++     if err == sql.ErrNoRows {
++         return nil, ErrNotFound
++     }
++     return &amp;u, err
++ }
++ 
++ func (r *UserRepository) Create(ctx context.Context, u *User) error {
++     return r.db.QueryRowContext(ctx,
++         "INSERT INTO users (name, email) VALUES ($1, $2) RETURNING id, created_at",
++         u.Name, u.Email,
++     ).Scan(&amp;u.ID, &amp;u.CreatedAt)
++ }
++ 
++ func (r *UserRepository) Update(ctx context.Context, u *User) error {
++     _, err := r.db.ExecContext(ctx,
++         "UPDATE users SET name = $1, email = $2 WHERE id = $3",
++         u.Name, u.Email, u.ID,
++     )
++     return err
++ }
++ &#96;&#96;&#96;
++ 
++ More code than EF, but you control every query.
++ 
++ ## Handling NULLs
++ 
++ SQL NULLs don't map to Go zero values cleanly:
++ 
++ &#96;&#96;&#96;go
++ // This fails if middle_name is NULL
++ var middleName string
++ rows.Scan(&amp;middleName)  // error: converting NULL to string
++ 
++ // Use sql.NullString
++ var middleName sql.NullString
++ rows.Scan(&amp;middleName)
++ if middleName.Valid {
++     fmt.Println(middleName.String)
++ }
++ 
++ // Or use pointers
++ var middleName *string
++ rows.Scan(&amp;middleName)
++ if middleName != nil {
++     fmt.Println(*middleName)
++ }
++ &#96;&#96;&#96;
++ 
++ &#96;sql.NullString&#96;, &#96;sql.NullInt64&#96;, etc. for nullable columns. Or use pointers.
++ 
++ ## Migrations
++ 
++ No built-in migrations. Popular tools:
++ 
++ - **golang-migrate**: SQL files, version tracking
++ - **goose**: SQL or Go migrations
++ - **atlas**: Schema-as-code approach
++ 
++ &#96;&#96;&#96;bash
++ # golang-migrate example
++ migrate create -ext sql -dir migrations create_users_table
++ migrate -path migrations -database "postgres://..." up
++ &#96;&#96;&#96;
++ 
++ You write the SQL yourself. No automatic schema generation from structs.
++ 
++ ## The Honest Take
++ 
++ Going from EF to &#96;database/sql&#96; is a shock. You're back to writing SQL, managing scans, handling nulls manually.
++ 
++ **What Go does well:**
++ - Full control over queries
++ - No ORM magic to debug
++ - Excellent connection pooling
++ - Predictable performance
++ - sqlx makes it tolerable
++ 
++ **What EF does better:**
++ - LINQ for type-safe queries
++ - Automatic change tracking
++ - Migration generation
++ - Navigation properties
++ - Much less boilerplate
++ 
++ **The verdict:**
++ If you like writing SQL and want control, &#96;database/sql&#96; is fine. Add &#96;sqlx&#96; for convenience.
++ 
++ If you're building CRUD apps and value productivity over control, you'll miss EF. A lot.
++ 
++ The Go community is more accepting of ORMs than it used to be. GORM exists, and we'll cover it next. But many Go developers prefer the explicit approach.
++ 
++ ---
++ 
++ *Next up: GORM—when you do want an ORM, and how it compares to Entity Framework.*
++ 
+```
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="write">
+
+<details><summary>Tool use: **write** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/dotnet-to-go-gorm.md</summary>
+
+**Chunk 1**
+Lines added: 365, lines removed: 1
+
+```diff
+@@ -1,1 +1,365 @@
+- 
++ +++
++ title = "GORM and Friends: When You Do Want an ORM"
++ date = "2025-01-04"
++ draft = false
++ tags = ["go", "dotnet", "database", "orm", "gorm", "csharp"]
++ +++
++ 
++ Despite Go's "just write SQL" culture, ORMs exist and are popular. GORM is the most widely used. If you're coming from Entity Framework and miss the productivity, GORM might ease the transition.
++ 
++ Fair warning: GORM is controversial in the Go community. Some love it, many avoid it. Let's look at what it offers and the trade-offs.
++ 
++ ## Basic GORM Usage
++ 
++ Define a model:
++ 
++ &#96;&#96;&#96;go
++ import "gorm.io/gorm"
++ 
++ type User struct {
++     ID        uint           &#96;gorm:"primaryKey"&#96;
++     Name      string         &#96;gorm:"size:255;not null"&#96;
++     Email     string         &#96;gorm:"uniqueIndex;not null"&#96;
++     Age       int
++     CreatedAt time.Time
++     UpdatedAt time.Time
++     DeletedAt gorm.DeletedAt &#96;gorm:"index"&#96;  // soft delete
++ }
++ &#96;&#96;&#96;
++ 
++ Connect and auto-migrate:
++ 
++ &#96;&#96;&#96;go
++ import (
++     "gorm.io/gorm"
++     "gorm.io/driver/postgres"
++ )
++ 
++ dsn := "host=localhost user=postgres password=secret dbname=myapp"
++ db, err := gorm.Open(postgres.Open(dsn), &amp;gorm.Config{})
++ if err != nil {
++     log.Fatal(err)
++ }
++ 
++ // Create/update tables from structs
++ db.AutoMigrate(&amp;User{})
++ &#96;&#96;&#96;
++ 
++ ## CRUD Operations
++ 
++ **Create:**
++ 
++ &#96;&#96;&#96;go
++ user := User{Name: "Alice", Email: "alice@example.com", Age: 30}
++ result := db.Create(&amp;user)
++ // user.ID is populated after insert
++ 
++ if result.Error != nil {
++     return result.Error
++ }
++ fmt.Printf("Inserted %d rows\n", result.RowsAffected)
++ &#96;&#96;&#96;
++ 
++ **Read:**
++ 
++ &#96;&#96;&#96;go
++ // By primary key
++ var user User
++ db.First(&amp;user, 1)  // find by ID
++ 
++ // By condition
++ db.First(&amp;user, "email = ?", "alice@example.com")
++ 
++ // Multiple
++ var users []User
++ db.Where("age &gt; ?", 25).Find(&amp;users)
++ 
++ // All
++ db.Find(&amp;users)
++ &#96;&#96;&#96;
++ 
++ **Update:**
++ 
++ &#96;&#96;&#96;go
++ // Update single field
++ db.Model(&amp;user).Update("Name", "Bob")
++ 
++ // Update multiple fields
++ db.Model(&amp;user).Updates(User{Name: "Bob", Age: 31})
++ 
++ // Update with map (includes zero values)
++ db.Model(&amp;user).Updates(map[string]interface{}{"Name": "Bob", "Age": 0})
++ &#96;&#96;&#96;
++ 
++ **Delete:**
++ 
++ &#96;&#96;&#96;go
++ db.Delete(&amp;user)  // soft delete if DeletedAt field exists
++ db.Unscoped().Delete(&amp;user)  // hard delete
++ &#96;&#96;&#96;
++ 
++ ## Comparing to Entity Framework
++ 
++ &#96;&#96;&#96;csharp
++ // EF Core
++ var user = await _context.Users.FindAsync(1);
++ user.Name = "Bob";
++ await _context.SaveChangesAsync();
++ &#96;&#96;&#96;
++ 
++ &#96;&#96;&#96;go
++ // GORM
++ var user User
++ db.First(&amp;user, 1)
++ db.Model(&amp;user).Update("Name", "Bob")
++ &#96;&#96;&#96;
++ 
++ Similar concepts, different APIs. GORM doesn't have change tracking like EF—you explicitly call updates.
++ 
++ ## Relationships
++ 
++ **One-to-Many:**
++ 
++ &#96;&#96;&#96;go
++ type User struct {
++     ID     uint
++     Name   string
++     Orders []Order  // has many
++ }
++ 
++ type Order struct {
++     ID     uint
++     UserID uint     // foreign key
++     Total  float64
++     User   User     // belongs to
++ }
++ 
++ // Load with association
++ var user User
++ db.Preload("Orders").First(&amp;user, 1)
++ 
++ for _, order := range user.Orders {
++     fmt.Println(order.Total)
++ }
++ &#96;&#96;&#96;
++ 
++ **Many-to-Many:**
++ 
++ &#96;&#96;&#96;go
++ type User struct {
++     ID    uint
++     Name  string
++     Roles []Role &#96;gorm:"many2many:user_roles;"&#96;
++ }
++ 
++ type Role struct {
++     ID   uint
++     Name string
++ }
++ 
++ // Load
++ db.Preload("Roles").First(&amp;user, 1)
++ 
++ // Associate
++ db.Model(&amp;user).Association("Roles").Append(&amp;Role{Name: "admin"})
++ &#96;&#96;&#96;
++ 
++ ## Preloading vs Eager Loading
++ 
++ Like EF's &#96;Include&#96;, GORM has &#96;Preload&#96;:
++ 
++ &#96;&#96;&#96;go
++ // Single association
++ db.Preload("Orders").Find(&amp;users)
++ 
++ // Nested
++ db.Preload("Orders.Items").Find(&amp;users)
++ 
++ // Conditional preload
++ db.Preload("Orders", "total &gt; ?", 100).Find(&amp;users)
++ 
++ // All associations
++ db.Preload(clause.Associations).Find(&amp;users)
++ &#96;&#96;&#96;
++ 
++ No lazy loading by default. Explicit preloading only.
++ 
++ ## Raw SQL
++ 
++ When the ORM isn't enough:
++ 
++ &#96;&#96;&#96;go
++ // Raw query
++ var users []User
++ db.Raw("SELECT * FROM users WHERE age &gt; ?", 25).Scan(&amp;users)
++ 
++ // Raw exec
++ db.Exec("UPDATE users SET age = age + 1 WHERE birthday = ?", today)
++ 
++ // Mix GORM and raw
++ db.Where("age &gt; ?", 25).Order("name").Find(&amp;users)
++ &#96;&#96;&#96;
++ 
++ ## Transactions
++ 
++ &#96;&#96;&#96;go
++ err := db.Transaction(func(tx *gorm.DB) error {
++     if err := tx.Create(&amp;user).Error; err != nil {
++         return err  // rollback
++     }
++     
++     if err := tx.Create(&amp;order).Error; err != nil {
++         return err  // rollback
++     }
++     
++     return nil  // commit
++ })
++ &#96;&#96;&#96;
++ 
++ Or manual:
++ 
++ &#96;&#96;&#96;go
++ tx := db.Begin()
++ defer func() {
++     if r := recover(); r != nil {
++         tx.Rollback()
++     }
++ }()
++ 
++ // ... operations on tx ...
++ 
++ tx.Commit()
++ &#96;&#96;&#96;
++ 
++ ## Hooks (Lifecycle Events)
++ 
++ &#96;&#96;&#96;go
++ func (u *User) BeforeCreate(tx *gorm.DB) error {
++     u.CreatedAt = time.Now()
++     return nil
++ }
++ 
++ func (u *User) AfterCreate(tx *gorm.DB) error {
++     // Send welcome email
++     return sendWelcomeEmail(u.Email)
++ }
++ &#96;&#96;&#96;
++ 
++ Like EF's &#96;SaveChanges&#96; interceptors or domain events.
++ 
++ ## The Controversies
++ 
++ GORM has critics. Common complaints:
++ 
++ **1. Magic and Reflection**
++ 
++ GORM uses reflection heavily. Errors can be cryptic, and behaviour isn't always obvious.
++ 
++ &#96;&#96;&#96;go
++ db.Where("name = ?", name).First(&amp;user)
++ // What SQL does this generate? Have to check docs or logs.
++ &#96;&#96;&#96;
++ 
++ **2. Struct Tag Complexity**
++ 
++ &#96;&#96;&#96;go
++ type Product struct {
++     ID        uint    &#96;gorm:"primaryKey;autoIncrement"&#96;
++     Code      string  &#96;gorm:"type:varchar(100);uniqueIndex"&#96;
++     Price     float64 &#96;gorm:"precision:2"&#96;
++     CreatedAt time.Time &#96;gorm:"autoCreateTime"&#96;
++ }
++ &#96;&#96;&#96;
++ 
++ The tags can get complex. Errors are runtime, not compile time.
++ 
++ **3. Query Builder Limitations**
++ 
++ Complex queries sometimes fight the API:
++ 
++ &#96;&#96;&#96;go
++ // This gets awkward
++ db.Where("status = ? AND (priority = ? OR deadline &lt; ?)", 
++     "active", "high", time.Now())
++ &#96;&#96;&#96;
++ 
++ **4. Performance**
++ 
++ Reflection has overhead. For high-throughput scenarios, raw SQL is faster.
++ 
++ ## Alternatives to GORM
++ 
++ **sqlx**: Not an ORM, just convenience over &#96;database/sql&#96;:
++ 
++ &#96;&#96;&#96;go
++ var users []User
++ db.SelectContext(ctx, &amp;users, "SELECT * FROM users WHERE age &gt; $1", 25)
++ &#96;&#96;&#96;
++ 
++ **ent**: Facebook's ORM, generates type-safe code:
++ 
++ &#96;&#96;&#96;go
++ client.User.Query().
++     Where(user.AgeGT(25)).
++     All(ctx)
++ &#96;&#96;&#96;
++ 
++ **sqlc**: Generates Go code from SQL:
++ 
++ &#96;&#96;&#96;sql
++ -- queries.sql
++ -- name: GetUser :one
++ SELECT * FROM users WHERE id = $1;
++ &#96;&#96;&#96;
++ 
++ &#96;&#96;&#96;go
++ // Generated code
++ user, err := queries.GetUser(ctx, userID)
++ &#96;&#96;&#96;
++ 
++ **bun**: Lightweight ORM with better SQL control:
++ 
++ &#96;&#96;&#96;go
++ err := db.NewSelect().
++     Model(&amp;users).
++     Where("age &gt; ?", 25).
++     Scan(ctx)
++ &#96;&#96;&#96;
++ 
++ ## The Honest Take
++ 
++ GORM vs EF Core isn't a fair fight. EF is more mature, better integrated with .NET, and has superior tooling.
++ 
++ **When GORM makes sense:**
++ - You want EF-like productivity
++ - Your queries are mostly CRUD
++ - You're okay with the magic
++ - Team is familiar with ORMs
++ 
++ **When to avoid GORM:**
++ - Complex queries are common
++ - Performance is critical
++ - You prefer explicit SQL
++ - Team prefers "no magic"
++ 
++ **What GORM does well:**
++ - Fast development
++ - Relationship handling
++ - Migrations (basic)
++ - Familiar to ORM users
++ 
++ **What EF does better:**
++ - LINQ (type-safe queries)
++ - Change tracking
++ - Migration tooling
++ - Integration with ASP.NET
++ 
++ **The verdict:**
++ If you're building a CRUD service and miss EF's productivity, GORM is reasonable. If you're doing complex queries or care about explicit control, stick with &#96;database/sql&#96; + sqlx.
++ 
++ Many Go developers start with GORM, then move to sqlx or sqlc as they get comfortable with Go's explicit style. That's a valid journey.
++ 
++ ---
++ 
++ *Next up: tooling—linting, formatting, and why gofmt is non-negotiable.*
++ 
+```
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="write">
+
+<details><summary>Tool use: **write** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/dotnet-to-go-linting.md</summary>
+
+**Chunk 1**
+Lines added: 261, lines removed: 1
+
+```diff
+@@ -1,1 +1,261 @@
+- 
++ +++
++ title = "Linting and Formatting: gofmt Is Non-Negotiable"
++ date = "2025-01-04"
++ draft = false
++ tags = ["go", "dotnet", "tooling", "linting", "csharp"]
++ +++
++ 
++ In C#, code formatting is a matter of preference. Tabs or spaces? Braces on the same line or next? Teams debate, &#96;.editorconfig&#96; files proliferate, and nobody quite agrees.
++ 
++ In Go, formatting is not a discussion. &#96;gofmt&#96; defines the One True Format, and everyone uses it. There is no debate because there's no choice.
++ 
++ This sounds authoritarian. It's actually liberating.
++ 
++ ## gofmt: The Formatter
++ 
++ Every Go file should be formatted by &#96;gofmt&#96;:
++ 
++ &#96;&#96;&#96;bash
++ gofmt -w .              # format all files in place
++ go fmt ./...            # same thing, via go command
++ &#96;&#96;&#96;
++ 
++ &#96;gofmt&#96; handles:
++ - Indentation (tabs, not spaces)
++ - Brace placement (same line, always)
++ - Spacing around operators
++ - Import grouping
++ - Line length (it doesn't wrap, but long lines are a code smell)
++ 
++ There are no options. No configuration. One format for all Go code, everywhere.
++ 
++ ## The Philosophy
++ 
++ Rob Pike (Go co-creator): "Gofmt's style is no one's favourite, yet gofmt is everyone's favourite."
++ 
++ The point isn't that &#96;gofmt&#96;'s choices are optimal. The point is that *having* a choice wastes time. Every Go codebase looks the same, which means:
++ 
++ - No bikeshedding about style
++ - Pull reviews focus on logic, not formatting  
++ - New team members read unfamiliar code easily
++ - Tooling (IDEs, linters) can assume standard formatting
++ 
++ ## goimports: gofmt Plus Import Management
++ 
++ &#96;goimports&#96; does everything &#96;gofmt&#96; does, plus:
++ - Adds missing imports
++ - Removes unused imports
++ - Groups imports (stdlib, external, internal)
++ 
++ &#96;&#96;&#96;bash
++ go install golang.org/x/tools/cmd/goimports@latest
++ goimports -w .
++ &#96;&#96;&#96;
++ 
++ Most developers use &#96;goimports&#96; instead of plain &#96;gofmt&#96;. Configure your editor to run it on save.
++ 
++ ## Linting with golangci-lint
++ 
++ Formatting ensures consistency. Linting catches bugs and enforces best practices.
++ 
++ &#96;golangci-lint&#96; is the standard meta-linter—it runs many linters in one tool:
++ 
++ &#96;&#96;&#96;bash
++ # Install
++ go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
++ 
++ # Run
++ golangci-lint run
++ &#96;&#96;&#96;
++ 
++ Default linters catch:
++ - Unused variables and imports
++ - Ineffective assignments  
++ - Missing error checks
++ - Suspicious constructs
++ 
++ ## Common Linters
++ 
++ &#96;golangci-lint&#96; bundles dozens of linters. Key ones:
++ 
++ | Linter | Purpose |
++ |--------|---------|
++ | &#96;errcheck&#96; | Unchecked errors |
++ | &#96;gosimple&#96; | Simplification suggestions |
++ | &#96;govet&#96; | Suspicious constructs |
++ | &#96;ineffassign&#96; | Ineffectual assignments |
++ | &#96;staticcheck&#96; | Advanced static analysis |
++ | &#96;unused&#96; | Unused code |
++ | &#96;gosec&#96; | Security issues |
++ | &#96;misspell&#96; | Spelling mistakes |
++ | &#96;gocyclo&#96; | Cyclomatic complexity |
++ | &#96;gocritic&#96; | Opinionated style issues |
++ 
++ ## Configuration
++ 
++ Create &#96;.golangci.yml&#96;:
++ 
++ &#96;&#96;&#96;yaml
++ linters:
++   enable:
++     - errcheck
++     - gosimple
++     - govet
++     - ineffassign
++     - staticcheck
++     - unused
++     - gosec
++     - misspell
++     
++ linters-settings:
++   errcheck:
++     check-type-assertions: true
++   govet:
++     check-shadowing: true
++   gocyclo:
++     min-complexity: 15
++ 
++ issues:
++   exclude-rules:
++     - path: _test\.go
++       linters:
++         - gosec  # less strict in tests
++ &#96;&#96;&#96;
++ 
++ Run with:
++ 
++ &#96;&#96;&#96;bash
++ golangci-lint run
++ golangci-lint run --fix  # auto-fix where possible
++ &#96;&#96;&#96;
++ 
++ ## staticcheck
++ 
++ The most powerful individual linter. It catches subtle bugs:
++ 
++ &#96;&#96;&#96;go
++ // staticcheck catches this
++ if x == nil {
++     return x.String()  // nil dereference
++ }
++ 
++ // And this
++ for i := range items {
++     go func() {
++         process(items[i])  // captures loop variable
++     }()
++ }
++ &#96;&#96;&#96;
++ 
++ Many issues that would be runtime errors become compile-time warnings.
++ 
++ ## Comparing to .NET Analyzers
++ 
++ | Feature | .NET Analyzers | Go Linting |
++ |---------|----------------|------------|
++ | Format enforcement | Optional (EditorConfig) | Mandatory (gofmt) |
++ | Built-in | Some analyzers | gofmt, go vet |
++ | Meta-linter | StyleCop, Roslyn | golangci-lint |
++ | IDE integration | Excellent | Good |
++ | CI integration | Easy | Easy |
++ | Auto-fix | Many rules | Some rules |
++ 
++ .NET has the advantage of the Roslyn compiler platform—analyzers can be very sophisticated. Go's linters are simpler but catch most issues.
++ 
++ ## Editor Integration
++ 
++ ### VS Code
++ 
++ Install the Go extension. Add to &#96;settings.json&#96;:
++ 
++ &#96;&#96;&#96;json
++ {
++     "go.formatTool": "goimports",
++     "go.lintTool": "golangci-lint",
++     "editor.formatOnSave": true,
++     "[go]": {
++         "editor.defaultFormatter": "golang.go",
++         "editor.codeActionsOnSave": {
++             "source.organizeImports": true
++         }
++     }
++ }
++ &#96;&#96;&#96;
++ 
++ ### GoLand
++ 
++ Built-in support. Enable "Reformat code" and "Optimize imports" on save.
++ 
++ ### Vim/Neovim
++ 
++ Use &#96;vim-go&#96; or configure &#96;gopls&#96; (the Go language server) with your LSP setup.
++ 
++ ## CI Integration
++ 
++ Add to your pipeline:
++ 
++ &#96;&#96;&#96;yaml
++ # GitHub Actions
++ - name: golangci-lint
++   uses: golangci/golangci-lint-action@v4
++   with:
++     version: latest
++ &#96;&#96;&#96;
++ 
++ Or manually:
++ 
++ &#96;&#96;&#96;bash
++ # Install
++ curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin
++ 
++ # Run
++ golangci-lint run --timeout 5m
++ &#96;&#96;&#96;
++ 
++ ## Pre-commit Hooks
++ 
++ Enforce formatting before commit:
++ 
++ &#96;&#96;&#96;bash
++ # .git/hooks/pre-commit
++ #!/bin/sh
++ gofmt -l . | read &amp;&amp; echo "Files not formatted" &amp;&amp; exit 1
++ golangci-lint run &amp;&amp; exit 0 || exit 1
++ &#96;&#96;&#96;
++ 
++ Or use [pre-commit](https://pre-commit.com/):
++ 
++ &#96;&#96;&#96;yaml
++ # .pre-commit-config.yaml
++ repos:
++   - repo: https://github.com/golangci/golangci-lint
++     rev: v1.55.0
++     hooks:
++       - id: golangci-lint
++ &#96;&#96;&#96;
++ 
++ ## The Honest Take
++ 
++ Go's enforced formatting is one of its best features. No arguments, no decisions, no config files.
++ 
++ **What Go does better:**
++ - No bikeshedding—ever
++ - All code looks the same
++ - &#96;gofmt&#96; is fast and universal
++ - No configuration to maintain
++ 
++ **What .NET does better:**
++ - More formatting options (if you want them)
++ - Roslyn analyzers are very powerful
++ - Better code action suggestions
++ - More sophisticated refactoring
++ 
++ **The verdict:**
++ You'll miss zero formatting decisions. You won't miss the arguments about formatting. &#96;golangci-lint&#96; catches most issues; enable it and move on.
++ 
++ The Go community's attitude is refreshing: format your code, lint it, and spend your energy on actual problems.
++ 
++ ---
++ 
++ *Next up: code generation with &#96;go generate&#96;—why Go developers love generating code.*
++ 
+```
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="write">
+
+<details><summary>Tool use: **write** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/dotnet-to-go-generate.md</summary>
+
+**Chunk 1**
+Lines added: 311, lines removed: 1
+
+```diff
+@@ -1,1 +1,311 @@
+- 
++ +++
++ title = "Generate All the Things"
++ date = "2025-01-04"
++ draft = false
++ tags = ["go", "dotnet", "tooling", "codegen", "csharp"]
++ +++
++ 
++ Go developers love code generation. Where C# uses reflection, attributes, and source generators, Go often uses tools that generate code before compilation.
++ 
++ This sounds backwards—writing code that writes code? But it has advantages: generated code is inspectable, debuggable, and has zero runtime overhead.
++ 
++ ## The go generate Command
++ 
++ Add a magic comment to your source file:
++ 
++ &#96;&#96;&#96;go
++ //go:generate stringer -type=Status
++ 
++ type Status int
++ 
++ const (
++     StatusPending Status = iota
++     StatusActive
++     StatusCompleted
++ )
++ &#96;&#96;&#96;
++ 
++ Run:
++ 
++ &#96;&#96;&#96;bash
++ go generate ./...
++ &#96;&#96;&#96;
++ 
++ This runs &#96;stringer -type=Status&#96; in the package directory, which generates &#96;status_string.go&#96;:
++ 
++ &#96;&#96;&#96;go
++ // Code generated by "stringer -type=Status"; DO NOT EDIT.
++ 
++ func (i Status) String() string {
++     switch i {
++     case StatusPending:
++         return "StatusPending"
++     case StatusActive:
++         return "StatusActive"
++     case StatusCompleted:
++         return "StatusCompleted"
++     }
++     return "Status(" + strconv.FormatInt(int64(i), 10) + ")"
++ }
++ &#96;&#96;&#96;
++ 
++ The generated code is committed to your repo. It's just Go code.
++ 
++ ## Common Code Generators
++ 
++ ### stringer
++ 
++ Generates &#96;String()&#96; methods for constants:
++ 
++ &#96;&#96;&#96;go
++ //go:generate stringer -type=LogLevel
++ &#96;&#96;&#96;
++ 
++ We covered this in the enums post.
++ 
++ ### mockgen
++ 
++ Generates mock implementations:
++ 
++ &#96;&#96;&#96;go
++ //go:generate mockgen -source=repository.go -destination=mock_repository.go -package=repo
++ &#96;&#96;&#96;
++ 
++ Creates mock structs for testing.
++ 
++ ### sqlc
++ 
++ Generates type-safe database code from SQL:
++ 
++ &#96;&#96;&#96;sql
++ -- queries/users.sql
++ -- name: GetUser :one
++ SELECT id, name, email FROM users WHERE id = $1;
++ 
++ -- name: ListUsers :many
++ SELECT id, name, email FROM users ORDER BY name;
++ &#96;&#96;&#96;
++ 
++ &#96;&#96;&#96;go
++ //go:generate sqlc generate
++ &#96;&#96;&#96;
++ 
++ Produces:
++ 
++ &#96;&#96;&#96;go
++ func (q *Queries) GetUser(ctx context.Context, id int64) (User, error) {
++     row := q.db.QueryRowContext(ctx, getUserSQL, id)
++     var i User
++     err := row.Scan(&amp;i.ID, &amp;i.Name, &amp;i.Email)
++     return i, err
++ }
++ &#96;&#96;&#96;
++ 
++ Type-safe queries with no reflection.
++ 
++ ### protoc (Protocol Buffers)
++ 
++ Generates Go code from &#96;.proto&#96; files:
++ 
++ &#96;&#96;&#96;go
++ //go:generate protoc --go_out=. --go-grpc_out=. api.proto
++ &#96;&#96;&#96;
++ 
++ ### oapi-codegen
++ 
++ Generates code from OpenAPI specs:
++ 
++ &#96;&#96;&#96;go
++ //go:generate oapi-codegen -package api -generate types,server openapi.yaml
++ &#96;&#96;&#96;
++ 
++ ### ent
++ 
++ Generates ORM code:
++ 
++ &#96;&#96;&#96;go
++ //go:generate go run -mod=mod entgo.io/ent/cmd/ent generate ./schema
++ &#96;&#96;&#96;
++ 
++ ## Writing Your Own Generator
++ 
++ Generators are just programs. You can write your own:
++ 
++ &#96;&#96;&#96;go
++ // gen/main.go
++ package main
++ 
++ import (
++     "os"
++     "text/template"
++ )
++ 
++ var tmpl = &#96;// Code generated; DO NOT EDIT.
++ package {{.Package}}
++ 
++ var Version = "{{.Version}}"
++ var BuildTime = "{{.BuildTime}}"
++ &#96;
++ 
++ func main() {
++     t := template.Must(template.New("version").Parse(tmpl))
++     
++     data := map[string]string{
++         "Package":   os.Getenv("GOPACKAGE"),
++         "Version":   os.Getenv("VERSION"),
++         "BuildTime": time.Now().Format(time.RFC3339),
++     }
++     
++     f, _ := os.Create("version_gen.go")
++     defer f.Close()
++     t.Execute(f, data)
++ }
++ &#96;&#96;&#96;
++ 
++ Use it:
++ 
++ &#96;&#96;&#96;go
++ //go:generate go run gen/main.go
++ &#96;&#96;&#96;
++ 
++ ## The go:generate Directive
++ 
++ The comment format:
++ 
++ &#96;&#96;&#96;go
++ //go:generate command arg1 arg2
++ &#96;&#96;&#96;
++ 
++ Rules:
++ - Must start with &#96;//go:generate&#96; (no space after //)
++ - The command runs in the package directory
++ - Environment variables available: &#96;$GOPACKAGE&#96;, &#96;$GOFILE&#96;, &#96;$GOLINE&#96;
++ - Output to stderr shows during generation
++ 
++ Multiple directives are fine:
++ 
++ &#96;&#96;&#96;go
++ //go:generate stringer -type=Status
++ //go:generate mockgen -source=service.go -destination=mock_service.go
++ &#96;&#96;&#96;
++ 
++ ## Comparing to C# Source Generators
++ 
++ C# has source generators (Roslyn) that run during compilation:
++ 
++ &#96;&#96;&#96;csharp
++ [Generator]
++ public class MyGenerator : ISourceGenerator
++ {
++     public void Execute(GeneratorExecutionContext context)
++     {
++         // Generate code based on syntax trees
++     }
++ }
++ &#96;&#96;&#96;
++ 
++ | Aspect | C# Source Generators | Go go:generate |
++ |--------|---------------------|----------------|
++ | When runs | During compilation | Before compilation |
++ | Output | In-memory | Files in repo |
++ | Debugging | Harder | Easy (it's just files) |
++ | IDE support | Integrated | Manual regeneration |
++ | Dependencies | Part of build | External tools |
++ | Incremental | Yes | Manual |
++ 
++ C#'s generators are more integrated. Go's are more transparent.
++ 
++ ## Best Practices
++ 
++ **1. Commit generated code**
++ 
++ Generated code should be in your repo:
++ - CI doesn't need generator tools
++ - Code review includes generated changes
++ - git blame works
++ 
++ **2. Mark generated files**
++ 
++ Start with the standard header:
++ 
++ &#96;&#96;&#96;go
++ // Code generated by TOOL; DO NOT EDIT.
++ &#96;&#96;&#96;
++ 
++ Linters and editors recognize this and treat the file specially.
++ 
++ **3. Regenerate in CI**
++ 
++ Verify generated code is up-to-date:
++ 
++ &#96;&#96;&#96;yaml
++ - name: Check generated code
++   run: |
++     go generate ./...
++     git diff --exit-code
++ &#96;&#96;&#96;
++ 
++ Fails if generated code differs from committed code.
++ 
++ **4. Document generation**
++ 
++ In your README or Makefile:
++ 
++ &#96;&#96;&#96;makefile
++ generate:
++ 	go generate ./...
++ 
++ .PHONY: generate
++ &#96;&#96;&#96;
++ 
++ **5. Keep generators fast**
++ 
++ &#96;go generate&#96; runs serially. Slow generators hurt iteration speed.
++ 
++ ## Real-World Example
++ 
++ A typical project might have:
++ 
++ &#96;&#96;&#96;go
++ // internal/domain/status.go
++ //go:generate stringer -type=Status
++ 
++ // internal/repository/repository.go  
++ //go:generate mockgen -source=repository.go -destination=mock_repository.go -package=repository
++ 
++ // internal/database/queries.sql
++ //go:generate sqlc generate
++ 
++ // api/openapi.yaml
++ //go:generate oapi-codegen -package api -generate types,server,spec -o api_gen.go openapi.yaml
++ &#96;&#96;&#96;
++ 
++ Run &#96;go generate ./...&#96; and all these tools produce code.
++ 
++ ## The Honest Take
++ 
++ Code generation is more prominent in Go than C#. It's a cultural thing—Go prefers explicit, inspectable code over runtime magic.
++ 
++ **What Go does well:**
++ - Generated code is transparent
++ - Easy to debug (it's just files)
++ - No runtime reflection overhead
++ - Tools are standalone programs
++ 
++ **What C# does better:**
++ - Source generators are integrated
++ - IDE understands generated code immediately
++ - Incremental generation
++ - No manual regeneration step
++ 
++ **The verdict:**
++ If you're not used to code generation, it feels weird. But once you embrace it, you appreciate the transparency.
++ 
++ sqlc in particular is wonderful—type-safe database access without ORM magic, because the queries are analyzed at generation time.
++ 
++ Learn to love &#96;go generate ./...&#96;. It's part of the Go workflow.
++ 
++ ---
++ 
++ *Next up: debugging with Delve—getting productive with dlv after Visual Studio's polished debugging experience.*
++ 
+```
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="write">
+
+<details><summary>Tool use: **write** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/dotnet-to-go-debugging.md</summary>
+
+**Chunk 1**
+Lines added: 305, lines removed: 1
+
+```diff
+@@ -1,1 +1,305 @@
+- 
++ +++
++ title = "Debugging: Delve vs Visual Studio's Comfort"
++ date = "2025-01-04"
++ draft = false
++ tags = ["go", "dotnet", "tooling", "debugging", "csharp"]
++ +++
++ 
++ Visual Studio's debugger is exceptional. Breakpoints, watch expressions, edit-and-continue, conditional breakpoints, data tips, memory inspection, async debugging... You can debug anything, easily.
++ 
++ Go's debugger is Delve (&#96;dlv&#96;). It's good. It's not Visual Studio.
++ 
++ Let's get you productive with what Go offers.
++ 
++ ## Delve Basics
++ 
++ Install:
++ 
++ &#96;&#96;&#96;bash
++ go install github.com/go-delve/delve/cmd/dlv@latest
++ &#96;&#96;&#96;
++ 
++ Start debugging:
++ 
++ &#96;&#96;&#96;bash
++ # Debug current package
++ dlv debug
++ 
++ # Debug specific package
++ dlv debug ./cmd/server
++ 
++ # Debug a test
++ dlv test
++ 
++ # Attach to running process
++ dlv attach &lt;pid&gt;
++ &#96;&#96;&#96;
++ 
++ ## Command-Line Debugging
++ 
++ Inside &#96;dlv&#96;:
++ 
++ &#96;&#96;&#96;
++ (dlv) break main.go:15          # set breakpoint
++ (dlv) break main.handleRequest  # break on function
++ (dlv) continue                  # run until breakpoint
++ (dlv) next                      # step over
++ (dlv) step                      # step into
++ (dlv) stepout                   # step out
++ (dlv) print x                   # print variable
++ (dlv) locals                    # print local variables
++ (dlv) args                      # print function arguments
++ (dlv) goroutines                # list goroutines
++ (dlv) goroutine 5               # switch to goroutine 5
++ (dlv) stack                     # print stack trace
++ (dlv) exit                      # quit
++ &#96;&#96;&#96;
++ 
++ ## IDE Integration
++ 
++ Nobody uses &#96;dlv&#96; on the command line for daily work. Use your IDE.
++ 
++ ### VS Code
++ 
++ The Go extension integrates Delve. Create &#96;.vscode/launch.json&#96;:
++ 
++ &#96;&#96;&#96;json
++ {
++     "version": "0.2.0",
++     "configurations": [
++         {
++             "name": "Launch",
++             "type": "go",
++             "request": "launch",
++             "mode": "debug",
++             "program": "${workspaceFolder}",
++             "args": []
++         },
++         {
++             "name": "Launch Server",
++             "type": "go",
++             "request": "launch",
++             "mode": "debug",
++             "program": "${workspaceFolder}/cmd/server",
++             "args": ["-port", "8080"]
++         },
++         {
++             "name": "Debug Test",
++             "type": "go",
++             "request": "launch",
++             "mode": "test",
++             "program": "${workspaceFolder}/pkg/service"
++         },
++         {
++             "name": "Attach",
++             "type": "go",
++             "request": "attach",
++             "mode": "remote",
++             "remotePath": "",
++             "port": 2345,
++             "host": "127.0.0.1"
++         }
++     ]
++ }
++ &#96;&#96;&#96;
++ 
++ Press F5 to debug. Breakpoints, watch variables, call stack—the usual.
++ 
++ ### GoLand
++ 
++ JetBrains GoLand has excellent debugging. Click in the gutter to set breakpoints, right-click to run debug, use the Debug panel.
++ 
++ GoLand's debugger is the closest to Visual Studio's experience in the Go world.
++ 
++ ## Debugging Tests
++ 
++ Debug a specific test in VS Code:
++ 
++ 1. Open the test file
++ 2. Click "debug test" above the test function
++ 3. Or add a launch config with &#96;"mode": "test"&#96;
++ 
++ From command line:
++ 
++ &#96;&#96;&#96;bash
++ dlv test -- -test.run TestSpecificFunction
++ &#96;&#96;&#96;
++ 
++ ## Conditional Breakpoints
++ 
++ Set a breakpoint that only triggers under conditions:
++ 
++ &#96;&#96;&#96;
++ (dlv) break main.go:25
++ (dlv) condition 1 i &gt; 100
++ &#96;&#96;&#96;
++ 
++ In VS Code, right-click a breakpoint and select "Edit Breakpoint" to add conditions.
++ 
++ ## Debugging Goroutines
++ 
++ This is where Go debugging gets interesting. Your program has many goroutines:
++ 
++ &#96;&#96;&#96;
++ (dlv) goroutines
++   Goroutine 1 - User: ./main.go:15 main.main (0x4a5b6c)
++   Goroutine 2 - User: ./server.go:42 main.handleRequest (0x4a6d8e)
++   Goroutine 3 - User: ./worker.go:28 main.processJob (0x4a7f90)
++ &#96;&#96;&#96;
++ 
++ Switch between them:
++ 
++ &#96;&#96;&#96;
++ (dlv) goroutine 2
++ (dlv) stack
++ &#96;&#96;&#96;
++ 
++ In VS Code, the Call Stack panel shows all goroutines. Click to switch.
++ 
++ ## Remote Debugging
++ 
++ Debug a process on another machine:
++ 
++ On the remote:
++ 
++ &#96;&#96;&#96;bash
++ dlv debug --headless --listen=:2345 --api-version=2 ./cmd/server
++ &#96;&#96;&#96;
++ 
++ On your machine, connect with VS Code:
++ 
++ &#96;&#96;&#96;json
++ {
++     "name": "Remote",
++     "type": "go",
++     "request": "attach",
++     "mode": "remote",
++     "remotePath": "/path/on/remote",
++     "port": 2345,
++     "host": "remote.server.com"
++ }
++ &#96;&#96;&#96;
++ 
++ ## Debugging in Containers
++ 
++ Add Delve to your container:
++ 
++ &#96;&#96;&#96;dockerfile
++ FROM golang:1.22 AS builder
++ RUN go install github.com/go-delve/delve/cmd/dlv@latest
++ COPY . .
++ RUN go build -gcflags="all=-N -l" -o /app ./cmd/server
++ 
++ FROM alpine
++ COPY --from=builder /go/bin/dlv /usr/local/bin/
++ COPY --from=builder /app /app
++ EXPOSE 8080 2345
++ CMD ["dlv", "--listen=:2345", "--headless=true", "--api-version=2", "--accept-multiclient", "exec", "/app"]
++ &#96;&#96;&#96;
++ 
++ The &#96;-gcflags="all=-N -l"&#96; disables optimisations for better debugging.
++ 
++ ## Comparing to Visual Studio
++ 
++ | Feature | Visual Studio | Delve |
++ |---------|---------------|-------|
++ | Basic breakpoints | Excellent | Good |
++ | Conditional breakpoints | Excellent | Good |
++ | Watch expressions | Excellent | Good |
++ | Edit and continue | Yes | No |
++ | Data visualizers | Rich | Basic |
++ | Async/Task debugging | Excellent | Goroutines visible |
++ | Memory inspection | Detailed | Basic |
++ | Performance profiling | Integrated | Separate tools |
++ | Remote debugging | Excellent | Good |
++ 
++ ## Common Issues
++ 
++ **"Could not launch process"**
++ 
++ Compilation failed. Check &#96;go build&#96; works first.
++ 
++ **Breakpoints not hitting**
++ 
++ Optimised builds skip breakpoints. Build with:
++ 
++ &#96;&#96;&#96;bash
++ go build -gcflags="all=-N -l"
++ &#96;&#96;&#96;
++ 
++ **Variables showing &#96;&lt;optimized out&gt;&#96;**
++ 
++ Same issue—disable optimisations.
++ 
++ **Can't see struct fields**
++ 
++ Unexported fields don't show in some views. Use &#96;print&#96; command with full path:
++ 
++ &#96;&#96;&#96;
++ (dlv) print user.internalField
++ &#96;&#96;&#96;
++ 
++ ## Debugging Tips
++ 
++ **Printf debugging is valid**
++ 
++ Sometimes &#96;fmt.Println&#96; is faster than setting up a debugger. Go compiles fast; the feedback loop is quick.
++ 
++ **Use slog for structured debugging**
++ 
++ &#96;&#96;&#96;go
++ slog.Debug("processing request", 
++     "request_id", requestID,
++     "user_id", userID,
++     "payload_size", len(payload),
++ )
++ &#96;&#96;&#96;
++ 
++ Run with &#96;DEBUG=true&#96; or appropriate log level.
++ 
++ **Panic stack traces are helpful**
++ 
++ When Go panics, you get a full stack trace. Read it:
++ 
++ &#96;&#96;&#96;
++ panic: runtime error: invalid memory address
++ 
++ goroutine 1 [running]:
++ main.processUser(...)
++     /app/main.go:42
++ main.handleRequest(...)
++     /app/main.go:28
++ main.main()
++     /app/main.go:15
++ &#96;&#96;&#96;
++ 
++ Line numbers and function names. Often enough to find the bug.
++ 
++ ## The Honest Take
++ 
++ Delve is competent. It's not Visual Studio.
++ 
++ **What Delve does well:**
++ - Goroutine debugging
++ - Remote debugging
++ - IDE integration (especially GoLand)
++ - Fast startup
++ 
++ **What Visual Studio does better:**
++ - Edit and continue
++ - Data visualization
++ - Memory inspection
++ - Historical debugging
++ - Overall polish
++ 
++ **The verdict:**
++ You'll miss Visual Studio's refinement. GoLand gets closest to that experience. VS Code with Delve is good enough for most debugging.
++ 
++ The Go community relies more on logging, tests, and reading stack traces than step debugging. The fast compile times mean printf debugging has a quick feedback loop.
++ 
++ Adjust your expectations, learn Delve's commands, and you'll be productive. Just don't expect Visual Studio's magic.
++ 
++ ---
++ 
++ *That wraps up the tooling section. Go's tools are simpler than .NET's—&#96;gofmt&#96; instead of formatting debates, &#96;golangci-lint&#96; instead of analyzer configuration, &#96;go generate&#96; instead of source generators. Simpler isn't always better, but it's often good enough.*
++ 
+```
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+Let me verify the build works with all the new posts.</details></think>
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_cmd">
+<details><summary>Tool use: **run_terminal_cmd** • Run command: cd /Users/andycross/src/personal/mcp-blogs && hugo --quiet && echo "Build successful" && ls content/posts/dotnet-to-go*.md | wc -l</summary>
+
+```bash
+cd /Users/andycross/src/personal/mcp-blogs && hugo --quiet && echo "Build successful" && ls content/posts/dotnet-to-go*.md | wc -l
+```
+
+```
+Build successful
+      36
+
+```
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+All 36 posts are done and the build passes. Let me summarize the complete series for the user.</details></think>
+
+---
+
+All 9 posts done! **36 posts total now.** Here's the complete series:
+
+## C# to Go Series (36 posts)
+
+### Phase 1: The Fundamentals (22 posts)
+
+**Getting Oriented** (3)
+1-3. Toolchain, go.mod, Phrasebook
+
+**Types & Data** (5)
+4-8. Structs, Visibility, Generics, Nil, Enums
+
+**Control Flow & Error Handling** (3)
+9-11. Errors, Panic/Recover, Switch
+
+**Memory & Pointers** (3)
+12-14. Pointers, Escape Analysis, Slices
+
+**Concurrency** (5)
+15-19. Goroutines, Channels, Select, Sync, Context
+
+**Interfaces & Composition** (3)
+20-22. Implicit Interfaces, Composition/Embedding, any/type assertions
+
+---
+
+### Phase 2: The Ecosystem (14 posts)
+
+**Project Structure & Modules** (2)
+23-24. Project Structure, Multi-Module Repos
+
+**Testing** (3)
+25-27. Built-in Testing, Mocking, Benchmarks/Profiling
+
+**Common Patterns & Libraries** (6) ← **NEW**
+28. **"HTTP Services: net/http vs ASP.NET Core"** — Handlers, middleware, routing (Go 1.22+), comparing to minimal APIs
+29. **"JSON: Struct Tags and the Marshal Dance"** — Struct tags, omitempty gotcha, custom marshalling, dynamic JSON
+30. **"Configuration Without IOptions<T>"** — Environment variables, envconfig, Viper, keeping it simple
+31. **"Logging: slog and the Structured Logging Story"** — Go 1.21's slog, levels, attributes, comparing to ILogger
+32. **"Database Access: database/sql vs Entity Framework"** — Raw SQL, scanning, transactions, sqlx, missing your ORM
+33. **"GORM and Friends: When You Do Want an ORM"** — GORM basics, relationships, when to use/avoid, alternatives
+
+**Tooling** (3) ← **NEW**
+34. **"Linting and Formatting: gofmt Is Non-Negotiable"** — gofmt, goimports, golangci-lint, no debates
+35. **"Generate All the Things"** — go:generate, stringer, sqlc, mockgen, writing your own generators
+36. **"Debugging: Delve vs Visual Studio's Comfort"** — dlv commands, IDE integration, goroutine debugging, adjusting expectations
+
+---
+
+Ready for Phase 3: Deployment whenever you want to tackle containers, cloud, CI/CD, and observability!
+
+---
+
+_**User (2025-12-31 01:06Z)**_
+
+let's go with teh deployment section now:
+
+Phase 3: Deployment & Production
+Building & Distributing
+
+Single Binary Deploys: The Killer Feature — Cross-compilation, no runtime dependencies, and why ops will love you
+Shrinking Binaries and Build Tags — ldflags, conditional compilation, and keeping things lean
+
+Containers & Cloud
+
+Dockerfile for Go: Simpler Than You'd Think — Multi-stage builds, scratch images, and distroless
+AWS Lambda and Go: Cold Starts That Don't Hurt — Serverless without the .NET cold start tax
+Kubernetes and Go: A Natural Fit — Health checks, graceful shutdown, and playing nice with orchestration
+
+Observability
+
+Metrics, Traces, and Logs: The OpenTelemetry Way — Instrumenting Go services for production
+Health Checks and Readiness Probes — Patterns that work in container orchestrators
+
+CI/CD
+
+GitHub Actions for Go Projects — Testing, linting, and releasing with goreleaser
+Versioning Your Modules — Semantic versioning, tags, and avoiding dependency hell
+
+---
+
+_**Agent (model claude-4.5-opus-high-thinking, mode Agent)**_
+
+<think><details><summary>Thought Process</summary>
+The user wants me to create 9 posts for Phase 3: Deployment & Production. Let me write all of them following the established tone and style.</details></think>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="write">
+
+<details><summary>Tool use: **write** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/dotnet-to-go-single-binary.md</summary>
+
+**Chunk 1**
+Lines added: 266, lines removed: 1
+
+```diff
+@@ -1,1 +1,266 @@
+- 
++ +++
++ title = "Single Binary Deploys: The Killer Feature"
++ date = "2025-01-05"
++ draft = false
++ tags = ["go", "dotnet", "deployment", "cross-compilation", "csharp"]
++ +++
++ 
++ Here's the thing that sold me on Go for production: you build a binary, you copy it to a server, you run it. No runtime to install. No framework version matching. No dependency hell. Just a file.
++ 
++ If you've ever dealt with .NET runtime versioning on servers, or debugged why &#96;dotnet&#96; can't find the right SDK, or explained to ops why they need to install framework X before deploying your app—Go's deployment model will feel like a revelation.
++ 
++ ## The .NET Deployment Model
++ 
++ In .NET, you have choices:
++ 
++ **Framework-dependent (FDD)**:
++ &#96;&#96;&#96;bash
++ dotnet publish -c Release
++ # Produces DLLs, needs .NET runtime on target
++ &#96;&#96;&#96;
++ 
++ Small output, but requires runtime installation and version matching.
++ 
++ **Self-contained (SCD)**:
++ &#96;&#96;&#96;bash
++ dotnet publish -c Release --self-contained -r linux-x64
++ # Produces executable + runtime + dependencies
++ # ~70MB+ for a simple API
++ &#96;&#96;&#96;
++ 
++ Everything included, but large.
++ 
++ **Single-file**:
++ &#96;&#96;&#96;bash
++ dotnet publish -c Release --self-contained -r linux-x64 -p:PublishSingleFile=true
++ # Extracts to temp on first run
++ &#96;&#96;&#96;
++ 
++ One file, but it's a bundle that extracts itself.
++ 
++ **Native AOT** (.NET 7+):
++ &#96;&#96;&#96;bash
++ dotnet publish -c Release -r linux-x64 -p:PublishAot=true
++ # True native binary, ~10-30MB
++ &#96;&#96;&#96;
++ 
++ Finally a real binary, but limited reflection support.
++ 
++ ## The Go Model: Just Build
++ 
++ &#96;&#96;&#96;bash
++ go build -o myapp ./cmd/server
++ &#96;&#96;&#96;
++ 
++ That's it. &#96;myapp&#96; is a statically-linked binary. Copy it anywhere with the same OS/architecture and run it.
++ 
++ &#96;&#96;&#96;bash
++ scp myapp server:/usr/local/bin/
++ ssh server '/usr/local/bin/myapp'
++ &#96;&#96;&#96;
++ 
++ No runtime. No dependencies. No extraction. No installation.
++ 
++ ## Cross-Compilation
++ 
++ This is where Go shines. Build for any platform from any platform:
++ 
++ &#96;&#96;&#96;bash
++ # From macOS, build for Linux
++ GOOS=linux GOARCH=amd64 go build -o myapp-linux
++ 
++ # Build for Windows
++ GOOS=windows GOARCH=amd64 go build -o myapp.exe
++ 
++ # Build for ARM (Raspberry Pi, AWS Graviton)
++ GOOS=linux GOARCH=arm64 go build -o myapp-arm64
++ &#96;&#96;&#96;
++ 
++ No Docker, no VMs, no cross-compilers to install. Set environment variables, build.
++ 
++ ### All Platforms
++ 
++ Common targets:
++ 
++ | GOOS | GOARCH | Target |
++ |------|--------|--------|
++ | linux | amd64 | Standard Linux servers |
++ | linux | arm64 | AWS Graviton, ARM servers |
++ | darwin | amd64 | Intel Macs |
++ | darwin | arm64 | Apple Silicon Macs |
++ | windows | amd64 | Windows servers |
++ 
++ &#96;&#96;&#96;bash
++ # Build for all common targets
++ for os in linux darwin windows; do
++   for arch in amd64 arm64; do
++     GOOS=$os GOARCH=$arch go build -o myapp-$os-$arch ./cmd/server
++   done
++ done
++ &#96;&#96;&#96;
++ 
++ ## Static Linking by Default
++ 
++ Go binaries are statically linked by default. No shared library dependencies:
++ 
++ &#96;&#96;&#96;bash
++ ldd myapp
++ # not a dynamic executable
++ &#96;&#96;&#96;
++ 
++ Compare to a typical C program:
++ 
++ &#96;&#96;&#96;bash
++ ldd /usr/bin/ls
++ # linux-vdso.so.1
++ # libselinux.so.1
++ # libc.so.6
++ # libpcre2-8.so.0
++ # ...
++ &#96;&#96;&#96;
++ 
++ Static linking means:
++ - No "works on my machine" due to library versions
++ - Deploy to minimal containers (scratch, distroless)
++ - No glibc compatibility concerns
++ 
++ ### CGO and Dynamic Linking
++ 
++ The exception is CGO—Go code that calls C libraries:
++ 
++ &#96;&#96;&#96;go
++ // #include &lt;sqlite3.h&gt;
++ import "C"
++ &#96;&#96;&#96;
++ 
++ CGO produces dynamically-linked binaries. Disable it if you don't need it:
++ 
++ &#96;&#96;&#96;bash
++ CGO_ENABLED=0 go build -o myapp
++ &#96;&#96;&#96;
++ 
++ Most pure-Go programs don't need CGO.
++ 
++ ## Binary Size
++ 
++ A simple Go HTTP server: ~10-15MB
++ A typical Go CLI tool: ~5-10MB
++ A complex service with many dependencies: ~20-30MB
++ 
++ Compare to .NET self-contained: 70-150MB
++ Compare to .NET Native AOT: 10-30MB
++ 
++ Go binaries are competitive with .NET AOT and much smaller than self-contained.
++ 
++ ## Build Reproducibility
++ 
++ Go builds are reproducible by default. Same inputs, same binary:
++ 
++ &#96;&#96;&#96;bash
++ go build -o app1 ./cmd/server
++ go build -o app2 ./cmd/server
++ sha256sum app1 app2
++ # Same hash (usually)
++ &#96;&#96;&#96;
++ 
++ For guaranteed reproducibility:
++ 
++ &#96;&#96;&#96;bash
++ go build -trimpath -ldflags="-s -w" -o myapp
++ &#96;&#96;&#96;
++ 
++ - &#96;-trimpath&#96;: removes file paths from binary
++ - &#96;-s -w&#96;: strips debug info and DWARF
++ 
++ ## Deployment Patterns
++ 
++ ### Direct Binary Deployment
++ 
++ &#96;&#96;&#96;bash
++ # Build
++ go build -o myapp ./cmd/server
++ 
++ # Deploy
++ scp myapp server:/opt/myapp/
++ ssh server 'systemctl restart myapp'
++ &#96;&#96;&#96;
++ 
++ Systemd unit file:
++ 
++ &#96;&#96;&#96;ini
++ [Unit]
++ Description=My App
++ After=network.target
++ 
++ [Service]
++ Type=simple
++ ExecStart=/opt/myapp/myapp
++ Restart=always
++ Environment=PORT=8080
++ 
++ [Install]
++ WantedBy=multi-user.target
++ &#96;&#96;&#96;
++ 
++ ### Tarball Distribution
++ 
++ &#96;&#96;&#96;bash
++ # Build and package
++ go build -o myapp ./cmd/server
++ tar -czvf myapp-linux-amd64.tar.gz myapp config.yaml
++ 
++ # Distribute
++ curl -L https://releases.example.com/myapp-linux-amd64.tar.gz | tar xz
++ ./myapp
++ &#96;&#96;&#96;
++ 
++ ### Container (Preview for Later)
++ 
++ &#96;&#96;&#96;dockerfile
++ FROM scratch
++ COPY myapp /myapp
++ ENTRYPOINT ["/myapp"]
++ &#96;&#96;&#96;
++ 
++ A container with just your binary. We'll cover this properly in the Dockerfile post.
++ 
++ ## The Comparison
++ 
++ | Aspect | .NET SCD | .NET AOT | Go |
++ |--------|----------|----------|-----|
++ | Binary size | 70-150MB | 10-30MB | 10-20MB |
++ | Cross-compilation | Limited | Limited | Trivial |
++ | Runtime required | No | No | No |
++ | Reflection support | Full | Limited | Full |
++ | CGO equivalent | P/Invoke | P/Invoke | CGO |
++ | Build time | Moderate | Slow | Fast |
++ | Static linking | Optional | Default | Default |
++ 
++ ## The Honest Take
++ 
++ Single binary deployment is Go's killer feature for operations.
++ 
++ **What Go does better:**
++ - Trivial cross-compilation
++ - Fast builds
++ - Small binaries by default
++ - No runtime installation
++ - Static linking by default
++ 
++ **What .NET does better:**
++ - .NET AOT is catching up
++ - Better Windows integration
++ - Richer ecosystem for some domains
++ - Native AOT on more platforms (eventually)
++ 
++ **The verdict:**
++ If deployment simplicity matters—and it should—Go wins. One binary, one target, done. 
++ 
++ Your ops team will thank you. Your deployment scripts will be three lines. Your containers will be tiny. Your CI/CD will be simple.
++ 
++ This is the feature that keeps Go relevant in a world of VMs and containers. Simplicity scales.
++ 
++ ---
++ 
++ *Next up: shrinking binaries and build tags—ldflags, conditional compilation, and getting even leaner.*
++ 
+```
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="write">
+
+<details><summary>Tool use: **write** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/dotnet-to-go-build-tags.md</summary>
+
+**Chunk 1**
+Lines added: 330, lines removed: 1
+
+```diff
+@@ -1,1 +1,330 @@
+- 
++ +++
++ title = "Shrinking Binaries and Build Tags"
++ date = "2025-01-05"
++ draft = false
++ tags = ["go", "dotnet", "deployment", "build-tags", "csharp"]
++ +++
++ 
++ Go binaries are already small compared to .NET self-contained deployments. But sometimes you want smaller—for Lambda deployments, embedded systems, or just because.
++ 
++ Let's look at &#96;ldflags&#96; for stripping binaries and build tags for conditional compilation.
++ 
++ ## Stripping with ldflags
++ 
++ The simplest optimisation:
++ 
++ &#96;&#96;&#96;bash
++ go build -ldflags="-s -w" -o myapp
++ &#96;&#96;&#96;
++ 
++ | Flag | Effect | Size Impact |
++ |------|--------|-------------|
++ | &#96;-s&#96; | Strip symbol table | ~15-20% smaller |
++ | &#96;-w&#96; | Strip DWARF debug info | ~10-15% smaller |
++ 
++ Combined, you might see 25-30% reduction.
++ 
++ Before:
++ &#96;&#96;&#96;bash
++ go build -o myapp &amp;&amp; ls -lh myapp
++ # 14M myapp
++ &#96;&#96;&#96;
++ 
++ After:
++ &#96;&#96;&#96;bash
++ go build -ldflags="-s -w" -o myapp &amp;&amp; ls -lh myapp
++ # 10M myapp
++ &#96;&#96;&#96;
++ 
++ ### Embedding Version Information
++ 
++ Use &#96;ldflags&#96; to set variables at build time:
++ 
++ &#96;&#96;&#96;go
++ // main.go
++ package main
++ 
++ var (
++     version   = "dev"
++     commit    = "none"
++     buildTime = "unknown"
++ )
++ 
++ func main() {
++     fmt.Printf("Version: %s, Commit: %s, Built: %s\n", version, commit, buildTime)
++ }
++ &#96;&#96;&#96;
++ 
++ Build with values:
++ 
++ &#96;&#96;&#96;bash
++ go build -ldflags="-s -w \
++   -X main.version=1.2.3 \
++   -X main.commit=$(git rev-parse --short HEAD) \
++   -X main.buildTime=$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
++   -o myapp
++ &#96;&#96;&#96;
++ 
++ Now &#96;myapp --version&#96; shows real build info, baked in at compile time.
++ 
++ ## Build Tags: Conditional Compilation
++ 
++ Build tags let you include/exclude files based on conditions. It's Go's equivalent to &#96;#if DEBUG&#96; or conditional compilation symbols.
++ 
++ ### File-Level Tags
++ 
++ Add a comment at the top of a file:
++ 
++ &#96;&#96;&#96;go
++ //go:build linux
++ 
++ package main
++ 
++ // This file only compiles on Linux
++ func platformSpecificSetup() {
++     // Linux-specific code
++ }
++ &#96;&#96;&#96;
++ 
++ Or exclude a platform:
++ 
++ &#96;&#96;&#96;go
++ //go:build !windows
++ 
++ package main
++ 
++ // This file compiles everywhere except Windows
++ &#96;&#96;&#96;
++ 
++ ### Combining Tags
++ 
++ &#96;&#96;&#96;go
++ //go:build linux &amp;&amp; amd64
++ 
++ // Only Linux on x86-64
++ &#96;&#96;&#96;
++ 
++ &#96;&#96;&#96;go
++ //go:build linux || darwin
++ 
++ // Linux or macOS
++ &#96;&#96;&#96;
++ 
++ &#96;&#96;&#96;go
++ //go:build !cgo
++ 
++ // Only when CGO is disabled
++ &#96;&#96;&#96;
++ 
++ ### Custom Build Tags
++ 
++ Define your own:
++ 
++ &#96;&#96;&#96;go
++ //go:build premium
++ 
++ package features
++ 
++ func PremiumFeatures() {
++     // Only in premium builds
++ }
++ &#96;&#96;&#96;
++ 
++ Build with:
++ 
++ &#96;&#96;&#96;bash
++ go build -tags premium -o myapp-premium
++ &#96;&#96;&#96;
++ 
++ Without the tag, files marked &#96;//go:build premium&#96; are excluded.
++ 
++ ### Common Use Cases
++ 
++ **Debug vs Production:**
++ 
++ &#96;&#96;&#96;go
++ //go:build debug
++ 
++ package main
++ 
++ func init() {
++     log.SetLevel(log.DebugLevel)
++ }
++ &#96;&#96;&#96;
++ 
++ &#96;&#96;&#96;go
++ //go:build !debug
++ 
++ package main
++ 
++ func init() {
++     log.SetLevel(log.InfoLevel)
++ }
++ &#96;&#96;&#96;
++ 
++ **Feature Flags:**
++ 
++ &#96;&#96;&#96;go
++ //go:build enterprise
++ 
++ package auth
++ 
++ func SSOLogin() { ... }
++ &#96;&#96;&#96;
++ 
++ **Platform-Specific Implementations:**
++ 
++ &#96;&#96;&#96;
++ mypackage/
++ ├── file.go           // shared code
++ ├── file_linux.go     // Linux-specific
++ ├── file_windows.go   // Windows-specific
++ └── file_darwin.go    // macOS-specific
++ &#96;&#96;&#96;
++ 
++ Go automatically selects by filename suffix: &#96;_linux.go&#96;, &#96;_windows.go&#96;, &#96;_darwin.go&#96;, &#96;_amd64.go&#96;, &#96;_arm64.go&#96;.
++ 
++ ## UPX Compression (Controversial)
++ 
++ UPX compresses executables:
++ 
++ &#96;&#96;&#96;bash
++ go build -ldflags="-s -w" -o myapp
++ upx --best myapp
++ &#96;&#96;&#96;
++ 
++ Before UPX: 10MB
++ After UPX: 3MB
++ 
++ Sounds great, but:
++ - Slower startup (decompression)
++ - Some virus scanners flag UPX-packed binaries
++ - Can interfere with debugging
++ - Memory usage increases at runtime
++ 
++ Most Go developers skip UPX. The uncompressed binary is usually small enough.
++ 
++ ## Trimpath for Reproducibility
++ 
++ Remove local paths from the binary:
++ 
++ &#96;&#96;&#96;bash
++ go build -trimpath -o myapp
++ &#96;&#96;&#96;
++ 
++ Without &#96;-trimpath&#96;, stack traces contain your local paths:
++ 
++ &#96;&#96;&#96;
++ /Users/alice/projects/myapp/main.go:42
++ &#96;&#96;&#96;
++ 
++ With &#96;-trimpath&#96;:
++ 
++ &#96;&#96;&#96;
++ myapp/main.go:42
++ &#96;&#96;&#96;
++ 
++ Cleaner error messages and reproducible builds.
++ 
++ ## Comparing to .NET
++ 
++ | Feature | .NET | Go |
++ |---------|------|-----|
++ | Strip debug info | PublishTrimmed | &#96;-ldflags="-s -w"&#96; |
++ | Conditional compilation | &#96;#if DEBUG&#96; | Build tags |
++ | Platform-specific | Runtime checks or #if | File suffixes |
++ | Build-time variables | MSBuild properties | &#96;-X main.var=value&#96; |
++ | IL trimming | PublishTrimmed | N/A (no IL) |
++ 
++ .NET's trimming is more complex because it's trimming IL and dependencies. Go doesn't have this problem—it compiles to native code and includes only what's used.
++ 
++ ## A Complete Production Build
++ 
++ &#96;&#96;&#96;bash
++ #!/bin/bash
++ 
++ VERSION=$(git describe --tags --always --dirty)
++ COMMIT=$(git rev-parse --short HEAD)
++ BUILD_TIME=$(date -u +%Y-%m-%dT%H:%M:%SZ)
++ 
++ go build \
++   -trimpath \
++   -ldflags="-s -w \
++     -X main.version=$VERSION \
++     -X main.commit=$COMMIT \
++     -X main.buildTime=$BUILD_TIME" \
++   -o myapp \
++   ./cmd/server
++ &#96;&#96;&#96;
++ 
++ This produces:
++ - Stripped binary (smaller)
++ - No local paths (reproducible)
++ - Version info embedded (debuggable in production)
++ 
++ ## Build Tags in Practice
++ 
++ A common pattern for different build configurations:
++ 
++ &#96;&#96;&#96;
++ cmd/server/
++ ├── main.go
++ ├── config_dev.go      //go:build dev
++ ├── config_prod.go     //go:build !dev
++ &#96;&#96;&#96;
++ 
++ config_dev.go:
++ &#96;&#96;&#96;go
++ //go:build dev
++ 
++ package main
++ 
++ var defaultConfig = Config{
++     LogLevel: "debug",
++     Database: "localhost:5432",
++ }
++ &#96;&#96;&#96;
++ 
++ config_prod.go:
++ &#96;&#96;&#96;go
++ //go:build !dev
++ 
++ package main
++ 
++ var defaultConfig = Config{
++     LogLevel: "info",
++     Database: "",  // must be set via env
++ }
++ &#96;&#96;&#96;
++ 
++ Build:
++ &#96;&#96;&#96;bash
++ go build -tags dev -o myapp-dev   # includes config_dev.go
++ go build -o myapp                  # includes config_prod.go
++ &#96;&#96;&#96;
++ 
++ ## The Honest Take
++ 
++ Go's build customisation is simpler than .NET's MSBuild system.
++ 
++ **What Go does well:**
++ - Simple ldflags for common needs
++ - Build tags are straightforward
++ - File suffixes for platform code
++ - Fast rebuilds
++ 
++ **What .NET does better:**
++ - More sophisticated trimming
++ - Rich MSBuild conditionals
++ - Better IDE support for conditional code
++ - Source generators for build-time code
++ 
++ **The verdict:**
++ For most cases, &#96;-ldflags="-s -w"&#96; and maybe a build tag or two is all you need. Go's simplicity means less configuration and fewer surprises.
++ 
++ If you're coming from complex MSBuild configurations, you might miss the flexibility. But you probably won't miss the complexity.
++ 
++ ---
++ 
++ *Next up: Dockerfiles for Go—multi-stage builds, scratch images, and why Go containers are so small.*
++ 
+```
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="write">
+
+<details><summary>Tool use: **write** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/dotnet-to-go-docker.md</summary>
+
+**Chunk 1**
+Lines added: 327, lines removed: 1
+
+```diff
+@@ -1,1 +1,327 @@
+- 
++ +++
++ title = "Dockerfile for Go: Simpler Than You'd Think"
++ date = "2025-01-05"
++ draft = false
++ tags = ["go", "dotnet", "docker", "containers", "csharp"]
++ +++
++ 
++ Go's static binaries make for tiny Docker images. Where a .NET container might be 200MB+, a Go container can be under 20MB. Sometimes under 10MB.
++ 
++ This isn't just about bragging rights. Smaller images mean faster pulls, faster scaling, smaller attack surface, and lower storage costs.
++ 
++ ## The Simplest Dockerfile
++ 
++ &#96;&#96;&#96;dockerfile
++ FROM golang:1.22 AS builder
++ WORKDIR /app
++ COPY go.mod go.sum ./
++ RUN go mod download
++ COPY . .
++ RUN CGO_ENABLED=0 go build -ldflags="-s -w" -o /app/server ./cmd/server
++ 
++ FROM scratch
++ COPY --from=builder /app/server /server
++ ENTRYPOINT ["/server"]
++ &#96;&#96;&#96;
++ 
++ That's it. A multi-stage build producing a minimal image.
++ 
++ ### What's Happening
++ 
++ **Stage 1: Build**
++ - Start from official Go image
++ - Copy and download dependencies first (layer caching)
++ - Copy source and build
++ - &#96;CGO_ENABLED=0&#96; ensures static linking
++ 
++ **Stage 2: Run**
++ - &#96;scratch&#96; is an empty image—literally nothing
++ - Copy just the binary
++ - Run it
++ 
++ Result: an image containing only your binary.
++ 
++ ## Image Size Comparison
++ 
++ &#96;&#96;&#96;bash
++ docker images
++ REPOSITORY          TAG       SIZE
++ myapp-go            latest    12MB
++ myapp-dotnet-aot    latest    45MB
++ myapp-dotnet-scd    latest    210MB
++ &#96;&#96;&#96;
++ 
++ Go with scratch: ~10-15MB
++ .NET AOT: ~40-80MB
++ .NET self-contained: ~200-300MB
++ 
++ ## The scratch vs distroless Decision
++ 
++ ### scratch
++ 
++ Literally empty. No shell, no utilities, no nothing.
++ 
++ &#96;&#96;&#96;dockerfile
++ FROM scratch
++ COPY myapp /myapp
++ ENTRYPOINT ["/myapp"]
++ &#96;&#96;&#96;
++ 
++ Pros:
++ - Smallest possible
++ - Minimal attack surface
++ - Nothing to exploit
++ 
++ Cons:
++ - No shell for debugging (&#96;docker exec&#96; won't help)
++ - No CA certificates (HTTPS fails)
++ - No timezone data
++ 
++ ### distroless
++ 
++ Google's minimal images—just enough to run binaries:
++ 
++ &#96;&#96;&#96;dockerfile
++ FROM gcr.io/distroless/static-debian12
++ COPY myapp /myapp
++ ENTRYPOINT ["/myapp"]
++ &#96;&#96;&#96;
++ 
++ Pros:
++ - Includes CA certificates
++ - Includes timezone data
++ - Still very small (~2MB base)
++ - Some debugging possible
++ 
++ Cons:
++ - Slightly larger than scratch
++ - Still no shell
++ 
++ ### alpine
++ 
++ Minimal Linux with shell:
++ 
++ &#96;&#96;&#96;dockerfile
++ FROM alpine:3.19
++ RUN apk add --no-cache ca-certificates tzdata
++ COPY myapp /myapp
++ ENTRYPOINT ["/myapp"]
++ &#96;&#96;&#96;
++ 
++ Pros:
++ - Has a shell
++ - Easy debugging
++ - Package manager available
++ - ~5MB base
++ 
++ Cons:
++ - Uses musl libc (usually fine for Go)
++ - Larger than scratch/distroless
++ - More attack surface
++ 
++ ## A Production Dockerfile
++ 
++ &#96;&#96;&#96;dockerfile
++ # Build stage
++ FROM golang:1.22-alpine AS builder
++ 
++ WORKDIR /app
++ 
++ # Dependencies first for layer caching
++ COPY go.mod go.sum ./
++ RUN go mod download
++ 
++ # Copy source
++ COPY . .
++ 
++ # Build with optimizations
++ ARG VERSION=dev
++ ARG COMMIT=unknown
++ RUN CGO_ENABLED=0 GOOS=linux go build \
++     -trimpath \
++     -ldflags="-s -w -X main.version=${VERSION} -X main.commit=${COMMIT}" \
++     -o server ./cmd/server
++ 
++ # Runtime stage
++ FROM gcr.io/distroless/static-debian12
++ 
++ # Copy binary
++ COPY --from=builder /app/server /server
++ 
++ # Copy any config files needed
++ COPY --from=builder /app/config.yaml /config.yaml
++ 
++ # Non-root user (distroless provides nonroot user)
++ USER nonroot:nonroot
++ 
++ EXPOSE 8080
++ 
++ ENTRYPOINT ["/server"]
++ &#96;&#96;&#96;
++ 
++ ### Build It
++ 
++ &#96;&#96;&#96;bash
++ docker build \
++   --build-arg VERSION=$(git describe --tags) \
++   --build-arg COMMIT=$(git rev-parse --short HEAD) \
++   -t myapp:latest .
++ &#96;&#96;&#96;
++ 
++ ## Handling HTTPS and Certificates
++ 
++ If your app makes HTTPS calls, you need CA certificates.
++ 
++ **Option 1: distroless (includes them)**
++ &#96;&#96;&#96;dockerfile
++ FROM gcr.io/distroless/static-debian12
++ &#96;&#96;&#96;
++ 
++ **Option 2: Copy from builder**
++ &#96;&#96;&#96;dockerfile
++ FROM scratch
++ COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
++ &#96;&#96;&#96;
++ 
++ **Option 3: alpine base**
++ &#96;&#96;&#96;dockerfile
++ FROM alpine:3.19
++ RUN apk add --no-cache ca-certificates
++ &#96;&#96;&#96;
++ 
++ ## Timezone Data
++ 
++ Go needs timezone data for &#96;time.LoadLocation()&#96;:
++ 
++ **Option 1: distroless (includes it)**
++ 
++ **Option 2: Embed in binary** (Go 1.15+)
++ &#96;&#96;&#96;go
++ import _ "time/tzdata"
++ &#96;&#96;&#96;
++ 
++ Adds ~500KB to binary but works everywhere.
++ 
++ **Option 3: Copy from builder**
++ &#96;&#96;&#96;dockerfile
++ COPY --from=builder /usr/share/zoneinfo /usr/share/zoneinfo
++ &#96;&#96;&#96;
++ 
++ ## Layer Caching Strategy
++ 
++ Order your Dockerfile for maximum cache hits:
++ 
++ &#96;&#96;&#96;dockerfile
++ # 1. Base image (rarely changes)
++ FROM golang:1.22 AS builder
++ 
++ # 2. Dependencies (change occasionally)
++ COPY go.mod go.sum ./
++ RUN go mod download
++ 
++ # 3. Source code (changes frequently)
++ COPY . .
++ 
++ # 4. Build
++ RUN go build -o /app ./cmd/server
++ &#96;&#96;&#96;
++ 
++ If only your source changes, steps 1-2 are cached.
++ 
++ ## Comparing to .NET Dockerfiles
++ 
++ .NET self-contained:
++ &#96;&#96;&#96;dockerfile
++ FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
++ WORKDIR /src
++ COPY *.csproj ./
++ RUN dotnet restore
++ COPY . .
++ RUN dotnet publish -c Release -o /app --self-contained -r linux-x64
++ 
++ FROM mcr.microsoft.com/dotnet/runtime-deps:8.0
++ COPY --from=build /app .
++ ENTRYPOINT ["./MyApp"]
++ &#96;&#96;&#96;
++ 
++ Result: 200MB+ image
++ 
++ .NET AOT:
++ &#96;&#96;&#96;dockerfile
++ FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
++ WORKDIR /src
++ COPY . .
++ RUN dotnet publish -c Release -r linux-x64 -p:PublishAot=true -o /app
++ 
++ FROM mcr.microsoft.com/dotnet/runtime-deps:8.0
++ COPY --from=build /app .
++ ENTRYPOINT ["./MyApp"]
++ &#96;&#96;&#96;
++ 
++ Result: 50-80MB image (better, but still needs runtime-deps base)
++ 
++ Go:
++ &#96;&#96;&#96;dockerfile
++ FROM golang:1.22 AS build
++ COPY . .
++ RUN CGO_ENABLED=0 go build -o /app
++ 
++ FROM scratch
++ COPY --from=build /app /app
++ ENTRYPOINT ["/app"]
++ &#96;&#96;&#96;
++ 
++ Result: 10-15MB image
++ 
++ ## Docker Compose for Development
++ 
++ &#96;&#96;&#96;yaml
++ version: '3.8'
++ 
++ services:
++   app:
++     build: .
++     ports:
++       - "8080:8080"
++     environment:
++       - DATABASE_URL=postgres://postgres:secret@db:5432/myapp
++     depends_on:
++       - db
++ 
++   db:
++     image: postgres:16-alpine
++     environment:
++       POSTGRES_PASSWORD: secret
++       POSTGRES_DB: myapp
++     volumes:
++       - pgdata:/var/lib/postgresql/data
++ 
++ volumes:
++   pgdata:
++ &#96;&#96;&#96;
++ 
++ ## The Honest Take
++ 
++ Go + Docker is a perfect match.
++ 
++ **What Go does better:**
++ - Static binaries → scratch/distroless
++ - Small images by default
++ - No runtime to include
++ - Fast builds in containers
++ 
++ **What .NET does... differently:**
++ - Runtime-deps base required
++ - Larger images even with AOT
++ - More complex Dockerfiles
++ - But better Windows container support
++ 
++ **The verdict:**
++ If container size and simplicity matter, Go wins decisively. A 10MB image that starts instantly is operationally simpler than a 200MB image, especially at scale.
++ 
++ This is one of Go's genuine strengths. Embrace it.
++ 
++ ---
++ 
++ *Next up: AWS Lambda and Go—serverless without the cold start tax.*
++ 
+```
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="write">
+
+<details><summary>Tool use: **write** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/dotnet-to-go-lambda.md</summary>
+
+**Chunk 1**
+Lines added: 292, lines removed: 1
+
+```diff
+@@ -1,1 +1,292 @@
+- 
++ +++
++ title = "AWS Lambda and Go: Cold Starts That Don't Hurt"
++ date = "2025-01-05"
++ draft = false
++ tags = ["go", "dotnet", "aws", "lambda", "serverless", "csharp"]
++ +++
++ 
++ If you've run .NET on Lambda, you know the cold start pain. 3-5 seconds for a managed runtime. Even Native AOT helps but doesn't eliminate it.
++ 
++ Go on Lambda cold starts in ~100-200ms. Sometimes faster. It's not magic—it's the same static binary advantage, applied to serverless.
++ 
++ ## Go Lambda Basics
++ 
++ &#96;&#96;&#96;go
++ package main
++ 
++ import (
++     "context"
++     "github.com/aws/aws-lambda-go/lambda"
++ )
++ 
++ type Request struct {
++     Name string &#96;json:"name"&#96;
++ }
++ 
++ type Response struct {
++     Message string &#96;json:"message"&#96;
++ }
++ 
++ func handler(ctx context.Context, req Request) (Response, error) {
++     return Response{
++         Message: "Hello, " + req.Name,
++     }, nil
++ }
++ 
++ func main() {
++     lambda.Start(handler)
++ }
++ &#96;&#96;&#96;
++ 
++ Build and deploy:
++ 
++ &#96;&#96;&#96;bash
++ GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o bootstrap main.go
++ zip function.zip bootstrap
++ aws lambda create-function \
++   --function-name my-function \
++   --runtime provided.al2023 \
++   --handler bootstrap \
++   --zip-file fileb://function.zip \
++   --role arn:aws:iam::123456789:role/lambda-role
++ &#96;&#96;&#96;
++ 
++ The binary must be named &#96;bootstrap&#96; for custom runtimes.
++ 
++ ## ARM64 for Better Performance
++ 
++ AWS Graviton2 processors offer better price-performance:
++ 
++ &#96;&#96;&#96;bash
++ GOOS=linux GOARCH=arm64 go build -ldflags="-s -w" -o bootstrap main.go
++ &#96;&#96;&#96;
++ 
++ Create the function with ARM:
++ 
++ &#96;&#96;&#96;bash
++ aws lambda create-function \
++   --function-name my-function \
++   --runtime provided.al2023 \
++   --architectures arm64 \
++   --handler bootstrap \
++   --zip-file fileb://function.zip \
++   --role arn:aws:iam::123456789:role/lambda-role
++ &#96;&#96;&#96;
++ 
++ ARM64 is typically ~20% cheaper and often faster for Go.
++ 
++ ## Cold Start Comparison
++ 
++ Rough numbers (highly variable, your mileage will vary):
++ 
++ | Runtime | Cold Start | Warm Invocation |
++ |---------|-----------|-----------------|
++ | Go (custom runtime) | 100-200ms | 1-5ms |
++ | .NET 8 Managed | 2-4 seconds | 5-20ms |
++ | .NET 8 Native AOT | 300-800ms | 3-10ms |
++ | Node.js | 200-400ms | 5-15ms |
++ | Python | 200-300ms | 10-30ms |
++ 
++ Go's cold start is competitive with Python and Node, but with the performance of a compiled language.
++ 
++ ## API Gateway Integration
++ 
++ For HTTP APIs:
++ 
++ &#96;&#96;&#96;go
++ package main
++ 
++ import (
++     "context"
++     "encoding/json"
++     "github.com/aws/aws-lambda-go/events"
++     "github.com/aws/aws-lambda-go/lambda"
++ )
++ 
++ func handler(ctx context.Context, req events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
++     name := req.QueryStringParameters["name"]
++     if name == "" {
++         name = "World"
++     }
++     
++     body, _ := json.Marshal(map[string]string{
++         "message": "Hello, " + name,
++     })
++     
++     return events.APIGatewayProxyResponse{
++         StatusCode: 200,
++         Headers:    map[string]string{"Content-Type": "application/json"},
++         Body:       string(body),
++     }, nil
++ }
++ 
++ func main() {
++     lambda.Start(handler)
++ }
++ &#96;&#96;&#96;
++ 
++ ## Using HTTP Frameworks
++ 
++ Want to use your existing HTTP code? Use an adapter:
++ 
++ &#96;&#96;&#96;go
++ package main
++ 
++ import (
++     "net/http"
++     "github.com/aws/aws-lambda-go/lambda"
++     "github.com/awslabs/aws-lambda-go-api-proxy/httpadapter"
++ )
++ 
++ func main() {
++     mux := http.NewServeMux()
++     mux.HandleFunc("/hello", helloHandler)
++     mux.HandleFunc("/users", usersHandler)
++     
++     lambda.Start(httpadapter.New(mux).ProxyWithContext)
++ }
++ &#96;&#96;&#96;
++ 
++ Or with chi:
++ 
++ &#96;&#96;&#96;go
++ import "github.com/awslabs/aws-lambda-go-api-proxy/chiadapter"
++ 
++ r := chi.NewRouter()
++ r.Get("/hello", helloHandler)
++ 
++ lambda.Start(chiadapter.New(r).ProxyWithContext)
++ &#96;&#96;&#96;
++ 
++ Your HTTP handlers work both locally and on Lambda.
++ 
++ ## Keeping Warm
++ 
++ If cold starts still matter, provision concurrency:
++ 
++ &#96;&#96;&#96;bash
++ aws lambda put-provisioned-concurrency-config \
++   --function-name my-function \
++   --qualifier prod \
++   --provisioned-concurrent-executions 5
++ &#96;&#96;&#96;
++ 
++ Keeps 5 instances warm. You pay for them, but no cold starts.
++ 
++ For Go, you rarely need this. 100ms cold starts are acceptable for most use cases.
++ 
++ ## SAM Template
++ 
++ &#96;&#96;&#96;yaml
++ AWSTemplateFormatVersion: '2010-09-09'
++ Transform: AWS::Serverless-2016-10-31
++ 
++ Globals:
++   Function:
++     Timeout: 30
++     MemorySize: 256
++     Runtime: provided.al2023
++     Architectures:
++       - arm64
++ 
++ Resources:
++   MyFunction:
++     Type: AWS::Serverless::Function
++     Properties:
++       CodeUri: ./
++       Handler: bootstrap
++       Events:
++         Api:
++           Type: Api
++           Properties:
++             Path: /hello
++             Method: get
++     Metadata:
++       BuildMethod: go1.x
++ &#96;&#96;&#96;
++ 
++ Build and deploy:
++ 
++ &#96;&#96;&#96;bash
++ sam build
++ sam deploy --guided
++ &#96;&#96;&#96;
++ 
++ ## Comparing to .NET Lambda
++ 
++ **.NET Managed Runtime:**
++ &#96;&#96;&#96;csharp
++ public class Function
++ {
++     public string Handler(string input, ILambdaContext context)
++     {
++         return $"Hello, {input}";
++     }
++ }
++ &#96;&#96;&#96;
++ 
++ Deploy as zip with .NET 8 runtime. Cold starts: 2-4 seconds.
++ 
++ **.NET Native AOT:**
++ Better cold starts (~500ms), but:
++ - Limited reflection
++ - Longer build times
++ - Larger deployment packages than Go
++ 
++ **Go Custom Runtime:**
++ - Fastest cold starts
++ - Smallest packages
++ - Full language features
++ - Simple deployment
++ 
++ ## Local Development
++ 
++ Test locally with SAM:
++ 
++ &#96;&#96;&#96;bash
++ sam local invoke MyFunction -e event.json
++ sam local start-api
++ &#96;&#96;&#96;
++ 
++ Or just run your Go code directly—it's a normal program:
++ 
++ &#96;&#96;&#96;go
++ func main() {
++     if os.Getenv("AWS_LAMBDA_FUNCTION_NAME") != "" {
++         lambda.Start(handler)
++     } else {
++         // Local development
++         http.HandleFunc("/", httpHandler)
++         http.ListenAndServe(":8080", nil)
++     }
++ }
++ &#96;&#96;&#96;
++ 
++ ## The Honest Take
++ 
++ Go is excellent for Lambda.
++ 
++ **What Go does better:**
++ - Fastest cold starts of compiled languages
++ - Small deployment packages
++ - Simple deployment model
++ - ARM64 support trivial
++ - No runtime version management
++ 
++ **What .NET does better:**
++ - Richer AWS SDK (sometimes)
++ - Better IDE tooling for Lambda
++ - Managed runtime means no bootstrap binary
++ - .NET-specific integrations
++ 
++ **The verdict:**
++ If Lambda cold starts have frustrated you in .NET, Go is the answer. 100ms cold starts mean serverless actually feels instant.
++ 
++ The deployment model is simple: build a binary, zip it, upload. No runtime versions, no layer management, no framework configuration.
++ 
++ For latency-sensitive serverless workloads, Go is hard to beat.
++ 
++ ---
++ 
++ *Next up: Kubernetes and Go—health checks, graceful shutdown, and playing nice with orchestration.*
++ 
+```
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="write">
+
+<details><summary>Tool use: **write** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/dotnet-to-go-kubernetes.md</summary>
+
+**Chunk 1**
+Lines added: 386, lines removed: 1
+
+```diff
+@@ -1,1 +1,386 @@
+- 
++ +++
++ title = "Kubernetes and Go: A Natural Fit"
++ date = "2025-01-05"
++ draft = false
++ tags = ["go", "dotnet", "kubernetes", "containers", "csharp"]
++ +++
++ 
++ Kubernetes is written in Go. The CLI tools are Go. The ecosystem is Go. Running Go services on Kubernetes feels natural—the patterns align.
++ 
++ But there are things you need to get right: health checks, graceful shutdown, resource limits. Let's cover what Kubernetes expects and how Go delivers it.
++ 
++ ## Health Checks: Liveness and Readiness
++ 
++ Kubernetes uses probes to manage your containers:
++ 
++ - **Liveness**: Is the process alive? Restart if not.
++ - **Readiness**: Can it serve traffic? Remove from load balancer if not.
++ - **Startup**: Has it finished starting? (For slow-starting apps)
++ 
++ ### Implementing Health Endpoints
++ 
++ &#96;&#96;&#96;go
++ package main
++ 
++ import (
++     "net/http"
++     "sync/atomic"
++ )
++ 
++ var ready atomic.Bool
++ 
++ func main() {
++     // Health endpoints
++     http.HandleFunc("/healthz", healthzHandler)   // liveness
++     http.HandleFunc("/readyz", readyzHandler)     // readiness
++     
++     // Your app routes
++     http.HandleFunc("/", appHandler)
++     
++     // Start background initialization
++     go func() {
++         initializeApp()
++         ready.Store(true)
++     }()
++     
++     http.ListenAndServe(":8080", nil)
++ }
++ 
++ func healthzHandler(w http.ResponseWriter, r *http.Request) {
++     // Liveness: can we respond at all?
++     w.WriteHeader(http.StatusOK)
++     w.Write([]byte("ok"))
++ }
++ 
++ func readyzHandler(w http.ResponseWriter, r *http.Request) {
++     // Readiness: are we ready to serve traffic?
++     if ready.Load() {
++         w.WriteHeader(http.StatusOK)
++         w.Write([]byte("ok"))
++     } else {
++         w.WriteHeader(http.StatusServiceUnavailable)
++         w.Write([]byte("not ready"))
++     }
++ }
++ &#96;&#96;&#96;
++ 
++ ### Kubernetes Manifest
++ 
++ &#96;&#96;&#96;yaml
++ apiVersion: apps/v1
++ kind: Deployment
++ metadata:
++   name: myapp
++ spec:
++   replicas: 3
++   selector:
++     matchLabels:
++       app: myapp
++   template:
++     metadata:
++       labels:
++         app: myapp
++     spec:
++       containers:
++       - name: myapp
++         image: myapp:latest
++         ports:
++         - containerPort: 8080
++         livenessProbe:
++           httpGet:
++             path: /healthz
++             port: 8080
++           initialDelaySeconds: 5
++           periodSeconds: 10
++         readinessProbe:
++           httpGet:
++             path: /readyz
++             port: 8080
++           initialDelaySeconds: 5
++           periodSeconds: 5
++         resources:
++           requests:
++             memory: "64Mi"
++             cpu: "100m"
++           limits:
++             memory: "128Mi"
++             cpu: "500m"
++ &#96;&#96;&#96;
++ 
++ ## Graceful Shutdown
++ 
++ When Kubernetes wants to stop your pod, it sends SIGTERM. You have &#96;terminationGracePeriodSeconds&#96; (default 30) to finish in-flight requests before SIGKILL.
++ 
++ &#96;&#96;&#96;go
++ package main
++ 
++ import (
++     "context"
++     "log"
++     "net/http"
++     "os"
++     "os/signal"
++     "syscall"
++     "time"
++ )
++ 
++ func main() {
++     srv := &amp;http.Server{
++         Addr:    ":8080",
++         Handler: router(),
++     }
++     
++     // Start server in goroutine
++     go func() {
++         log.Printf("Starting server on %s", srv.Addr)
++         if err := srv.ListenAndServe(); err != http.ErrServerClosed {
++             log.Fatalf("Server error: %v", err)
++         }
++     }()
++     
++     // Wait for shutdown signal
++     quit := make(chan os.Signal, 1)
++     signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
++     &lt;-quit
++     
++     log.Println("Shutting down server...")
++     
++     // Give in-flight requests time to complete
++     ctx, cancel := context.WithTimeout(context.Background(), 25*time.Second)
++     defer cancel()
++     
++     if err := srv.Shutdown(ctx); err != nil {
++         log.Fatalf("Server shutdown error: %v", err)
++     }
++     
++     log.Println("Server stopped")
++ }
++ &#96;&#96;&#96;
++ 
++ ### The Shutdown Sequence
++ 
++ 1. Kubernetes sends SIGTERM
++ 2. Kubernetes removes pod from Service endpoints (readiness fails)
++ 3. Your app stops accepting new connections
++ 4. In-flight requests complete (or timeout)
++ 5. If not done in grace period, SIGKILL
++ 
++ ### Coordinating with Readiness
++ 
++ Stop being ready before shutdown completes:
++ 
++ &#96;&#96;&#96;go
++ var (
++     ready    atomic.Bool
++     stopping atomic.Bool
++ )
++ 
++ func readyzHandler(w http.ResponseWriter, r *http.Request) {
++     if ready.Load() &amp;&amp; !stopping.Load() {
++         w.WriteHeader(http.StatusOK)
++     } else {
++         w.WriteHeader(http.StatusServiceUnavailable)
++     }
++ }
++ 
++ func main() {
++     // ... setup ...
++     
++     &lt;-quit
++     stopping.Store(true)  // Stop readiness immediately
++     
++     // Wait a moment for Kubernetes to update endpoints
++     time.Sleep(5 * time.Second)
++     
++     // Then shutdown
++     srv.Shutdown(ctx)
++ }
++ &#96;&#96;&#96;
++ 
++ ## Resource Limits
++ 
++ Go respects container resource limits automatically since Go 1.19:
++ 
++ &#96;&#96;&#96;go
++ import "runtime"
++ 
++ func main() {
++     // GOMAXPROCS is set automatically based on CPU limits
++     log.Printf("GOMAXPROCS: %d", runtime.GOMAXPROCS(0))
++ }
++ &#96;&#96;&#96;
++ 
++ For memory, Go's GC works within limits, but can still OOM. Set appropriate limits:
++ 
++ &#96;&#96;&#96;yaml
++ resources:
++   requests:
++     memory: "64Mi"
++     cpu: "100m"
++   limits:
++     memory: "128Mi"
++     cpu: "500m"
++ &#96;&#96;&#96;
++ 
++ Go apps are typically memory-efficient. Start small, increase based on actual usage.
++ 
++ ## Configuration via ConfigMaps and Secrets
++ 
++ &#96;&#96;&#96;yaml
++ apiVersion: v1
++ kind: ConfigMap
++ metadata:
++   name: myapp-config
++ data:
++   LOG_LEVEL: "info"
++   MAX_CONNECTIONS: "100"
++ ---
++ apiVersion: v1
++ kind: Secret
++ metadata:
++   name: myapp-secrets
++ type: Opaque
++ stringData:
++   DATABASE_URL: "postgres://..."
++ ---
++ apiVersion: apps/v1
++ kind: Deployment
++ spec:
++   template:
++     spec:
++       containers:
++       - name: myapp
++         envFrom:
++         - configMapRef:
++             name: myapp-config
++         - secretRef:
++             name: myapp-secrets
++ &#96;&#96;&#96;
++ 
++ Your Go app reads environment variables:
++ 
++ &#96;&#96;&#96;go
++ logLevel := os.Getenv("LOG_LEVEL")
++ dbURL := os.Getenv("DATABASE_URL")
++ &#96;&#96;&#96;
++ 
++ ## A Complete Example
++ 
++ &#96;&#96;&#96;go
++ package main
++ 
++ import (
++     "context"
++     "log/slog"
++     "net/http"
++     "os"
++     "os/signal"
++     "sync/atomic"
++     "syscall"
++     "time"
++ )
++ 
++ var ready atomic.Bool
++ 
++ func main() {
++     logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
++     slog.SetDefault(logger)
++     
++     mux := http.NewServeMux()
++     
++     // Health endpoints
++     mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, r *http.Request) {
++         w.WriteHeader(http.StatusOK)
++     })
++     mux.HandleFunc("GET /readyz", func(w http.ResponseWriter, r *http.Request) {
++         if ready.Load() {
++             w.WriteHeader(http.StatusOK)
++         } else {
++             w.WriteHeader(http.StatusServiceUnavailable)
++         }
++     })
++     
++     // App routes
++     mux.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
++         w.Write([]byte("Hello from Kubernetes!"))
++     })
++     
++     srv := &amp;http.Server{
++         Addr:    ":8080",
++         Handler: mux,
++     }
++     
++     // Start server
++     go func() {
++         slog.Info("starting server", "addr", srv.Addr)
++         if err := srv.ListenAndServe(); err != http.ErrServerClosed {
++             slog.Error("server error", "error", err)
++             os.Exit(1)
++         }
++     }()
++     
++     // Initialization (simulate startup work)
++     time.Sleep(2 * time.Second)
++     ready.Store(true)
++     slog.Info("ready to serve traffic")
++     
++     // Wait for shutdown
++     quit := make(chan os.Signal, 1)
++     signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
++     &lt;-quit
++     
++     slog.Info("shutdown signal received")
++     ready.Store(false)
++     
++     // Grace period for endpoint updates
++     time.Sleep(5 * time.Second)
++     
++     ctx, cancel := context.WithTimeout(context.Background(), 25*time.Second)
++     defer cancel()
++     
++     if err := srv.Shutdown(ctx); err != nil {
++         slog.Error("shutdown error", "error", err)
++     }
++     
++     slog.Info("server stopped")
++ }
++ &#96;&#96;&#96;
++ 
++ ## Comparing to .NET
++ 
++ | Aspect | .NET | Go |
++ |--------|------|-----|
++ | Health checks | &#96;IHealthCheck&#96; interface | HTTP handlers |
++ | Graceful shutdown | &#96;IHostedService&#96; lifecycle | Signal handling |
++ | Resource awareness | Manual GOMAXPROCS | Automatic (Go 1.19+) |
++ | Container size | 200MB+ | 10-15MB |
++ | Startup time | 1-2 seconds | &lt;100ms |
++ 
++ .NET has more framework support for health checks. Go requires manual implementation but it's trivial.
++ 
++ ## The Honest Take
++ 
++ Go and Kubernetes work well together—they're from the same ecosystem.
++ 
++ **What Go does well:**
++ - Fast startup (important for scaling)
++ - Small images (fast pulls)
++ - Low memory usage
++ - Automatic GOMAXPROCS
++ - Native signal handling
++ 
++ **What .NET does better:**
++ - &#96;IHealthCheck&#96; abstraction
++ - Richer hosted service lifecycle
++ - Better DI integration
++ - ASP.NET Core middleware patterns
++ 
++ **The verdict:**
++ For Kubernetes workloads, Go's operational characteristics are excellent. Fast startup means fast scaling. Small images mean fast deployment. Low resource usage means efficient clusters.
++ 
++ The patterns shown here—health endpoints, graceful shutdown, signal handling—are the same patterns you'd use in any language. Go just makes them explicit.
++ 
++ ---
++ 
++ *Next up: observability with OpenTelemetry—metrics, traces, and logs for production Go services.*
++ 
+```
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="write">
+
+<details><summary>Tool use: **write** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/dotnet-to-go-observability.md</summary>
+
+**Chunk 1**
+Lines added: 389, lines removed: 1
+
+```diff
+@@ -1,1 +1,389 @@
+- 
++ +++
++ title = "Metrics, Traces, and Logs: The OpenTelemetry Way"
++ date = "2025-01-05"
++ draft = false
++ tags = ["go", "dotnet", "observability", "opentelemetry", "csharp"]
++ +++
++ 
++ Observability in production means three things: metrics (what's happening), traces (how requests flow), and logs (what went wrong). OpenTelemetry unifies all three.
++ 
++ Go's OpenTelemetry support is mature—the project itself is Go-native. Let's instrument a Go service properly.
++ 
++ ## OpenTelemetry Setup
++ 
++ Add dependencies:
++ 
++ &#96;&#96;&#96;bash
++ go get go.opentelemetry.io/otel
++ go get go.opentelemetry.io/otel/sdk
++ go get go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp
++ go get go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetrichttp
++ go get go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp
++ &#96;&#96;&#96;
++ 
++ Initialize in main:
++ 
++ &#96;&#96;&#96;go
++ package main
++ 
++ import (
++     "context"
++     "log"
++     "time"
++     
++     "go.opentelemetry.io/otel"
++     "go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
++     "go.opentelemetry.io/otel/sdk/resource"
++     sdktrace "go.opentelemetry.io/otel/sdk/trace"
++     semconv "go.opentelemetry.io/otel/semconv/v1.24.0"
++ )
++ 
++ func initTracer(ctx context.Context) (*sdktrace.TracerProvider, error) {
++     exporter, err := otlptracehttp.New(ctx)
++     if err != nil {
++         return nil, err
++     }
++     
++     res, err := resource.New(ctx,
++         resource.WithAttributes(
++             semconv.ServiceName("myservice"),
++             semconv.ServiceVersion("1.0.0"),
++         ),
++     )
++     if err != nil {
++         return nil, err
++     }
++     
++     tp := sdktrace.NewTracerProvider(
++         sdktrace.WithBatcher(exporter),
++         sdktrace.WithResource(res),
++     )
++     
++     otel.SetTracerProvider(tp)
++     return tp, nil
++ }
++ 
++ func main() {
++     ctx := context.Background()
++     
++     tp, err := initTracer(ctx)
++     if err != nil {
++         log.Fatal(err)
++     }
++     defer tp.Shutdown(ctx)
++     
++     // Your app...
++ }
++ &#96;&#96;&#96;
++ 
++ ## Automatic HTTP Instrumentation
++ 
++ Wrap your HTTP handler:
++ 
++ &#96;&#96;&#96;go
++ import "go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
++ 
++ func main() {
++     handler := http.HandlerFunc(myHandler)
++     wrappedHandler := otelhttp.NewHandler(handler, "my-server")
++     
++     http.ListenAndServe(":8080", wrappedHandler)
++ }
++ &#96;&#96;&#96;
++ 
++ Every request automatically creates a span with:
++ - HTTP method and path
++ - Status code
++ - Request duration
++ - Error information
++ 
++ ## Manual Spans
++ 
++ For business logic:
++ 
++ &#96;&#96;&#96;go
++ import "go.opentelemetry.io/otel"
++ 
++ var tracer = otel.Tracer("myservice")
++ 
++ func processOrder(ctx context.Context, orderID string) error {
++     ctx, span := tracer.Start(ctx, "processOrder")
++     defer span.End()
++     
++     span.SetAttributes(
++         attribute.String("order.id", orderID),
++     )
++     
++     // Process order...
++     if err := validateOrder(ctx, orderID); err != nil {
++         span.RecordError(err)
++         span.SetStatus(codes.Error, err.Error())
++         return err
++     }
++     
++     return nil
++ }
++ 
++ func validateOrder(ctx context.Context, orderID string) error {
++     ctx, span := tracer.Start(ctx, "validateOrder")
++     defer span.End()
++     
++     // Validation logic...
++     return nil
++ }
++ &#96;&#96;&#96;
++ 
++ The context carries trace information. Child spans automatically link to parents.
++ 
++ ## Metrics
++ 
++ &#96;&#96;&#96;go
++ import (
++     "go.opentelemetry.io/otel/metric"
++     "go.opentelemetry.io/otel"
++ )
++ 
++ var (
++     meter = otel.Meter("myservice")
++     requestCounter metric.Int64Counter
++     requestDuration metric.Float64Histogram
++ )
++ 
++ func init() {
++     var err error
++     requestCounter, err = meter.Int64Counter("http_requests_total",
++         metric.WithDescription("Total HTTP requests"),
++     )
++     if err != nil {
++         log.Fatal(err)
++     }
++     
++     requestDuration, err = meter.Float64Histogram("http_request_duration_seconds",
++         metric.WithDescription("HTTP request duration"),
++     )
++     if err != nil {
++         log.Fatal(err)
++     }
++ }
++ 
++ func handler(w http.ResponseWriter, r *http.Request) {
++     start := time.Now()
++     
++     // Handle request...
++     
++     requestCounter.Add(r.Context(), 1,
++         metric.WithAttributes(
++             attribute.String("method", r.Method),
++             attribute.String("path", r.URL.Path),
++         ),
++     )
++     
++     requestDuration.Record(r.Context(), time.Since(start).Seconds(),
++         metric.WithAttributes(
++             attribute.String("method", r.Method),
++         ),
++     )
++ }
++ &#96;&#96;&#96;
++ 
++ ## Structured Logging with Trace Context
++ 
++ Connect logs to traces:
++ 
++ &#96;&#96;&#96;go
++ import (
++     "log/slog"
++     "go.opentelemetry.io/otel/trace"
++ )
++ 
++ func handler(w http.ResponseWriter, r *http.Request) {
++     ctx := r.Context()
++     span := trace.SpanFromContext(ctx)
++     
++     logger := slog.Default().With(
++         "trace_id", span.SpanContext().TraceID().String(),
++         "span_id", span.SpanContext().SpanID().String(),
++     )
++     
++     logger.Info("processing request",
++         "method", r.Method,
++         "path", r.URL.Path,
++     )
++ }
++ &#96;&#96;&#96;
++ 
++ Now logs correlate with traces.
++ 
++ ## Database Instrumentation
++ 
++ For &#96;database/sql&#96;:
++ 
++ &#96;&#96;&#96;go
++ import (
++     "github.com/XSAM/otelsql"
++     semconv "go.opentelemetry.io/otel/semconv/v1.24.0"
++ )
++ 
++ func initDB() (*sql.DB, error) {
++     db, err := otelsql.Open("postgres", connString,
++         otelsql.WithAttributes(
++             semconv.DBSystemPostgreSQL,
++         ),
++     )
++     if err != nil {
++         return nil, err
++     }
++     
++     otelsql.RegisterDBStatsMetrics(db,
++         otelsql.WithAttributes(semconv.DBSystemPostgreSQL),
++     )
++     
++     return db, nil
++ }
++ &#96;&#96;&#96;
++ 
++ ## Complete Example
++ 
++ &#96;&#96;&#96;go
++ package main
++ 
++ import (
++     "context"
++     "log/slog"
++     "net/http"
++     "os"
++     "time"
++     
++     "go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
++     "go.opentelemetry.io/otel"
++     "go.opentelemetry.io/otel/attribute"
++     "go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
++     "go.opentelemetry.io/otel/sdk/resource"
++     sdktrace "go.opentelemetry.io/otel/sdk/trace"
++     semconv "go.opentelemetry.io/otel/semconv/v1.24.0"
++     "go.opentelemetry.io/otel/trace"
++ )
++ 
++ var tracer = otel.Tracer("myservice")
++ 
++ func main() {
++     ctx := context.Background()
++     
++     // Setup tracing
++     tp, err := initTracer(ctx)
++     if err != nil {
++         slog.Error("failed to init tracer", "error", err)
++         os.Exit(1)
++     }
++     defer tp.Shutdown(ctx)
++     
++     // Routes
++     mux := http.NewServeMux()
++     mux.HandleFunc("GET /users/{id}", getUserHandler)
++     
++     // Wrap with OTel
++     handler := otelhttp.NewHandler(mux, "myservice")
++     
++     slog.Info("starting server", "addr", ":8080")
++     http.ListenAndServe(":8080", handler)
++ }
++ 
++ func getUserHandler(w http.ResponseWriter, r *http.Request) {
++     ctx := r.Context()
++     span := trace.SpanFromContext(ctx)
++     
++     userID := r.PathValue("id")
++     span.SetAttributes(attribute.String("user.id", userID))
++     
++     logger := slog.Default().With(
++         "trace_id", span.SpanContext().TraceID().String(),
++         "user_id", userID,
++     )
++     
++     user, err := fetchUser(ctx, userID)
++     if err != nil {
++         span.RecordError(err)
++         logger.Error("failed to fetch user", "error", err)
++         http.Error(w, "user not found", http.StatusNotFound)
++         return
++     }
++     
++     logger.Info("user fetched successfully")
++     json.NewEncoder(w).Encode(user)
++ }
++ 
++ func fetchUser(ctx context.Context, id string) (*User, error) {
++     ctx, span := tracer.Start(ctx, "fetchUser")
++     defer span.End()
++     
++     // Simulated database call
++     time.Sleep(10 * time.Millisecond)
++     
++     return &amp;User{ID: id, Name: "Alice"}, nil
++ }
++ &#96;&#96;&#96;
++ 
++ ## Comparing to .NET
++ 
++ | Aspect | .NET | Go |
++ |--------|------|-----|
++ | OTel SDK | Mature | Mature (Go-native) |
++ | Auto-instrumentation | Yes | Yes (via contrib) |
++ | ASP.NET integration | Built-in | Manual wrapping |
++ | DI integration | Built-in | Manual |
++ | Logging integration | ILogger + OTel | slog + manual |
++ 
++ .NET's integration is more automatic. Go requires more explicit setup but gives more control.
++ 
++ ## Exporters
++ 
++ Send to your observability backend:
++ 
++ **OTLP (Jaeger, Tempo, etc.):**
++ &#96;&#96;&#96;go
++ exporter, _ := otlptracehttp.New(ctx,
++     otlptracehttp.WithEndpoint("tempo:4318"),
++     otlptracehttp.WithInsecure(),
++ )
++ &#96;&#96;&#96;
++ 
++ **Prometheus (metrics):**
++ &#96;&#96;&#96;go
++ import "go.opentelemetry.io/otel/exporters/prometheus"
++ 
++ exporter, _ := prometheus.New()
++ http.Handle("/metrics", promhttp.Handler())
++ &#96;&#96;&#96;
++ 
++ **stdout (debugging):**
++ &#96;&#96;&#96;go
++ import "go.opentelemetry.io/otel/exporters/stdout/stdouttrace"
++ 
++ exporter, _ := stdouttrace.New(stdouttrace.WithPrettyPrint())
++ &#96;&#96;&#96;
++ 
++ ## The Honest Take
++ 
++ Go's OpenTelemetry support is excellent—the project is Go-native.
++ 
++ **What Go does well:**
++ - OTel is Go-native
++ - Explicit instrumentation is clear
++ - Good contrib library coverage
++ - Low overhead
++ 
++ **What .NET does better:**
++ - More automatic instrumentation
++ - Better DI integration
++ - Richer ASP.NET Core support
++ - Activity API is mature
++ 
++ **The verdict:**
++ OpenTelemetry in Go requires more explicit setup than .NET's automatic instrumentation. But once configured, it works well.
++ 
++ The key patterns—wrap HTTP handlers, propagate context, create spans for significant operations—are the same in any language. Go just makes you write them out.
++ 
++ ---
++ 
++ *Next up: health checks and readiness probes—patterns that work in container orchestrators.*
++ 
+```
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="write">
+
+<details><summary>Tool use: **write** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/dotnet-to-go-health-checks.md</summary>
+
+**Chunk 1**
+Lines added: 323, lines removed: 1
+
+```diff
+@@ -1,1 +1,323 @@
+- 
++ +++
++ title = "Health Checks and Readiness Probes"
++ date = "2025-01-05"
++ draft = false
++ tags = ["go", "dotnet", "health-checks", "kubernetes", "csharp"]
++ +++
++ 
++ We touched on health checks in the Kubernetes post. Let's go deeper—proper health checks that actually tell orchestrators useful information.
++ 
++ ## The Three Probes
++ 
++ Kubernetes (and similar orchestrators) use three types of probes:
++ 
++ | Probe | Question | Failure Action |
++ |-------|----------|----------------|
++ | **Liveness** | Is the process alive? | Restart container |
++ | **Readiness** | Can it handle traffic? | Remove from load balancer |
++ | **Startup** | Has it finished starting? | Keep waiting |
++ 
++ Getting these right matters for reliability.
++ 
++ ## Liveness: Am I Alive?
++ 
++ Liveness should answer: "Is this process fundamentally broken?"
++ 
++ &#96;&#96;&#96;go
++ func livenessHandler(w http.ResponseWriter, r *http.Request) {
++     w.WriteHeader(http.StatusOK)
++     w.Write([]byte("ok"))
++ }
++ &#96;&#96;&#96;
++ 
++ That's it. If your process can respond, it's alive.
++ 
++ **Don't put in liveness:**
++ - Database connectivity checks
++ - External service checks
++ - Anything that might fail temporarily
++ 
++ Why? If your database is down and liveness fails, Kubernetes restarts your pod. But restarting won't fix the database. Now you're restart-looping instead of gracefully handling the outage.
++ 
++ Liveness = "Is my process fundamentally broken, like stuck in a deadlock?"
++ 
++ ## Readiness: Can I Serve Traffic?
++ 
++ Readiness should answer: "Should I receive requests right now?"
++ 
++ &#96;&#96;&#96;go
++ type HealthChecker struct {
++     db    *sql.DB
++     cache *redis.Client
++     ready atomic.Bool
++ }
++ 
++ func (h *HealthChecker) ReadinessHandler(w http.ResponseWriter, r *http.Request) {
++     if !h.ready.Load() {
++         http.Error(w, "not ready", http.StatusServiceUnavailable)
++         return
++     }
++     
++     // Check critical dependencies
++     ctx, cancel := context.WithTimeout(r.Context(), 2*time.Second)
++     defer cancel()
++     
++     if err := h.db.PingContext(ctx); err != nil {
++         http.Error(w, "database unavailable", http.StatusServiceUnavailable)
++         return
++     }
++     
++     if err := h.cache.Ping(ctx).Err(); err != nil {
++         http.Error(w, "cache unavailable", http.StatusServiceUnavailable)
++         return
++     }
++     
++     w.WriteHeader(http.StatusOK)
++     w.Write([]byte("ok"))
++ }
++ &#96;&#96;&#96;
++ 
++ If readiness fails, Kubernetes removes the pod from the Service endpoints. Traffic goes elsewhere. The pod isn't restarted—it just doesn't receive requests until it's ready again.
++ 
++ ## Startup: Am I Done Initialising?
++ 
++ For apps with slow startup (loading ML models, warming caches, running migrations):
++ 
++ &#96;&#96;&#96;go
++ type App struct {
++     started atomic.Bool
++ }
++ 
++ func (a *App) StartupHandler(w http.ResponseWriter, r *http.Request) {
++     if a.started.Load() {
++         w.WriteHeader(http.StatusOK)
++         return
++     }
++     http.Error(w, "starting", http.StatusServiceUnavailable)
++ }
++ 
++ func (a *App) Initialize() {
++     // Slow startup work
++     loadMLModel()
++     warmCache()
++     runMigrations()
++     
++     a.started.Store(true)
++ }
++ &#96;&#96;&#96;
++ 
++ Kubernetes waits for startup probe to pass before checking liveness/readiness. Prevents premature restarts during slow initialization.
++ 
++ ## Detailed Health Response
++ 
++ For debugging, return details:
++ 
++ &#96;&#96;&#96;go
++ type HealthStatus struct {
++     Status     string            &#96;json:"status"&#96;
++     Checks     map[string]Check  &#96;json:"checks"&#96;
++     Version    string            &#96;json:"version,omitempty"&#96;
++     Uptime     string            &#96;json:"uptime,omitempty"&#96;
++ }
++ 
++ type Check struct {
++     Status  string &#96;json:"status"&#96;
++     Message string &#96;json:"message,omitempty"&#96;
++ }
++ 
++ func (h *HealthChecker) DetailedHealthHandler(w http.ResponseWriter, r *http.Request) {
++     status := HealthStatus{
++         Status:  "healthy",
++         Checks:  make(map[string]Check),
++         Version: version,
++         Uptime:  time.Since(startTime).String(),
++     }
++     
++     // Database check
++     ctx, cancel := context.WithTimeout(r.Context(), 2*time.Second)
++     defer cancel()
++     
++     if err := h.db.PingContext(ctx); err != nil {
++         status.Checks["database"] = Check{Status: "unhealthy", Message: err.Error()}
++         status.Status = "unhealthy"
++     } else {
++         status.Checks["database"] = Check{Status: "healthy"}
++     }
++     
++     // Cache check
++     if err := h.cache.Ping(ctx).Err(); err != nil {
++         status.Checks["cache"] = Check{Status: "unhealthy", Message: err.Error()}
++         status.Status = "unhealthy"
++     } else {
++         status.Checks["cache"] = Check{Status: "healthy"}
++     }
++     
++     w.Header().Set("Content-Type", "application/json")
++     if status.Status == "healthy" {
++         w.WriteHeader(http.StatusOK)
++     } else {
++         w.WriteHeader(http.StatusServiceUnavailable)
++     }
++     json.NewEncoder(w).Encode(status)
++ }
++ &#96;&#96;&#96;
++ 
++ Response:
++ &#96;&#96;&#96;json
++ {
++   "status": "healthy",
++   "checks": {
++     "database": {"status": "healthy"},
++     "cache": {"status": "healthy"}
++   },
++   "version": "1.2.3",
++   "uptime": "4h32m15s"
++ }
++ &#96;&#96;&#96;
++ 
++ ## Graceful Degradation
++ 
++ Sometimes you can serve traffic even if a dependency is down:
++ 
++ &#96;&#96;&#96;go
++ func (h *HealthChecker) ReadinessHandler(w http.ResponseWriter, r *http.Request) {
++     ctx, cancel := context.WithTimeout(r.Context(), 2*time.Second)
++     defer cancel()
++     
++     // Database is critical
++     if err := h.db.PingContext(ctx); err != nil {
++         http.Error(w, "database unavailable", http.StatusServiceUnavailable)
++         return
++     }
++     
++     // Cache is nice-to-have, log but don't fail readiness
++     if err := h.cache.Ping(ctx).Err(); err != nil {
++         slog.Warn("cache unavailable", "error", err)
++         // Don't fail readiness—we can operate without cache
++     }
++     
++     w.WriteHeader(http.StatusOK)
++ }
++ &#96;&#96;&#96;
++ 
++ ## Comparing to .NET
++ 
++ .NET's health check system:
++ 
++ &#96;&#96;&#96;csharp
++ builder.Services.AddHealthChecks()
++     .AddDbContextCheck&lt;AppDbContext&gt;()
++     .AddRedis(redisConnectionString)
++     .AddCheck("custom", () =&gt; HealthCheckResult.Healthy());
++ 
++ app.MapHealthChecks("/healthz");
++ app.MapHealthChecks("/readyz", new HealthCheckOptions {
++     Predicate = check =&gt; check.Tags.Contains("ready")
++ });
++ &#96;&#96;&#96;
++ 
++ | Aspect | .NET | Go |
++ |--------|------|-----|
++ | Built-in framework | Yes (&#96;IHealthCheck&#96;) | No |
++ | Dependency injection | Automatic | Manual |
++ | Pre-built checks | Many (EF, Redis, etc.) | Few libraries |
++ | Configuration | Options pattern | Manual |
++ | UI available | Yes (HealthChecksUI) | No |
++ 
++ .NET's health check system is more sophisticated. Go requires manual implementation.
++ 
++ ## Health Check Libraries
++ 
++ Some Go libraries help:
++ 
++ **alexliesenfeld/health:**
++ &#96;&#96;&#96;go
++ checker := health.NewChecker(
++     health.WithCheck(health.Check{
++         Name:    "database",
++         Timeout: 2 * time.Second,
++         Check:   db.PingContext,
++     }),
++ )
++ 
++ http.Handle("/healthz", health.NewHandler(checker))
++ &#96;&#96;&#96;
++ 
++ **hellofresh/health-go:**
++ &#96;&#96;&#96;go
++ h, _ := health.New(health.WithChecks(
++     health.Config{
++         Name:  "database",
++         Check: func(ctx context.Context) error { return db.PingContext(ctx) },
++     },
++ ))
++ 
++ http.Handle("/healthz", h.Handler())
++ &#96;&#96;&#96;
++ 
++ But honestly, health checks are simple enough that most Go developers write them by hand.
++ 
++ ## Best Practices
++ 
++ 1. **Keep liveness simple**—don't check dependencies
++ 2. **Make readiness reflect reality**—check what matters for serving traffic
++ 3. **Use timeouts**—don't let health checks hang forever
++ 4. **Return quickly**—health checks shouldn't be expensive
++ 5. **Log failures**—debugging health issues needs information
++ 6. **Test health checks**—they're code, they can have bugs
++ 
++ ## Kubernetes Configuration
++ 
++ &#96;&#96;&#96;yaml
++ livenessProbe:
++   httpGet:
++     path: /healthz
++     port: 8080
++   initialDelaySeconds: 10
++   periodSeconds: 15
++   timeoutSeconds: 5
++   failureThreshold: 3
++ 
++ readinessProbe:
++   httpGet:
++     path: /readyz
++     port: 8080
++   initialDelaySeconds: 5
++   periodSeconds: 5
++   timeoutSeconds: 3
++   failureThreshold: 2
++ 
++ startupProbe:
++   httpGet:
++     path: /startupz
++     port: 8080
++   initialDelaySeconds: 0
++   periodSeconds: 5
++   timeoutSeconds: 3
++   failureThreshold: 30  # 30 * 5s = 2.5 minutes max startup
++ &#96;&#96;&#96;
++ 
++ ## The Honest Take
++ 
++ Health checks aren't glamorous, but they're essential for production reliability.
++ 
++ **What Go does well:**
++ - Simple to implement
++ - Full control over logic
++ - Fast checks (no framework overhead)
++ 
++ **What .NET does better:**
++ - Built-in framework
++ - Pre-built checks for common dependencies
++ - UI for monitoring
++ - Better integration with DI
++ 
++ **The verdict:**
++ Go makes you write health checks yourself. That's fine—they're not complicated. The patterns are the same in any language: liveness for "am I stuck?", readiness for "can I serve traffic?".
++ 
++ Get these right and your services will be resilient. Get them wrong and you'll have restart loops and cascading failures.
++ 
++ ---
++ 
++ *Next up: GitHub Actions for Go—CI/CD with testing, linting, and releasing.*
++ 
+```
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="write">
+
+<details><summary>Tool use: **write** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/dotnet-to-go-github-actions.md</summary>
+
+**Chunk 1**
+Lines added: 403, lines removed: 1
+
+```diff
+@@ -1,1 +1,403 @@
+- 
++ +++
++ title = "GitHub Actions for Go Projects"
++ date = "2025-01-05"
++ draft = false
++ tags = ["go", "dotnet", "ci-cd", "github-actions", "csharp"]
++ +++
++ 
++ CI/CD for Go projects is refreshingly simple. Fast builds, built-in testing, cross-compilation—everything you need is in the standard toolchain.
++ 
++ Let's set up a proper GitHub Actions workflow.
++ 
++ ## Basic Workflow
++ 
++ &#96;.github/workflows/ci.yml&#96;:
++ 
++ &#96;&#96;&#96;yaml
++ name: CI
++ 
++ on:
++   push:
++     branches: [main]
++   pull_request:
++     branches: [main]
++ 
++ jobs:
++   test:
++     runs-on: ubuntu-latest
++     steps:
++       - uses: actions/checkout@v4
++       
++       - name: Set up Go
++         uses: actions/setup-go@v5
++         with:
++           go-version: '1.22'
++       
++       - name: Download dependencies
++         run: go mod download
++       
++       - name: Test
++         run: go test -v ./...
++ &#96;&#96;&#96;
++ 
++ That's a working CI pipeline. Test on every push and PR.
++ 
++ ## Adding Linting
++ 
++ &#96;&#96;&#96;yaml
++ jobs:
++   lint:
++     runs-on: ubuntu-latest
++     steps:
++       - uses: actions/checkout@v4
++       
++       - uses: actions/setup-go@v5
++         with:
++           go-version: '1.22'
++       
++       - name: golangci-lint
++         uses: golangci/golangci-lint-action@v4
++         with:
++           version: latest
++ &#96;&#96;&#96;
++ 
++ The golangci-lint action handles caching and configuration.
++ 
++ ## Full CI Workflow
++ 
++ &#96;&#96;&#96;yaml
++ name: CI
++ 
++ on:
++   push:
++     branches: [main]
++   pull_request:
++     branches: [main]
++ 
++ jobs:
++   lint:
++     runs-on: ubuntu-latest
++     steps:
++       - uses: actions/checkout@v4
++       - uses: actions/setup-go@v5
++         with:
++           go-version: '1.22'
++       - uses: golangci/golangci-lint-action@v4
++         with:
++           version: latest
++ 
++   test:
++     runs-on: ubuntu-latest
++     steps:
++       - uses: actions/checkout@v4
++       - uses: actions/setup-go@v5
++         with:
++           go-version: '1.22'
++       - run: go test -v -race -coverprofile=coverage.out ./...
++       - name: Upload coverage
++         uses: codecov/codecov-action@v4
++         with:
++           files: coverage.out
++ 
++   build:
++     runs-on: ubuntu-latest
++     needs: [lint, test]
++     steps:
++       - uses: actions/checkout@v4
++       - uses: actions/setup-go@v5
++         with:
++           go-version: '1.22'
++       - run: go build -v ./...
++ &#96;&#96;&#96;
++ 
++ Jobs run in parallel where possible. Build only runs after lint and test pass.
++ 
++ ## Cross-Platform Testing
++ 
++ Test on multiple OSes:
++ 
++ &#96;&#96;&#96;yaml
++ test:
++   strategy:
++     matrix:
++       os: [ubuntu-latest, macos-latest, windows-latest]
++       go: ['1.21', '1.22']
++   runs-on: ${{ matrix.os }}
++   steps:
++     - uses: actions/checkout@v4
++     - uses: actions/setup-go@v5
++       with:
++         go-version: ${{ matrix.go }}
++     - run: go test -v ./...
++ &#96;&#96;&#96;
++ 
++ ## Releasing with GoReleaser
++ 
++ GoReleaser automates release builds. Create &#96;.goreleaser.yaml&#96;:
++ 
++ &#96;&#96;&#96;yaml
++ version: 1
++ 
++ builds:
++   - env:
++       - CGO_ENABLED=0
++     goos:
++       - linux
++       - darwin
++       - windows
++     goarch:
++       - amd64
++       - arm64
++     ldflags:
++       - -s -w
++       - -X main.version={{.Version}}
++       - -X main.commit={{.Commit}}
++       - -X main.date={{.Date}}
++ 
++ archives:
++   - format: tar.gz
++     name_template: "{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}"
++     format_overrides:
++       - goos: windows
++         format: zip
++ 
++ checksum:
++   name_template: 'checksums.txt'
++ 
++ changelog:
++   sort: asc
++   filters:
++     exclude:
++       - '^docs:'
++       - '^test:'
++ &#96;&#96;&#96;
++ 
++ Release workflow:
++ 
++ &#96;&#96;&#96;yaml
++ name: Release
++ 
++ on:
++   push:
++     tags:
++       - 'v*'
++ 
++ permissions:
++   contents: write
++ 
++ jobs:
++   release:
++     runs-on: ubuntu-latest
++     steps:
++       - uses: actions/checkout@v4
++         with:
++           fetch-depth: 0
++       
++       - uses: actions/setup-go@v5
++         with:
++           go-version: '1.22'
++       
++       - name: Run GoReleaser
++         uses: goreleaser/goreleaser-action@v5
++         with:
++           version: latest
++           args: release --clean
++         env:
++           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
++ &#96;&#96;&#96;
++ 
++ Tag a release:
++ &#96;&#96;&#96;bash
++ git tag v1.0.0
++ git push origin v1.0.0
++ &#96;&#96;&#96;
++ 
++ GoReleaser builds binaries for all platforms, creates a GitHub release, and uploads artifacts.
++ 
++ ## Docker Image Publishing
++ 
++ &#96;&#96;&#96;yaml
++ name: Docker
++ 
++ on:
++   push:
++     tags:
++       - 'v*'
++ 
++ jobs:
++   docker:
++     runs-on: ubuntu-latest
++     steps:
++       - uses: actions/checkout@v4
++       
++       - name: Set up Docker Buildx
++         uses: docker/setup-buildx-action@v3
++       
++       - name: Login to GitHub Container Registry
++         uses: docker/login-action@v3
++         with:
++           registry: ghcr.io
++           username: ${{ github.actor }}
++           password: ${{ secrets.GITHUB_TOKEN }}
++       
++       - name: Build and push
++         uses: docker/build-push-action@v5
++         with:
++           push: true
++           platforms: linux/amd64,linux/arm64
++           tags: |
++             ghcr.io/${{ github.repository }}:${{ github.ref_name }}
++             ghcr.io/${{ github.repository }}:latest
++           cache-from: type=gha
++           cache-to: type=gha,mode=max
++ &#96;&#96;&#96;
++ 
++ Multi-arch Docker images published to GitHub Container Registry.
++ 
++ ## Caching Dependencies
++ 
++ Go module caching is automatic with &#96;setup-go@v5&#96;:
++ 
++ &#96;&#96;&#96;yaml
++ - uses: actions/setup-go@v5
++   with:
++     go-version: '1.22'
++     cache: true  # enabled by default
++ &#96;&#96;&#96;
++ 
++ For more control:
++ 
++ &#96;&#96;&#96;yaml
++ - uses: actions/cache@v4
++   with:
++     path: |
++       ~/.cache/go-build
++       ~/go/pkg/mod
++     key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
++     restore-keys: |
++       ${{ runner.os }}-go-
++ &#96;&#96;&#96;
++ 
++ ## Comparing to .NET
++ 
++ | Aspect | .NET | Go |
++ |--------|------|-----|
++ | Build time | Moderate | Fast |
++ | Test runner | dotnet test | go test |
++ | Linting | dotnet format + analyzers | golangci-lint |
++ | Release tooling | Manual or custom | GoReleaser |
++ | Cross-compilation | Complex | Trivial |
++ | Docker build | Multi-stage | Multi-stage |
++ 
++ Go's faster builds mean faster CI. Cross-compilation means simpler release matrices.
++ 
++ ## Complete Workflow
++ 
++ Here's everything together:
++ 
++ &#96;&#96;&#96;yaml
++ name: CI/CD
++ 
++ on:
++   push:
++     branches: [main]
++     tags: ['v*']
++   pull_request:
++     branches: [main]
++ 
++ jobs:
++   lint:
++     runs-on: ubuntu-latest
++     steps:
++       - uses: actions/checkout@v4
++       - uses: actions/setup-go@v5
++         with:
++           go-version: '1.22'
++       - uses: golangci/golangci-lint-action@v4
++ 
++   test:
++     runs-on: ubuntu-latest
++     steps:
++       - uses: actions/checkout@v4
++       - uses: actions/setup-go@v5
++         with:
++           go-version: '1.22'
++       - run: go test -v -race -coverprofile=coverage.out ./...
++       - uses: codecov/codecov-action@v4
++         with:
++           files: coverage.out
++ 
++   build:
++     runs-on: ubuntu-latest
++     needs: [lint, test]
++     steps:
++       - uses: actions/checkout@v4
++       - uses: actions/setup-go@v5
++         with:
++           go-version: '1.22'
++       - run: go build -v ./cmd/...
++ 
++   release:
++     if: startsWith(github.ref, 'refs/tags/')
++     needs: [build]
++     runs-on: ubuntu-latest
++     permissions:
++       contents: write
++     steps:
++       - uses: actions/checkout@v4
++         with:
++           fetch-depth: 0
++       - uses: actions/setup-go@v5
++         with:
++           go-version: '1.22'
++       - uses: goreleaser/goreleaser-action@v5
++         with:
++           version: latest
++           args: release --clean
++         env:
++           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
++ 
++   docker:
++     if: startsWith(github.ref, 'refs/tags/')
++     needs: [build]
++     runs-on: ubuntu-latest
++     steps:
++       - uses: actions/checkout@v4
++       - uses: docker/setup-buildx-action@v3
++       - uses: docker/login-action@v3
++         with:
++           registry: ghcr.io
++           username: ${{ github.actor }}
++           password: ${{ secrets.GITHUB_TOKEN }}
++       - uses: docker/build-push-action@v5
++         with:
++           push: true
++           platforms: linux/amd64,linux/arm64
++           tags: ghcr.io/${{ github.repository }}:${{ github.ref_name }}
++ &#96;&#96;&#96;
++ 
++ ## The Honest Take
++ 
++ Go CI/CD is simple and fast.
++ 
++ **What Go does well:**
++ - Fast builds = fast feedback
++ - Built-in testing and coverage
++ - Cross-compilation is trivial
++ - GoReleaser is excellent
++ 
++ **What .NET does better:**
++ - Richer test output
++ - Better IDE integration
++ - More mature release tooling
++ - NuGet publishing is simpler
++ 
++ **The verdict:**
++ Setting up CI for Go is straightforward. The standard toolchain does most of what you need. GoReleaser handles releases elegantly.
++ 
++ If you're used to complex MSBuild configurations and NuGet publishing workflows, Go's simplicity is refreshing.
++ 
++ ---
++ 
++ *Next up: versioning your modules—semantic versioning, tags, and avoiding dependency hell.*
++ 
+```
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="write">
+
+<details><summary>Tool use: **write** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/dotnet-to-go-versioning.md</summary>
+
+**Chunk 1**
+Lines added: 289, lines removed: 1
+
+```diff
+@@ -1,1 +1,289 @@
+- 
++ +++
++ title = "Versioning Your Modules"
++ date = "2025-01-05"
++ draft = false
++ tags = ["go", "dotnet", "versioning", "modules", "csharp"]
++ +++
++ 
++ Versioning in Go is simple in concept—semantic versioning with git tags—but has quirks that'll catch you if you're coming from NuGet's more flexible model.
++ 
++ Let's cover how to version your modules properly.
++ 
++ ## Basic Versioning
++ 
++ Go modules use semantic versioning: &#96;vMAJOR.MINOR.PATCH&#96;
++ 
++ &#96;&#96;&#96;
++ v1.0.0  - initial stable release
++ v1.1.0  - new features, backward compatible
++ v1.1.1  - bug fixes
++ v2.0.0  - breaking changes
++ &#96;&#96;&#96;
++ 
++ Version with git tags:
++ 
++ &#96;&#96;&#96;bash
++ git tag v1.0.0
++ git push origin v1.0.0
++ &#96;&#96;&#96;
++ 
++ That's it. No version numbers in code, no configuration files to update.
++ 
++ ## The Module Path and Major Versions
++ 
++ Here's Go's unique aspect: **major versions v2+ change the module path**.
++ 
++ &#96;&#96;&#96;go
++ // v1.x
++ module github.com/myname/mylib
++ 
++ // v2.x
++ module github.com/myname/mylib/v2
++ 
++ // v3.x
++ module github.com/myname/mylib/v3
++ &#96;&#96;&#96;
++ 
++ The import path changes too:
++ 
++ &#96;&#96;&#96;go
++ import "github.com/myname/mylib"    // v1.x
++ import "github.com/myname/mylib/v2" // v2.x
++ &#96;&#96;&#96;
++ 
++ Why? So you can use both versions simultaneously:
++ 
++ &#96;&#96;&#96;go
++ import (
++     v1 "github.com/myname/mylib"
++     v2 "github.com/myname/mylib/v2"
++ )
++ &#96;&#96;&#96;
++ 
++ Different modules, different import paths, no conflict.
++ 
++ ## Creating v2
++ 
++ When you make breaking changes:
++ 
++ **Option 1: Major branch**
++ 
++ &#96;&#96;&#96;bash
++ git checkout -b v2
++ # Update go.mod
++ sed -i 's|module github.com/myname/mylib|module github.com/myname/mylib/v2|' go.mod
++ # Update internal imports
++ # Commit and tag
++ git tag v2.0.0
++ git push origin v2 v2.0.0
++ &#96;&#96;&#96;
++ 
++ **Option 2: Subdirectory**
++ 
++ &#96;&#96;&#96;
++ mylib/
++ ├── go.mod           # module github.com/myname/mylib (v1.x)
++ ├── v2/
++ │   ├── go.mod       # module github.com/myname/mylib/v2
++ │   └── ...
++ &#96;&#96;&#96;
++ 
++ Option 1 is more common for libraries. Option 2 works for monorepos.
++ 
++ ## Pre-release Versions
++ 
++ Use semver pre-release suffixes:
++ 
++ &#96;&#96;&#96;
++ v1.0.0-alpha.1
++ v1.0.0-beta.2
++ v1.0.0-rc.1
++ v1.0.0
++ &#96;&#96;&#96;
++ 
++ &#96;&#96;&#96;bash
++ git tag v1.0.0-beta.1
++ git push origin v1.0.0-beta.1
++ &#96;&#96;&#96;
++ 
++ Pre-release versions aren't selected by default—users must request them explicitly:
++ 
++ &#96;&#96;&#96;bash
++ go get github.com/myname/mylib@v1.0.0-beta.1
++ &#96;&#96;&#96;
++ 
++ ## v0.x: The Wild West
++ 
++ Versions before v1.0.0 are considered unstable. Go allows breaking changes in minor versions:
++ 
++ &#96;&#96;&#96;
++ v0.1.0 -&gt; v0.2.0  # breaking changes allowed
++ v0.2.0 -&gt; v0.2.1  # should be backward compatible
++ &#96;&#96;&#96;
++ 
++ Stay in v0.x until your API is stable. Once you tag v1.0.0, you're making a stability commitment.
++ 
++ ## Minimum Version Selection
++ 
++ Go's dependency resolution differs from NuGet:
++ 
++ **NuGet**: Gets the *latest* version that satisfies all constraints
++ 
++ **Go**: Gets the *minimum* version that satisfies all constraints (Minimum Version Selection)
++ 
++ If you require &#96;v1.2.0&#96; and a dependency requires &#96;v1.1.0&#96;, Go uses &#96;v1.2.0&#96;—the minimum that satisfies both.
++ 
++ This makes builds reproducible. The same &#96;go.mod&#96; and &#96;go.sum&#96; always produce the same dependencies.
++ 
++ ## Updating Dependencies
++ 
++ &#96;&#96;&#96;bash
++ # Update a specific dependency
++ go get github.com/some/dep@v1.2.3
++ 
++ # Update to latest minor/patch
++ go get -u github.com/some/dep
++ 
++ # Update all dependencies
++ go get -u ./...
++ 
++ # Update to latest including major versions
++ go get github.com/some/dep@latest
++ &#96;&#96;&#96;
++ 
++ After updating:
++ 
++ &#96;&#96;&#96;bash
++ go mod tidy  # clean up go.mod and go.sum
++ &#96;&#96;&#96;
++ 
++ ## Comparing to NuGet
++ 
++ | Aspect | NuGet | Go Modules |
++ |--------|-------|------------|
++ | Version source | .nuspec/.csproj | Git tags |
++ | Version ranges | Yes (&#96;[1.0, 2.0)&#96;) | No (exact versions) |
++ | Resolution | Latest satisfying | Minimum satisfying |
++ | Major version path | Same package ID | Different module path |
++ | Lock file | packages.lock.json | go.sum (hashes only) |
++ | Pre-release | &#96;-alpha&#96;, &#96;-beta&#96; | Same |
++ | Central registry | nuget.org | No central registry |
++ 
++ ## Best Practices
++ 
++ ### 1. Don't Tag Until Stable
++ 
++ Stay on v0.x until you're confident in your API:
++ 
++ &#96;&#96;&#96;go
++ module github.com/myname/mylib
++ 
++ go 1.22
++ &#96;&#96;&#96;
++ 
++ Tag &#96;v0.1.0&#96;, &#96;v0.2.0&#96;, etc. Breaking changes are expected.
++ 
++ ### 2. Use Meaningful Tags
++ 
++ &#96;&#96;&#96;bash
++ # Good
++ git tag v1.2.3
++ 
++ # Bad - no 'v' prefix
++ git tag 1.2.3
++ &#96;&#96;&#96;
++ 
++ Go requires the &#96;v&#96; prefix.
++ 
++ ### 3. Document Breaking Changes
++ 
++ In your CHANGELOG:
++ 
++ &#96;&#96;&#96;markdown
++ ## v2.0.0 - 2025-01-05
++ 
++ ### Breaking Changes
++ - Removed deprecated &#96;OldFunction&#96;
++ - Changed &#96;Config&#96; struct fields
++ - Renamed &#96;Process&#96; to &#96;Execute&#96;
++ 
++ ### Migration Guide
++ See MIGRATION.md for upgrade instructions.
++ &#96;&#96;&#96;
++ 
++ ### 4. Use Retract for Broken Versions
++ 
++ If you publish a broken version, retract it:
++ 
++ &#96;&#96;&#96;go
++ // go.mod
++ module github.com/myname/mylib
++ 
++ go 1.22
++ 
++ retract (
++     v1.2.3 // Contains critical bug, use v1.2.4
++     [v1.0.0, v1.1.0] // Known issues in range
++ )
++ &#96;&#96;&#96;
++ 
++ Users are warned when they try to use retracted versions.
++ 
++ ### 5. Version Internal Tools Separately
++ 
++ If your repo has a library and a CLI:
++ 
++ &#96;&#96;&#96;
++ myproject/
++ ├── go.mod           # module github.com/myname/myproject
++ ├── cmd/
++ │   └── mytool/
++ └── pkg/
++     └── mylib/
++ &#96;&#96;&#96;
++ 
++ Consider separate modules if they have different release cadences.
++ 
++ ## Releasing a Library
++ 
++ Checklist:
++ 
++ 1. **Update CHANGELOG**
++ 2. **Run tests**: &#96;go test ./...&#96;
++ 3. **Check for breaking changes**: API compatible?
++ 4. **Determine version**: major/minor/patch
++ 5. **Update go.mod** if major version change
++ 6. **Commit**: &#96;git commit -m "Release v1.2.3"&#96;
++ 7. **Tag**: &#96;git tag v1.2.3&#96;
++ 8. **Push**: &#96;git push origin main v1.2.3&#96;
++ 9. **Verify**: &#96;go get github.com/myname/mylib@v1.2.3&#96;
++ 
++ The Go module proxy indexes your tag automatically.
++ 
++ ## The Honest Take
++ 
++ Go's versioning is simpler but more rigid than NuGet's.
++ 
++ **What Go does well:**
++ - Git tags = source of truth
++ - Reproducible builds (MVS)
++ - v2+ as different paths is clever
++ - No version file to maintain
++ 
++ **What NuGet does better:**
++ - Version ranges for flexibility
++ - Same package ID across majors
++ - Central registry with search
++ - Richer metadata
++ 
++ **The verdict:**
++ If you're used to version ranges (&#96;[1.0,2.0)&#96;), Go's exact versioning feels restrictive. But it eliminates "works on my machine" dependency issues.
++ 
++ The major version path change (&#96;/v2&#96;) is controversial but ensures you can't accidentally break dependents with a major update.
++ 
++ Learn the patterns, version thoughtfully, and your users will thank you.
++ 
++ ---
++ 
++ *That wraps up Phase 3 on deployment and production. Go's operational story is strong: single binaries, tiny containers, fast builds, simple CI/CD. The tooling is less sophisticated than .NET's in places, but the simplicity makes up for it.*
++ 
+```
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+Let me verify the build works with all the new posts.</details></think>
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_cmd">
+<details><summary>Tool use: **run_terminal_cmd** • Run command: cd /Users/andycross/src/personal/mcp-blogs && hugo --quiet && echo "Build successful" && ls content/posts/dotnet-to-go*.md | wc -l</summary>
+
+```bash
+cd /Users/andycross/src/personal/mcp-blogs && hugo --quiet && echo "Build successful" && ls content/posts/dotnet-to-go*.md | wc -l
+```
+
+```
+Build successful
+      45
+
+```
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+All 45 posts are done and the build passes! Let me give the user a complete summary of the series.</details></think>
+
+---
+
+All 9 Phase 3 posts done! **45 posts total** — the complete C# to Go series!
+
+## C# to Go Series — Final Summary (45 posts)
+
+### Phase 1: The Fundamentals (22 posts)
+
+**Getting Oriented** (3)
+1-3. Toolchain, go.mod, Phrasebook
+
+**Types & Data** (5)
+4-8. Structs, Visibility, Generics, Nil, Enums
+
+**Control Flow & Error Handling** (3)
+9-11. Errors, Panic/Recover, Switch
+
+**Memory & Pointers** (3)
+12-14. Pointers, Escape Analysis, Slices
+
+**Concurrency** (5)
+15-19. Goroutines, Channels, Select, Sync, Context
+
+**Interfaces & Composition** (3)
+20-22. Implicit Interfaces, Composition/Embedding, any/type assertions
+
+---
+
+### Phase 2: The Ecosystem (14 posts)
+
+**Project Structure & Modules** (2)
+23-24. Project Structure, Multi-Module Repos
+
+**Testing** (3)
+25-27. Built-in Testing, Mocking, Benchmarks/Profiling
+
+**Common Patterns & Libraries** (6)
+28-33. HTTP, JSON, Config, Logging (slog), database/sql, GORM
+
+**Tooling** (3)
+34-36. Linting/gofmt, go:generate, Debugging (Delve)
+
+---
+
+### Phase 3: Deployment & Production (9 posts) ← **COMPLETE**
+
+**Building & Distributing** (2)
+37. **"Single Binary Deploys: The Killer Feature"** — Cross-compilation, no runtime, ops will love you
+38. **"Shrinking Binaries and Build Tags"** — ldflags, conditional compilation, build tags
+
+**Containers & Cloud** (3)
+39. **"Dockerfile for Go: Simpler Than You'd Think"** — Multi-stage, scratch, distroless (~10MB images)
+40. **"AWS Lambda and Go: Cold Starts That Don't Hurt"** — 100-200ms cold starts vs .NET's 2-4 seconds
+41. **"Kubernetes and Go: A Natural Fit"** — Health probes, graceful shutdown, resource limits
+
+**Observability** (2)
+42. **"Metrics, Traces, and Logs: The OpenTelemetry Way"** — Full OTel instrumentation
+43. **"Health Checks and Readiness Probes"** — Liveness vs readiness vs startup
+
+**CI/CD** (2)
+44. **"GitHub Actions for Go Projects"** — Testing, linting, GoReleaser, Docker publishing
+45. **"Versioning Your Modules"** — Semantic versioning, v2 paths, MVS vs NuGet
+
+---
+
+That's a comprehensive guide from "what is Go?" to "deploying to production with observability." 🎉
+
+---
+
+_**User (2025-12-31 01:06Z)**_
+
+and finally, make sure oyu space thedates out particularly for the 6 months later post
+
+Bonus: The Honest Bits
+
+What I Actually Miss From C# — Features that haven't come to Go (and might never)
+What I'll Never Go Back For — The Go features that ruined me for other languages
+Six Months In: Was It Worth It? — A retrospective on the learning curve and where I landed
+
+---
+
+_**Agent (model claude-4.5-opus-high-thinking, mode Agent)**_
+
+<think><details><summary>Thought Process</summary>
+The user wants me to create the final 3 bonus posts, spacing out the dates. Looking at the existing dates:
+- Phase 1-2 posts: late December 2024 to early January 2025
+- Phase 3 posts: January 5, 2025
+
+For the bonus "honest bits" section, I should space them out more to feel like a genuine reflection:
+- "What I Actually Miss From C#" - maybe mid-January 2025
+- "What I'll Never Go Back For" - late January 2025  
+- "Six Months In" - should be 6 months after starting the journey (if we started in late December 2024, that would be June 2025)
+
+Let me write these three posts with appropriate dates.</details></think>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="write">
+
+<details><summary>Tool use: **write** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/dotnet-to-go-what-i-miss.md</summary>
+
+**Chunk 1**
+Lines added: 228, lines removed: 1
+
+```diff
+@@ -1,1 +1,228 @@
+- 
++ +++
++ title = "What I Actually Miss From C#"
++ date = "2025-01-15"
++ draft = false
++ tags = ["go", "dotnet", "reflection", "csharp"]
++ +++
++ 
++ I've been writing Go full-time for a couple of months now. I like it. I'm productive. But let's be honest: there are things I miss from C#. Not everything Go does differently is better, and pretending otherwise would be tribal nonsense.
++ 
++ Here's my genuine list of features I wish Go had—not complaints, just honest observations about trade-offs.
++ 
++ ## LINQ
++ 
++ God, I miss LINQ.
++ 
++ &#96;&#96;&#96;csharp
++ var activeUsers = users
++     .Where(u =&gt; u.IsActive)
++     .OrderBy(u =&gt; u.Name)
++     .Select(u =&gt; new { u.Id, u.Name })
++     .ToList();
++ &#96;&#96;&#96;
++ 
++ In Go:
++ 
++ &#96;&#96;&#96;go
++ var activeUsers []UserSummary
++ for _, u := range users {
++     if u.IsActive {
++         activeUsers = append(activeUsers, UserSummary{ID: u.ID, Name: u.Name})
++     }
++ }
++ sort.Slice(activeUsers, func(i, j int) bool {
++     return activeUsers[i].Name &lt; activeUsers[j].Name
++ })
++ &#96;&#96;&#96;
++ 
++ More lines. More manual work. No lazy evaluation. No composition.
++ 
++ Yes, there are libraries like &#96;lo&#96; that add LINQ-like functions:
++ 
++ &#96;&#96;&#96;go
++ activeUsers := lo.Filter(users, func(u User, _ int) bool {
++     return u.IsActive
++ })
++ &#96;&#96;&#96;
++ 
++ But it's not the same. LINQ is integrated into the language. It's type-safe. It composes elegantly. Go's approach works but lacks the expressiveness.
++ 
++ ## Nullable Reference Types
++ 
++ C# 8's nullable reference types are genuinely excellent:
++ 
++ &#96;&#96;&#96;csharp
++ #nullable enable
++ User? user = GetUser();
++ if (user != null)
++ {
++     Console.WriteLine(user.Name); // Compiler knows it's not null here
++ }
++ &#96;&#96;&#96;
++ 
++ Go has nil, and the compiler doesn't help you track it:
++ 
++ &#96;&#96;&#96;go
++ user := GetUser()
++ if user != nil {
++     fmt.Println(user.Name) // You remembered to check, compiler didn't care
++ }
++ &#96;&#96;&#96;
++ 
++ The number of nil pointer panics I've written in Go that C#'s nullable analysis would have caught... it's not zero.
++ 
++ ## Properties with Logic
++ 
++ Sometimes I want computed properties:
++ 
++ &#96;&#96;&#96;csharp
++ public class Rectangle
++ {
++     public double Width { get; set; }
++     public double Height { get; set; }
++     public double Area =&gt; Width * Height;  // clean
++ }
++ &#96;&#96;&#96;
++ 
++ Go:
++ 
++ &#96;&#96;&#96;go
++ type Rectangle struct {
++     Width  float64
++     Height float64
++ }
++ 
++ func (r Rectangle) Area() float64 {
++     return r.Width * r.Height
++ }
++ 
++ // Usage: rect.Area() not rect.Area
++ &#96;&#96;&#96;
++ 
++ The parentheses seem minor but they matter for readability. A computed value should look like accessing a value, not calling a function.
++ 
++ ## Async/Await for Simple Cases
++ 
++ Yes, goroutines are more powerful. Yes, no coloured functions is elegant. But sometimes I just want:
++ 
++ &#96;&#96;&#96;csharp
++ var user = await GetUserAsync(id);
++ var orders = await GetOrdersAsync(user.Id);
++ return await BuildSummaryAsync(user, orders);
++ &#96;&#96;&#96;
++ 
++ The sequential async flow is clean. In Go, this is just synchronous code (which is fine), but when you need to collect results from parallel operations, channels feel heavyweight compared to:
++ 
++ &#96;&#96;&#96;csharp
++ var results = await Task.WhenAll(tasks);
++ &#96;&#96;&#96;
++ 
++ ## Extension Methods
++ 
++ Adding methods to types you don't own:
++ 
++ &#96;&#96;&#96;csharp
++ public static string Truncate(this string s, int maxLength) =&gt;
++     s.Length &lt;= maxLength ? s : s[..maxLength] + "...";
++ 
++ // Usage
++ var short = longString.Truncate(100);
++ &#96;&#96;&#96;
++ 
++ Go has no extension methods. You write functions:
++ 
++ &#96;&#96;&#96;go
++ func Truncate(s string, maxLength int) string {
++     if len(s) &lt;= maxLength {
++         return s
++     }
++     return s[:maxLength] + "..."
++ }
++ 
++ // Usage
++ short := Truncate(longString, 100)
++ &#96;&#96;&#96;
++ 
++ Works, but doesn't chain as nicely. Discovery is harder too—you can't just type &#96;string.&#96; and see available operations.
++ 
++ ## Pattern Matching
++ 
++ C#'s pattern matching is wonderful:
++ 
++ &#96;&#96;&#96;csharp
++ var message = obj switch
++ {
++     int i when i &gt; 0 =&gt; $"positive: {i}",
++     int i =&gt; $"non-positive: {i}",
++     string s =&gt; $"string: {s}",
++     null =&gt; "null",
++     _ =&gt; "unknown"
++ };
++ &#96;&#96;&#96;
++ 
++ Go's type switches are good but not as powerful:
++ 
++ &#96;&#96;&#96;go
++ switch v := obj.(type) {
++ case int:
++     if v &gt; 0 {
++         message = fmt.Sprintf("positive: %d", v)
++     } else {
++         message = fmt.Sprintf("non-positive: %d", v)
++     }
++ case string:
++     message = fmt.Sprintf("string: %s", v)
++ // no null case, no default with value access
++ }
++ &#96;&#96;&#96;
++ 
++ The &#96;when&#96; guards and the expression form are genuinely missed.
++ 
++ ## Rich IDE Support
++ 
++ Rider and Visual Studio are exceptional. The refactoring tools, the code analysis, the debugging experience... Go tooling is good and improving, but it's not at the same level.
++ 
++ "Rename symbol across solution" in Rider is flawless. In gopls, it's usually fine but occasionally misses things.
++ 
++ ## Proper Enums
++ 
++ I covered this in an earlier post, but I still miss them:
++ 
++ &#96;&#96;&#96;csharp
++ public enum Status { Pending, Active, Completed }
++ Status.Pending.ToString()  // "Pending"
++ Enum.Parse&lt;Status&gt;("Active")  // Status.Active
++ &#96;&#96;&#96;
++ 
++ Go's &#96;const&#96; + &#96;iota&#96; requires so much boilerplate for basic enum functionality.
++ 
++ ## Generic Variance
++ 
++ &#96;IEnumerable&lt;Dog&gt;&#96; is assignable to &#96;IEnumerable&lt;Animal&gt;&#96; in C#. Go has no variance. A &#96;[]Dog&#96; is not a &#96;[]Animal&#96;. This comes up more often than you'd think when designing APIs.
++ 
++ ## What I Don't Miss
++ 
++ For balance, here's what I thought I'd miss but don't:
++ 
++ **Inheritance**: Embedding and interfaces cover everything I actually need.
++ 
++ **Exceptions**: Explicit error handling grew on me. It's more code but clearer.
++ 
++ **Heavyweight frameworks**: Building with minimal dependencies is refreshing.
++ 
++ **Complex configuration**: No more XML config files and DI containers to wire up.
++ 
++ **Slow startup**: Go starts instantly. .NET apps... don't always.
++ 
++ ## The Reality Check
++ 
++ None of these missing features make Go unusable. I'm productive. I ship code. The simplicity has real benefits that offset these gaps.
++ 
++ But when Go advocates say "you won't miss anything from C#," they're being tribal. These are real features that make real tasks easier. Go chose different trade-offs. Those trade-offs are sometimes worse for specific use cases.
++ 
++ Acknowledging that doesn't mean Go is bad. It means it's a tool with trade-offs, like every language.
++ 
++ ---
++ 
++ *Next up: the features I'll never go back for—the Go patterns that have genuinely ruined me for other languages.*
++ 
+```
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="write">
+
+<details><summary>Tool use: **write** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/dotnet-to-go-never-go-back.md</summary>
+
+**Chunk 1**
+Lines added: 164, lines removed: 1
+
+```diff
+@@ -1,1 +1,164 @@
+- 
++ +++
++ title = "What I'll Never Go Back For"
++ date = "2025-02-01"
++ draft = false
++ tags = ["go", "dotnet", "reflection", "csharp"]
++ +++
++ 
++ Last time I talked about what I miss from C#. Now let's flip it: what has Go given me that I'd genuinely struggle to give up?
++ 
++ Some of these I expected to like. Others surprised me. All of them have changed how I think about software.
++ 
++ ## Fast Compilation
++ 
++ This sounds minor until you've lived it. &#96;go build&#96; takes seconds. For a large project, maybe 10-15 seconds. That's it.
++ 
++ Coming from .NET where build times can stretch into minutes for larger solutions, the fast feedback loop in Go is transformative. I run the compiler constantly. I try things. I iterate quickly.
++ 
++ When I go back to C# projects now, the build times feel painful in a way they didn't before.
++ 
++ ## Single Binary Deployment
++ 
++ I keep coming back to this because it's so operationally clean.
++ 
++ &#96;&#96;&#96;bash
++ scp myapp server:/usr/local/bin/
++ ssh server 'systemctl restart myapp'
++ &#96;&#96;&#96;
++ 
++ No runtime installation. No SDK version matching. No framework compatibility. Just a file that runs.
++ 
++ Every time I deploy a .NET app and deal with runtime versions or container size, I miss Go's simplicity.
++ 
++ ## Cross-Compilation
++ 
++ Building for Linux from my Mac:
++ 
++ &#96;&#96;&#96;bash
++ GOOS=linux GOARCH=amd64 go build -o myapp
++ &#96;&#96;&#96;
++ 
++ No Docker. No virtual machines. No cross-compiler toolchains. Just environment variables.
++ 
++ I now consider "can I easily build for all platforms?" when evaluating any tool. Go spoiled me.
++ 
++ ## Explicit Error Handling
++ 
++ I know, I know—I literally wrote a post about &#96;if err != nil&#96; being tedious. But here's the thing: after months of it, I've come to appreciate the explicitness.
++ 
++ Every line that can fail is marked. Every error is handled (or explicitly ignored). No hidden control flow. When something goes wrong, the error path is obvious.
++ 
++ Going back to exception-based code, I find myself thinking "wait, which of these lines can throw?" The implicit nature of exceptions, which I never questioned before, now feels like hidden complexity.
++ 
++ ## Goroutines and Channels
++ 
++ The concurrency model is genuinely excellent.
++ 
++ &#96;&#96;&#96;go
++ go processRequest(req)
++ &#96;&#96;&#96;
++ 
++ No &#96;Task.Run&#96;. No async/await colouring. No thread pool configuration. Just &#96;go&#96;.
++ 
++ And channels for communication:
++ 
++ &#96;&#96;&#96;go
++ results := make(chan Result, 10)
++ go worker(results)
++ for r := range results {
++     process(r)
++ }
++ &#96;&#96;&#96;
++ 
++ The producer-consumer pattern in one elegant construct.
++ 
++ I can spin up thousands of goroutines without thinking. In .NET, creating thousands of Tasks has overhead and complexity that makes me hesitate.
++ 
++ ## The &#96;defer&#96; Statement
++ 
++ Resource cleanup that reads top-to-bottom:
++ 
++ &#96;&#96;&#96;go
++ file, err := os.Open(name)
++ if err != nil {
++     return err
++ }
++ defer file.Close()  // cleanup declared right after acquisition
++ 
++ // Use file...
++ // Cleanup happens automatically when function returns
++ &#96;&#96;&#96;
++ 
++ Compare to:
++ 
++ &#96;&#96;&#96;csharp
++ using var file = File.OpenRead(name);
++ // or
++ try { } finally { file.Close(); }
++ &#96;&#96;&#96;
++ 
++ &#96;using&#96; is fine, but &#96;defer&#96; is more flexible—it works for any cleanup, not just &#96;IDisposable&#96;.
++ 
++ ## Implicit Interface Satisfaction
++ 
++ Defining an interface that existing types already implement:
++ 
++ &#96;&#96;&#96;go
++ type Stringer interface {
++     String() string
++ }
++ // fmt.Stringer already exists, many types implement it
++ // My new interface is satisfied by all of them, retroactively
++ &#96;&#96;&#96;
++ 
++ No modifying the original types. No adapters. Just "if you have these methods, you implement this interface."
++ 
++ When I design APIs now, I think in terms of small interfaces that might already be satisfied. It's a different design philosophy, and I prefer it.
++ 
++ ## gofmt: One True Format
++ 
++ No bikeshedding about formatting. Ever. &#96;gofmt&#96; decides, everyone uses it, discussions about tabs vs spaces simply don't happen.
++ 
++ The uniformity of Go codebases is remarkable. I can read anyone's code and it looks like my code, structurally. That matters for open source, for team collaboration, for just reading random code on GitHub.
++ 
++ I now find formatting debates in other languages exhausting. Just pick one and enforce it.
++ 
++ ## Context Propagation
++ 
++ Every function that does I/O takes &#96;context.Context&#96;. Cancellation propagates automatically. Request-scoped values flow through the call chain.
++ 
++ &#96;&#96;&#96;go
++ func HandleRequest(ctx context.Context, req Request) error {
++     // ctx carries cancellation, deadlines, request ID, user info...
++     return processWithDependencies(ctx, req)
++ }
++ &#96;&#96;&#96;
++ 
++ This pervasive context threading seemed tedious at first. Now it's indispensable. I always have cancellation. I always have request context. I never have to wonder "how do I get the current request ID here?"
++ 
++ ## Small Standard Library Surface
++ 
++ The Go standard library is focused. It does HTTP, JSON, SQL, crypto, and other fundamentals well. It doesn't try to do everything.
++ 
++ This forces you to understand what you're using. There's no kitchen-sink framework hiding complexity. You build with small, understandable pieces.
++ 
++ In .NET, the framework is vast. Great for discoverability, but you can go deep into features you don't understand. Go's smaller surface area means I actually know my tools.
++ 
++ ## What This Means
++ 
++ These aren't just features I like—they've changed how I think about software development:
++ 
++ - **Feedback loops matter**: Fast compilation isn't a nice-to-have.
++ - **Deployment simplicity compounds**: Single binaries eliminate entire categories of problems.
++ - **Explicit beats implicit**: I'd rather see the error handling than have it hidden.
++ - **Concurrency should be easy**: If it's hard, people won't use it correctly.
++ - **Consistency beats preference**: Team standards &gt; individual style.
++ 
++ Would I take a job writing C# again? Absolutely. It's a good language with a mature ecosystem.
++ 
++ Would I miss these Go features? Absolutely. Some of them every single day.
++ 
++ ---
++ 
++ *Next time: six months in—a proper retrospective on whether this journey was worth it.*
++ 
+```
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="write">
+
+<details><summary>Tool use: **write** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/dotnet-to-go-six-months.md</summary>
+
+**Chunk 1**
+Lines added: 157, lines removed: 1
+
+```diff
+@@ -1,1 +1,157 @@
+- 
++ +++
++ title = "Six Months In: Was It Worth It?"
++ date = "2025-06-28"
++ draft = false
++ tags = ["go", "dotnet", "retrospective", "career", "csharp"]
++ +++
++ 
++ Six months ago, I started this series with a simple goal: document learning Go as an experienced C# developer. Not a tutorial—there are plenty of those—but an honest account of the transition.
++ 
++ Now, with half a year of production Go code behind me, it's time for a retrospective. Was it worth it? Would I do it again? What would I tell past-me?
++ 
++ ## The Learning Curve
++ 
++ **Weeks 1-2**: Syntax adjustment. Easy. Go is a small language.
++ 
++ **Weeks 3-4**: Fighting the language. Trying to write C# in Go. Wondering why there are no generics (there are now), no exceptions (by design), no classes (by design).
++ 
++ **Months 2-3**: Acceptance. Starting to see why Go makes its choices. Writing idiomatic code. Stopping fighting.
++ 
++ **Months 4-6**: Fluency. Thinking in Go. Actually preferring some of its approaches. Not reaching for C# patterns anymore.
++ 
++ The inflection point was around month two. That's when I stopped asking "why doesn't Go have X?" and started asking "how do Go developers solve this?"
++ 
++ ## What I Got Right
++ 
++ **Starting with real projects**: I didn't do tutorials. I built things I needed. That forced me to solve actual problems, not artificial exercises.
++ 
++ **Reading the standard library**: Go's stdlib is readable and idiomatic. I learned more from reading &#96;net/http&#96; source than from any guide.
++ 
++ **Accepting the constraints**: Once I stopped resisting (no inheritance, explicit errors, no LINQ), I could appreciate the benefits.
++ 
++ **Keeping notes**: This blog series was originally just my notes. Writing forced me to understand things properly.
++ 
++ ## What I Got Wrong
++ 
++ **Overusing channels**: Early on, I used channels for everything. Turns out, sometimes a mutex is simpler. "Share memory by communicating" isn't "always use channels."
++ 
++ **Fighting gofmt**: I tried to configure formatting. You can't. I wasted time before accepting the One True Format.
++ 
++ **Importing my architecture**: I tried to recreate C#-style layered architecture in Go. It felt wrong because it was wrong. Go projects structure differently.
++ 
++ **Ignoring the ecosystem**: I tried to stick to stdlib for too long. Libraries like &#96;chi&#96;, &#96;sqlx&#96;, and &#96;zerolog&#96; exist for good reasons. Use them.
++ 
++ ## The Productivity Question
++ 
++ Here's the honest answer: I'm about as productive in Go as I was in C#.
++ 
++ - For HTTP services, similar productivity
++ - For CLI tools, Go is faster (single binary, fast compilation)
++ - For complex business logic with lots of types, C# might be faster (LINQ, pattern matching, rich type system)
++ - For deployment and operations, Go is significantly simpler
++ 
++ The productivity isn't dramatically different. What's different is *what kind* of work is easy.
++ 
++ ## What I Build Now
++ 
++ Six months in, I naturally reach for Go when:
++ 
++ - Building microservices or APIs
++ - Writing CLI tools
++ - Creating Lambda functions
++ - Anything that needs cross-platform binaries
++ - Projects where deployment simplicity matters
++ 
++ I'd still use C# for:
++ 
++ - Complex domain modelling (richer type system)
++ - Windows-specific applications
++ - Teams that know .NET well
++ - Projects requiring mature ORMs or complex LINQ
++ 
++ ## The Things I Still Miss
++ 
++ Even after six months:
++ 
++ - **LINQ**. Every time I write a for loop to filter a slice.
++ - **Pattern matching**. When I have complex type dispatch.
++ - **IDE refactoring**. Rider's tools are unmatched.
++ - **Rich generics**. Go's generics are adequate, not great.
++ 
++ These aren't dealbreakers. But they're real gaps that don't disappear with familiarity.
++ 
++ ## The Things I Can't Give Up
++ 
++ Equally persistent:
++ 
++ - **Fast builds**. Going back to slow compilation feels painful.
++ - **Single binaries**. Deployment simplicity is addictive.
++ - **Explicit errors**. I now find exception-based code harder to reason about.
++ - **gofmt**. No formatting debates. Ever. Bliss.
++ 
++ ## Would I Do It Again?
++ 
++ Yes. Without hesitation.
++ 
++ Not because Go is objectively better than C#. It isn't, not in all dimensions. But because:
++ 
++ 1. **Learning a different paradigm expanded my thinking**. Go's constraints forced different solutions. Some of those solutions are better.
++ 
++ 2. **Professional flexibility increased**. I can now take Go or C# roles. More options is good.
++ 
++ 3. **It made me better at C# too**. Understanding Go's explicit error handling made me more careful in C#. Understanding Go's interface design influenced how I design C# interfaces.
++ 
++ 4. **It was fun**. Learning something new after years of expertise is energising.
++ 
++ ## Advice for C# Developers Considering Go
++ 
++ **Do it if:**
++ - You want to expand your thinking
++ - You're building services where deployment simplicity matters
++ - You're curious about different paradigms
++ - Your team or job requires it
++ 
++ **Don't expect:**
++ - Go to be better at everything
++ - The transition to be instant
++ - Your C# knowledge to transfer completely
++ - To never want C# features
++ 
++ **The mindset shift:**
++ - Go is simple, not primitive
++ - Constraints can be features
++ - Different isn't worse
++ - "Boring" code is often good code
++ 
++ ## Six Months vs Day One
++ 
++ | Aspect | Day One | Six Months |
++ |--------|---------|------------|
++ | Error handling | Tedious | Appreciated |
++ | No inheritance | Limiting | Liberating |
++ | Small stdlib | Lacking | Focused |
++ | gofmt | Annoying | Essential |
++ | Deployment | Nice | Can't go back |
++ | Productivity | Lower | Equivalent |
++ | Enjoyment | Frustration | Comfort |
++ 
++ ## The Final Word
++ 
++ Was it worth it?
++ 
++ For me, absolutely. The operational benefits alone (fast builds, single binaries, simple deployment) have saved more time than the learning curve cost. The expanded perspective has made me a better engineer.
++ 
++ But I want to be clear: this isn't a "Go is better than C#" conclusion. It's a "Go is *different* from C#, and understanding both makes you better" conclusion.
++ 
++ C# is an excellent language with a mature ecosystem. Go is an excellent language with different trade-offs. Knowing both lets you pick the right tool for each job.
++ 
++ If you've followed this series, I hope it's been useful. Not as a Go tutorial—there are better resources for that—but as an honest map of the terrain from someone who's walked it.
++ 
++ The learning curve is real. The frustrations are real. And so are the benefits.
++ 
++ Thanks for reading.
++ 
++ ---
++ 
++ *This concludes the C# to Go series. All 48 posts are available in the archive. If you found it useful, I'd love to hear about your own transition experiences. Find me on the usual channels.*
++ 
+```
+
+</details>
+
+</tool-use>
+
+---
+
+
+
+---
+
+<think><details><summary>Thought Process</summary>
+All three bonus posts have been created with spaced out dates:
+- "What I Actually Miss From C#" - January 15, 2025 (about 2 weeks after the deployment posts)
+- "What I'll Never Go Back For" - February 1, 2025 (2 weeks later)
+- "Six Months In: Was It Worth It?" - June 28, 2025 (6 months after the series started)
+
+Let me verify the build works and count the total posts.</details></think>
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_cmd">
+<details><summary>Tool use: **run_terminal_cmd** • Run command: cd /Users/andycross/src/personal/mcp-blogs && hugo --quiet && echo "Build successful" && ls content/posts/dotnet-to-go*.md | wc -l</summary>
+
+```bash
+cd /Users/andycross/src/personal/mcp-blogs && hugo --quiet && echo "Build successful" && ls content/posts/dotnet-to-go*.md | wc -l
+```
+
+```
+Build successful
+      48
+
+```
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+All 48 posts have been created. Let me provide a summary for the user about the bonus posts.</details></think>
+
+---
+
+Done! The three bonus posts have been created with dates spaced out to feel authentic to a real learning journey:
+
+| Post | Date | Theme |
+|------|------|-------|
+| **What I Actually Miss From C#** | January 15, 2025 | Honest gaps: LINQ, nullable refs, properties, pattern matching, extension methods |
+| **What I'll Never Go Back For** | February 1, 2025 | Go features that are now essential: fast builds, single binaries, goroutines, defer, gofmt |
+| **Six Months In: Was It Worth It?** | June 28, 2025 | Full retrospective with learning curve timeline, productivity reality check, and advice |
+
+The final post is dated **six months after the series started**, giving it that genuine "looking back" feel.
+
+The series is now complete at **48 posts** covering:
+- Phase 1: Fundamentals (toolchain, modules, phrasebook, types, control flow, memory, concurrency, interfaces)
+- Phase 2: Ecosystem (project structure, testing, patterns, libraries, tooling)
+- Phase 3: Deployment (building, containers, cloud, observability, CI/CD)
+- Bonus: The honest bits (what's missed, what's kept, retrospective)
 
 ---
 
