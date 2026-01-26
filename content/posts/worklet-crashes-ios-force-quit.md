@@ -13,7 +13,7 @@ Turns out, the user had force-quit the app from the iOS app switcher. Swiped up,
 
 This is the story of a race condition that only happens when users kill your app, why your beautifully animated 3D scenes are secretly time bombs, and how the "obvious" fix actually made things worse.
 
-**Update (December 2024):** After the initial fix, I got *another* crash—this time from just opening the app switcher, not even force-quitting. The rabbit hole went deeper. See [Part 2: The App Switcher Crash](#part-2-the-app-switcher-crash) below.
+**Update (December 2024):** After the initial fix, I got *another* crash. This time from just opening the app switcher, not even force-quitting. The rabbit hole went deeper. See [Part 2: The App Switcher Crash](#part-2-the-app-switcher-crash) below.
 
 ## The Crash Log
 
@@ -141,7 +141,7 @@ useRenderCallback(() => {
 }, [isSceneActive, /* ... */]);
 ```
 
-Also, stop rendering when the app goes inactive. **But be careful:** don't unmount native views, just skip rendering. (I learned this the hard way—see [Part 2](#part-2-the-app-switcher-crash).)
+Also, stop rendering when the app goes inactive. **But be careful:** don't unmount native views, just skip rendering. (I learned this the hard way. See [Part 2](#part-2-the-app-switcher-crash).)
 
 ```typescript
 const [isAppActive, setIsAppActive] = useState(true);
@@ -172,11 +172,11 @@ The `inactive` state happens briefly during force-quit. If you stop rendering at
 
 Anyone using worklet-based libraries:
 
-- **react-native-worklets-core** — the underlying runtime
-- **react-native-reanimated** — animations
-- **react-native-filament** — 3D rendering
-- **react-native-skia** — 2D graphics
-- **vision-camera** — frame processors
+- **react-native-worklets-core**: the underlying runtime
+- **react-native-reanimated**: animations
+- **react-native-filament**: 3D rendering
+- **react-native-skia**: 2D graphics
+- **vision-camera**: frame processors
 
 If you're using any of these and haven't seen this crash, you've been lucky. Or your users are polite and use the home button instead of force-quitting.
 
@@ -209,9 +209,9 @@ MIT licensed, because these kinds of fixes should just exist.
 
 ## The Broader Lesson
 
-This bug is a perfect example of why crash reporting from real users matters. I never would have found this in development. The force-quit gesture is something users do constantly but developers almost never do—we're always hot-reloading or stopping from the CLI.
+This bug is a perfect example of why crash reporting from real users matters. I never would have found this in development. The force-quit gesture is something users do constantly but developers almost never do. We're always hot-reloading or stopping from the CLI.
 
-It's also a reminder that threads don't respect your app lifecycle. When you spin up background work—worklets, timers, network requests—you're making a promise that you'll clean up after yourself. Native frameworks expect it. When you don't, things get ugly.
+It's also a reminder that threads don't respect your app lifecycle. When you spin up background work (worklets, timers, network requests) you're making a promise that you'll clean up after yourself. Native frameworks expect it. When you don't, things get ugly.
 
 ## Will This Fix It Completely?
 
@@ -241,7 +241,7 @@ Thread 14:
   margelo::EngineImpl::~EngineImpl
 ```
 
-The smoking gun: `0x000000000000000c`. That's 12 bytes offset from null—classic "accessing a field on a nil object."
+The smoking gun: `0x000000000000000c`. That's 12 bytes offset from null. Classic "accessing a field on a nil object."
 
 And Thread 14? That's Filament cleaning up. `FEngine::destroy()`. The 3D renderer was shutting down.
 
@@ -263,7 +263,7 @@ When the app goes inactive (app switcher opens), we stop rendering the FilamentV
 
 **Wrong.** This was the actual cause of the crash.
 
-When `isAppActive` becomes `false`, React unmounts `<FilamentView>`. Unmounting triggers Filament's native cleanup—`FEngine::destroy()`, `FRenderer::terminate()`. That cleanup throws an `NSException`. React Native tries to convert that exception to a JavaScript error. But Hermes (the JS runtime) is already being torn down, or the conversion is happening on the wrong thread.
+When `isAppActive` becomes `false`, React unmounts `<FilamentView>`. Unmounting triggers Filament's native cleanup: `FEngine::destroy()`, `FRenderer::terminate()`. That cleanup throws an `NSException`. React Native tries to convert that exception to a JavaScript error. But Hermes (the JS runtime) is already being torn down, or the conversion is happening on the wrong thread.
 
 Null pointer. Crash.
 
@@ -291,7 +291,7 @@ So my cleanup notification was never being posted for the most common case.
 
 Two changes were needed:
 
-#### 1. Don't Unmount—Just Pause
+#### 1. Don't Unmount, Just Pause
 
 The key insight: **keep native 3D views mounted, but skip rendering in the worklet**.
 
@@ -359,7 +359,7 @@ public override func applicationDidEnterBackground(_ application: UIApplication)
 }
 ```
 
-This notification **is** reliably called. Native modules can listen for it to prepare for potential termination—pause operations, flush caches, whatever they need.
+This notification **is** reliably called. Native modules can listen for it to prepare for potential termination: pause operations, flush caches, whatever they need.
 
 ### Plugin v2.0.0
 
@@ -388,9 +388,9 @@ The counterintuitive solution: keep things mounted, but inert. Let the native re
 
 | Problem | Wrong Fix | Right Fix |
 |---------|-----------|-----------|
-| Worklet crashes on force-quit | — | Bail out early with `isSceneActive` guard |
+| Worklet crashes on force-quit | - | Bail out early with `isSceneActive` guard |
 | Cleanup crashes on background | Unmount the FilamentScene | Keep mounted, skip rendering |
-| `applicationWillTerminate` not called | — | Also use `applicationDidEnterBackground` |
+| `applicationWillTerminate` not called | - | Also use `applicationDidEnterBackground` |
 
 ---
 

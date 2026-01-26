@@ -5,7 +5,7 @@ draft = false
 tags = ["go", "dotnet", "syntax", "csharp"]
 +++
 
-Before we get into the weeds of types and patterns, let's establish some vocabulary. Go uses different names for familiar concepts, and has operators you've never seen. This post is a reference—skim it now, bookmark it for later.
+Before we get into the weeds of types and patterns, let's establish some vocabulary. Go uses different names for familiar concepts, and has operators you've never seen. This post is a reference. Skim it now, bookmark it for later.
 
 ## The Terminology Swap
 
@@ -41,20 +41,20 @@ This one catches everyone. In C#, "array" means a fixed-size, contiguous block:
 int[] numbers = new int[5];  // fixed size 5
 ```
 
-In Go, this is also called an array—but you almost never use them directly:
+In Go, this is also called an array, but you almost never use them directly:
 
 ```go
 var numbers [5]int  // array - fixed size, rarely used
 ```
 
-What you use instead is a **slice**—a dynamic view over an array:
+What you use instead is a **slice**, a dynamic view over an array:
 
 ```go
 numbers := []int{1, 2, 3, 4, 5}  // slice - this is what you want
 numbers = append(numbers, 6)     // grows automatically
 ```
 
-Think of slices as `List<T>` that happens to have array-like syntax. They grow, shrink, and pass by reference (sort of—the header is copied, but the backing array is shared).
+Think of slices as `List<T>` that happens to have array-like syntax. They grow, shrink, and pass by reference (sort of: the header is copied, but the backing array is shared).
 
 **The rule:** if you're reaching for an array in Go, you probably want a slice.
 
@@ -215,7 +215,7 @@ ptr.Name = "Bob"    // Go auto-dereferences for field access
 
 Two built-in functions for creating things:
 
-**`make()`** is for slices, maps, and channels—types that need initialisation:
+**`make()`** is for slices, maps, and channels, types that need initialisation:
 
 ```go
 s := make([]int, 0, 10)     // slice with length 0, capacity 10
@@ -420,4 +420,4 @@ Keep this handy until it's automatic:
 
 ---
 
-*This post is a reference, not a deep dive. We'll cover structs, visibility, and the type system properly in the next posts. But now you've got the vocabulary and the operators—the rest should make more sense.*
+*This post is a reference, not a deep dive. We'll cover structs, visibility, and the type system properly in the next posts. But now you've got the vocabulary and the operators. The rest should make more sense.*

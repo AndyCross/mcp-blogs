@@ -5,7 +5,7 @@ draft = false
 tags = ["go", "dotnet", "deployment", "build-tags", "csharp"]
 +++
 
-Go binaries are already small compared to .NET self-contained deployments. But sometimes you want smaller—for Lambda deployments, embedded systems, or just because.
+Go binaries are already small compared to .NET self-contained deployments. But sometimes you want smaller: Lambda deployments, embedded systems, or just because.
 
 Let's look at `ldflags` for stripping binaries and build tags for conditional compilation.
 
@@ -236,7 +236,7 @@ Cleaner error messages and reproducible builds.
 | Build-time variables | MSBuild properties | `-X main.var=value` |
 | IL trimming | PublishTrimmed | N/A (no IL) |
 
-.NET's trimming is more complex because it's trimming IL and dependencies. Go doesn't have this problem—it compiles to native code and includes only what's used.
+.NET's trimming is more complex because it's trimming IL and dependencies. Go doesn't have this problem. It compiles to native code and includes only what's used.
 
 ## A Complete Production Build
 
@@ -326,4 +326,4 @@ If you're coming from complex MSBuild configurations, you might miss the flexibi
 
 ---
 
-*Next up: Dockerfiles for Go—multi-stage builds, scratch images, and why Go containers are so small.*
+*Next up: Dockerfiles for Go. Multi-stage builds, scratch images, and why Go containers are so small.*

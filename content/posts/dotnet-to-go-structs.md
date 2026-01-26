@@ -5,7 +5,7 @@ draft = false
 tags = ["go", "dotnet", "types", "csharp"]
 +++
 
-Here's something that'll feel wrong for about a week: Go doesn't have classes. Not "Go has classes but calls them something else"—it genuinely doesn't have them. No inheritance. No class hierarchies. No `virtual` or `override`. No `protected`.
+Here's something that'll feel wrong for about a week: Go doesn't have classes. Not "Go has classes but calls them something else". It genuinely doesn't have them. No inheritance. No class hierarchies. No `virtual` or `override`. No `protected`.
 
 If you've spent years designing C# class hierarchies, this feels like having a limb removed. Then you start writing Go code and realise... you don't actually miss it that much.
 
@@ -57,10 +57,10 @@ func (u User) DisplayName() string {
 
 A few things to notice:
 
-1. **No constructor syntax**—`NewUser` is just a function. By convention, Go uses `NewX` functions, but there's nothing special about them.
-2. **Methods are declared separately**—that `func (u User)` syntax attaches a method to the type.
-3. **No access modifiers**—capitalisation controls visibility (covered in the next post).
-4. **Fields are just fields**—no properties, no getters/setters.
+1. **No constructor syntax**. `NewUser` is just a function. By convention, Go uses `NewX` functions, but there's nothing special about them.
+2. **Methods are declared separately**. That `func (u User)` syntax attaches a method to the type.
+3. **No access modifiers**. Capitalisation controls visibility (covered in the next post).
+4. **Fields are just fields**. No properties, no getters/setters.
 
 ## Value Semantics by Default
 
@@ -121,7 +121,7 @@ func (u User) DisplayName() string {
 
 Go doesn't have inheritance. Full stop. No `class Admin : User`. No `protected` members. No `virtual` methods.
 
-Instead, Go has embedding—a form of composition that feels almost like inheritance but isn't.
+Instead, Go has embedding, a form of composition that feels almost like inheritance but isn't.
 
 ```go
 type Person struct {
@@ -155,23 +155,23 @@ fmt.Println(emp.Greet()) // "Hello, I'm Alice" - method promoted too
 
 This *looks* like inheritance, but it's not:
 
-- No polymorphism—you can't pass an `Employee` where a `Person` is expected
-- No `override`—if `Employee` defines its own `Greet()`, it shadows `Person.Greet()`
-- The embedded type is still accessible—`emp.Person.Name` works
+- No polymorphism. You can't pass an `Employee` where a `Person` is expected.
+- No `override`. If `Employee` defines its own `Greet()`, it shadows `Person.Greet()`.
+- The embedded type is still accessible. `emp.Person.Name` works.
 
 ### When You'll Miss Inheritance
 
 Let's be honest: sometimes you'll miss it.
 
-**Template Method Pattern**—In C#, you'd have a base class with a `virtual` method that subclasses override. Go has no direct equivalent. You use interfaces and composition instead, which works but feels more verbose.
+**Template Method Pattern**: In C#, you'd have a base class with a `virtual` method that subclasses override. Go has no direct equivalent. You use interfaces and composition instead, which works but feels more verbose.
 
-**Protected Members**—There's no "visible to derived types" concept. Everything is either exported (public) or unexported (package-private). For library design, this can be limiting.
+**Protected Members**: There's no "visible to derived types" concept. Everything is either exported (public) or unexported (package-private). For library design, this can be limiting.
 
-**Deep Hierarchies**—If your C# design has `Animal -> Mammal -> Dog -> Labrador`, Go will make you rethink that structure entirely. Usually for the better, but the rethinking takes effort.
+**Deep Hierarchies**: If your C# design has `Animal -> Mammal -> Dog -> Labrador`, Go will make you rethink that structure entirely. Usually for the better, but the rethinking takes effort.
 
 ## Interfaces Are Implicit
 
-Here's where Go gets genuinely interesting. Interfaces are satisfied implicitly—no `implements` keyword.
+Here's where Go gets genuinely interesting. Interfaces are satisfied implicitly. No `implements` keyword.
 
 In C#:
 
@@ -210,9 +210,9 @@ If a type has the methods an interface requires, it implements that interface. P
 
 This has profound implications:
 
-1. **You can define interfaces after the fact**—create an interface that existing types already satisfy
-2. **Small interfaces are encouraged**—the standard library is full of one-method interfaces
-3. **Testing is trivial**—any type with the right methods can be substituted
+1. **You can define interfaces after the fact**. Create an interface that existing types already satisfy.
+2. **Small interfaces are encouraged**. The standard library is full of one-method interfaces.
+3. **Testing is trivial**. Any type with the right methods can be substituted.
 
 The `io.Reader` interface is the canonical example:
 
@@ -222,7 +222,7 @@ type Reader interface {
 }
 ```
 
-One method. But files, network connections, byte buffers, HTTP response bodies—they all implement it. Polymorphism without inheritance.
+One method. But files, network connections, byte buffers, HTTP response bodies: they all implement it. Polymorphism without inheritance.
 
 ## The Comparison
 
@@ -262,14 +262,14 @@ The shift from "design your class hierarchy upfront" to "compose small pieces an
 
 If you're converting C# code to Go, here's the process I use:
 
-1. **Start with structs for data**—no methods yet, just fields
-2. **Add methods as needed**—use pointer receivers by default
-3. **Extract interfaces late**—when you need polymorphism, create the smallest interface that works
-4. **Embed for code reuse**—not "inheritance", just "I want those fields and methods too"
-5. **Resist the urge to build hierarchies**—if you're thinking "base class", stop and reconsider
+1. **Start with structs for data**. No methods yet, just fields.
+2. **Add methods as needed**. Use pointer receivers by default.
+3. **Extract interfaces late**. When you need polymorphism, create the smallest interface that works.
+4. **Embed for code reuse**. Not "inheritance", just "I want those fields and methods too".
+5. **Resist the urge to build hierarchies**. If you're thinking "base class", stop and reconsider.
 
 The code ends up flatter. More types, shallower relationships. It's different, not worse.
 
 ---
 
-*Next up: visibility and the death of properties—why Go uses capitalisation instead of access modifiers, and why you'll stop missing getters and setters faster than you'd expect.*
+*Next up: visibility and the death of properties. Why Go uses capitalisation instead of access modifiers, and why you'll stop missing getters and setters faster than you'd expect.*

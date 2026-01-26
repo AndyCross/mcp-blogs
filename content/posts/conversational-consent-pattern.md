@@ -5,9 +5,9 @@ draft = false
 tags = ["ai", "privacy", "gdpr", "llm", "architecture"]
 +++
 
-I've been thinking a lot about privacy consent lately. Not the legal side—though that matters—but the *experience* side. The way we currently handle consent is, frankly, insulting to users.
+I've been thinking a lot about privacy consent lately. Not the legal side (though that matters) but the *experience* side. The way we currently handle consent is, frankly, insulting to users.
 
-You know the drill. Land on a site, get slapped with a modal, click through seventeen toggles you don't understand, accept something you didn't read, and get on with your life. Nobody reads those consent forms. Nobody understands the toggles. And nobody—*nobody*—feels like they made an informed decision.
+You know the drill. Land on a site, get slapped with a modal, click through seventeen toggles you don't understand, accept something you didn't read, and get on with your life. Nobody reads those consent forms. Nobody understands the toggles. And nobody (*nobody*) feels like they made an informed decision.
 
 We can do better. And I think LLMs give us a way to do it.
 
@@ -34,11 +34,11 @@ I'm calling this the **Conversational Consent Pattern**, and it's built on a sim
 
 The pattern works like this:
 
-1. **Default to permissive** — Start with reasonable defaults that let users actually use your product
-2. **Surface consent contextually** — When you need specific consent, ask for it *in the flow*, not before it
-3. **Use natural language** — Let the LLM explain what you're asking and why, in plain English
-4. **Respect the answer** — Store preferences, honour them, and don't ask again unnecessarily
-5. **Inject context to agents** — Tell your AI what consent exists so it can behave appropriately
+1. **Default to permissive**: Start with reasonable defaults that let users actually use your product
+2. **Surface consent contextually**: When you need specific consent, ask for it *in the flow*, not before it
+3. **Use natural language**: Let the LLM explain what you're asking and why, in plain English
+4. **Respect the answer**: Store preferences, honour them, and don't ask again unnecessarily
+5. **Inject context to agents**: Tell your AI what consent exists so it can behave appropriately
 
 ## What This Looks Like In Practice
 
@@ -125,9 +125,9 @@ When the LLM determines it needs consent it doesn't have, it can request it conv
 
 Your consent state needs to persist. Build proper API endpoints:
 
-- `GET /api/me/privacy/consent` — Current preferences
-- `PUT /api/me/privacy/consent` — Update preferences
-- `GET /api/me/privacy/consent/history` — Audit trail
+- `GET /api/me/privacy/consent`: Current preferences
+- `PUT /api/me/privacy/consent`: Update preferences
+- `GET /api/me/privacy/consent/history`: Audit trail
 
 The audit trail matters. GDPR requires you to prove consent was given freely and specifically. A conversational log showing the user explicitly agreeing is far stronger evidence than a checkbox click.
 
@@ -153,7 +153,7 @@ The audit trail matters. GDPR requires you to prove consent was given freely and
 
 ## The Philosophical Bit
 
-There's something deeper here. Traditional consent mechanisms treat privacy as a *barrier*—something to get past before the real experience begins. The Conversational Consent Pattern treats privacy as part of the *relationship*.
+There's something deeper here. Traditional consent mechanisms treat privacy as a *barrier*, something to get past before the real experience begins. The Conversational Consent Pattern treats privacy as part of the *relationship*.
 
 When you ask someone for permission in conversation, you're treating them as a person. When you explain why you need something, you're building trust. When you respect their answer, you're demonstrating integrity.
 
@@ -163,7 +163,7 @@ LLMs give us the tools to bring that human pattern into software. We should use 
 
 ## Real-World Implementations
 
-We've been exploring this pattern at TheControlGroup and Laris, particularly in our BeautyAI work. The results have been encouraging—users are more willing to share information when asked conversationally, and more likely to actually understand what they're agreeing to.
+We've been exploring this pattern at TheControlGroup and Laris, particularly in our BeautyAI work. The results have been encouraging. Users are more willing to share information when asked conversationally, and more likely to actually understand what they're agreeing to.
 
 I can't share specifics (client work, NDAs, the usual), but the pattern itself is generic enough to apply anywhere you're collecting user data: healthcare apps, financial services, e-commerce personalisation, anything where trust matters.
 
@@ -171,14 +171,14 @@ I can't share specifics (client work, NDAs, the usual), but the pattern itself i
 
 If you want to try this:
 
-1. **Audit your current consent flows** — Where are you front-loading consent? What could be deferred?
-2. **Build your consent state service** — Track what explicit preferences exist
-3. **Inject context to your LLM** — Tell it what consent exists (and doesn't)
-4. **Register consent collection functions** — Let the LLM request consent when needed
-5. **Wire up your backend** — Proper storage with audit trails
-6. **Test with real users** — Watch how they respond to conversational consent vs. traditional modals
+1. **Audit your current consent flows**: Where are you front-loading consent? What could be deferred?
+2. **Build your consent state service**: Track what explicit preferences exist
+3. **Inject context to your LLM**: Tell it what consent exists (and doesn't)
+4. **Register consent collection functions**: Let the LLM request consent when needed
+5. **Wire up your backend**: Proper storage with audit trails
+6. **Test with real users**: Watch how they respond to conversational consent vs. traditional modals
 
-The code isn't complicated. The mindset shift is the hard part—treating consent as conversation rather than obstacle.
+The code isn't complicated. The mindset shift is the hard part: treating consent as conversation rather than obstacle.
 
 ## The Bet
 
@@ -188,10 +188,10 @@ Dark patterns are being banned. "Accept All" buttons are being scrutinised. The 
 
 Conversational consent is future-proof. It's compliant by design. It's user-friendly by nature. And it actually achieves what privacy laws were trying to accomplish all along: *informed* consent from *empowered* users.
 
-That's the bet, anyway. Build privacy into the conversation, not around it. Let the LLM do what it's good at—explaining, contextualising, respecting nuance. Let your backend do what it's good at—storage, audit trails, enforcement.
+That's the bet, anyway. Build privacy into the conversation, not around it. Let the LLM do what it's good at: explaining, contextualising, respecting nuance. Let your backend do what it's good at: storage, audit trails, enforcement.
 
 Neither system is doing something it's bad at. Sound familiar?
 
 ---
 
-*If you're working on similar problems—conversational AI, privacy architecture, or the intersection of both—I'd love to hear about it. Find me on the usual channels.*
+*If you're working on similar problems (conversational AI, privacy architecture, or the intersection of both) I'd love to hear about it. Find me on the usual channels.*

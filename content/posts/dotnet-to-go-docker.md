@@ -35,7 +35,7 @@ That's it. A multi-stage build producing a minimal image.
 - `CGO_ENABLED=0` ensures static linking
 
 **Stage 2: Run**
-- `scratch` is an empty image—literally nothing
+- `scratch` is an empty image (literally nothing)
 - Copy just the binary
 - Run it
 
@@ -79,7 +79,7 @@ Cons:
 
 ### distroless
 
-Google's minimal images—just enough to run binaries:
+Google's minimal images, just enough to run binaries:
 
 ```dockerfile
 FROM gcr.io/distroless/static-debian12
@@ -323,4 +323,4 @@ This is one of Go's genuine strengths. Embrace it.
 
 ---
 
-*Next up: AWS Lambda and Go—serverless without the cold start tax.*
+*Next up: AWS Lambda and Go. Serverless without the cold start tax.*

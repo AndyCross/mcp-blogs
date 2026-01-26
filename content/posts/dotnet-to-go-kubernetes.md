@@ -5,7 +5,7 @@ draft = false
 tags = ["go", "dotnet", "kubernetes", "containers", "csharp"]
 +++
 
-Kubernetes is written in Go. The CLI tools are Go. The ecosystem is Go. Running Go services on Kubernetes feels natural—the patterns align.
+Kubernetes is written in Go. The CLI tools are Go. The ecosystem is Go. Running Go services on Kubernetes feels natural. The patterns align.
 
 But there are things you need to get right: health checks, graceful shutdown, resource limits. Let's cover what Kubernetes expects and how Go delivers it.
 
@@ -360,7 +360,7 @@ func main() {
 
 ## The Honest Take
 
-Go and Kubernetes work well together—they're from the same ecosystem.
+Go and Kubernetes work well together. They're from the same ecosystem.
 
 **What Go does well:**
 - Fast startup (important for scaling)
@@ -378,8 +378,8 @@ Go and Kubernetes work well together—they're from the same ecosystem.
 **The verdict:**
 For Kubernetes workloads, Go's operational characteristics are excellent. Fast startup means fast scaling. Small images mean fast deployment. Low resource usage means efficient clusters.
 
-The patterns shown here—health endpoints, graceful shutdown, signal handling—are the same patterns you'd use in any language. Go just makes them explicit.
+The patterns shown here (health endpoints, graceful shutdown, signal handling) are the same patterns you'd use in any language. Go just makes them explicit.
 
 ---
 
-*Next up: observability with OpenTelemetry—metrics, traces, and logs for production Go services.*
+*Next up: observability with OpenTelemetry. Metrics, traces, and logs for production Go services.*

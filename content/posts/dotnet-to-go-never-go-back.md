@@ -44,7 +44,7 @@ I now consider "can I easily build for all platforms?" when evaluating any tool.
 
 ## Explicit Error Handling
 
-I know, I know—I literally wrote a post about `if err != nil` being tedious. But here's the thing: after months of it, I've come to appreciate the explicitness.
+I know, I know. I literally wrote a post about `if err != nil` being tedious. But after months of it, I've come to appreciate the explicitness.
 
 Every line that can fail is marked. Every error is handled (or explicitly ignored). No hidden control flow. When something goes wrong, the error path is obvious.
 
@@ -97,7 +97,7 @@ using var file = File.OpenRead(name);
 try { } finally { file.Close(); }
 ```
 
-`using` is fine, but `defer` is more flexible—it works for any cleanup, not just `IDisposable`.
+`using` is fine, but `defer` is more flexible. It works for any cleanup, not just `IDisposable`.
 
 ## Implicit Interface Satisfaction
 
@@ -146,7 +146,7 @@ In .NET, the framework is vast. Great for discoverability, but you can go deep i
 
 ## What This Means
 
-These aren't just features I like—they've changed how I think about software development:
+These aren't just features I like. They've changed how I think about software development:
 
 - **Feedback loops matter**: Fast compilation isn't a nice-to-have.
 - **Deployment simplicity compounds**: Single binaries eliminate entire categories of problems.
@@ -160,4 +160,4 @@ Would I miss these Go features? Absolutely. Some of them every single day.
 
 ---
 
-*Next time: six months in—a proper retrospective on whether this journey was worth it.*
+*Next time: six months in. A proper retrospective on whether this journey was worth it.*

@@ -33,7 +33,7 @@ if err := db.Ping(); err != nil {
 }
 ```
 
-The `sql.Open` doesn't actually connect—it just validates the connection string. `Ping` makes the actual connection.
+The `sql.Open` doesn't actually connect. It just validates the connection string. `Ping` makes the actual connection.
 
 ## Querying
 
@@ -127,7 +127,7 @@ var user User
 err := db.GetContext(ctx, &user, "SELECT * FROM users WHERE id = $1", id)
 ```
 
-`sqlx` is `database/sql` with convenience methods. It's not an ORM—still raw SQL—but much less boilerplate.
+`sqlx` is `database/sql` with convenience methods. Not an ORM (still raw SQL) but much less boilerplate.
 
 ## Transactions
 
@@ -151,7 +151,7 @@ if err != nil {
 return tx.Commit()
 ```
 
-The `defer tx.Rollback()` is safe—it does nothing if already committed.
+The `defer tx.Rollback()` is safe. It does nothing if already committed.
 
 ## Connection Pooling
 
@@ -289,4 +289,4 @@ The Go community is more accepting of ORMs than it used to be. GORM exists, and 
 
 ---
 
-*Next up: GORM—when you do want an ORM, and how it compares to Entity Framework.*
+*Next up: GORM. When you do want an ORM, and how it compares to Entity Framework.*

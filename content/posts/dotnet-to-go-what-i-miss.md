@@ -7,7 +7,7 @@ tags = ["go", "dotnet", "reflection", "csharp"]
 
 I've been writing Go full-time for a couple of months now. I like it. I'm productive. But let's be honest: there are things I miss from C#. Not everything Go does differently is better, and pretending otherwise would be tribal nonsense.
 
-Here's my genuine list of features I wish Go had—not complaints, just honest observations about trade-offs.
+Here's my genuine list of features I wish Go had. Not complaints, just honest observations about trade-offs.
 
 ## LINQ
 
@@ -143,7 +143,7 @@ func Truncate(s string, maxLength int) string {
 short := Truncate(longString, 100)
 ```
 
-Works, but doesn't chain as nicely. Discovery is harder too—you can't just type `string.` and see available operations.
+Works, but doesn't chain as nicely. Discovery is harder too. You can't just type `string.` and see available operations.
 
 ## Pattern Matching
 
@@ -224,4 +224,4 @@ Acknowledging that doesn't mean Go is bad. It means it's a tool with trade-offs,
 
 ---
 
-*Next up: the features I'll never go back for—the Go patterns that have genuinely ruined me for other languages.*
+*Next up: the features I'll never go back for. The Go patterns that have genuinely ruined me for other languages.*

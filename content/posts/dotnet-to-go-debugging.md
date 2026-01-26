@@ -103,7 +103,7 @@ The Go extension integrates Delve. Create `.vscode/launch.json`:
 }
 ```
 
-Press F5 to debug. Breakpoints, watch variables, call stack—the usual.
+Press F5 to debug. Breakpoints, watch variables, call stack. The usual.
 
 ### GoLand
 
@@ -229,7 +229,7 @@ go build -gcflags="all=-N -l"
 
 **Variables showing `<optimized out>`**
 
-Same issue—disable optimisations.
+Same issue. Disable optimisations.
 
 **Can't see struct fields**
 
@@ -301,4 +301,4 @@ Adjust your expectations, learn Delve's commands, and you'll be productive. Just
 
 ---
 
-*That wraps up the tooling section. Go's tools are simpler than .NET's—`gofmt` instead of formatting debates, `golangci-lint` instead of analyzer configuration, `go generate` instead of source generators. Simpler isn't always better, but it's often good enough.*
+*That wraps up the tooling section. Go's tools are simpler than .NET's: `gofmt` instead of formatting debates, `golangci-lint` instead of analyzer configuration, `go generate` instead of source generators. Simpler isn't always better, but it's often good enough.*

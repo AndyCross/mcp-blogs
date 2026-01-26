@@ -7,7 +7,7 @@ tags = ["go", "dotnet", "generics", "csharp"]
 
 Go shipped generics in version 1.18 (March 2022). C# has had them since 2.0 (November 2005). That's a seventeen-year head start, and it shows.
 
-If you're coming from C# expecting the same power and flexibility, you'll be disappointed. Go's generics are deliberately constrained—they solve the common cases but won't let you build the same abstractions you're used to.
+If you're coming from C# expecting the same power and flexibility, you'll be disappointed. Go's generics are deliberately constrained. They solve the common cases but won't let you build the same abstractions you're used to.
 
 Let's look at what we've got, what's missing, and whether that matters.
 
@@ -43,7 +43,7 @@ var numbers = new[] { 1, 2, 3, 4 };
 var squared = Map(numbers, n => n * n);
 ```
 
-The syntax is different but the concept is familiar. Type parameters go in square brackets in Go (`[T, U any]`) rather than angle brackets (`<T, U>`). The `any` is a constraint—more on that shortly.
+The syntax is different but the concept is familiar. Type parameters go in square brackets in Go (`[T, U any]`) rather than angle brackets (`<T, U>`). The `any` is a constraint (more on that shortly).
 
 ## Constraints
 
@@ -245,7 +245,7 @@ builder
     .Build();
 ```
 
-This pattern is harder in Go because you can't have generic methods. You'd need a different approach—probably top-level functions or a less fluent API.
+This pattern is harder in Go because you can't have generic methods. You'd need a different approach, probably top-level functions or a less fluent API.
 
 **Repository Patterns**
 
@@ -327,4 +327,4 @@ For now? Lower your expectations, use generics where they help, and don't twist 
 
 ---
 
-*Next up: nil in Go versus nullable reference types in C#—two different approaches to the billion dollar mistake, and why both languages still get caught out.*
+*Next up: nil in Go versus nullable reference types in C#. Two different approaches to the billion dollar mistake, and why both languages still get caught out.*

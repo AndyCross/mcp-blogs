@@ -7,7 +7,7 @@ tags = ["go", "dotnet", "memory", "performance", "csharp"]
 
 In C#, you mostly don't think about where variables live. Value types go on the stack (usually). Reference types go on the heap (always). The runtime and JIT make optimisations. You trust the process.
 
-In Go, you still mostly don't think about it—but for different reasons. Go decides where things live at compile time through something called escape analysis. And sometimes it makes choices that'll surprise you.
+In Go, you still mostly don't think about it, but for different reasons. Go decides where things live at compile time through something called escape analysis. And sometimes it makes choices that'll surprise you.
 
 ## The C# Mental Model
 
@@ -26,7 +26,7 @@ void Example()
 
 Value types on stack (unless boxed, captured in closures, or part of a heap object). Reference types on heap. Simple.
 
-.NET has more tricks now—`stackalloc`, `Span<T>`, `ref struct`—but the basic model is straightforward.
+.NET has more tricks now (`stackalloc`, `Span<T>`, `ref struct`) but the basic model is straightforward.
 
 ## Go's Escape Analysis
 
@@ -187,7 +187,7 @@ Go slices are similar but the escape analysis is less predictable.
 
 ### What .NET Gets Right
 
-The JIT can do escape analysis too, and it can make different decisions at runtime based on actual usage patterns. Go's compile-time analysis is conservative—it heap-allocates when unsure.
+The JIT can do escape analysis too, and it can make different decisions at runtime based on actual usage patterns. Go's compile-time analysis is conservative. It heap-allocates when unsure.
 
 ```csharp
 // .NET JIT might stack-allocate this if it proves the object doesn't escape
@@ -203,7 +203,7 @@ Go's compiler is good, but it doesn't have runtime profile-guided optimisation.
 
 Does this matter? Sometimes.
 
-For most code—web handlers, CLI tools, data processing—the GC is fast enough that escape analysis is academic. Things allocate, they get collected, life goes on.
+For most code (web handlers, CLI tools, data processing) the GC is fast enough that escape analysis is academic. Things allocate, they get collected, life goes on.
 
 For hot paths processing millions of events per second, allocation pressure matters. And here's the uncomfortable truth: **Go gives you less control than C#**.
 
@@ -227,7 +227,7 @@ func process() {
 }
 ```
 
-This doesn't avoid allocation—it reuses allocations. Different problem, similar goal.
+This doesn't avoid allocation. It reuses allocations. Different problem, similar goal.
 
 **Passing values instead of pointers for small structs:**
 
@@ -302,4 +302,4 @@ Know what's actually allocating before you fight the compiler.
 
 ---
 
-*Next up: slices in depth—they're not arrays, they're not List<T>, and the gotchas around capacity, length, and shared backing arrays will bite you eventually.*
+*Next up: slices in depth. They're not arrays, they're not List<T>, and the gotchas around capacity, length, and shared backing arrays will bite you eventually.*

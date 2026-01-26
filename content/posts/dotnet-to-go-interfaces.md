@@ -84,7 +84,7 @@ func ProcessData(q Querier) { ... }
 
 You created a new interface. `Database` implements it without any modification. Your production code doesn't change. Your tests can use a mock `Querier`. Beautiful.
 
-In C#, you'd need to go back and add `: IQuerier` to `Database`. That's a code change, a new commit, potentially a new deployment—all for what should be a refactoring detail.
+In C#, you'd need to go back and add `: IQuerier` to `Database`. That's a code change, a new commit, potentially a new deployment. All for what should be a refactoring detail.
 
 ### Small Interfaces Are Encouraged
 
@@ -104,7 +104,7 @@ type Closer interface {
 }
 ```
 
-One method each. Dozens of types implement `Reader`—files, network connections, HTTP response bodies, byte buffers, compression streams. They don't know about each other. They just happen to have a `Read` method.
+One method each. Dozens of types implement `Reader`: files, network connections, HTTP response bodies, byte buffers, compression streams. They don't know about each other. They just happen to have a `Read` method.
 
 This leads to highly composable code. Functions take the smallest interface they need:
 
@@ -228,7 +228,7 @@ Then I realised: the caller defines what it needs. The implementer just provides
 **What Go does better:**
 - Define interfaces at the point of use, not declaration
 - Small, composable interfaces are natural
-- No ceremony—just write the methods
+- No ceremony, just write the methods
 - Retroactive interface satisfaction
 - Decouples interface from implementation completely
 
@@ -246,4 +246,4 @@ The interface belongs to the consumer, not the producer. That inversion takes ti
 
 ---
 
-*Next up: composition via embedding—Go's alternative to inheritance, and why you really won't miss base classes.*
+*Next up: composition via embedding. Go's alternative to inheritance, and why you really won't miss base classes.*

@@ -330,4 +330,4 @@ Start simple. Environment variables and `envconfig` get you far. Reach for Viper
 
 ---
 
-*Next up: logging with slog—Go's new structured logging standard and how it compares to ILogger.*
+*Next up: logging with slog. Go's new structured logging standard and how it compares to ILogger.*

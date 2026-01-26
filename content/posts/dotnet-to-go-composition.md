@@ -9,7 +9,7 @@ We've all heard "favour composition over inheritance." We've all nodded sagely. 
 
 Go doesn't give you the choice. There's no inheritance. Zero. You can't extend a type. You can't override methods. There's no `virtual`, no `abstract`, no `base`.
 
-Instead, Go has **embedding**—a form of composition that feels almost like inheritance but isn't. And after using it for a while, I genuinely don't miss base classes.
+Instead, Go has **embedding**, a form of composition that feels almost like inheritance but isn't. And after using it for a while, I genuinely don't miss base classes.
 
 ## What Is Embedding?
 
@@ -264,7 +264,7 @@ More explicit, arguably clearer, but more code.
 
 **Protected Members:**
 
-C# has `protected`—visible to derived classes. Go has nothing like this. Everything is either exported (public) or unexported (package-private).
+C# has `protected`, visible to derived classes. Go has nothing like this. Everything is either exported (public) or unexported (package-private).
 
 If you want controlled extension points, you design them explicitly with interfaces, not protected methods.
 
@@ -340,4 +340,4 @@ And honestly? Those deep inheritance hierarchies you built in C#? They probably 
 
 ---
 
-*Next up: the empty interface and type assertions—when you're basically back to `object`, and how to work with Go's dynamic typing escape hatch.*
+*Next up: the empty interface and type assertions. When you're basically back to `object`, and how to work with Go's dynamic typing escape hatch.*

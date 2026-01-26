@@ -51,12 +51,12 @@ fmt.Println(*p)  // 42 - dereference to get value
 
 Two operators, two meanings:
 
-- `&` means "give me the address of this thing"—where it lives in memory
-- `*` means "follow this address to the thing it points at"—dereferencing
+- `&` means "give me the address of this thing", where it lives in memory
+- `*` means "follow this address to the thing it points at", dereferencing
 
 ### What's Dereferencing?
 
-If a pointer is an address—"the data lives at memory location 0x1234"—then dereferencing is following that address to get the actual data. It's a bit of a mouthful: "follow the pointer to the thing that is pointed at." That's why we just use a little `*`.
+If a pointer is an address ("the data lives at memory location 0x1234") then dereferencing is following that address to get the actual data. It's a bit of a mouthful: "follow the pointer to the thing that is pointed at." That's why we just use a little `*`.
 
 Think of it like a postal address. The pointer `p` is the address on an envelope. Dereferencing `*p` is going to that address and looking at what's actually there.
 
@@ -74,7 +74,7 @@ fmt.Println(x)   // prints 100 - x changed because p points to x
 
 The `*` does double duty in Go (and C):
 - In a type declaration, `*int` means "pointer to int"
-- As an operator, `*p` means "dereference p—follow the pointer"
+- As an operator, `*p` means "dereference p, follow the pointer"
 
 This is confusing for about a week, then it becomes second nature.
 
@@ -127,7 +127,7 @@ var user *User = nil
 fmt.Println(user.Name)  // panic: runtime error: invalid memory address
 ```
 
-When you try to dereference a nil pointer—follow an address that doesn't point anywhere—Go panics. There's nothing at that address to read.
+When you try to dereference a nil pointer (follow an address that doesn't point anywhere) Go panics. There's nothing at that address to read.
 
 No nullable reference types. No compile-time null safety. Just runtime panics.
 
@@ -221,7 +221,7 @@ Go's pointers are garbage-collected. You can't:
 - Have dangling pointers (the GC keeps referenced memory alive)
 - Cast pointers to integers (without `unsafe`)
 
-This is why Go pointers are "safe"—they're really just references with explicit syntax. All the scary C stuff is locked behind the `unsafe` package.
+This is why Go pointers are "safe". They're really just references with explicit syntax. All the scary C stuff is locked behind the `unsafe` package.
 
 ## The `unsafe` Package
 
@@ -243,7 +243,7 @@ The `unsafe` package lets you:
 - Access struct padding
 - Generally shoot yourself in the foot
 
-If you're using `unsafe` outside of extremely low-level code, you're probably doing something wrong. It exists for syscalls, memory-mapped I/O, and interop—not for your web handlers.
+If you're using `unsafe` outside of extremely low-level code, you're probably doing something wrong. It exists for syscalls, memory-mapped I/O, and interop. Not for your web handlers.
 
 ## Comparing to C# `ref` and Pointers
 
@@ -288,4 +288,4 @@ You'll write `*User` a lot. You'll occasionally forget to check for nil. You'll 
 
 ---
 
-*Next up: stack vs heap allocation and escape analysis—Go decides where your variables live, and you don't always get a vote.*
+*Next up: stack vs heap allocation and escape analysis. Go decides where your variables live, and you don't always get a vote.*

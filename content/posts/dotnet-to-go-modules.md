@@ -7,7 +7,7 @@ tags = ["go", "dotnet", "dependencies", "csharp"]
 
 Right, let's talk about dependencies. In .NET land, we've got NuGet, `.csproj` files, `PackageReference` elements, version ranges, transitive dependencies, and `packages.lock.json` if we're being careful. It's a mature ecosystem with excellent tooling.
 
-Go does things differently. There's no NuGet. There's no package registry at all, actually. And that sounds mental until you understand why—and discover it works rather well.
+Go does things differently. There's no NuGet. There's no package registry at all, actually. And that sounds mental until you understand why. It works rather well.
 
 ## The go.mod File
 
@@ -38,7 +38,7 @@ Let's break this down.
 module github.com/yourname/yourproject
 ```
 
-This is your module's identity—its import path. When someone writes `import "github.com/yourname/yourproject/pkg/whatever"`, Go knows where to find it because of this declaration.
+This is your module's identity, its import path. When someone writes `import "github.com/yourname/yourproject/pkg/whatever"`, Go knows where to find it because of this declaration.
 
 Unlike a `.csproj` where the assembly name is mostly internal, this path is *the* identifier. Choose it thoughtfully.
 
@@ -48,7 +48,7 @@ Unlike a `.csproj` where the assembly name is mostly internal, this path is *the
 go 1.22
 ```
 
-This declares the minimum Go version required. It's not exactly the same as `<TargetFramework>net8.0</TargetFramework>`—you're not compiling for a specific runtime. You're just saying "this code uses features from Go 1.22, don't try to build it with something older."
+This declares the minimum Go version required. Not quite the same as `<TargetFramework>net8.0</TargetFramework>`. You're not compiling for a specific runtime. You're just saying "this code uses features from Go 1.22, don't try to build it with something older."
 
 ### Dependencies
 
@@ -59,7 +59,7 @@ require (
 )
 ```
 
-Here's where it gets interesting. These are your direct dependencies—the packages you actually import in your code.
+Here's where it gets interesting. These are your direct dependencies, the packages you actually import in your code.
 
 Notice the format: `module-path version`. The version uses semantic versioning prefixed with `v`. No version ranges. No floating versions. Exactly this version, every time.
 
@@ -71,7 +71,7 @@ require (
 )
 ```
 
-The `// indirect` comment marks transitive dependencies—packages that your dependencies need, but you don't import directly. Go tracks these explicitly in `go.mod`.
+The `// indirect` comment marks transitive dependencies, packages that your dependencies need, but you don't import directly. Go tracks these explicitly in `go.mod`.
 
 ## No Central Registry
 
@@ -79,7 +79,7 @@ Here's the thing that confused me coming from NuGet: Go doesn't have a package r
 
 NuGet has nuget.org. npm has npmjs.com. Go has... URLs.
 
-When you `go get github.com/gin-gonic/gin`, Go literally fetches from GitHub. The module path isn't an identifier that maps to a registry—it's a resolvable URL (with some clever translation rules).
+When you `go get github.com/gin-gonic/gin`, Go literally fetches from GitHub. The module path isn't an identifier that maps to a registry. It's a resolvable URL (with some clever translation rules).
 
 This means:
 - No registry account needed to publish
@@ -148,7 +148,7 @@ This flexibility is powerful but creates problems:
 
 Go uses something called Minimum Version Selection (MVS). The idea: given all the version constraints, pick the *minimum* version that satisfies everything.
 
-If you require `v1.9.1` and a dependency requires `v1.8.0` of the same module, Go picks `v1.9.1`—the minimum version that satisfies both.
+If you require `v1.9.1` and a dependency requires `v1.8.0` of the same module, Go picks `v1.9.1`. The minimum version that satisfies both.
 
 No ranges. No "latest compatible." Just: here are the minimums everyone needs, let's use those.
 
@@ -156,7 +156,7 @@ The result? Given the same `go.mod` and `go.sum` files, you'll always get exactl
 
 ### The go.sum File
 
-Speaking of which—`go.sum` is Go's integrity file:
+Speaking of which, `go.sum` is Go's integrity file:
 
 ```
 github.com/gin-gonic/gin v1.9.1 h1:4idEAncQnU5...
@@ -238,7 +238,7 @@ Public modules "just work." Private repos need GOPROXY configuration or GOPRIVAT
 
 ### Vendor Directory
 
-Go can vendor dependencies—copy them into a `vendor/` directory in your project. Some teams mandate this for reproducibility. If you see a vendor directory, know that `go build` will use it by default.
+Go can vendor dependencies (copy them into a `vendor/` directory in your project). Some teams mandate this for reproducibility. If you see a vendor directory, know that `go build` will use it by default.
 
 ## The Honest Take
 
@@ -274,4 +274,4 @@ Whether you prefer this philosophy is personal. But understanding *why* Go made 
 
 ---
 
-*Next in the series: packages and imports—why Go's package system is nothing like namespaces, and how to stop your C# brain from making it harder than it needs to be.*
+*Next in the series: packages and imports. Why Go's package system is nothing like namespaces, and how to stop your C# brain from making it harder than it needs to be.*

@@ -63,7 +63,7 @@ In C#, visibility is per-member and you have fine-grained control. In Go, the pa
 | `internal` | Lowercase (package = assembly, roughly) |
 | `private protected` | Doesn't exist |
 
-The lack of `protected` is the big one. There's no "visible to derived types" because there are no derived types. Embedding doesn't grant special access—embedded types can only access their own unexported members.
+The lack of `protected` is the big one. There's no "visible to derived types" because there are no derived types. Embedding doesn't grant special access. Embedded types can only access their own unexported members.
 
 ## No Properties, Just Fields
 
@@ -249,7 +249,7 @@ type User struct {
 }
 ```
 
-These are just strings—the runtime and libraries parse them by convention. The `json` package looks for `json:` tags. Database libraries look for `db:` tags. Validation libraries look for `validate:` tags.
+These are just strings. The runtime and libraries parse them by convention. The `json` package looks for `json:` tags. Database libraries look for `db:` tags. Validation libraries look for `validate:` tags.
 
 It's less type-safe than C# attributes (no compile-time checking of tag names), but it's simple and works.
 
@@ -287,7 +287,7 @@ After months of Go, here's where I've landed:
 
 4. **Return errors from setters that validate**. Don't panic, don't silently fail.
 
-5. **Keep packages small and focused**. The package boundary is your encapsulation tool—make packages that are cohesive enough that sharing unexported identifiers makes sense.
+5. **Keep packages small and focused**. The package boundary is your encapsulation tool. Make packages that are cohesive enough that sharing unexported identifiers makes sense.
 
 6. **Use `internal/` for module-private packages**. Better than making everything unexported in a shared package.
 
@@ -295,4 +295,4 @@ The shift from "everything should have properties" to "fields are fine, methods 
 
 ---
 
-*Next up: generics in Go—what we got in Go 1.18, where the gaps are, and why you'll need to adjust your expectations if you're used to C#'s mature generics.*
+*Next up: generics in Go. What we got in Go 1.18, where the gaps are, and why you'll need to adjust your expectations if you're used to C#'s mature generics.*

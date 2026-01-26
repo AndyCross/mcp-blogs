@@ -377,4 +377,4 @@ The more interesting question is channels vs mutexes. Go developers sometimes ov
 
 ---
 
-*Next up: context.Context—Go's answer to CancellationToken, and arguably one of the most important patterns in Go.*
+*Next up: context.Context. Go's answer to CancellationToken, and arguably one of the most important patterns in Go.*

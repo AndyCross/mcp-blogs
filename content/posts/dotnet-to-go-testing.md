@@ -319,4 +319,4 @@ For complex test scenarios, you might miss xUnit's features. But honestly? Most 
 
 ---
 
-*Next up: mocking in Go—interfaces, hand-written fakes, and when to reach for testify/mock.*
+*Next up: mocking in Go. Interfaces, hand-written fakes, and when to reach for testify/mock.*

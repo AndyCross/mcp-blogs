@@ -7,7 +7,7 @@ tags = ["go", "dotnet", "testing", "performance", "benchmarks", "csharp"]
 
 Here's something that surprised me: Go has built-in benchmarking. No BenchmarkDotNet to install. No configuration. Write a function, run `go test -bench`, get numbers.
 
-And profiling? Also built in. CPU profiles, memory profiles, blocking profiles—all from the standard toolchain.
+And profiling? Also built in. CPU profiles, memory profiles, blocking profiles. All from the standard toolchain.
 
 Coming from .NET where you install BenchmarkDotNet for proper benchmarks and a separate profiler for profiling, Go's integrated approach is refreshing.
 
@@ -345,4 +345,4 @@ But Go wins on the "I can just do this" factor. No packages to install. No proje
 
 ---
 
-*That wraps up Phase 2 on the ecosystem—project structure, testing, mocking, and benchmarking. These are the tools you'll use every day. Go's approach is consistently simpler than .NET's, with trade-offs in power and flexibility. But for most work, simpler is better.*
+*That wraps up Phase 2 on the ecosystem: project structure, testing, mocking, and benchmarking. These are the tools you'll use every day. Go's approach is consistently simpler than .NET's, with trade-offs in power and flexibility. But for most work, simpler is better.*

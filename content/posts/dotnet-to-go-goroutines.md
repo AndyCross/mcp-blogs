@@ -43,11 +43,11 @@ public async Task ProcessUsersAsync()
 }
 ```
 
-This model is explicit, type-safe, and viral—once you have an async function, everything that calls it tends to become async too.
+This model is explicit, type-safe, and viral. Once you have an async function, everything that calls it tends to become async too.
 
 ## The Go Model: Just... Go
 
-Go's approach is radically simpler:
+Go's approach is simpler:
 
 ```go
 func GetUser(id int) (*User, error) {
@@ -82,7 +82,7 @@ A goroutine is a lightweight thread managed by Go's runtime. Think of it as a Ta
 
 - **Cheaper**: Goroutines start with ~2KB stack (vs ~1MB for OS threads)
 - **Multiplexed**: Go's scheduler runs thousands of goroutines on a few OS threads
-- **Implicit**: No `Task.Run()` ceremony—just `go f()`
+- **Implicit**: No `Task.Run()` ceremony, just `go f()`
 
 ```go
 func main() {
@@ -105,7 +105,7 @@ Here's where things get interesting. When you `go` a function, you can't get its
 result := go GetUser(1)  // DOESN'T WORK - go doesn't return anything
 ```
 
-The `go` keyword fires and forgets. If you need results, you need **channels**—which we'll cover properly in the next post. For now, here's a taste:
+The `go` keyword fires and forgets. If you need results, you need **channels**, which we'll cover properly in the next post. For now, here's a taste:
 
 ```go
 func main() {
@@ -177,7 +177,7 @@ In Go, blocking is the default and it's fine:
 user, err := GetUser(1)
 ```
 
-Why? Because Go's scheduler is cooperative. When a goroutine blocks on I/O, the scheduler runs other goroutines on the same OS thread. You're not tying up a thread pool thread—you're just pausing one goroutine.
+Why? Because Go's scheduler is cooperative. When a goroutine blocks on I/O, the scheduler runs other goroutines on the same OS thread. You're not tying up a thread pool thread. You're just pausing one goroutine.
 
 This is why Go doesn't need async/await. Blocking calls don't waste resources because the runtime handles the multiplexing.
 
@@ -217,7 +217,7 @@ Parallel.ForEach(items, item => Process(item));
 await Task.WhenAll(items.Select(item => ProcessAsync(item)));
 ```
 
-Both work, but Go's is more uniform—same syntax for I/O-bound and CPU-bound concurrency.
+Both work, but Go's is more uniform: same syntax for I/O-bound and CPU-bound concurrency.
 
 ## When C# Feels Better
 
@@ -230,7 +230,7 @@ var summary = await BuildSummaryAsync(user, orders);
 return summary;
 ```
 
-This sequential async flow is clean in C#. In Go, you'd write the same thing without any special syntax—which is fine, but you don't get the visual markers of "this is I/O."
+This sequential async flow is clean in C#. In Go, you'd write the same thing without any special syntax. Fine, but you don't get the visual markers of "this is I/O."
 
 **Parallel with results:**
 
@@ -274,9 +274,9 @@ Here's what took me time to internalise:
 
 ## The Honest Take
 
-Go's concurrency model is simpler to start with and scales well. The lack of function colouring is genuinely liberating—no more "async virus" infecting your codebase.
+Go's concurrency model is simpler to start with and scales well. The lack of function colouring is genuinely liberating. No more "async virus" infecting your codebase.
 
-But C#'s model is more explicit about what's happening. When you see `await`, you know there's a potential suspension point. In Go, any function call might block, and that's... fine, but less visible.
+But C#'s model is more explicit about what's happening. When you see `await`, you know there's a potential suspension point. In Go, any function call might block. That's fine, but less visible.
 
 **What Go does better:**
 - No function colouring
@@ -294,4 +294,4 @@ Neither is objectively better. They're different philosophies. Go says "concurre
 
 ---
 
-*Next up: channels—Go's answer to BlockingCollection, and the primary way goroutines communicate.*
+*Next up: channels. Go's answer to BlockingCollection, and the primary way goroutines communicate.*

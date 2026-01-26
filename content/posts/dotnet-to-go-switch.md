@@ -5,7 +5,7 @@ draft = false
 tags = ["go", "dotnet", "control-flow", "csharp"]
 +++
 
-C#'s switch statement has evolved a lot over the years. Pattern matching, switch expressions, when guards—it's become genuinely powerful. But Go's switch has some tricks that'll make you wish C# worked this way.
+C#'s switch statement has evolved a lot over the years. Pattern matching, switch expressions, when guards. It's become genuinely powerful. But Go's switch has some tricks that'll make you wish C# worked this way.
 
 Let's look at what Go's switch can do, including the bits that'll trip you up.
 
@@ -37,7 +37,7 @@ case "Friday":
 }
 ```
 
-This is a genuine improvement. The C# pattern of requiring `break` after every case was a source of bugs for decades. Go's default—exit after each case—matches what you almost always want.
+This is a genuine improvement. The C# pattern of requiring `break` after every case was a source of bugs for decades. Go's default (exit after each case) matches what you almost always want.
 
 ## Multiple Values Per Case
 
@@ -111,7 +111,7 @@ case "Friday":
 // Friday prints just "Weekend soon!"
 ```
 
-Important: `fallthrough` must be the last statement in a case, and it falls into the next case unconditionally—it doesn't re-evaluate the case expression.
+Important: `fallthrough` must be the last statement in a case, and it falls into the next case unconditionally. It doesn't re-evaluate the case expression.
 
 ```go
 // This is usually wrong
@@ -216,7 +216,7 @@ var message = day switch
 };
 ```
 
-Go doesn't have switch expressions—switch is always a statement, not an expression. You can't do:
+Go doesn't have switch expressions. Switch is always a statement, not an expression. You can't do:
 
 ```go
 // This doesn't work in Go
@@ -428,4 +428,4 @@ Go's switch is simpler and covers the common cases elegantly. C#'s switch has mo
 
 ---
 
-*That wraps up Phase 3 on control flow and error handling. Next we'll move into concurrency—goroutines, channels, and why Go's approach to parallelism is fundamentally different from async/await.*
+*That wraps up Phase 3 on control flow and error handling. Next we'll move into concurrency: goroutines, channels, and why Go's approach to parallelism is fundamentally different from async/await.*

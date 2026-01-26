@@ -334,4 +334,4 @@ The bigger lesson: good interface design reduces mocking complexity in any langu
 
 ---
 
-*Next up: benchmarks and profiling—`go test -bench` and pprof for understanding where your performance actually goes.*
+*Next up: benchmarks and profiling. `go test -bench` and pprof for understanding where your performance actually goes.*

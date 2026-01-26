@@ -154,19 +154,19 @@ func getUser(w http.ResponseWriter, r *http.Request) {
 
 Before 1.22, you needed a third-party router. Many projects still use them:
 
-**chi** — lightweight, idiomatic:
+**chi**: lightweight, idiomatic:
 ```go
 r := chi.NewRouter()
 r.Get("/users/{id}", getUser)
 ```
 
-**gorilla/mux** — feature-rich (now maintained by community):
+**gorilla/mux**: feature-rich (now maintained by community):
 ```go
 r := mux.NewRouter()
 r.HandleFunc("/users/{id}", getUser).Methods("GET")
 ```
 
-**gin** — fast, popular, framework-like:
+**gin**: fast, popular, framework-like:
 ```go
 r := gin.Default()
 r.GET("/users/:id", getUser)
@@ -343,4 +343,4 @@ Neither is wrong. Go gives you the choice that ASP.NET Core makes for you.
 
 ---
 
-*Next up: JSON handling—struct tags, marshalling, and why it's more manual than Newtonsoft.*
+*Next up: JSON handling. Struct tags, marshalling, and why it's more manual than Newtonsoft.*

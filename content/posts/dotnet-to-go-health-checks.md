@@ -5,7 +5,7 @@ draft = false
 tags = ["go", "dotnet", "health-checks", "kubernetes", "csharp"]
 +++
 
-We touched on health checks in the Kubernetes post. Let's go deeper—proper health checks that actually tell orchestrators useful information.
+We touched on health checks in the Kubernetes post. Let's go deeper. Proper health checks that actually tell orchestrators useful information.
 
 ## The Three Probes
 
@@ -77,7 +77,7 @@ func (h *HealthChecker) ReadinessHandler(w http.ResponseWriter, r *http.Request)
 }
 ```
 
-If readiness fails, Kubernetes removes the pod from the Service endpoints. Traffic goes elsewhere. The pod isn't restarted—it just doesn't receive requests until it's ready again.
+If readiness fails, Kubernetes removes the pod from the Service endpoints. Traffic goes elsewhere. The pod isn't restarted. It just doesn't receive requests until it's ready again.
 
 ## Startup: Am I Done Initialising?
 
@@ -193,7 +193,7 @@ func (h *HealthChecker) ReadinessHandler(w http.ResponseWriter, r *http.Request)
     // Cache is nice-to-have, log but don't fail readiness
     if err := h.cache.Ping(ctx).Err(); err != nil {
         slog.Warn("cache unavailable", "error", err)
-        // Don't fail readiness—we can operate without cache
+        // Don't fail readiness - we can operate without cache
     }
     
     w.WriteHeader(http.StatusOK)
@@ -259,12 +259,12 @@ But honestly, health checks are simple enough that most Go developers write them
 
 ## Best Practices
 
-1. **Keep liveness simple**—don't check dependencies
-2. **Make readiness reflect reality**—check what matters for serving traffic
-3. **Use timeouts**—don't let health checks hang forever
-4. **Return quickly**—health checks shouldn't be expensive
-5. **Log failures**—debugging health issues needs information
-6. **Test health checks**—they're code, they can have bugs
+1. **Keep liveness simple**. Don't check dependencies.
+2. **Make readiness reflect reality**. Check what matters for serving traffic.
+3. **Use timeouts**. Don't let health checks hang forever.
+4. **Return quickly**. Health checks shouldn't be expensive.
+5. **Log failures**. Debugging health issues needs information.
+6. **Test health checks**. They're code, they can have bugs.
 
 ## Kubernetes Configuration
 
@@ -313,10 +313,10 @@ Health checks aren't glamorous, but they're essential for production reliability
 - Better integration with DI
 
 **The verdict:**
-Go makes you write health checks yourself. That's fine—they're not complicated. The patterns are the same in any language: liveness for "am I stuck?", readiness for "can I serve traffic?".
+Go makes you write health checks yourself. That's fine. They're not complicated. The patterns are the same in any language: liveness for "am I stuck?", readiness for "can I serve traffic?".
 
 Get these right and your services will be resilient. Get them wrong and you'll have restart loops and cascading failures.
 
 ---
 
-*Next up: GitHub Actions for Go—CI/CD with testing, linting, and releasing.*
+*Next up: GitHub Actions for Go. CI/CD with testing, linting, and releasing.*

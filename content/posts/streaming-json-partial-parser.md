@@ -7,7 +7,7 @@ tags = ["llm", "ai", "typescript", "streaming"]
 
 I've been building conversational AI features recently, and I hit an annoying problem: I want *structured* responses from the LLM (JSON with specific fields), but I also want to *stream* the response text to the user as it generates. These two goals don't play nicely together.
 
-When you ask an LLM to respond with structured JSON, you can't show anything to the user until the entire response arrives and parses successfully. That's a rubbish user experience—users stare at a spinner for seconds while the model churns through tokens that could already be on screen.
+When you ask an LLM to respond with structured JSON, you can't show anything to the user until the entire response arrives and parses successfully. That's a rubbish user experience. Users stare at a spinner for seconds while the model churns through tokens that could already be on screen.
 
 So I wrote a partial JSON parser. It's scrappy, it's specific to my use case, and it works beautifully.
 
@@ -223,7 +223,7 @@ The user sees the response text appearing token-by-token, exactly like a normal 
 
 ## Why Not Use a Streaming JSON Library?
 
-There are proper streaming JSON parsers out there. But they're solving a different problem—parsing arbitrarily nested JSON incrementally. That's complex. My needs are simpler:
+There are proper streaming JSON parsers out there. But they're solving a different problem: parsing arbitrarily nested JSON incrementally. That's complex. My needs are simpler:
 
 1. I only care about one field (`response`)
 2. The structure is known and flat
@@ -253,7 +253,7 @@ If your needs are more complex, look at something like [partial-json-parser](htt
 
 Before this, users waited 3-4 seconds staring at nothing while the model generated a full response. Now they see text appearing immediately, exactly like ChatGPT or Claude's native interfaces.
 
-The structured data still arrives at the end—but by then, the user has already read most of the response. The suggestions and metadata feel like a bonus, not something they waited for.
+The structured data still arrives at the end, but by then the user has already read most of the response. The suggestions and metadata feel like a bonus, not something they waited for.
 
 Small change, significant improvement. That's the kind of optimisation I like.
 

@@ -64,7 +64,7 @@ Verbose? Yes. But look at what you can see:
 - Every line that can fail is marked with `err :=` or `, err`
 - You know exactly what error each block handles
 - The handling is right next to the call that produced the error
-- No hidden control flow—the code does what it looks like it does
+- No hidden control flow. The code does what it looks like it does
 
 ## The Error Interface
 
@@ -90,7 +90,7 @@ err := errors.New("something went wrong")
 err := fmt.Errorf("failed to load user %d: %w", userID, originalErr)
 ```
 
-That `%w` verb is important—it wraps the original error, preserving the chain.
+That `%w` verb is important. It wraps the original error, preserving the chain.
 
 ## The Pattern You'll Write Forever
 
@@ -318,7 +318,7 @@ func MustLoadConfig(path string) Config {
 }
 ```
 
-Use `Must` functions sparingly—only for program setup where failure means "can't start."
+Use `Must` functions sparingly. Only for program setup where failure means "can't start."
 
 ## What You're Actually Getting
 
@@ -328,7 +328,7 @@ After the initial frustration wears off, here's what explicit errors give you:
 
 **Local reasoning.** You handle errors where they occur. No tracing back through call stacks.
 
-**No performance penalty.** Error returns are just values—no stack unwinding, no runtime cost.
+**No performance penalty.** Error returns are just values. No stack unwinding, no runtime cost.
 
 **Forced consideration.** You can't ignore errors accidentally. (Well, you can with `_`, but it's deliberate.)
 
@@ -353,7 +353,7 @@ After the initial frustration wears off, here's what explicit errors give you:
 - You can see which calls can fail
 - Error handling is local and explicit
 - No surprise exceptions from deep in the stack
-- Errors are values—you can store, compare, wrap them
+- Errors are values. You can store, compare, wrap them
 
 **Things I miss from C#:**
 
@@ -364,10 +364,10 @@ After the initial frustration wears off, here's what explicit errors give you:
 
 **The verdict:**
 
-Go's approach is more verbose but more honest. Once you accept that error handling is part of your code—not something that happens off to the side—the verbosity starts to feel appropriate.
+Go's approach is more verbose but more honest. Once you accept that error handling is part of your code (not something that happens off to the side) the verbosity starts to feel appropriate.
 
 You're not writing boilerplate. You're writing error handling. It just happens to look the same every time because handling errors correctly *is* repetitive.
 
 ---
 
-*Next up: panic and recover—Go's actual exception mechanism, why it exists, and why using it for normal errors will get you judged.*
+*Next up: panic and recover. Go's actual exception mechanism, why it exists, and why using it for normal errors will get you judged.*

@@ -58,7 +58,7 @@ Most developers use `goimports` instead of plain `gofmt`. Configure your editor 
 
 Formatting ensures consistency. Linting catches bugs and enforces best practices.
 
-`golangci-lint` is the standard meta-linter—it runs many linters in one tool:
+`golangci-lint` is the standard meta-linter. It runs many linters in one tool:
 
 ```bash
 # Install
@@ -160,7 +160,7 @@ Many issues that would be runtime errors become compile-time warnings.
 | CI integration | Easy | Easy |
 | Auto-fix | Many rules | Some rules |
 
-.NET has the advantage of the Roslyn compiler platform—analyzers can be very sophisticated. Go's linters are simpler but catch most issues.
+.NET has the advantage of the Roslyn compiler platform. Analyzers can be very sophisticated. Go's linters are simpler but catch most issues.
 
 ## Editor Integration
 
@@ -239,7 +239,7 @@ repos:
 Go's enforced formatting is one of its best features. No arguments, no decisions, no config files.
 
 **What Go does better:**
-- No bikeshedding—ever
+- No bikeshedding. Ever.
 - All code looks the same
 - `gofmt` is fast and universal
 - No configuration to maintain
@@ -257,4 +257,4 @@ The Go community's attitude is refreshing: format your code, lint it, and spend 
 
 ---
 
-*Next up: code generation with `go generate`—why Go developers love generating code.*
+*Next up: code generation with `go generate`. Why Go developers love generating code.*

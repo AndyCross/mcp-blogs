@@ -95,7 +95,7 @@ func addItem(items *[]int, item int) {
 addItem(&s, 4)
 ```
 
-In C#, this wouldn't be a problem—`List<T>` is a reference type:
+In C#, this wouldn't be a problem. `List<T>` is a reference type:
 
 ```csharp
 void AddItem(List<int> items, int item) {
@@ -285,8 +285,8 @@ Slices are Go's most footgun-laden feature. They look simple, they have subtle s
 - No boxing, good cache locality
 
 **What C# does better:**
-- `List<T>` is a reference type—modifications are visible everywhere
-- Range slicing copies by default—no surprise aliasing
+- `List<T>` is a reference type, modifications are visible everywhere
+- Range slicing copies by default, no surprise aliasing
 - `Span<T>` gives you explicit no-copy semantics when you want them
 - You don't have to remember the three-index slice syntax
 
@@ -297,4 +297,4 @@ My advice: be paranoid about slice aliasing. Copy when returning subslices. Alwa
 
 ---
 
-*That wraps up the memory section. Next we'll move into concurrency—goroutines, channels, and why Go's approach is fundamentally different from async/await.*
+*That wraps up the memory section. Next we'll move into concurrency: goroutines, channels, and why Go's approach is fundamentally different from async/await.*

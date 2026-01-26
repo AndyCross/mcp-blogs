@@ -7,7 +7,7 @@ tags = ["go", "dotnet", "deployment", "cross-compilation", "csharp"]
 
 Here's the thing that sold me on Go for production: you build a binary, you copy it to a server, you run it. No runtime to install. No framework version matching. No dependency hell. Just a file.
 
-If you've ever dealt with .NET runtime versioning on servers, or debugged why `dotnet` can't find the right SDK, or explained to ops why they need to install framework X before deploying your app—Go's deployment model will feel like a revelation.
+If you've ever dealt with .NET runtime versioning on servers, or debugged why `dotnet` can't find the right SDK, or explained to ops why they need to install framework X before deploying your app, Go's deployment model will feel like a revelation.
 
 ## The .NET Deployment Model
 
@@ -126,7 +126,7 @@ Static linking means:
 
 ### CGO and Dynamic Linking
 
-The exception is CGO—Go code that calls C libraries:
+The exception is CGO, Go code that calls C libraries:
 
 ```go
 // #include <sqlite3.h>
@@ -254,7 +254,7 @@ Single binary deployment is Go's killer feature for operations.
 - Native AOT on more platforms (eventually)
 
 **The verdict:**
-If deployment simplicity matters—and it should—Go wins. One binary, one target, done. 
+If deployment simplicity matters (and it should) Go wins. One binary, one target, done. 
 
 Your ops team will thank you. Your deployment scripts will be three lines. Your containers will be tiny. Your CI/CD will be simple.
 
@@ -262,4 +262,4 @@ This is the feature that keeps Go relevant in a world of VMs and containers. Sim
 
 ---
 
-*Next up: shrinking binaries and build tags—ldflags, conditional compilation, and getting even leaner.*
+*Next up: shrinking binaries and build tags. ldflags, conditional compilation, and getting even leaner.*

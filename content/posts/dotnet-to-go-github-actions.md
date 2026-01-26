@@ -5,7 +5,7 @@ draft = false
 tags = ["go", "dotnet", "ci-cd", "github-actions", "csharp"]
 +++
 
-CI/CD for Go projects is refreshingly simple. Fast builds, built-in testing, cross-compilation—everything you need is in the standard toolchain.
+CI/CD for Go projects is refreshingly simple. Fast builds, built-in testing, cross-compilation. Everything you need is in the standard toolchain.
 
 Let's set up a proper GitHub Actions workflow.
 
@@ -399,4 +399,4 @@ If you're used to complex MSBuild configurations and NuGet publishing workflows,
 
 ---
 
-*Next up: versioning your modules—semantic versioning, tags, and avoiding dependency hell.*
+*Next up: versioning your modules. Semantic versioning, tags, and avoiding dependency hell.*

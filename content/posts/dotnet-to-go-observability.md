@@ -7,7 +7,7 @@ tags = ["go", "dotnet", "observability", "opentelemetry", "csharp"]
 
 Observability in production means three things: metrics (what's happening), traces (how requests flow), and logs (what went wrong). OpenTelemetry unifies all three.
 
-Go's OpenTelemetry support is mature—the project itself is Go-native. Let's instrument a Go service properly.
+Go's OpenTelemetry support is mature. The project itself is Go-native. Let's instrument a Go service properly.
 
 ## OpenTelemetry Setup
 
@@ -364,7 +364,7 @@ exporter, _ := stdouttrace.New(stdouttrace.WithPrettyPrint())
 
 ## The Honest Take
 
-Go's OpenTelemetry support is excellent—the project is Go-native.
+Go's OpenTelemetry support is excellent. The project is Go-native.
 
 **What Go does well:**
 - OTel is Go-native
@@ -381,8 +381,8 @@ Go's OpenTelemetry support is excellent—the project is Go-native.
 **The verdict:**
 OpenTelemetry in Go requires more explicit setup than .NET's automatic instrumentation. But once configured, it works well.
 
-The key patterns—wrap HTTP handlers, propagate context, create spans for significant operations—are the same in any language. Go just makes you write them out.
+The key patterns (wrap HTTP handlers, propagate context, create spans for significant operations) are the same in any language. Go just makes you write them out.
 
 ---
 
-*Next up: health checks and readiness probes—patterns that work in container orchestrators.*
+*Next up: health checks and readiness probes. Patterns that work in container orchestrators.*

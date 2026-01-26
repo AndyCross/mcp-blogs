@@ -5,7 +5,7 @@ draft = false
 tags = ["go", "dotnet", "concurrency", "channels", "csharp"]
 +++
 
-The `select` statement is where Go's channel system goes from "neat" to "powerful." It lets you wait on multiple channel operations simultaneously, handle timeouts, and do non-blocking checks—all with clean syntax.
+The `select` statement is where Go's channel system goes from "neat" to "powerful." It lets you wait on multiple channel operations simultaneously, handle timeouts, and do non-blocking checks. All with clean syntax.
 
 C# doesn't have a direct equivalent. The closest is `Task.WhenAny`, but `select` is more flexible and more deeply integrated.
 
@@ -154,7 +154,7 @@ for {
 }
 ```
 
-The first `select` with `default` is non-blocking—it handles high-priority if available, otherwise falls through. This ensures high-priority messages are processed first.
+The first `select` with `default` is non-blocking. It handles high-priority if available, otherwise falls through. This ensures high-priority messages are processed first.
 
 ## Cancellation Pattern
 
@@ -279,7 +279,7 @@ But multiplexing multiple channels still requires `Task.WhenAny` gymnastics.
 
 ## The Honest Take
 
-`select` is one of Go's genuinely great features. It makes patterns that are awkward in other languages—timeouts, multiplexing, non-blocking checks—into one clean construct.
+`select` is one of Go's genuinely great features. It makes patterns that are awkward in other languages (timeouts, multiplexing, non-blocking checks) into one clean construct.
 
 **What Go does better:**
 - Clean syntax for multiplexing
@@ -294,8 +294,8 @@ But multiplexing multiple channels still requires `Task.WhenAny` gymnastics.
 - Richer LINQ-style composition with Rx
 
 **The verdict:**
-If you're doing event-loop style programming—handling messages from multiple sources, implementing timeouts, coordinating shutdown—`select` is wonderful. It's one of those features you miss when you go back to languages without it.
+If you're doing event-loop style programming (handling messages from multiple sources, implementing timeouts, coordinating shutdown) `select` is wonderful. It's one of those features you miss when you go back to languages without it.
 
 ---
 
-*Next up: mutexes and WaitGroups—because sometimes shared memory with locks is simpler than channels.*
+*Next up: mutexes and WaitGroups. Because sometimes shared memory with locks is simpler than channels.*

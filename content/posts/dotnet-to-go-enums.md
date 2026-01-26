@@ -5,7 +5,7 @@ draft = false
 tags = ["go", "dotnet", "enums", "csharp"]
 +++
 
-Go doesn't have enums. Not "Go has something enum-like"—it genuinely doesn't have a dedicated enum construct. What it has instead is constants, a clever auto-incrementing keyword called `iota`, and convention.
+Go doesn't have enums. Not "Go has something enum-like". It genuinely doesn't have a dedicated enum construct. What it has instead is constants, a clever auto-incrementing keyword called `iota`, and convention.
 
 For simple cases, this works fine. For anything more complex, you'll miss C#'s enums more than you expect.
 
@@ -436,4 +436,4 @@ Maybe we'll get real enums eventually. Until then, embrace `iota` and keep your 
 
 ---
 
-*That wraps up Phase 2 on types and data. Next we'll move into Phase 3: Functions, Methods, and Interfaces—where Go's composition-over-inheritance philosophy really starts to show its strengths.*
+*That wraps up Phase 2 on types and data. Next we'll move into Phase 3: Functions, Methods, and Interfaces, where Go's composition-over-inheritance philosophy really starts to show its strengths.*

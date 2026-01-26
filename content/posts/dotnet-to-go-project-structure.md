@@ -99,7 +99,7 @@ myproject/
 
 Let's break this down.
 
-### `internal/` — The Privacy Fence
+### `internal/`: The Privacy Fence
 
 The `internal` directory is magic. The Go compiler enforces that packages under `internal/` can only be imported by code rooted at the parent of `internal/`.
 
@@ -116,7 +116,7 @@ If someone else imports your module, they *cannot* import `internal/secret`. The
 
 This is Go's answer to `internal` visibility in C#. Use it for implementation details you don't want to be part of your public API.
 
-### `pkg/` — Exportable Packages (Convention)
+### `pkg/`: Exportable Packages (Convention)
 
 The `pkg/` directory is purely convention (not enforced). It signals "these packages are intended for external use."
 
@@ -129,7 +129,7 @@ myproject/
 
 Some projects skip `pkg/` and put public packages at the root. Both are fine. Just be consistent.
 
-### `cmd/` — Multiple Binaries
+### `cmd/`: Multiple Binaries
 
 If your module produces multiple executables:
 
@@ -313,7 +313,7 @@ myapi/
 
 ## The Honest Take
 
-Go's package system is simpler than C#'s project/namespace hierarchy. That simplicity is mostly good—less configuration, clearer structure.
+Go's package system is simpler than C#'s project/namespace hierarchy. That simplicity is mostly good: less configuration, clearer structure.
 
 **What Go does better:**
 - `internal/` is enforced by the compiler, not convention
@@ -334,4 +334,4 @@ It's more restrictive, but those restrictions prevent the spaghetti that large C
 
 ---
 
-*Next up: multi-module repos—when you need more than one `go.mod` and how to think about monorepo structure in Go.*
+*Next up: multi-module repos. When you need more than one `go.mod` and how to think about monorepo structure in Go.*

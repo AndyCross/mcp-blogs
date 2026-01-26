@@ -96,7 +96,7 @@ require (
 )
 ```
 
-For published modules, this just works—Go fetches from the module proxy.
+For published modules, this just works. Go fetches from the module proxy.
 
 For local development without `go.work`, you'd need `replace` directives:
 
@@ -188,7 +188,7 @@ go get github.com/mycompany/libs/auth@v0.2.0
 
 ### CI/CD Considerations
 
-Your CI shouldn't use `go.work`—it should test each module independently:
+Your CI shouldn't use `go.work`. It should test each module independently:
 
 ```yaml
 # Example GitHub Actions
@@ -247,4 +247,4 @@ If you need multi-module, Go can do it. But it's not as polished as .NET's multi
 
 ---
 
-*Next up: testing in Go—why the built-in testing package might be all you need, and why you might not miss xUnit.*
+*Next up: testing in Go. Why the built-in testing package might be all you need, and why you might not miss xUnit.*

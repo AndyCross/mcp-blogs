@@ -9,7 +9,7 @@ I spent the better part of a day staring at a blank screen on an iPhone 11. The 
 
 No errors. No warnings. Filament (the rendering engine) happily reported "ready". The JavaScript console was clean. Everything was fine, except for the part where nothing was rendering.
 
-This is the story of two silent killers in React Native 3D development—and how to avoid them.
+This is the story of two silent killers in React Native 3D development, and how to avoid them.
 
 ## The Setup
 
@@ -44,15 +44,15 @@ The GLTF file loads fine. But then Filament's native C++/Metal code tries to fet
 
 The reasons are murky but likely involve:
 
-1. **iOS App Transport Security** — Even with `NSAllowsArbitraryLoads: true`, native code doesn't necessarily inherit JavaScript's network permissions
-2. **Aggressive Sandboxing** — iOS sandboxes native code more heavily than JS
-3. **Path Resolution** — Filament's iOS implementation expects local `file://` paths, not HTTP URLs with relative references
+1. **iOS App Transport Security**: Even with `NSAllowsArbitraryLoads: true`, native code doesn't necessarily inherit JavaScript's network permissions
+2. **Aggressive Sandboxing**: iOS sandboxes native code more heavily than JS
+3. **Path Resolution**: Filament's iOS implementation expects local `file://` paths, not HTTP URLs with relative references
 
 The frustrating part? No error. Just... nothing.
 
 ### The Fix
 
-Convert GLTF to GLB. GLB is the binary version of GLTF—everything packed into a single self-contained file. No external references, no path resolution issues.
+Convert GLTF to GLB. GLB is the binary version of GLTF, everything packed into a single self-contained file. No external references, no path resolution issues.
 
 ```bash
 npx @gltf-transform/cli copy holodeck_grid.gltf holodeck_grid.glb
@@ -64,7 +64,7 @@ I made the conversion, rebuilt, deployed... and still nothing.
 
 This is where it gets properly strange.
 
-After converting to GLB, my grid model still broke rendering. But worse—it broke *everything*. Adding this one model caused the entire scene to stop rendering. Other models that worked perfectly became invisible too.
+After converting to GLB, my grid model still broke rendering. But worse, it broke *everything*. Adding this one model caused the entire scene to stop rendering. Other models that worked perfectly became invisible too.
 
 What fresh hell was this?
 
@@ -76,7 +76,7 @@ I ran `gltf-transform inspect` on the GLB:
 │ mode  │ LINES │
 ```
 
-That's the problem. The grid was using LINE primitive mode—a wireframe representation drawn with individual line segments.
+That's the problem. The grid was using LINE primitive mode, a wireframe representation drawn with individual line segments.
 
 This is perfectly valid GLTF. It works on iOS Simulator. It works on Android. But on iOS physical devices with Metal? Something in Filament's Metal backend doesn't handle LINE primitives correctly.
 
@@ -84,7 +84,7 @@ And instead of failing gracefully on just that model, it poisons the entire rend
 
 ### The Silent Catastrophe
 
-This is the insidious part. You add a wireframe grid to your scene—seems harmless. Testing on simulator: works. Testing on Android: works. Deploy to a real iPhone: *everything* disappears.
+This is the insidious part. You add a wireframe grid to your scene. Seems harmless. Testing on simulator: works. Testing on Android: works. Deploy to a real iPhone: *everything* disappears.
 
 If you're methodical, you'll eventually bisect your way to the problem model. If you're not, you'll question your sanity.
 
@@ -92,8 +92,8 @@ If you're methodical, you'll eventually bisect your way to the problem model. If
 
 The rules for iOS physical devices are simple:
 
-1. **Use GLB, not GLTF** — No external references
-2. **Use TRIANGULAR primitives only** — No LINE mode, no POINTS mode
+1. **Use GLB, not GLTF**: No external references
+2. **Use TRIANGULAR primitives only**: No LINE mode, no POINTS mode
 
 If you need a grid, build it from thin triangular strips instead of lines. If you need wireframes, use tube geometry or outline shaders.
 
@@ -109,11 +109,11 @@ Here's the compatibility matrix I wish I'd found at the start:
 
 If your 3D models vanish on iOS physical devices:
 
-1. **Test on simulator first** — If it works there, you've hit one of these issues
-2. **Test on Android** — If it works there too, it's definitely iOS-specific
-3. **Check your file format** — GLTF with external refs? Convert to GLB
-4. **Inspect the GLB** — Look for LINE or POINTS primitive modes
-5. **Bisect your models** — Remove them one by one to find the culprit
+1. **Test on simulator first**: If it works there, you've hit one of these issues
+2. **Test on Android**: If it works there too, it's definitely iOS-specific
+3. **Check your file format**: GLTF with external refs? Convert to GLB
+4. **Inspect the GLB**: Look for LINE or POINTS primitive modes
+5. **Bisect your models**: Remove them one by one to find the culprit
 
 The inspection command:
 
@@ -127,7 +127,7 @@ Look for the `mode` field in the output. If it says anything other than `TRIANGL
 
 This experience crystallised something I've been thinking about: **the simulator is a lie**.
 
-Not entirely, obviously. It's incredibly useful for rapid iteration. But there's a class of bugs that only exist on physical hardware—especially where native code interacts with platform-specific graphics APIs. iOS's Metal implementation has quirks that simply don't manifest in the simulated environment.
+Not entirely, obviously. It's incredibly useful for rapid iteration. But there's a class of bugs that only exist on physical hardware, especially where native code interacts with platform-specific graphics APIs. iOS's Metal implementation has quirks that simply don't manifest in the simulated environment.
 
 The painful truth is that if you're doing anything involving native code and 3D rendering, you need a physical device in your testing loop. Not occasionally. Constantly.
 
@@ -144,13 +144,13 @@ So I'm documenting it here. Maybe it saves someone else a day of staring at a bl
 ## The Code That Works
 
 ```typescript
-// ❌ GLTF with external .bin reference — fails on iOS device
+// ❌ GLTF with external .bin reference - fails on iOS device
 const grid = require('./holodeck_grid.gltf');
 
-// ❌ GLB with LINE primitive mode — also fails on iOS device
+// ❌ GLB with LINE primitive mode - also fails on iOS device
 const grid = require('./wireframe_grid.glb');
 
-// ✅ GLB with triangle primitives — works everywhere
+// ✅ GLB with triangle primitives - works everywhere
 const caseta = require('./caseta.glb');
 ```
 

@@ -7,7 +7,7 @@ tags = ["go", "dotnet", "aws", "lambda", "serverless", "csharp"]
 
 If you've run .NET on Lambda, you know the cold start pain. 3-5 seconds for a managed runtime. Even Native AOT helps but doesn't eliminate it.
 
-Go on Lambda cold starts in ~100-200ms. Sometimes faster. It's not magic—it's the same static binary advantage, applied to serverless.
+Go on Lambda cold starts in ~100-200ms. Sometimes faster. Same static binary advantage you get everywhere else, just applied to serverless.
 
 ## Go Lambda Basics
 
@@ -248,7 +248,7 @@ sam local invoke MyFunction -e event.json
 sam local start-api
 ```
 
-Or just run your Go code directly—it's a normal program:
+Or just run your Go code directly. It's a normal program:
 
 ```go
 func main() {
@@ -288,4 +288,4 @@ For latency-sensitive serverless workloads, Go is hard to beat.
 
 ---
 
-*Next up: Kubernetes and Go—health checks, graceful shutdown, and playing nice with orchestration.*
+*Next up: Kubernetes and Go. Health checks, graceful shutdown, and playing nice with orchestration.*

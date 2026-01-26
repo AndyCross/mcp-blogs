@@ -5,7 +5,7 @@ draft = false
 tags = ["mcp", "ai", "threejs", "webgl", "python"]
 +++
 
-In my [previous post](/posts/building-3d-scenes-with-mcp/), I promised that the scene data was portable—that you could feed it to "a game engine, a GIS tool, a mapping API, whatever." Time to make good on that.
+In my [previous post](/posts/building-3d-scenes-with-mcp/), I promised that the scene data was portable. That you could feed it to "a game engine, a GIS tool, a mapping API, whatever." Time to make good on that.
 
 This post walks through building a Three.js web viewer that consumes scene data from the MCP server in real-time. You'll end up with a browser-based 3D view that updates live as Claude manipulates the scene through conversation.
 
@@ -70,7 +70,7 @@ The scene server supports HTTP transport out of the box. Instead of stdio (which
 SCENE_MCP_TRANSPORT=http SCENE_MCP_PORT=8080 scene-mcp
 ```
 
-This starts an HTTP server on port 8080 that speaks the MCP protocol. Under the hood, FastMCP uses Server-Sent Events (SSE) for the transport—the client opens a persistent connection to `/sse`, and the server streams responses back.
+This starts an HTTP server on port 8080 that speaks the MCP protocol. Under the hood, FastMCP uses Server-Sent Events (SSE) for the transport. The client opens a persistent connection to `/sse`, and the server streams responses back.
 
 For CORS during local development, you might need to add headers. Here's a quick modification if you're hacking on the server:
 
@@ -96,7 +96,7 @@ Now for the fun part. We need a viewer that:
 
 ### The Coordinate Problem
 
-Here's the first interesting challenge. The MCP server stores positions in WGS84—latitude and longitude on a sphere. Three.js works in Cartesian coordinates—X, Y, Z in a flat 3D space.
+Here's the first interesting challenge. The MCP server stores positions in WGS84 (latitude and longitude on a sphere). Three.js works in Cartesian coordinates (X, Y, Z in a flat 3D space).
 
 For a local scene (say, a village or a farm), we can use a simple approximation: pick a reference point (the first object, or a configured origin), and project everything else relative to it using a local tangent plane.
 
@@ -133,7 +133,7 @@ function geoToLocal(lat, lon, elevation) {
 }
 ```
 
-This gives us meter-scale accuracy within a few kilometers of the origin—more than enough for our purposes. For planetary-scale scenes, you'd want a proper geodetic library, but let's not over-engineer.
+This gives us meter-scale accuracy within a few kilometers of the origin. More than enough for our purposes. For planetary-scale scenes, you'd want a proper geodetic library, but let's not over-engineer.
 
 ### Object Geometry
 
@@ -579,17 +579,17 @@ Here's a self-contained HTML file that demonstrates the rendering side. This ver
 
 Save that as `viewer.html` and open it in your browser. Click "Add Objects" to see a sample farm scene appear. The `mockSceneData` array shows exactly the format that `get_scene()` returns from the MCP server.
 
-To connect this to a real MCP server, you'd replace the mock data with actual MCP client calls. The [@anthropic-ai/mcp-client](https://www.npmjs.com/package/@anthropic-ai/mcp-client) package handles the SSE/JSON-RPC protocol—your viewer just needs to call `client.callTool('get_scene', {})` and pass the results to `syncScene()`.
+To connect this to a real MCP server, you'd replace the mock data with actual MCP client calls. The [@anthropic-ai/mcp-client](https://www.npmjs.com/package/@anthropic-ai/mcp-client) package handles the SSE/JSON-RPC protocol. Your viewer just needs to call `client.callTool('get_scene', {})` and pass the results to `syncScene()`.
 
 With a real connection, open Claude Desktop (configured to use the same MCP server) and say something like:
 
 > "Create a small farm. Put a farmhouse facing south, a barn 30 meters to the east, and scatter some trees around the property."
 
-Watch the Three.js viewer. As Claude calls the MCP tools, objects pop into existence. Move things around, add more objects, delete some—the viewer stays in sync.
+Watch the Three.js viewer. As Claude calls the MCP tools, objects pop into existence. Move things around, add more objects, delete some. The viewer stays in sync.
 
 ## What You're Actually Seeing
 
-This pattern—MCP server as authoritative state, LLM as interpreter, web viewer as dumb renderer—is remarkably clean. Each component does exactly one thing:
+This pattern (MCP server as authoritative state, LLM as interpreter, web viewer as dumb renderer) is remarkably clean. Each component does exactly one thing:
 
 - The **server** is the source of truth. It doesn't care who's calling it or why.
 - **Claude** is the brain. It understands "behind the barn" and "near the pond."
@@ -605,7 +605,7 @@ This is deliberately minimal. Some obvious enhancements:
 
 **Terrain**: Use elevation data (DEM tiles) to create actual topography. The `elevation` field would place objects on the terrain surface.
 
-**Real-time SSE**: Instead of polling, subscribe to server events. FastMCP's SSE transport supports this—you'd need to track tool call results and push scene changes.
+**Real-time SSE**: Instead of polling, subscribe to server events. FastMCP's SSE transport supports this. You'd need to track tool call results and push scene changes.
 
 **Labels and interaction**: Add CSS2D labels for object names. Click to select. Drag to move (and call `set_position`).
 

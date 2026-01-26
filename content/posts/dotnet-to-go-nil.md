@@ -37,7 +37,7 @@ public void Process(User user)
 }
 ```
 
-The compiler tracks nullability and warns you. It's not perfect—it's still a warning system, not a guarantee—but it catches loads of bugs at compile time.
+The compiler tracks nullability and warns you. It's still a warning system, not a guarantee, but it catches loads of bugs at compile time.
 
 ## Go's Approach: Everything Is Potentially Nil (But Different)
 
@@ -69,7 +69,7 @@ s = append(s, 1, 2, 3)  // works fine! Now s is [1, 2, 3]
 for _, v := range s { } // works even when nil (iterates zero times)
 ```
 
-A nil slice isn't "no slice"—it's an empty slice with no backing array. Most operations work. This is intentional and idiomatic.
+A nil slice isn't "no slice". It's an empty slice with no backing array. Most operations work. This is intentional and idiomatic.
 
 ### Nil Maps Are NOT Fine
 
@@ -146,7 +146,7 @@ var u User
 // u is now {Name: "", Email: "", Age: 0, CreatedAt: zero time}
 ```
 
-Every field has a defined zero value. There's no "unset" state—just "set to zero."
+Every field has a defined zero value. There's no "unset" state, just "set to zero."
 
 This works well for many cases:
 
@@ -308,4 +308,4 @@ You'll write more nil checks. You'll occasionally miss one. That's the trade-off
 
 ---
 
-*Next up: Go's approach to enums—const blocks, iota, and why you'll miss real enums more than you expected to.*
+*Next up: Go's approach to enums. Const blocks, iota, and why you'll miss real enums more than you expected to.*

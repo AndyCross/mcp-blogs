@@ -5,7 +5,7 @@ draft = false
 tags = ["go", "dotnet", "versioning", "modules", "csharp"]
 +++
 
-Versioning in Go is simple in concept—semantic versioning with git tags—but has quirks that'll catch you if you're coming from NuGet's more flexible model.
+Versioning in Go is simple in concept (semantic versioning with git tags) but has quirks that'll catch you if you're coming from NuGet's more flexible model.
 
 Let's cover how to version your modules properly.
 
@@ -106,7 +106,7 @@ git tag v1.0.0-beta.1
 git push origin v1.0.0-beta.1
 ```
 
-Pre-release versions aren't selected by default—users must request them explicitly:
+Pre-release versions aren't selected by default. Users must request them explicitly:
 
 ```bash
 go get github.com/myname/mylib@v1.0.0-beta.1
@@ -131,7 +131,7 @@ Go's dependency resolution differs from NuGet:
 
 **Go**: Gets the *minimum* version that satisfies all constraints (Minimum Version Selection)
 
-If you require `v1.2.0` and a dependency requires `v1.1.0`, Go uses `v1.2.0`—the minimum that satisfies both.
+If you require `v1.2.0` and a dependency requires `v1.1.0`, Go uses `v1.2.0`. The minimum that satisfies both.
 
 This makes builds reproducible. The same `go.mod` and `go.sum` always produce the same dependencies.
 

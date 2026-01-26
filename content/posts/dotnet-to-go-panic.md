@@ -159,7 +159,7 @@ var templates = template.Must(template.ParseGlob("*.html"))
 var emailRegex = regexp.MustCompile(`^[a-z]+@[a-z]+\.[a-z]+$`)
 ```
 
-The `Must` prefix tells callers "this panics on error—only use with compile-time constant inputs."
+The `Must` prefix tells callers "this panics on error, only use with compile-time constant inputs."
 
 ### 4. Deep Recursion Bailout
 
@@ -284,7 +284,7 @@ func TestSomething(t *testing.T) {
 }
 ```
 
-`t.Fatal` and `t.Fatalf` panic to abort the test. This is fine—tests are the one place where "stop everything" is the right response to failure.
+`t.Fatal` and `t.Fatalf` panic to abort the test. This is fine. Tests are the one place where "stop everything" is the right response to failure.
 
 ## The Honest Take
 
@@ -312,4 +312,4 @@ Don't let performance justify panic. If you're that performance-sensitive, you'r
 
 ---
 
-*Coming up: Go's switch statement—more powerful than C#'s, with type switching, expression cases, and some surprises around fallthrough.*
+*Coming up: Go's switch statement. More powerful than C#'s, with type switching, expression cases, and some surprises around fallthrough.*

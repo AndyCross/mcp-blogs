@@ -5,7 +5,7 @@ draft = false
 tags = ["go", "dotnet", "logging", "slog", "csharp"]
 +++
 
-For years, Go's logging story was "use the `log` package or pick a third-party library." The standard `log` package is basic—no levels, no structure, no context. Everyone used zerolog, zap, or logrus.
+For years, Go's logging story was "use the `log` package or pick a third-party library." The standard `log` package is basic: no levels, no structure, no context. Everyone used zerolog, zap, or logrus.
 
 Then Go 1.21 shipped `log/slog`. Finally, structured logging in the standard library. And it's actually good.
 
@@ -286,4 +286,4 @@ If you're coming from ILogger, you'll find slog familiar but simpler. Fewer feat
 
 ---
 
-*Next up: database access with database/sql—raw SQL, connection pooling, and missing your ORM.*
+*Next up: database access with database/sql. Raw SQL, connection pooling, and missing your ORM.*

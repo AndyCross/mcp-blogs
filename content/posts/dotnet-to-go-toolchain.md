@@ -5,7 +5,7 @@ draft = false
 tags = ["go", "dotnet", "tooling", "csharp"]
 +++
 
-After twenty-odd years writing C#, I'm learning Go. Not because .NET has failed me—it hasn't—but because some problems want a different shape of solution. Small binaries. Fast startup. Simple deployment. The kind of thing Go does without breaking a sweat.
+After twenty-odd years writing C#, I'm learning Go. Not because .NET has failed me (it hasn't) but because some problems want a different shape of solution. Small binaries. Fast startup. Simple deployment. The kind of thing Go does without breaking a sweat.
 
 This is the first post in a series documenting that journey. Not a tutorial (the Go docs are excellent), but an honest account of where my C# muscle memory helps, where it hinders, and what makes Go feel genuinely different rather than just superficially unfamiliar.
 
@@ -17,7 +17,7 @@ In .NET, you've got `dotnet` for building, running, testing, and package managem
 
 Go has `go`.
 
-That's it. One command. Build, run, test, format, vet, mod management—all through the same tool. There's no separate "SDK" to install per project. No workload selectors. No runtime configuration.
+That's it. One command. Build, run, test, format, vet, mod management. All through the same tool. There's no separate "SDK" to install per project. No workload selectors. No runtime configuration.
 
 ```bash
 go build    # compiles
@@ -56,7 +56,7 @@ mkdir myproject && cd myproject
 go mod init github.com/yourname/myproject
 ```
 
-That `go mod init` command creates a `go.mod` file—Go's equivalent of your `.csproj`. We'll dig into that properly in the next post.
+That `go mod init` command creates a `go.mod` file, Go's equivalent of your `.csproj`. We'll dig into that properly in the next post.
 
 The key insight: **the module path is the project's identity**. It's what other code uses to import your packages. Choose it thoughtfully.
 
@@ -156,7 +156,7 @@ In C#, namespaces and folders are loosely coupled. You can have a file in `Servi
 
 In Go, packages are directories. Every `.go` file in a directory must have the same `package` declaration. Want a different package? Different directory. No exceptions.
 
-This feels restrictive at first. Then you realise it makes codebases significantly easier to navigate. You always know what package a file belongs to—just look at where it lives.
+This feels restrictive at first. Then you realise it makes codebases significantly easier to navigate. You always know what package a file belongs to. Just look at where it lives.
 
 ## What We Haven't Covered
 
@@ -189,7 +189,7 @@ After a few weeks with Go's toolchain, here's my take:
 - Project structure. Go's conventions feel strange, then liberating.
 - Package system. We'll cover this properly, but it's a genuine paradigm shift.
 
-The toolchain isn't trying to be .NET. It's not trying to be "simple .NET" or ".NET but faster". It's a different philosophy: less configuration, more convention, explicit over implicit.
+The toolchain isn't trying to be .NET, or "simple .NET", or ".NET but faster". Different philosophy entirely: less configuration, more convention, explicit over implicit.
 
 That last one will come up a lot in this series. Go loves explicitness. Coming from C#, where we've spent years making things implicit (top-level statements, global usings, minimal APIs), it takes adjustment.
 
@@ -197,4 +197,4 @@ But there's method to the explicitness. And honestly? I'm starting to appreciate
 
 ---
 
-*Next up: go.mod in depth—dependency management without NuGet, and why it's both simpler and more opinionated than you'd expect.*
+*Next up: go.mod in depth. Dependency management without NuGet, and why it's both simpler and more opinionated than you'd expect.*

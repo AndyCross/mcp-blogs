@@ -7,7 +7,7 @@ tags = ["go", "dotnet", "tooling", "codegen", "csharp"]
 
 Go developers love code generation. Where C# uses reflection, attributes, and source generators, Go often uses tools that generate code before compilation.
 
-This sounds backwards—writing code that writes code? But it has advantages: generated code is inspectable, debuggable, and has zero runtime overhead.
+This sounds backwards. Writing code that writes code? But it has advantages: generated code is inspectable, debuggable, and has zero runtime overhead.
 
 ## The go generate Command
 
@@ -284,7 +284,7 @@ Run `go generate ./...` and all these tools produce code.
 
 ## The Honest Take
 
-Code generation is more prominent in Go than C#. It's a cultural thing—Go prefers explicit, inspectable code over runtime magic.
+Code generation is more prominent in Go than C#. It's a cultural thing. Go prefers explicit, inspectable code over runtime magic.
 
 **What Go does well:**
 - Generated code is transparent
@@ -301,10 +301,10 @@ Code generation is more prominent in Go than C#. It's a cultural thing—Go pref
 **The verdict:**
 If you're not used to code generation, it feels weird. But once you embrace it, you appreciate the transparency.
 
-sqlc in particular is wonderful—type-safe database access without ORM magic, because the queries are analyzed at generation time.
+sqlc in particular is wonderful: type-safe database access without ORM magic, because the queries are analyzed at generation time.
 
 Learn to love `go generate ./...`. It's part of the Go workflow.
 
 ---
 
-*Next up: debugging with Delve—getting productive with dlv after Visual Studio's polished debugging experience.*
+*Next up: debugging with Delve. Getting productive with dlv after Visual Studio's polished debugging experience.*

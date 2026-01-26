@@ -5,7 +5,7 @@ draft = false
 tags = ["go", "dotnet", "retrospective", "career", "csharp"]
 +++
 
-Six months ago, I started this series with a simple goal: document learning Go as an experienced C# developer. Not a tutorial—there are plenty of those—but an honest account of the transition.
+Six months ago, I started this series with a simple goal: document learning Go as an experienced C# developer. Not a tutorial (there are plenty of those) but an honest account of the transition.
 
 Now, with half a year of production Go code behind me, it's time for a retrospective. Was it worth it? Would I do it again? What would I tell past-me?
 
@@ -145,7 +145,7 @@ But I want to be clear: this isn't a "Go is better than C#" conclusion. It's a "
 
 C# is an excellent language with a mature ecosystem. Go is an excellent language with different trade-offs. Knowing both lets you pick the right tool for each job.
 
-If you've followed this series, I hope it's been useful. Not as a Go tutorial—there are better resources for that—but as an honest map of the terrain from someone who's walked it.
+If you've followed this series, I hope it's been useful. Not as a Go tutorial (there are better resources for that) but as an honest map of the terrain from someone who's walked it.
 
 The learning curve is real. The frustrations are real. And so are the benefits.
 

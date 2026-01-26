@@ -23,7 +23,7 @@ ch <- 42
 value := <-ch
 ```
 
-The `<-` operator does both sending and receiving—the arrow points in the direction of data flow.
+The `<-` operator does both sending and receiving. The arrow points in the direction of data flow.
 
 ## Buffered vs Unbuffered
 
@@ -41,7 +41,7 @@ time.Sleep(time.Second)
 fmt.Println(<-ch)  // "sent" prints after this line
 ```
 
-The sender blocks until the receiver is ready. This creates a synchronisation point—a "handshake" between goroutines.
+The sender blocks until the receiver is ready. This creates a synchronisation point, a "handshake" between goroutines.
 
 **Buffered channels** have capacity:
 
@@ -163,8 +163,8 @@ func main() {
 ```
 
 Notice the channel direction syntax:
-- `jobs <-chan int` — receive-only channel
-- `results chan<- int` — send-only channel
+- `jobs <-chan int`: receive-only channel
+- `results chan<- int`: send-only channel
 
 This prevents workers from accidentally closing `jobs` or reading from `results`.
 
@@ -337,4 +337,4 @@ If you're doing producer-consumer, pipelines, or fan-out/fan-in patterns, channe
 
 ---
 
-*Next up: the `select` statement—multiplexing channels, handling timeouts, and non-blocking operations.*
+*Next up: the `select` statement. Multiplexing channels, handling timeouts, and non-blocking operations.*

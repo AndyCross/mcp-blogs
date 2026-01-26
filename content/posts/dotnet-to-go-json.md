@@ -72,7 +72,7 @@ type Response struct {
 
 r := Response{Count: 0, Found: false}
 data, _ := json.Marshal(r)
-// {} — both fields omitted because they're zero values!
+// {} - both fields omitted because they're zero values!
 ```
 
 If zero is a meaningful value, don't use `omitempty`. Or use a pointer:
@@ -319,4 +319,4 @@ For complex JSON needs (polymorphic types, extensive customization), consider th
 
 ---
 
-*Next up: configuration—how to load config without IOptions<T> and why simplicity wins.*
+*Next up: configuration. How to load config without IOptions<T> and why simplicity wins.*

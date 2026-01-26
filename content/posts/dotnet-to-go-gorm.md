@@ -114,7 +114,7 @@ db.First(&user, 1)
 db.Model(&user).Update("Name", "Bob")
 ```
 
-Similar concepts, different APIs. GORM doesn't have change tracking like EF—you explicitly call updates.
+Similar concepts, different APIs. GORM doesn't have change tracking like EF. You explicitly call updates.
 
 ## Relationships
 
@@ -361,4 +361,4 @@ Many Go developers start with GORM, then move to sqlx or sqlc as they get comfor
 
 ---
 
-*Next up: tooling—linting, formatting, and why gofmt is non-negotiable.*
+*Next up: tooling. Linting, formatting, and why gofmt is non-negotiable.*

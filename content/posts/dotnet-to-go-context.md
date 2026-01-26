@@ -324,7 +324,7 @@ Context is one of Go's better patterns. It unifies cancellation and request-scop
 - Less ceremony for simple cases
 
 **The verdict:**
-Context feels heavyweight at first—every function needs `ctx context.Context` as its first parameter. But the consistency pays off. You can always cancel. You can always set timeouts. You can always trace request IDs through your system.
+Context feels heavyweight at first. Every function needs `ctx context.Context` as its first parameter. But the consistency pays off. You can always cancel. You can always set timeouts. You can always trace request IDs through your system.
 
 Once you're used to it, going back to languages without pervasive cancellation support feels limiting.
 

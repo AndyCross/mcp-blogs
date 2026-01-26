@@ -5,7 +5,7 @@ draft = false
 tags = ["go", "dotnet", "interfaces", "any", "csharp"]
 +++
 
-Go has a type called `any`. Before Go 1.18, it was written `interface{}`. Same thing, nicer name. And it's basically Go's version of `object`—the type that can hold anything.
+Go has a type called `any`. Before Go 1.18, it was written `interface{}`. Same thing, nicer name. And it's basically Go's version of `object`, the type that can hold anything.
 
 Every type in Go implements `any` because `any` has no methods. Zero requirements means universal satisfaction. And that means when you use `any`, you're opting out of the type system.
 
@@ -325,4 +325,4 @@ Every time you write `any`, ask yourself: "Do I really not know the type here?" 
 
 ---
 
-*That wraps up the interfaces and composition section. Go's approach is simpler than C#'s—implicit interfaces, embedding instead of inheritance, and a minimal `any` type for the truly dynamic cases. It's less powerful in some ways, but the constraints push you toward cleaner designs.*
+*That wraps up the interfaces and composition section. Go's approach is simpler than C#'s: implicit interfaces, embedding instead of inheritance, and a minimal `any` type for the truly dynamic cases. It's less powerful in some ways, but the constraints push you toward cleaner designs.*
