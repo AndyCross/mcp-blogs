@@ -5,7 +5,7 @@ draft = false
 tags = ["go", "dotnet", "types", "csharp"]
 +++
 
-Here's something that'll feel wrong for about a week: Go doesn't have classes. Not "Go has classes but calls them something else". It genuinely doesn't have them. No inheritance. No class hierarchies. No `virtual` or `override`. No `protected`.
+Here's something that'll feel wrong for about a week: Go doesn't have classes. Not "Go has classes but calls them something else". It really doesn't have them. No inheritance. No class hierarchies. No `virtual` or `override`. No `protected`.
 
 If you've spent years designing C# class hierarchies, this feels like having a limb removed. Then you start writing Go code and realise... you don't actually miss it that much.
 
@@ -171,7 +171,7 @@ Let's be honest: sometimes you'll miss it.
 
 ## Interfaces Are Implicit
 
-Here's where Go gets genuinely interesting. Interfaces are satisfied implicitly. No `implements` keyword.
+This is where Go gets properly interesting. Interfaces are satisfied implicitly. No `implements` keyword.
 
 In C#:
 

@@ -279,7 +279,7 @@ But multiplexing multiple channels still requires `Task.WhenAny` gymnastics.
 
 ## The Honest Take
 
-`select` is one of Go's genuinely great features. It makes patterns that are awkward in other languages (timeouts, multiplexing, non-blocking checks) into one clean construct.
+`select` is one of Go's rather splendid features. It makes patterns that are awkward in other languages (timeouts, multiplexing, non-blocking checks) into one clean construct.
 
 **What Go does better:**
 - Clean syntax for multiplexing

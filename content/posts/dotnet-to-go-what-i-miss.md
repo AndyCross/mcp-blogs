@@ -176,7 +176,7 @@ case string:
 }
 ```
 
-The `when` guards and the expression form are genuinely missed.
+The `when` guards and the expression form are sorely missed.
 
 ## Rich IDE Support
 

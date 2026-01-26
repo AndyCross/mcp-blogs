@@ -11,7 +11,7 @@ It's a romantic notion. I understand the appeal. But it's also, I think, deeply 
 
 ## Suffering Is Not a Unit of Measurement
 
-Here's the thing about suffering: it's wildly subjective. What destroys one developer is another's Tuesday afternoon. I've watched juniors spend three days on something I could solve in an hour. Not because I'm smarter, but because I've already suffered through that particular flavour of hell a decade ago. Does their code become more trustworthy because they bled for it? Does mine become suspect because it didn't cost me enough?
+Suffering is wildly subjective. What destroys one developer is another's Tuesday afternoon. I've watched juniors spend three days on something I could solve in an hour. Not because I'm smarter, but because I've already suffered through that particular flavour of hell a decade ago. Does their code become more trustworthy because they bled for it? Does mine become suspect because it didn't cost me enough?
 
 The argument, taken to its logical conclusion, suggests that experts (people who've accumulated enough scar tissue to navigate problems efficiently) are somehow less invested in their work. That proficiency breeds detachment.
 
@@ -27,7 +27,7 @@ If you're working on anything of consequence, the codebase has already exceeded 
 
 I've lost count of the times I've opened old code, thought "what kind of incompetent wrote this garbage," checked git blame, and found my own name staring back at me. Past-me had his reasons. Present-me has forgotten them. The code still runs. The suffering I endured writing it confers no special understanding today.
 
-If you genuinely believe your particular module is so precious that only your suffering-certified brain can be trusted with it, I have news for you: you're working on something too small to matter, or you've fundamentally misunderstood how modern software gets built.
+If you actually believe your particular module is so precious that only your suffering-certified brain can be trusted with it, I have news for you: you're working on something too small to matter, or you've fundamentally misunderstood how modern software gets built.
 
 ## You're Using AI Wrong
 

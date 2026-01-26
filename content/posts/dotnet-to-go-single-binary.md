@@ -5,7 +5,7 @@ draft = false
 tags = ["go", "dotnet", "deployment", "cross-compilation", "csharp"]
 +++
 
-Here's the thing that sold me on Go for production: you build a binary, you copy it to a server, you run it. No runtime to install. No framework version matching. No dependency hell. Just a file.
+What sold me on Go for production: you build a binary, you copy it to a server, you run it. No runtime to install. No framework version matching. No dependency hell. Just a file.
 
 If you've ever dealt with .NET runtime versioning on servers, or debugged why `dotnet` can't find the right SDK, or explained to ops why they need to install framework X before deploying your app, Go's deployment model will feel like a revelation.
 

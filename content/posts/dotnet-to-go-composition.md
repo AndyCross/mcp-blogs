@@ -9,7 +9,7 @@ We've all heard "favour composition over inheritance." We've all nodded sagely. 
 
 Go doesn't give you the choice. There's no inheritance. Zero. You can't extend a type. You can't override methods. There's no `virtual`, no `abstract`, no `base`.
 
-Instead, Go has **embedding**, a form of composition that feels almost like inheritance but isn't. And after using it for a while, I genuinely don't miss base classes.
+Instead, Go has **embedding**, a form of composition that feels almost like inheritance but isn't. And after using it for a while, I actually don't miss base classes.
 
 ## What Is Embedding?
 

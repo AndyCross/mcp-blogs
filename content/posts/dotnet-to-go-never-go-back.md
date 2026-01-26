@@ -5,7 +5,7 @@ draft = false
 tags = ["go", "dotnet", "reflection", "csharp"]
 +++
 
-Last time I talked about what I miss from C#. Now let's flip it: what has Go given me that I'd genuinely struggle to give up?
+Last time I talked about what I miss from C#. Now let's flip it: what has Go given me that I'd properly struggle to give up?
 
 Some of these I expected to like. Others surprised me. All of them have changed how I think about software.
 
@@ -13,7 +13,7 @@ Some of these I expected to like. Others surprised me. All of them have changed 
 
 This sounds minor until you've lived it. `go build` takes seconds. For a large project, maybe 10-15 seconds. That's it.
 
-Coming from .NET where build times can stretch into minutes for larger solutions, the fast feedback loop in Go is transformative. I run the compiler constantly. I try things. I iterate quickly.
+Coming from .NET where build times can stretch into minutes for larger solutions, the fast feedback loop in Go changes how you work. I run the compiler constantly. I try things. I iterate quickly.
 
 When I go back to C# projects now, the build times feel painful in a way they didn't before.
 
@@ -52,7 +52,7 @@ Going back to exception-based code, I find myself thinking "wait, which of these
 
 ## Goroutines and Channels
 
-The concurrency model is genuinely excellent.
+The concurrency model is rather excellent.
 
 ```go
 go processRequest(req)

@@ -7,7 +7,7 @@ tags = ["go", "dotnet", "errors", "csharp"]
 
 So Go doesn't have exceptions. Except... it kind of does. They're called `panic` and `recover`, and they work almost exactly like throw and catch.
 
-Here's the thing: if you use them like exceptions, other Go developers will judge you. Harshly. Let's understand why they exist, when to use them, and why the judgment is (mostly) deserved.
+If you use them like exceptions, other Go developers will judge you. Harshly. Let's understand why they exist, when to use them, and why the judgment is (mostly) deserved.
 
 ## What Panic Does
 

@@ -5,7 +5,7 @@ draft = false
 tags = ["mcp", "ai", "python", "gis"]
 +++
 
-I've been noodling around with the Model Context Protocol lately, and I wanted to share something I've built that demonstrates what I think is a genuinely interesting pattern: how you can split responsibilities between an AI and a server in a way that plays to each of their strengths.
+I've been noodling around with the Model Context Protocol lately, and I wanted to share something I've built that demonstrates what I think is a rather interesting pattern: how you can split responsibilities between an AI and a server in a way that plays to each of their strengths.
 
 The project is a 3D scene builder. But before you start thinking about meshes, textures, and rendering pipelines, stop. This isn't that. It's far more minimal, and I'd argue, far more useful as a foundation.
 

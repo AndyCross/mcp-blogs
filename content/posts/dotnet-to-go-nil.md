@@ -96,7 +96,7 @@ m := map[string]int{}
 
 ### The Interface Nil Trap
 
-This one is genuinely confusing. An interface can be nil in two ways:
+This one is properly confusing. An interface can be nil in two ways:
 
 ```go
 type Writer interface {

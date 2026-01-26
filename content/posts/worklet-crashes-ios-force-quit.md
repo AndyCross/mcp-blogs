@@ -281,7 +281,7 @@ public override func applicationWillTerminate(_ application: UIApplication) {
 }
 ```
 
-Here's the thing: **`applicationWillTerminate` is not reliably called on iOS 13+**.
+**`applicationWillTerminate` is not reliably called on iOS 13+**.
 
 When users swipe away apps in the app switcher, iOS often just kills the process without calling it. The scene-based lifecycle in iOS 13+ changed the rules, and `applicationWillTerminate` became more of a "nice to have" than a guarantee.
 

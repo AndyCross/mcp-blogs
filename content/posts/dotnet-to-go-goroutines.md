@@ -5,7 +5,7 @@ draft = false
 tags = ["go", "dotnet", "concurrency", "async", "csharp"]
 +++
 
-Here's the thing about Go's concurrency model: it's going to feel backwards. You've spent years learning that async operations need `async` keywords, `await` expressions, `Task<T>` return types, and careful thought about which thread you're on.
+Go's concurrency model is going to feel backwards. You've spent years learning that async operations need `async` keywords, `await` expressions, `Task<T>` return types, and careful thought about which thread you're on.
 
 Go throws all of that out. Any function can be concurrent. There's no special syntax. No coloured functions. No async/await virus spreading through your codebase.
 
@@ -274,7 +274,7 @@ Here's what took me time to internalise:
 
 ## The Honest Take
 
-Go's concurrency model is simpler to start with and scales well. The lack of function colouring is genuinely liberating. No more "async virus" infecting your codebase.
+Go's concurrency model is simpler to start with and scales well. The lack of function colouring is properly liberating. No more "async virus" infecting your codebase.
 
 But C#'s model is more explicit about what's happening. When you see `await`, you know there's a potential suspension point. In Go, any function call might block. That's fine, but less visible.
 

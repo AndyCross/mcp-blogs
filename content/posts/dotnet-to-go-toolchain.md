@@ -62,7 +62,7 @@ The key insight: **the module path is the project's identity**. It's what other 
 
 ## The Build Model
 
-This is where things get genuinely different, and honestly? It took me a while to stop fighting it.
+This is where things get properly different, and honestly? It took me a while to stop fighting it.
 
 ### C# Build Mental Model
 
@@ -177,7 +177,7 @@ After a few weeks with Go's toolchain, here's my take:
 **Better than C#:**
 - Simplicity. One tool, minimal configuration.
 - Cross-compilation. Effortless.
-- Build speed. It's genuinely fast.
+- Build speed. It's properly fast.
 - Deployment. Single binary, no runtime.
 
 **Worse than C#:**

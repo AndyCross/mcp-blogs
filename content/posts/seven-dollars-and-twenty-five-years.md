@@ -11,7 +11,7 @@ Specifically, I needed native Google Sign-In using Android's modern Credential M
 
 ## The Paywall Problem
 
-Here's the thing: solutions exist. Expo has a vibrant plugin ecosystem. But the ones that solve this particular problem (native Credential Manager with nonce support) are almost all behind paywalls. Subscription services. Premium tiers. Enterprise plans.
+Solutions exist. Expo has a vibrant plugin ecosystem. But the ones that solve this particular problem (native Credential Manager with nonce support) are almost all behind paywalls. Subscription services. Premium tiers. Enterprise plans.
 
 I get it. People need to make money. But for a side project exploring SLM deployment, paying $20/month for an auth plugin feels wrong. Especially when the underlying Android APIs are well-documented and straightforward.
 

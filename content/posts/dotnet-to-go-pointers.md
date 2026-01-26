@@ -258,7 +258,7 @@ C# has several ways to get pointer-like semantics:
 | `unsafe` pointers | `unsafe.Pointer` | Both are escape hatches |
 | `ref struct` | No equivalent | Go doesn't have stack-only types |
 
-C#'s `ref struct` and `Span<T>` are genuinely more sophisticated than anything Go offers. If you're doing zero-allocation parsing or high-performance buffer manipulation, .NET's tooling is better.
+C#'s `ref struct` and `Span<T>` are rather more sophisticated than anything Go offers. If you're doing zero-allocation parsing or high-performance buffer manipulation, .NET's tooling is better.
 
 Go's answer is "use slices and let the GC handle it." Less control, simpler mental model, occasionally more allocation.
 

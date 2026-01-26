@@ -318,7 +318,7 @@ Go's proverb is "share memory by communicating," but sometimes sharing memory wi
 
 ## The Honest Take
 
-Channels are genuinely elegant. They're built into the language, they compose well, and they make producer-consumer patterns trivial.
+Channels are remarkably elegant. They're built into the language, they compose well, and they make producer-consumer patterns trivial.
 
 **What Go does better:**
 - First-class language support

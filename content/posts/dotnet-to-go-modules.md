@@ -75,7 +75,7 @@ The `// indirect` comment marks transitive dependencies, packages that your depe
 
 ## No Central Registry
 
-Here's the thing that confused me coming from NuGet: Go doesn't have a package registry.
+This confused me coming from NuGet: Go doesn't have a package registry.
 
 NuGet has nuget.org. npm has npmjs.com. Go has... URLs.
 

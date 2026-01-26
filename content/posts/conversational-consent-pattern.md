@@ -182,7 +182,7 @@ The code isn't complicated. The mindset shift is the hard part: treating consent
 
 ## The Bet
 
-Here's the thing: privacy regulations aren't going away. If anything, they're getting stricter. The companies that figure out how to make privacy *feel good* are going to have a massive advantage.
+Privacy regulations aren't going away. If anything, they're getting stricter. The companies that figure out how to make privacy *feel good* are going to have a massive advantage.
 
 Dark patterns are being banned. "Accept All" buttons are being scrutinised. The consent wall approach is on borrowed time.
 

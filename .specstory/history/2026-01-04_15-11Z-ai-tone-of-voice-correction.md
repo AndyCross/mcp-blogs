@@ -8758,8 +8758,6 @@ Let me fix these files. There are a lot of em dashes to fix here.</details></thi
 
 <details><summary>Tool use: **edit_file_v2** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/dotnet-to-go-structs.md</summary>
 
-Status: **loading**
-
 </details>
 
 </tool-use>
@@ -8770,6 +8768,6234 @@ Status: **loading**
 
 <details><summary>Tool use: **edit_file_v2** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/dotnet-to-go-structs.md</summary>
 
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+Good, now let me fix the seven-dollars-and-twenty-five-years.md file.</details></think>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/seven-dollars-and-twenty-five-years.md</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/seven-dollars-and-twenty-five-years.md</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/seven-dollars-and-twenty-five-years.md</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/seven-dollars-and-twenty-five-years.md</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/seven-dollars-and-twenty-five-years.md</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/seven-dollars-and-twenty-five-years.md</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/seven-dollars-and-twenty-five-years.md</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/seven-dollars-and-twenty-five-years.md</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/seven-dollars-and-twenty-five-years.md</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/seven-dollars-and-twenty-five-years.md</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/seven-dollars-and-twenty-five-years.md</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/seven-dollars-and-twenty-five-years.md</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/seven-dollars-and-twenty-five-years.md</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+Good progress! Let me continue with the remaining high-count files.</details></think>
+
+---
+
+Now let me tackle the remaining files:
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "—",
+  "path": "/Users/andycross/src/personal/mcp-blogs/content/posts/worklet-crashes-ios-force-quit.md",
+  "context": 0,
+  "caseInsensitive": false
+}
+```
+Result:
+
+```json
+{
+  "success": {
+    "pattern": "—",
+    "path": "/Users/andycross/src/personal/mcp-blogs/content/posts/worklet-crashes-ios-force-quit.md",
+    "outputMode": "content",
+    "workspaceResults": {
+      "/Users/andycross/src/personal/mcp-blogs": {
+        "content": {
+          "matches": [
+            {
+              "file": "content/posts/worklet-crashes-ios-force-quit.md",
+              "matches": [
+                {
+                  "lineNumber": 16,
+                  "content": "**Update (December 2024):** After the initial fix, I got *another* crash—this time from just opening the app switcher, not even force-quitting. The rabbit hole went deeper. See [Part 2: The App Switcher Crash](#part-2-the-app-switcher-crash) below."
+                },
+                {
+                  "lineNumber": 144,
+                  "content": "Also, stop rendering when the app goes inactive. **But be careful:** don't unmount native views, just skip rendering. (I learned this the hard way—see [Part 2](#part-2-the-app-switcher-crash).)"
+                },
+                {
+                  "lineNumber": 175,
+                  "content": "- **react-native-worklets-core** — the underlying runtime"
+                },
+                {
+                  "lineNumber": 176,
+                  "content": "- **react-native-reanimated** — animations"
+                },
+                {
+                  "lineNumber": 177,
+                  "content": "- **react-native-filament** — 3D rendering"
+                },
+                {
+                  "lineNumber": 178,
+                  "content": "- **react-native-skia** — 2D graphics"
+                },
+                {
+                  "lineNumber": 179,
+                  "content": "- **vision-camera** — frame processors"
+                },
+                {
+                  "lineNumber": 212,
+                  "content": "This bug is a perfect example of why crash reporting from real users matters. I never would have found this in development. The force-quit gesture is something users do constantly but developers almost never do—we're always hot-reloading or stopping from the CLI."
+                },
+                {
+                  "lineNumber": 214,
+                  "content": "It's also a reminder that threads don't respect your app lifecycle. When you spin up background work—worklets, timers, network requests—you're making a promise that you'll clean up after yourself. Native frameworks expect it. When you don't, things get ugly."
+                },
+                {
+                  "lineNumber": 244,
+                  "content": "The smoking gun: &#96;0x000000000000000c&#96;. That's 12 bytes offset from null—classic \"accessing a field on a nil object.\""
+                },
+                {
+                  "lineNumber": 266,
+                  "content": "When &#96;isAppActive&#96; becomes &#96;false&#96;, React unmounts &#96;&lt;FilamentView&gt;&#96;. Unmounting triggers Filament's native cleanup—&#96;FEngine::destroy()&#96;, &#96;FRenderer::terminate()&#96;. That cleanup throws an &#96;NSException&#96;. React Native tries to convert that exception to a JavaScript error. But Hermes (the JS runtime) is already being torn down, or the conversion is happening on the wrong thread."
+                },
+                {
+                  "lineNumber": 294,
+                  "content": "#### 1. Don't Unmount—Just Pause"
+                },
+                {
+                  "lineNumber": 362,
+                  "content": "This notification **is** reliably called. Native modules can listen for it to prepare for potential termination—pause operations, flush caches, whatever they need."
+                },
+                {
+                  "lineNumber": 391,
+                  "content": "| Worklet crashes on force-quit | — | Bail out early with &#96;isSceneActive&#96; guard |"
+                },
+                {
+                  "lineNumber": 393,
+                  "content": "| &#96;applicationWillTerminate&#96; not called | — | Also use &#96;applicationDidEnterBackground&#96; |"
+                }
+              ]
+            }
+          ],
+          "totalLines": 15,
+          "totalMatchedLines": 15
+        }
+      }
+    }
+  }
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "—",
+  "path": "/Users/andycross/src/personal/mcp-blogs/content/posts/three-js-scenes-from-conversation.md",
+  "context": 0,
+  "caseInsensitive": false
+}
+```
+Result:
+
+```json
+{
+  "success": {
+    "pattern": "—",
+    "path": "/Users/andycross/src/personal/mcp-blogs/content/posts/three-js-scenes-from-conversation.md",
+    "outputMode": "content",
+    "workspaceResults": {
+      "/Users/andycross/src/personal/mcp-blogs": {
+        "content": {
+          "matches": [
+            {
+              "file": "content/posts/three-js-scenes-from-conversation.md",
+              "matches": [
+                {
+                  "lineNumber": 8,
+                  "content": "In my [previous post](/posts/building-3d-scenes-with-mcp/), I promised that the scene data was portable—that you could feed it to \"a game engine, a GIS tool, a mapping API, whatever.\" Time to make good on that."
+                },
+                {
+                  "lineNumber": 73,
+                  "content": "This starts an HTTP server on port 8080 that speaks the MCP protocol. Under the hood, FastMCP uses Server-Sent Events (SSE) for the transport—the client opens a persistent connection to &#96;/sse&#96;, and the server streams responses back."
+                },
+                {
+                  "lineNumber": 99,
+                  "content": "Here's the first interesting challenge. The MCP server stores positions in WGS84—latitude and longitude on a sphere. Three.js works in Cartesian coordinates—X, Y, Z in a flat 3D space."
+                },
+                {
+                  "lineNumber": 136,
+                  "content": "This gives us meter-scale accuracy within a few kilometers of the origin—more than enough for our purposes. For planetary-scale scenes, you'd want a proper geodetic library, but let's not over-engineer."
+                },
+                {
+                  "lineNumber": 582,
+                  "content": "To connect this to a real MCP server, you'd replace the mock data with actual MCP client calls. The [@anthropic-ai/mcp-client](https://www.npmjs.com/package/@anthropic-ai/mcp-client) package handles the SSE/JSON-RPC protocol—your viewer just needs to call &#96;client.callTool('get_scene', {})&#96; and pass the results to &#96;syncScene()&#96;."
+                },
+                {
+                  "lineNumber": 588,
+                  "content": "Watch the Three.js viewer. As Claude calls the MCP tools, objects pop into existence. Move things around, add more objects, delete some—the viewer stays in sync."
+                },
+                {
+                  "lineNumber": 592,
+                  "content": "This pattern—MCP server as authoritative state, LLM as interpreter, web viewer as dumb renderer—is remarkably clean. Each component does exactly one thing:"
+                },
+                {
+                  "lineNumber": 608,
+                  "content": "**Real-time SSE**: Instead of polling, subscribe to server events. FastMCP's SSE transport supports this—you'd need to track tool call results and push scene changes."
+                }
+              ]
+            }
+          ],
+          "totalLines": 8,
+          "totalMatchedLines": 8
+        }
+      }
+    }
+  }
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+Let me fix these files.</details></think>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/worklet-crashes-ios-force-quit.md</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/worklet-crashes-ios-force-quit.md</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/worklet-crashes-ios-force-quit.md</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/worklet-crashes-ios-force-quit.md</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/worklet-crashes-ios-force-quit.md</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/three-js-scenes-from-conversation.md</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/worklet-crashes-ios-force-quit.md</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/worklet-crashes-ios-force-quit.md</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/worklet-crashes-ios-force-quit.md</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/worklet-crashes-ios-force-quit.md</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/worklet-crashes-ios-force-quit.md</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/worklet-crashes-ios-force-quit.md</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/three-js-scenes-from-conversation.md</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/three-js-scenes-from-conversation.md</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/three-js-scenes-from-conversation.md</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/three-js-scenes-from-conversation.md</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/three-js-scenes-from-conversation.md</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/three-js-scenes-from-conversation.md</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/three-js-scenes-from-conversation.md</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+Good progress! Let me continue with the remaining files.</details></think>
+
+---
+
+Now let me tackle the remaining high-count files:
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "—",
+  "path": "/Users/andycross/src/personal/mcp-blogs/content/posts/building-3d-scenes-with-mcp.md",
+  "context": 0,
+  "caseInsensitive": false
+}
+```
+Result:
+
+```json
+{
+  "success": {
+    "pattern": "—",
+    "path": "/Users/andycross/src/personal/mcp-blogs/content/posts/building-3d-scenes-with-mcp.md",
+    "outputMode": "content",
+    "workspaceResults": {
+      "/Users/andycross/src/personal/mcp-blogs": {
+        "content": {
+          "matches": [
+            {
+              "file": "content/posts/building-3d-scenes-with-mcp.md",
+              "matches": [
+                {
+                  "lineNumber": 10,
+                  "content": "The project is a 3D scene builder. But before you start thinking about meshes, textures, and rendering pipelines—stop. This isn't that. It's far more minimal, and I'd argue, far more useful as a foundation."
+                },
+                {
+                  "lineNumber": 14,
+                  "content": "The server maintains a collection of named objects in real-world geographic space. That's it. No rendering, no assets, no visual output. Just a spatial registry that speaks in WGS84 coordinates—the same system your phone's GPS uses."
+                },
+                {
+                  "lineNumber": 21,
+                  "content": "| &#96;type&#96; | Freeform descriptor—could be \"house\", \"ancient oak\", or \"portal to dimension X\" |"
+                },
+                {
+                  "lineNumber": 27,
+                  "content": "Why so minimal? Because downstream systems can interpret this data however they like. Feed it to a game engine, a GIS tool, a mapping API, whatever. The scene server doesn't care about rendering—it cares about *where things are*."
+                },
+                {
+                  "lineNumber": 33,
+                  "content": "Claude, on the other hand, is brilliant at understanding spatial language. \"Behind the house\", \"near the oak tree\", \"along the path\"—this is exactly the kind of fuzzy human concept that LLMs handle well."
+                },
+                {
+                  "lineNumber": 65,
+                  "content": "The server handles the tricky bit—calculating what \"20 metres at bearing 225\" means on a sphere. Claude just needs to know that southwest = 225°."
+                },
+                {
+                  "lineNumber": 84,
+                  "content": "- &#96;add_object&#96; — place something in the scene"
+                },
+                {
+                  "lineNumber": 85,
+                  "content": "- &#96;remove_object&#96; — delete by name"
+                },
+                {
+                  "lineNumber": 88,
+                  "content": "- &#96;set_position&#96; — move to new coordinates"
+                },
+                {
+                  "lineNumber": 89,
+                  "content": "- &#96;set_orientation&#96; — rotate"
+                },
+                {
+                  "lineNumber": 90,
+                  "content": "- &#96;set_scale&#96; — resize"
+                },
+                {
+                  "lineNumber": 93,
+                  "content": "- &#96;get_object&#96; — full details of one object"
+                },
+                {
+                  "lineNumber": 94,
+                  "content": "- &#96;list_objects&#96; — all objects, optionally filtered by type"
+                },
+                {
+                  "lineNumber": 97,
+                  "content": "- &#96;geocode&#96; — natural language → coordinates"
+                },
+                {
+                  "lineNumber": 98,
+                  "content": "- &#96;calculate_offset&#96; — \"from here, go X metres at bearing Y\""
+                },
+                {
+                  "lineNumber": 101,
+                  "content": "- &#96;get_scene&#96; — export everything"
+                },
+                {
+                  "lineNumber": 102,
+                  "content": "- &#96;set_scene&#96; — import/replace everything"
+                },
+                {
+                  "lineNumber": 108,
+                  "content": "I think there's a broader lesson here about building MCP servers. The temptation is to make them smart—to handle natural language, fuzzy inputs, contextual interpretation. But that's Claude's job. That's what the LLM is *for*."
+                },
+                {
+                  "lineNumber": 112,
+                  "content": "1. **Precise** — clear inputs, predictable outputs"
+                },
+                {
+                  "lineNumber": 113,
+                  "content": "2. **Minimal** — do one thing well"
+                },
+                {
+                  "lineNumber": 114,
+                  "content": "3. **Portable** — standard formats (WGS84, JSON, etc.)"
+                },
+                {
+                  "lineNumber": 115,
+                  "content": "4. **Stateless where possible** — let the client handle persistence"
+                },
+                {
+                  "lineNumber": 145,
+                  "content": "This is foundation work. The scene data is portable—it's just coordinates and metadata. You could feed it to:"
+                }
+              ]
+            }
+          ],
+          "totalLines": 23,
+          "totalMatchedLines": 23
+        }
+      }
+    }
+  }
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "—",
+  "path": "/Users/andycross/src/personal/mcp-blogs/content/posts/conversational-consent-pattern.md",
+  "context": 0,
+  "caseInsensitive": false
+}
+```
+Result:
+
+```json
+{
+  "success": {
+    "pattern": "—",
+    "path": "/Users/andycross/src/personal/mcp-blogs/content/posts/conversational-consent-pattern.md",
+    "outputMode": "content",
+    "workspaceResults": {
+      "/Users/andycross/src/personal/mcp-blogs": {
+        "content": {
+          "matches": [
+            {
+              "file": "content/posts/conversational-consent-pattern.md",
+              "matches": [
+                {
+                  "lineNumber": 8,
+                  "content": "I've been thinking a lot about privacy consent lately. Not the legal side—though that matters—but the *experience* side. The way we currently handle consent is, frankly, insulting to users."
+                },
+                {
+                  "lineNumber": 10,
+                  "content": "You know the drill. Land on a site, get slapped with a modal, click through seventeen toggles you don't understand, accept something you didn't read, and get on with your life. Nobody reads those consent forms. Nobody understands the toggles. And nobody—*nobody*—feels like they made an informed decision."
+                },
+                {
+                  "lineNumber": 37,
+                  "content": "1. **Default to permissive** — Start with reasonable defaults that let users actually use your product"
+                },
+                {
+                  "lineNumber": 38,
+                  "content": "2. **Surface consent contextually** — When you need specific consent, ask for it *in the flow*, not before it"
+                },
+                {
+                  "lineNumber": 39,
+                  "content": "3. **Use natural language** — Let the LLM explain what you're asking and why, in plain English"
+                },
+                {
+                  "lineNumber": 40,
+                  "content": "4. **Respect the answer** — Store preferences, honour them, and don't ask again unnecessarily"
+                },
+                {
+                  "lineNumber": 41,
+                  "content": "5. **Inject context to agents** — Tell your AI what consent exists so it can behave appropriately"
+                },
+                {
+                  "lineNumber": 128,
+                  "content": "- &#96;GET /api/me/privacy/consent&#96; — Current preferences"
+                },
+                {
+                  "lineNumber": 129,
+                  "content": "- &#96;PUT /api/me/privacy/consent&#96; — Update preferences"
+                },
+                {
+                  "lineNumber": 130,
+                  "content": "- &#96;GET /api/me/privacy/consent/history&#96; — Audit trail"
+                },
+                {
+                  "lineNumber": 156,
+                  "content": "There's something deeper here. Traditional consent mechanisms treat privacy as a *barrier*—something to get past before the real experience begins. The Conversational Consent Pattern treats privacy as part of the *relationship*."
+                },
+                {
+                  "lineNumber": 166,
+                  "content": "We've been exploring this pattern at TheControlGroup and Laris, particularly in our BeautyAI work. The results have been encouraging—users are more willing to share information when asked conversationally, and more likely to actually understand what they're agreeing to."
+                },
+                {
+                  "lineNumber": 174,
+                  "content": "1. **Audit your current consent flows** — Where are you front-loading consent? What could be deferred?"
+                },
+                {
+                  "lineNumber": 175,
+                  "content": "2. **Build your consent state service** — Track what explicit preferences exist"
+                },
+                {
+                  "lineNumber": 176,
+                  "content": "3. **Inject context to your LLM** — Tell it what consent exists (and doesn't)"
+                },
+                {
+                  "lineNumber": 177,
+                  "content": "4. **Register consent collection functions** — Let the LLM request consent when needed"
+                },
+                {
+                  "lineNumber": 178,
+                  "content": "5. **Wire up your backend** — Proper storage with audit trails"
+                },
+                {
+                  "lineNumber": 179,
+                  "content": "6. **Test with real users** — Watch how they respond to conversational consent vs. traditional modals"
+                },
+                {
+                  "lineNumber": 181,
+                  "content": "The code isn't complicated. The mindset shift is the hard part—treating consent as conversation rather than obstacle."
+                },
+                {
+                  "lineNumber": 191,
+                  "content": "That's the bet, anyway. Build privacy into the conversation, not around it. Let the LLM do what it's good at—explaining, contextualising, respecting nuance. Let your backend do what it's good at—storage, audit trails, enforcement."
+                },
+                {
+                  "lineNumber": 197,
+                  "content": "*If you're working on similar problems—conversational AI, privacy architecture, or the intersection of both—I'd love to hear about it. Find me on the usual channels.*"
+                }
+              ]
+            }
+          ],
+          "totalLines": 21,
+          "totalMatchedLines": 21
+        }
+      }
+    }
+  }
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+Let me fix these two files as well.</details></think>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/building-3d-scenes-with-mcp.md</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/building-3d-scenes-with-mcp.md</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/building-3d-scenes-with-mcp.md</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/building-3d-scenes-with-mcp.md</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/building-3d-scenes-with-mcp.md</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/building-3d-scenes-with-mcp.md</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/building-3d-scenes-with-mcp.md</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/building-3d-scenes-with-mcp.md</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/building-3d-scenes-with-mcp.md</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/building-3d-scenes-with-mcp.md</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/building-3d-scenes-with-mcp.md</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/building-3d-scenes-with-mcp.md</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/building-3d-scenes-with-mcp.md</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/building-3d-scenes-with-mcp.md</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+Good. Now let me fix the conversational-consent-pattern.md file.</details></think>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/conversational-consent-pattern.md</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/conversational-consent-pattern.md</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/conversational-consent-pattern.md</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/conversational-consent-pattern.md</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/conversational-consent-pattern.md</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/conversational-consent-pattern.md</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/conversational-consent-pattern.md</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/conversational-consent-pattern.md</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/conversational-consent-pattern.md</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/conversational-consent-pattern.md</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+Let me check the remaining file and the final count.</details></think>
+
+---
+
+Now let me tackle the last remaining file with many em dashes:
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "—",
+  "path": "/Users/andycross/src/personal/mcp-blogs/content/posts/invisible-models-ios-3d-debugging.md",
+  "context": 0,
+  "caseInsensitive": false
+}
+```
+Result:
+
+```json
+{
+  "success": {
+    "pattern": "—",
+    "path": "/Users/andycross/src/personal/mcp-blogs/content/posts/invisible-models-ios-3d-debugging.md",
+    "outputMode": "content",
+    "workspaceResults": {
+      "/Users/andycross/src/personal/mcp-blogs": {
+        "content": {
+          "matches": [
+            {
+              "file": "content/posts/invisible-models-ios-3d-debugging.md",
+              "matches": [
+                {
+                  "lineNumber": 12,
+                  "content": "This is the story of two silent killers in React Native 3D development—and how to avoid them."
+                },
+                {
+                  "lineNumber": 47,
+                  "content": "1. **iOS App Transport Security** — Even with &#96;NSAllowsArbitraryLoads: true&#96;, native code doesn't necessarily inherit JavaScript's network permissions"
+                },
+                {
+                  "lineNumber": 48,
+                  "content": "2. **Aggressive Sandboxing** — iOS sandboxes native code more heavily than JS"
+                },
+                {
+                  "lineNumber": 49,
+                  "content": "3. **Path Resolution** — Filament's iOS implementation expects local &#96;file://&#96; paths, not HTTP URLs with relative references"
+                },
+                {
+                  "lineNumber": 55,
+                  "content": "Convert GLTF to GLB. GLB is the binary version of GLTF—everything packed into a single self-contained file. No external references, no path resolution issues."
+                },
+                {
+                  "lineNumber": 67,
+                  "content": "After converting to GLB, my grid model still broke rendering. But worse—it broke *everything*. Adding this one model caused the entire scene to stop rendering. Other models that worked perfectly became invisible too."
+                },
+                {
+                  "lineNumber": 79,
+                  "content": "That's the problem. The grid was using LINE primitive mode—a wireframe representation drawn with individual line segments."
+                },
+                {
+                  "lineNumber": 87,
+                  "content": "This is the insidious part. You add a wireframe grid to your scene—seems harmless. Testing on simulator: works. Testing on Android: works. Deploy to a real iPhone: *everything* disappears."
+                },
+                {
+                  "lineNumber": 95,
+                  "content": "1. **Use GLB, not GLTF** — No external references"
+                },
+                {
+                  "lineNumber": 96,
+                  "content": "2. **Use TRIANGULAR primitives only** — No LINE mode, no POINTS mode"
+                },
+                {
+                  "lineNumber": 112,
+                  "content": "1. **Test on simulator first** — If it works there, you've hit one of these issues"
+                },
+                {
+                  "lineNumber": 113,
+                  "content": "2. **Test on Android** — If it works there too, it's definitely iOS-specific"
+                },
+                {
+                  "lineNumber": 114,
+                  "content": "3. **Check your file format** — GLTF with external refs? Convert to GLB"
+                },
+                {
+                  "lineNumber": 115,
+                  "content": "4. **Inspect the GLB** — Look for LINE or POINTS primitive modes"
+                },
+                {
+                  "lineNumber": 116,
+                  "content": "5. **Bisect your models** — Remove them one by one to find the culprit"
+                },
+                {
+                  "lineNumber": 130,
+                  "content": "Not entirely, obviously. It's incredibly useful for rapid iteration. But there's a class of bugs that only exist on physical hardware—especially where native code interacts with platform-specific graphics APIs. iOS's Metal implementation has quirks that simply don't manifest in the simulated environment."
+                },
+                {
+                  "lineNumber": 147,
+                  "content": "// ❌ GLTF with external .bin reference — fails on iOS device"
+                },
+                {
+                  "lineNumber": 150,
+                  "content": "// ❌ GLB with LINE primitive mode — also fails on iOS device"
+                },
+                {
+                  "lineNumber": 153,
+                  "content": "// ✅ GLB with triangle primitives — works everywhere"
+                }
+              ]
+            }
+          ],
+          "totalLines": 19,
+          "totalMatchedLines": 19
+        }
+      }
+    }
+  }
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+Let me fix this file as well.</details></think>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/invisible-models-ios-3d-debugging.md</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/invisible-models-ios-3d-debugging.md</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/invisible-models-ios-3d-debugging.md</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/invisible-models-ios-3d-debugging.md</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/invisible-models-ios-3d-debugging.md</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/invisible-models-ios-3d-debugging.md</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/invisible-models-ios-3d-debugging.md</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/invisible-models-ios-3d-debugging.md</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/invisible-models-ios-3d-debugging.md</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/invisible-models-ios-3d-debugging.md</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/invisible-models-ios-3d-debugging.md</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/invisible-models-ios-3d-debugging.md</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+Good. Let me check the final count.</details></think>
+
+---
+
+Let me check the final count:
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "—",
+  "path": "/Users/andycross/src/personal/mcp-blogs/content/posts",
+  "outputMode": "count",
+  "caseInsensitive": false
+}
+```
+Result:
+
+```json
+{
+  "success": {
+    "pattern": "—",
+    "path": "/Users/andycross/src/personal/mcp-blogs/content/posts",
+    "outputMode": "count",
+    "workspaceResults": {
+      "/Users/andycross/src/personal/mcp-blogs": {
+        "count": {
+          "counts": [
+            {
+              "file": "content/posts/seven-dollars-and-twenty-five-years.md",
+              "count": 1
+            },
+            {
+              "file": "content/posts/dotnet-to-go-what-i-miss.md",
+              "count": 1
+            },
+            {
+              "file": "content/posts/dotnet-to-go-never-go-back.md",
+              "count": 1
+            },
+            {
+              "file": "content/posts/dotnet-to-go-nil.md",
+              "count": 3
+            },
+            {
+              "file": "content/posts/dotnet-to-go-single-binary.md",
+              "count": 1
+            },
+            {
+              "file": "content/posts/dotnet-to-go-docker.md",
+              "count": 1
+            },
+            {
+              "file": "content/posts/dotnet-to-go-build-tags.md",
+              "count": 1
+            },
+            {
+              "file": "content/posts/dotnet-to-go-channels.md",
+              "count": 1
+            },
+            {
+              "file": "content/posts/dotnet-to-go-composition.md",
+              "count": 1
+            },
+            {
+              "file": "content/posts/dotnet-to-go-select.md",
+              "count": 1
+            },
+            {
+              "file": "content/posts/no-emotions-in-runtime.md",
+              "count": 1
+            }
+          ],
+          "totalFiles": 11,
+          "totalMatches": 13
+        }
+      }
+    }
+  }
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+Excellent! Down from 315 to 13 em dashes. Let me check the remaining ones to see if they're legitimate or need fixing.</details></think>
+
+---
+
+From **315 to 13** em dashes. Let me check what's left:
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "—",
+  "path": "/Users/andycross/src/personal/mcp-blogs/content/posts",
+  "context": 0,
+  "caseInsensitive": false
+}
+```
+Result:
+
+```json
+{
+  "success": {
+    "pattern": "—",
+    "path": "/Users/andycross/src/personal/mcp-blogs/content/posts",
+    "outputMode": "content",
+    "workspaceResults": {
+      "/Users/andycross/src/personal/mcp-blogs": {
+        "content": {
+          "matches": [
+            {
+              "file": "content/posts/seven-dollars-and-twenty-five-years.md",
+              "matches": [
+                {
+                  "lineNumber": 102,
+                  "content": "I suspect we need this equation. As AI tooling becomes more central to how we build software, we'll need better ways to value the human expertise that makes AI productive. The tokens are cheap. The time is measurable. But the decades of context that let you wield these tools effectively—that's the variable nobody's quantified yet."
+                }
+              ]
+            },
+            {
+              "file": "content/posts/dotnet-to-go-what-i-miss.md",
+              "matches": [
+                {
+                  "lineNumber": 227,
+                  "content": "*Next up: the features I'll never go back for—the Go patterns that have genuinely ruined me for other languages.*"
+                }
+              ]
+            },
+            {
+              "file": "content/posts/dotnet-to-go-never-go-back.md",
+              "matches": [
+                {
+                  "lineNumber": 163,
+                  "content": "*Next time: six months in—a proper retrospective on whether this journey was worth it.*"
+                }
+              ]
+            },
+            {
+              "file": "content/posts/dotnet-to-go-nil.md",
+              "matches": [
+                {
+                  "lineNumber": 72,
+                  "content": "A nil slice isn't \"no slice\"—it's an empty slice with no backing array. Most operations work. This is intentional and idiomatic."
+                },
+                {
+                  "lineNumber": 149,
+                  "content": "Every field has a defined zero value. There's no \"unset\" state—just \"set to zero.\""
+                },
+                {
+                  "lineNumber": 311,
+                  "content": "*Next up: Go's approach to enums—const blocks, iota, and why you'll miss real enums more than you expected to.*"
+                }
+              ]
+            },
+            {
+              "file": "content/posts/dotnet-to-go-single-binary.md",
+              "matches": [
+                {
+                  "lineNumber": 265,
+                  "content": "*Next up: shrinking binaries and build tags—ldflags, conditional compilation, and getting even leaner.*"
+                }
+              ]
+            },
+            {
+              "file": "content/posts/dotnet-to-go-docker.md",
+              "matches": [
+                {
+                  "lineNumber": 326,
+                  "content": "*Next up: AWS Lambda and Go—serverless without the cold start tax.*"
+                }
+              ]
+            },
+            {
+              "file": "content/posts/dotnet-to-go-build-tags.md",
+              "matches": [
+                {
+                  "lineNumber": 329,
+                  "content": "*Next up: Dockerfiles for Go—multi-stage builds, scratch images, and why Go containers are so small.*"
+                }
+              ]
+            },
+            {
+              "file": "content/posts/dotnet-to-go-channels.md",
+              "matches": [
+                {
+                  "lineNumber": 340,
+                  "content": "*Next up: the &#96;select&#96; statement—multiplexing channels, handling timeouts, and non-blocking operations.*"
+                }
+              ]
+            },
+            {
+              "file": "content/posts/dotnet-to-go-composition.md",
+              "matches": [
+                {
+                  "lineNumber": 343,
+                  "content": "*Next up: the empty interface and type assertions—when you're basically back to &#96;object&#96;, and how to work with Go's dynamic typing escape hatch.*"
+                }
+              ]
+            },
+            {
+              "file": "content/posts/dotnet-to-go-select.md",
+              "matches": [
+                {
+                  "lineNumber": 301,
+                  "content": "*Next up: mutexes and WaitGroups—because sometimes shared memory with locks is simpler than channels.*"
+                }
+              ]
+            },
+            {
+              "file": "content/posts/no-emotions-in-runtime.md",
+              "matches": [
+                {
+                  "lineNumber": 64,
+                  "content": "Perhaps there's value in the suffering itself—lessons learned, patterns recognised, taste developed. I believe there is. My $7 plugin post made the point that 25 years of experience was the enabling factor, not an incidental cost. But that's different from claiming the suffering transfers to the artefact."
+                }
+              ]
+            }
+          ],
+          "totalLines": 13,
+          "totalMatchedLines": 13
+        }
+      }
+    }
+  }
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+There are 13 em dashes left. Most are in "Next up:" footer lines which have a consistent pattern. Let me fix these last ones.</details></think>
+
+---
+
+Let me fix the remaining 13:
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/seven-dollars-and-twenty-five-years.md</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/dotnet-to-go-what-i-miss.md</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/dotnet-to-go-never-go-back.md</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/dotnet-to-go-nil.md</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/dotnet-to-go-nil.md</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/dotnet-to-go-nil.md</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/dotnet-to-go-single-binary.md</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/dotnet-to-go-docker.md</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/dotnet-to-go-build-tags.md</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/dotnet-to-go-channels.md</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/dotnet-to-go-composition.md</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/dotnet-to-go-select.md</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/no-emotions-in-runtime.md</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+Let me verify the final count.</details></think>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "—",
+  "path": "/Users/andycross/src/personal/mcp-blogs/content/posts",
+  "outputMode": "count",
+  "caseInsensitive": false
+}
+```
+Result:
+
+```json
+{
+  "success": {
+    "pattern": "—",
+    "path": "/Users/andycross/src/personal/mcp-blogs/content/posts",
+    "outputMode": "count",
+    "workspaceResults": {
+      "/Users/andycross/src/personal/mcp-blogs": {
+        "count": {}
+      }
+    }
+  }
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+Excellent! Zero em dashes remaining across all posts. Let me provide a summary.</details></think>
+
+---
+
+Done. **315 → 0 em dashes**.
+
+Summary of what was cleaned up:
+
+**Pattern replacements:**
+- `X—Y explanation` → `X. Y explanation` (periods for dramatic pause)
+- `X—Y, Z` → `X, Y, Z` (commas for light continuation)  
+- `X—parenthetical aside—Y` → `X (parenthetical aside) Y` (brackets for asides)
+- `X—list item` → `X: list item` (colons for introducing)
+- `**Bold**—description` → `**Bold**: description` (definition lists)
+
+**Also fixed:**
+- The original "It's not magic—it's Y" AI pattern in `dotnet-to-go-lambda.md`
+- Consistent `*Next up:` footer style across all Go series posts
+
+All 55+ blog posts are now clean of the AI em dash pattern.
+
+---
+
+
+
+---
+
+_**User**_
+
+ok what about the other patterns? 
+
+---
+
+_**Agent (model claude-4.5-opus-high-thinking, mode Agent)**_
+
+<think><details><summary>Thought Process</summary>
+The user wants me to continue with the other AI patterns from their style guide. Let me search for:
+
+1. Em dashes - DONE
+2. "X isn't this — it's that" constructions - need to check
+3. Consultant buzzwords (leverage, utilize, value proposition, ecosystem, holistic, paradigm, best-in-class, cutting-edge, seamless, robust, synergy, scalable)
+4. Excessive quotation marks for branded frameworks
+5. Grandiose framing
+6. Hedged confidence (we believe, it's possible, could potentially)
+7. Lists of three with escalating drama
+
+Let me search for these patterns.</details></think>
+
+---
+
+Let me hunt down the remaining AI patterns. I'll search for them in parallel:
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "leverage",
+  "path": "/Users/andycross/src/personal/mcp-blogs/content/posts",
+  "outputMode": "count",
+  "caseInsensitive": true
+}
+```
+Result:
+
+```json
+{
+  "success": {
+    "pattern": "leverage",
+    "path": "/Users/andycross/src/personal/mcp-blogs/content/posts",
+    "outputMode": "count",
+    "workspaceResults": {
+      "/Users/andycross/src/personal/mcp-blogs": {
+        "count": {}
+      }
+    }
+  }
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "utilize",
+  "path": "/Users/andycross/src/personal/mcp-blogs/content/posts",
+  "outputMode": "count",
+  "caseInsensitive": true
+}
+```
+Result:
+
+```json
+{
+  "success": {
+    "pattern": "utilize",
+    "path": "/Users/andycross/src/personal/mcp-blogs/content/posts",
+    "outputMode": "count",
+    "workspaceResults": {
+      "/Users/andycross/src/personal/mcp-blogs": {
+        "count": {}
+      }
+    }
+  }
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "ecosystem",
+  "path": "/Users/andycross/src/personal/mcp-blogs/content/posts",
+  "outputMode": "count",
+  "caseInsensitive": true
+}
+```
+Result:
+
+```json
+{
+  "success": {
+    "pattern": "ecosystem",
+    "path": "/Users/andycross/src/personal/mcp-blogs/content/posts",
+    "outputMode": "count",
+    "workspaceResults": {
+      "/Users/andycross/src/personal/mcp-blogs": {
+        "count": {
+          "counts": [
+            {
+              "file": "content/posts/dotnet-to-go-single-binary.md",
+              "count": 1
+            },
+            {
+              "file": "content/posts/dotnet-to-go-never-go-back.md",
+              "count": 1
+            },
+            {
+              "file": "content/posts/seven-dollars-and-twenty-five-years.md",
+              "count": 1
+            },
+            {
+              "file": "content/posts/dotnet-to-go-modules.md",
+              "count": 2
+            },
+            {
+              "file": "content/posts/dotnet-to-go-six-months.md",
+              "count": 2
+            },
+            {
+              "file": "content/posts/dotnet-to-go-http.md",
+              "count": 1
+            },
+            {
+              "file": "content/posts/dotnet-to-go-kubernetes.md",
+              "count": 2
+            },
+            {
+              "file": "content/posts/dotnet-to-go-logging.md",
+              "count": 1
+            },
+            {
+              "file": "content/posts/dotnet-to-go-benchmarks.md",
+              "count": 1
+            },
+            {
+              "file": "content/posts/dotnet-to-go-testing.md",
+              "count": 1
+            },
+            {
+              "file": "content/posts/dotnet-to-go-context.md",
+              "count": 1
+            }
+          ],
+          "totalFiles": 11,
+          "totalMatches": 14
+        }
+      }
+    }
+  }
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "holistic",
+  "path": "/Users/andycross/src/personal/mcp-blogs/content/posts",
+  "outputMode": "count",
+  "caseInsensitive": true
+}
+```
+Result:
+
+```json
+{
+  "success": {
+    "pattern": "holistic",
+    "path": "/Users/andycross/src/personal/mcp-blogs/content/posts",
+    "outputMode": "count",
+    "workspaceResults": {
+      "/Users/andycross/src/personal/mcp-blogs": {
+        "count": {}
+      }
+    }
+  }
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "paradigm",
+  "path": "/Users/andycross/src/personal/mcp-blogs/content/posts",
+  "outputMode": "count",
+  "caseInsensitive": true
+}
+```
+Result:
+
+```json
+{
+  "success": {
+    "pattern": "paradigm",
+    "path": "/Users/andycross/src/personal/mcp-blogs/content/posts",
+    "outputMode": "count",
+    "workspaceResults": {
+      "/Users/andycross/src/personal/mcp-blogs": {
+        "count": {
+          "counts": [
+            {
+              "file": "content/posts/dotnet-to-go-toolchain.md",
+              "count": 1
+            },
+            {
+              "file": "content/posts/dotnet-to-go-six-months.md",
+              "count": 2
+            }
+          ],
+          "totalFiles": 2,
+          "totalMatches": 3
+        }
+      }
+    }
+  }
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "best-in-class",
+  "path": "/Users/andycross/src/personal/mcp-blogs/content/posts",
+  "outputMode": "count",
+  "caseInsensitive": true
+}
+```
+Result:
+
+```json
+{
+  "success": {
+    "pattern": "best-in-class",
+    "path": "/Users/andycross/src/personal/mcp-blogs/content/posts",
+    "outputMode": "count",
+    "workspaceResults": {
+      "/Users/andycross/src/personal/mcp-blogs": {
+        "count": {}
+      }
+    }
+  }
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "cutting-edge",
+  "path": "/Users/andycross/src/personal/mcp-blogs/content/posts",
+  "outputMode": "count",
+  "caseInsensitive": true
+}
+```
+Result:
+
+```json
+{
+  "success": {
+    "pattern": "cutting-edge",
+    "path": "/Users/andycross/src/personal/mcp-blogs/content/posts",
+    "outputMode": "count",
+    "workspaceResults": {
+      "/Users/andycross/src/personal/mcp-blogs": {
+        "count": {}
+      }
+    }
+  }
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "seamless",
+  "path": "/Users/andycross/src/personal/mcp-blogs/content/posts",
+  "outputMode": "count",
+  "caseInsensitive": true
+}
+```
+Result:
+
+```json
+{
+  "success": {
+    "pattern": "seamless",
+    "path": "/Users/andycross/src/personal/mcp-blogs/content/posts",
+    "outputMode": "count",
+    "workspaceResults": {
+      "/Users/andycross/src/personal/mcp-blogs": {
+        "count": {}
+      }
+    }
+  }
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "\\brobust\\b",
+  "path": "/Users/andycross/src/personal/mcp-blogs/content/posts",
+  "outputMode": "count",
+  "caseInsensitive": true
+}
+```
+Result:
+
+```json
+{
+  "success": {
+    "pattern": "\\brobust\\b",
+    "path": "/Users/andycross/src/personal/mcp-blogs/content/posts",
+    "outputMode": "count",
+    "workspaceResults": {
+      "/Users/andycross/src/personal/mcp-blogs": {
+        "count": {}
+      }
+    }
+  }
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "synergy",
+  "path": "/Users/andycross/src/personal/mcp-blogs/content/posts",
+  "outputMode": "count",
+  "caseInsensitive": true
+}
+```
+Result:
+
+```json
+{
+  "success": {
+    "pattern": "synergy",
+    "path": "/Users/andycross/src/personal/mcp-blogs/content/posts",
+    "outputMode": "count",
+    "workspaceResults": {
+      "/Users/andycross/src/personal/mcp-blogs": {
+        "count": {}
+      }
+    }
+  }
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "scalable",
+  "path": "/Users/andycross/src/personal/mcp-blogs/content/posts",
+  "outputMode": "count",
+  "caseInsensitive": true
+}
+```
+Result:
+
+```json
+{
+  "success": {
+    "pattern": "scalable",
+    "path": "/Users/andycross/src/personal/mcp-blogs/content/posts",
+    "outputMode": "count",
+    "workspaceResults": {
+      "/Users/andycross/src/personal/mcp-blogs": {
+        "count": {}
+      }
+    }
+  }
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "we believe",
+  "path": "/Users/andycross/src/personal/mcp-blogs/content/posts",
+  "outputMode": "count",
+  "caseInsensitive": true
+}
+```
+Result:
+
+```json
+{
+  "success": {
+    "pattern": "we believe",
+    "path": "/Users/andycross/src/personal/mcp-blogs/content/posts",
+    "outputMode": "count",
+    "workspaceResults": {
+      "/Users/andycross/src/personal/mcp-blogs": {
+        "count": {}
+      }
+    }
+  }
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "could potentially",
+  "path": "/Users/andycross/src/personal/mcp-blogs/content/posts",
+  "outputMode": "count",
+  "caseInsensitive": true
+}
+```
+Result:
+
+```json
+{
+  "success": {
+    "pattern": "could potentially",
+    "path": "/Users/andycross/src/personal/mcp-blogs/content/posts",
+    "outputMode": "count",
+    "workspaceResults": {
+      "/Users/andycross/src/personal/mcp-blogs": {
+        "count": {}
+      }
+    }
+  }
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "it's possible",
+  "path": "/Users/andycross/src/personal/mcp-blogs/content/posts",
+  "outputMode": "count",
+  "caseInsensitive": true
+}
+```
+Result:
+
+```json
+{
+  "success": {
+    "pattern": "it's possible",
+    "path": "/Users/andycross/src/personal/mcp-blogs/content/posts",
+    "outputMode": "count",
+    "workspaceResults": {
+      "/Users/andycross/src/personal/mcp-blogs": {
+        "count": {}
+      }
+    }
+  }
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "value proposition",
+  "path": "/Users/andycross/src/personal/mcp-blogs/content/posts",
+  "outputMode": "count",
+  "caseInsensitive": true
+}
+```
+Result:
+
+```json
+{
+  "success": {
+    "pattern": "value proposition",
+    "path": "/Users/andycross/src/personal/mcp-blogs/content/posts",
+    "outputMode": "count",
+    "workspaceResults": {
+      "/Users/andycross/src/personal/mcp-blogs": {
+        "count": {}
+      }
+    }
+  }
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "revolutionary",
+  "path": "/Users/andycross/src/personal/mcp-blogs/content/posts",
+  "outputMode": "count",
+  "caseInsensitive": true
+}
+```
+Result:
+
+```json
+{
+  "success": {
+    "pattern": "revolutionary",
+    "path": "/Users/andycross/src/personal/mcp-blogs/content/posts",
+    "outputMode": "count",
+    "workspaceResults": {
+      "/Users/andycross/src/personal/mcp-blogs": {
+        "count": {
+          "counts": [
+            {
+              "file": "content/posts/seven-dollars-and-twenty-five-years.md",
+              "count": 1
+            }
+          ],
+          "totalFiles": 1,
+          "totalMatches": 1
+        }
+      }
+    }
+  }
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "game.?changer",
+  "path": "/Users/andycross/src/personal/mcp-blogs/content/posts",
+  "outputMode": "count",
+  "caseInsensitive": true
+}
+```
+Result:
+
+```json
+{
+  "success": {
+    "pattern": "game.?changer",
+    "path": "/Users/andycross/src/personal/mcp-blogs/content/posts",
+    "outputMode": "count",
+    "workspaceResults": {
+      "/Users/andycross/src/personal/mcp-blogs": {
+        "count": {}
+      }
+    }
+  }
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "transformative",
+  "path": "/Users/andycross/src/personal/mcp-blogs/content/posts",
+  "outputMode": "count",
+  "caseInsensitive": true
+}
+```
+Result:
+
+```json
+{
+  "success": {
+    "pattern": "transformative",
+    "path": "/Users/andycross/src/personal/mcp-blogs/content/posts",
+    "outputMode": "count",
+    "workspaceResults": {
+      "/Users/andycross/src/personal/mcp-blogs": {
+        "count": {
+          "counts": [
+            {
+              "file": "content/posts/dotnet-to-go-never-go-back.md",
+              "count": 1
+            }
+          ],
+          "totalFiles": 1,
+          "totalMatches": 1
+        }
+      }
+    }
+  }
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+Good news - most consultant buzzwords are clean! Let me look at what we found:
+- **ecosystem**: 14 instances across 11 files - need to review context
+- **paradigm**: 3 instances across 2 files - need to review context
+- **revolutionary**: 1 instance - need to review
+- **transformative**: 1 instance - need to review
+
+Let me examine these in context to decide if they need fixing.</details></think>
+
+---
+
+Good news - most buzzwords are clean. Let me examine the hits:
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "ecosystem",
+  "path": "/Users/andycross/src/personal/mcp-blogs/content/posts",
+  "context": 1,
+  "caseInsensitive": true
+}
+```
+Result:
+
+```json
+{
+  "success": {
+    "pattern": "ecosystem",
+    "path": "/Users/andycross/src/personal/mcp-blogs/content/posts",
+    "outputMode": "content",
+    "workspaceResults": {
+      "/Users/andycross/src/personal/mcp-blogs": {
+        "content": {
+          "matches": [
+            {
+              "file": "content/posts/dotnet-to-go-single-binary.md",
+              "matches": [
+                {
+                  "lineNumber": 252,
+                  "content": "- Better Windows integration",
+                  "isContextLine": true
+                },
+                {
+                  "lineNumber": 253,
+                  "content": "- Richer ecosystem for some domains"
+                },
+                {
+                  "lineNumber": 254,
+                  "content": "- Native AOT on more platforms (eventually)",
+                  "isContextLine": true
+                }
+              ]
+            },
+            {
+              "file": "content/posts/dotnet-to-go-never-go-back.md",
+              "matches": [
+                {
+                  "lineNumber": 156,
+                  "isContextLine": true
+                },
+                {
+                  "lineNumber": 157,
+                  "content": "Would I take a job writing C# again? Absolutely. It's a good language with a mature ecosystem."
+                },
+                {
+                  "lineNumber": 158,
+                  "isContextLine": true
+                }
+              ]
+            },
+            {
+              "file": "content/posts/seven-dollars-and-twenty-five-years.md",
+              "matches": [
+                {
+                  "lineNumber": 13,
+                  "isContextLine": true
+                },
+                {
+                  "lineNumber": 14,
+                  "content": "Here's the thing: solutions exist. Expo has a vibrant plugin ecosystem. But the ones that solve this particular problem (native Credential Manager with nonce support) are almost all behind paywalls. Subscription services. Premium tiers. Enterprise plans."
+                },
+                {
+                  "lineNumber": 15,
+                  "isContextLine": true
+                }
+              ]
+            },
+            {
+              "file": "content/posts/dotnet-to-go-modules.md",
+              "matches": [
+                {
+                  "lineNumber": 7,
+                  "isContextLine": true
+                },
+                {
+                  "lineNumber": 8,
+                  "content": "Right, let's talk about dependencies. In .NET land, we've got NuGet, &#96;.csproj&#96; files, &#96;PackageReference&#96; elements, version ranges, transitive dependencies, and &#96;packages.lock.json&#96; if we're being careful. It's a mature ecosystem with excellent tooling."
+                },
+                {
+                  "lineNumber": 9,
+                  "isContextLine": true
+                },
+                {
+                  "lineNumber": 268,
+                  "isContextLine": true
+                },
+                {
+                  "lineNumber": 269,
+                  "content": "The Ruby and Node ecosystems taught us that flexible version resolution leads to \"works on my machine\" nightmares. Go said: fine, no flexibility. Exact versions always."
+                },
+                {
+                  "lineNumber": 270,
+                  "isContextLine": true
+                }
+              ]
+            },
+            {
+              "file": "content/posts/dotnet-to-go-six-months.md",
+              "matches": [
+                {
+                  "lineNumber": 41,
+                  "isContextLine": true
+                },
+                {
+                  "lineNumber": 42,
+                  "content": "**Ignoring the ecosystem**: I tried to stick to stdlib for too long. Libraries like &#96;chi&#96;, &#96;sqlx&#96;, and &#96;zerolog&#96; exist for good reasons. Use them."
+                },
+                {
+                  "lineNumber": 43,
+                  "isContextLine": true
+                },
+                {
+                  "lineNumber": 145,
+                  "isContextLine": true
+                },
+                {
+                  "lineNumber": 146,
+                  "content": "C# is an excellent language with a mature ecosystem. Go is an excellent language with different trade-offs. Knowing both lets you pick the right tool for each job."
+                },
+                {
+                  "lineNumber": 147,
+                  "isContextLine": true
+                }
+              ]
+            },
+            {
+              "file": "content/posts/dotnet-to-go-http.md",
+              "matches": [
+                {
+                  "lineNumber": 336,
+                  "content": "- OpenAPI generation",
+                  "isContextLine": true
+                },
+                {
+                  "lineNumber": 337,
+                  "content": "- Richer middleware ecosystem"
+                },
+                {
+                  "lineNumber": 338,
+                  "isContextLine": true
+                }
+              ]
+            },
+            {
+              "file": "content/posts/dotnet-to-go-kubernetes.md",
+              "matches": [
+                {
+                  "lineNumber": 7,
+                  "isContextLine": true
+                },
+                {
+                  "lineNumber": 8,
+                  "content": "Kubernetes is written in Go. The CLI tools are Go. The ecosystem is Go. Running Go services on Kubernetes feels natural. The patterns align."
+                },
+                {
+                  "lineNumber": 9,
+                  "isContextLine": true
+                },
+                {
+                  "lineNumber": 362,
+                  "isContextLine": true
+                },
+                {
+                  "lineNumber": 363,
+                  "content": "Go and Kubernetes work well together. They're from the same ecosystem."
+                },
+                {
+                  "lineNumber": 364,
+                  "isContextLine": true
+                }
+              ]
+            },
+            {
+              "file": "content/posts/dotnet-to-go-logging.md",
+              "matches": [
+                {
+                  "lineNumber": 269,
+                  "content": "- More log levels",
+                  "isContextLine": true
+                },
+                {
+                  "lineNumber": 270,
+                  "content": "- Richer ecosystem"
+                },
+                {
+                  "lineNumber": 271,
+                  "content": "- DI integration",
+                  "isContextLine": true
+                }
+              ]
+            },
+            {
+              "file": "content/posts/dotnet-to-go-benchmarks.md",
+              "matches": [
+                {
+                  "lineNumber": 347,
+                  "isContextLine": true
+                },
+                {
+                  "lineNumber": 348,
+                  "content": "*That wraps up Phase 2 on the ecosystem: project structure, testing, mocking, and benchmarking. These are the tools you'll use every day. Go's approach is consistently simpler than .NET's, with trade-offs in power and flexibility. But for most work, simpler is better.*"
+                }
+              ]
+            },
+            {
+              "file": "content/posts/dotnet-to-go-testing.md",
+              "matches": [
+                {
+                  "lineNumber": 312,
+                  "content": "- Better test output formatting",
+                  "isContextLine": true
+                },
+                {
+                  "lineNumber": 313,
+                  "content": "- Mature mocking ecosystem"
+                },
+                {
+                  "lineNumber": 314,
+                  "isContextLine": true
+                }
+              ]
+            },
+            {
+              "file": "content/posts/dotnet-to-go-context.md",
+              "matches": [
+                {
+                  "lineNumber": 311,
+                  "isContextLine": true
+                },
+                {
+                  "lineNumber": 312,
+                  "content": "Context is one of Go's better patterns. It unifies cancellation and request-scoped values into one concept that permeates the ecosystem."
+                },
+                {
+                  "lineNumber": 313,
+                  "isContextLine": true
+                }
+              ]
+            }
+          ],
+          "totalLines": 41,
+          "totalMatchedLines": 14
+        }
+      }
+    }
+  }
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "paradigm",
+  "path": "/Users/andycross/src/personal/mcp-blogs/content/posts",
+  "context": 1,
+  "caseInsensitive": true
+}
+```
+Result:
+
+```json
+{
+  "success": {
+    "pattern": "paradigm",
+    "path": "/Users/andycross/src/personal/mcp-blogs/content/posts",
+    "outputMode": "content",
+    "workspaceResults": {
+      "/Users/andycross/src/personal/mcp-blogs": {
+        "content": {
+          "matches": [
+            {
+              "file": "content/posts/dotnet-to-go-toolchain.md",
+              "matches": [
+                {
+                  "lineNumber": 189,
+                  "content": "- Project structure. Go's conventions feel strange, then liberating.",
+                  "isContextLine": true
+                },
+                {
+                  "lineNumber": 190,
+                  "content": "- Package system. We'll cover this properly, but it's a genuine paradigm shift."
+                },
+                {
+                  "lineNumber": 191,
+                  "isContextLine": true
+                }
+              ]
+            },
+            {
+              "file": "content/posts/dotnet-to-go-six-months.md",
+              "matches": [
+                {
+                  "lineNumber": 97,
+                  "isContextLine": true
+                },
+                {
+                  "lineNumber": 98,
+                  "content": "1. **Learning a different paradigm expanded my thinking**. Go's constraints forced different solutions. Some of those solutions are better."
+                },
+                {
+                  "lineNumber": 99,
+                  "isContextLine": true
+                },
+                {
+                  "lineNumber": 110,
+                  "content": "- You're building services where deployment simplicity matters",
+                  "isContextLine": true
+                },
+                {
+                  "lineNumber": 111,
+                  "content": "- You're curious about different paradigms"
+                },
+                {
+                  "lineNumber": 112,
+                  "content": "- Your team or job requires it",
+                  "isContextLine": true
+                }
+              ]
+            }
+          ],
+          "totalLines": 9,
+          "totalMatchedLines": 3
+        }
+      }
+    }
+  }
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "revolutionary",
+  "path": "/Users/andycross/src/personal/mcp-blogs/content/posts",
+  "context": 1,
+  "caseInsensitive": true
+}
+```
+Result:
+
+```json
+{
+  "success": {
+    "pattern": "revolutionary",
+    "path": "/Users/andycross/src/personal/mcp-blogs/content/posts",
+    "outputMode": "content",
+    "workspaceResults": {
+      "/Users/andycross/src/personal/mcp-blogs": {
+        "content": {
+          "matches": [
+            {
+              "file": "content/posts/seven-dollars-and-twenty-five-years.md",
+              "matches": [
+                {
+                  "lineNumber": 7,
+                  "isContextLine": true
+                },
+                {
+                  "lineNumber": 8,
+                  "content": "I'm building an AI training tool for small language models that ultimately deploys on mobile. Nothing revolutionary there. It's a natural endpoint for a lot of the SLM work happening right now. But I hit a snag: Google Sign-In on Android."
+                },
+                {
+                  "lineNumber": 9,
+                  "isContextLine": true
+                }
+              ]
+            }
+          ],
+          "totalLines": 3,
+          "totalMatchedLines": 1
+        }
+      }
+    }
+  }
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "transformative",
+  "path": "/Users/andycross/src/personal/mcp-blogs/content/posts",
+  "context": 1,
+  "caseInsensitive": true
+}
+```
+Result:
+
+```json
+{
+  "success": {
+    "pattern": "transformative",
+    "path": "/Users/andycross/src/personal/mcp-blogs/content/posts",
+    "outputMode": "content",
+    "workspaceResults": {
+      "/Users/andycross/src/personal/mcp-blogs": {
+        "content": {
+          "matches": [
+            {
+              "file": "content/posts/dotnet-to-go-never-go-back.md",
+              "matches": [
+                {
+                  "lineNumber": 15,
+                  "isContextLine": true
+                },
+                {
+                  "lineNumber": 16,
+                  "content": "Coming from .NET where build times can stretch into minutes for larger solutions, the fast feedback loop in Go is transformative. I run the compiler constantly. I try things. I iterate quickly."
+                },
+                {
+                  "lineNumber": 17,
+                  "isContextLine": true
+                }
+              ]
+            }
+          ],
+          "totalLines": 3,
+          "totalMatchedLines": 1
+        }
+      }
+    }
+  }
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+Looking at these:
+
+**Ecosystem (14 uses)**: These all seem legitimate. "Ecosystem" is being used to describe actual software ecosystems (package ecosystems, Go ecosystem, etc.) - not as vague consultant-speak. They're talking about:
+- Expo's plugin ecosystem (literal)
+- NuGet ecosystem (literal)
+- Go/Kubernetes ecosystem (literal)
+- "Richer ecosystem for some domains" - legitimate comparison
+
+These seem fine - "ecosystem" here is the actual technical term.
+
+**Paradigm (3 uses)**: 
+- "genuine paradigm shift" - borderline but in context describing Go's package system which IS quite different
+- "different paradigm expanded my thinking" - used correctly
+- "curious about different paradigms" - valid usage
+
+These are actually legitimate uses of the word in a technical context about programming languages.
+
+**Revolutionary (1 use)**: "Nothing revolutionary there" - this is actually ANTI-grandiose. The author is downplaying their work, not hyping it.
+
+**Transformative (1 use)**: "the fast feedback loop in Go is transformative" - this could be replaced with something more concrete.
+
+Let me check for other patterns:
+- Lists of three with escalating drama
+- Excessive quotation marks for branded frameworks
+- "isn't this — it's that" patterns (though we fixed em dashes, the structure might remain)</details></think>
+
+---
+
+Most of those are legitimate technical uses:
+- **ecosystem**: Describing actual software ecosystems (Expo, NuGet, Go/Kubernetes) - valid
+- **paradigm**: Technical programming concept usage - valid  
+- **revolutionary**: "Nothing revolutionary there" - actually anti-grandiose, self-deprecating
+- **transformative**: One use that could be more concrete
+
+Let me fix the one weak spot and search for more patterns:
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/dotnet-to-go-never-go-back.md</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "isn't.*it's",
+  "path": "/Users/andycross/src/personal/mcp-blogs/content/posts",
+  "context": 0,
+  "caseInsensitive": true
+}
+```
+Result:
+
+```json
+{
+  "success": {
+    "pattern": "isn't.*it's",
+    "path": "/Users/andycross/src/personal/mcp-blogs/content/posts",
+    "outputMode": "content",
+    "workspaceResults": {
+      "/Users/andycross/src/personal/mcp-blogs": {
+        "content": {
+          "matches": [
+            {
+              "file": "content/posts/no-emotions-in-runtime.md",
+              "matches": [
+                {
+                  "lineNumber": 38,
+                  "content": "Using AI without oversight isn't sophisticated modern development. It's a toddler with a power tool. We don't blame the circular saw when someone cuts off their fingers whilst not paying attention."
+                }
+              ]
+            },
+            {
+              "file": "content/posts/dotnet-to-go-nil.md",
+              "matches": [
+                {
+                  "lineNumber": 72,
+                  "content": "A nil slice isn't \"no slice\". It's an empty slice with no backing array. Most operations work. This is intentional and idiomatic."
+                }
+              ]
+            },
+            {
+              "file": "content/posts/seven-dollars-and-twenty-five-years.md",
+              "matches": [
+                {
+                  "lineNumber": 137,
+                  "content": "This isn't really about Google Sign-In. It's about the calculus of building versus buying in an AI-assisted world."
+                }
+              ]
+            },
+            {
+              "file": "content/posts/building-3d-scenes-with-mcp.md",
+              "matches": [
+                {
+                  "lineNumber": 10,
+                  "content": "The project is a 3D scene builder. But before you start thinking about meshes, textures, and rendering pipelines, stop. This isn't that. It's far more minimal, and I'd argue, far more useful as a foundation."
+                }
+              ]
+            },
+            {
+              "file": "content/posts/dotnet-to-go-health-checks.md",
+              "matches": [
+                {
+                  "lineNumber": 80,
+                  "content": "If readiness fails, Kubernetes removes the pod from the Service endpoints. Traffic goes elsewhere. The pod isn't restarted. It just doesn't receive requests until it's ready again."
+                }
+              ]
+            },
+            {
+              "file": "content/posts/dotnet-to-go-modules.md",
+              "matches": [
+                {
+                  "lineNumber": 82,
+                  "content": "When you &#96;go get github.com/gin-gonic/gin&#96;, Go literally fetches from GitHub. The module path isn't an identifier that maps to a registry. It's a resolvable URL (with some clever translation rules)."
+                }
+              ]
+            },
+            {
+              "file": "content/posts/dotnet-to-go-six-months.md",
+              "matches": [
+                {
+                  "lineNumber": 144,
+                  "content": "But I want to be clear: this isn't a \"Go is better than C#\" conclusion. It's a \"Go is *different* from C#, and understanding both makes you better\" conclusion."
+                }
+              ]
+            },
+            {
+              "file": "content/posts/dotnet-to-go-debugging.md",
+              "matches": [
+                {
+                  "lineNumber": 304,
+                  "content": "*That wraps up the tooling section. Go's tools are simpler than .NET's: &#96;gofmt&#96; instead of formatting debates, &#96;golangci-lint&#96; instead of analyzer configuration, &#96;go generate&#96; instead of source generators. Simpler isn't always better, but it's often good enough.*"
+                }
+              ]
+            }
+          ],
+          "totalLines": 8,
+          "totalMatchedLines": 8
+        }
+      }
+    }
+  }
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "not about.*about",
+  "path": "/Users/andycross/src/personal/mcp-blogs/content/posts",
+  "context": 0,
+  "caseInsensitive": true
+}
+```
+Result:
+
+```json
+{
+  "success": {
+    "pattern": "not about.*about",
+    "path": "/Users/andycross/src/personal/mcp-blogs/content/posts",
+    "outputMode": "content",
+    "workspaceResults": {
+      "/Users/andycross/src/personal/mcp-blogs": {
+        "content": {}
+      }
+    }
+  }
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "faster.*smarter.*better",
+  "path": "/Users/andycross/src/personal/mcp-blogs/content/posts",
+  "outputMode": "count",
+  "caseInsensitive": true
+}
+```
+Result:
+
+```json
+{
+  "success": {
+    "pattern": "faster.*smarter.*better",
+    "path": "/Users/andycross/src/personal/mcp-blogs/content/posts",
+    "outputMode": "count",
+    "workspaceResults": {
+      "/Users/andycross/src/personal/mcp-blogs": {
+        "count": {}
+      }
+    }
+  }
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "not just.*but",
+  "path": "/Users/andycross/src/personal/mcp-blogs/content/posts",
+  "context": 0,
+  "caseInsensitive": true
+}
+```
+Result:
+
+```json
+{
+  "success": {
+    "pattern": "not just.*but",
+    "path": "/Users/andycross/src/personal/mcp-blogs/content/posts",
+    "outputMode": "content",
+    "workspaceResults": {
+      "/Users/andycross/src/personal/mcp-blogs": {
+        "content": {}
+      }
+    }
+  }
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "genuinely",
+  "path": "/Users/andycross/src/personal/mcp-blogs/content/posts",
+  "outputMode": "count",
+  "caseInsensitive": true
+}
+```
+Result:
+
+```json
+{
+  "success": {
+    "pattern": "genuinely",
+    "path": "/Users/andycross/src/personal/mcp-blogs/content/posts",
+    "outputMode": "count",
+    "workspaceResults": {
+      "/Users/andycross/src/personal/mcp-blogs": {
+        "count": {
+          "counts": [
+            {
+              "file": "content/posts/dotnet-to-go-never-go-back.md",
+              "count": 2
+            },
+            {
+              "file": "content/posts/no-emotions-in-runtime.md",
+              "count": 1
+            },
+            {
+              "file": "content/posts/dotnet-to-go-select.md",
+              "count": 1
+            },
+            {
+              "file": "content/posts/dotnet-to-go-composition.md",
+              "count": 1
+            },
+            {
+              "file": "content/posts/dotnet-to-go-channels.md",
+              "count": 1
+            },
+            {
+              "file": "content/posts/dotnet-to-go-nil.md",
+              "count": 1
+            },
+            {
+              "file": "content/posts/dotnet-to-go-what-i-miss.md",
+              "count": 3
+            },
+            {
+              "file": "content/posts/seven-dollars-and-twenty-five-years.md",
+              "count": 1
+            },
+            {
+              "file": "content/posts/building-3d-scenes-with-mcp.md",
+              "count": 1
+            },
+            {
+              "file": "content/posts/dotnet-to-go-structs.md",
+              "count": 2
+            },
+            {
+              "file": "content/posts/dotnet-to-go-toolchain.md",
+              "count": 3
+            },
+            {
+              "file": "content/posts/dotnet-to-go-pointers.md",
+              "count": 1
+            },
+            {
+              "file": "content/posts/dotnet-to-go-escape-analysis.md",
+              "count": 2
+            },
+            {
+              "file": "content/posts/dotnet-to-go-visibility.md",
+              "count": 1
+            },
+            {
+              "file": "content/posts/dotnet-to-go-generics.md",
+              "count": 1
+            },
+            {
+              "file": "content/posts/dotnet-to-go-enums.md",
+              "count": 1
+            },
+            {
+              "file": "content/posts/dotnet-to-go-panic.md",
+              "count": 1
+            },
+            {
+              "file": "content/posts/dotnet-to-go-switch.md",
+              "count": 3
+            },
+            {
+              "file": "content/posts/dotnet-to-go-any.md",
+              "count": 1
+            },
+            {
+              "file": "content/posts/dotnet-to-go-benchmarks.md",
+              "count": 1
+            },
+            {
+              "file": "content/posts/dotnet-to-go-mocking.md",
+              "count": 1
+            },
+            {
+              "file": "content/posts/dotnet-to-go-goroutines.md",
+              "count": 1
+            }
+          ],
+          "totalFiles": 22,
+          "totalMatches": 31
+        }
+      }
+    }
+  }
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "fundamentally",
+  "path": "/Users/andycross/src/personal/mcp-blogs/content/posts",
+  "outputMode": "count",
+  "caseInsensitive": true
+}
+```
+Result:
+
+```json
+{
+  "success": {
+    "pattern": "fundamentally",
+    "path": "/Users/andycross/src/personal/mcp-blogs/content/posts",
+    "outputMode": "count",
+    "workspaceResults": {
+      "/Users/andycross/src/personal/mcp-blogs": {
+        "count": {
+          "counts": [
+            {
+              "file": "content/posts/no-emotions-in-runtime.md",
+              "count": 2
+            },
+            {
+              "file": "content/posts/worklet-crashes-ios-force-quit.md",
+              "count": 1
+            },
+            {
+              "file": "content/posts/dotnet-to-go-health-checks.md",
+              "count": 2
+            },
+            {
+              "file": "content/posts/dotnet-to-go-slices.md",
+              "count": 2
+            },
+            {
+              "file": "content/posts/dotnet-to-go-switch.md",
+              "count": 1
+            }
+          ],
+          "totalFiles": 5,
+          "totalMatches": 8
+        }
+      }
+    }
+  }
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "essentially",
+  "path": "/Users/andycross/src/personal/mcp-blogs/content/posts",
+  "outputMode": "count",
+  "caseInsensitive": true
+}
+```
+Result:
+
+```json
+{
+  "success": {
+    "pattern": "essentially",
+    "path": "/Users/andycross/src/personal/mcp-blogs/content/posts",
+    "outputMode": "count",
+    "workspaceResults": {
+      "/Users/andycross/src/personal/mcp-blogs": {
+        "count": {
+          "counts": [
+            {
+              "file": "content/posts/seven-dollars-and-twenty-five-years.md",
+              "count": 1
+            }
+          ],
+          "totalFiles": 1,
+          "totalMatches": 1
+        }
+      }
+    }
+  }
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+Looking at the "isn't...it's" patterns - these are legitimate contrasts, not the theatrical "It's not X—it's Y" AI pattern. They're normal English constructions.
+
+"genuinely" appears 31 times - that's worth looking at.
+"fundamentally" appears 8 times - should check these.
+"essentially" appears 1 time - probably fine.
+
+Let me check the "genuinely" uses.</details></think>
+
+---
+
+The "isn't...it's" patterns look legitimate - they're normal contrast, not the theatrical AI construction. Let me check the intensifiers:
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "genuinely",
+  "path": "/Users/andycross/src/personal/mcp-blogs/content/posts",
+  "context": 0,
+  "caseInsensitive": true
+}
+```
+Result:
+
+```json
+{
+  "success": {
+    "pattern": "genuinely",
+    "path": "/Users/andycross/src/personal/mcp-blogs/content/posts",
+    "outputMode": "content",
+    "workspaceResults": {
+      "/Users/andycross/src/personal/mcp-blogs": {
+        "content": {
+          "matches": [
+            {
+              "file": "content/posts/dotnet-to-go-never-go-back.md",
+              "matches": [
+                {
+                  "lineNumber": 8,
+                  "content": "Last time I talked about what I miss from C#. Now let's flip it: what has Go given me that I'd genuinely struggle to give up?"
+                },
+                {
+                  "lineNumber": 55,
+                  "content": "The concurrency model is genuinely excellent."
+                }
+              ]
+            },
+            {
+              "file": "content/posts/no-emotions-in-runtime.md",
+              "matches": [
+                {
+                  "lineNumber": 30,
+                  "content": "If you genuinely believe your particular module is so precious that only your suffering-certified brain can be trusted with it, I have news for you: you're working on something too small to matter, or you've fundamentally misunderstood how modern software gets built."
+                }
+              ]
+            },
+            {
+              "file": "content/posts/dotnet-to-go-select.md",
+              "matches": [
+                {
+                  "lineNumber": 282,
+                  "content": "&#96;select&#96; is one of Go's genuinely great features. It makes patterns that are awkward in other languages (timeouts, multiplexing, non-blocking checks) into one clean construct."
+                }
+              ]
+            },
+            {
+              "file": "content/posts/dotnet-to-go-composition.md",
+              "matches": [
+                {
+                  "lineNumber": 12,
+                  "content": "Instead, Go has **embedding**, a form of composition that feels almost like inheritance but isn't. And after using it for a while, I genuinely don't miss base classes."
+                }
+              ]
+            },
+            {
+              "file": "content/posts/dotnet-to-go-channels.md",
+              "matches": [
+                {
+                  "lineNumber": 321,
+                  "content": "Channels are genuinely elegant. They're built into the language, they compose well, and they make producer-consumer patterns trivial."
+                }
+              ]
+            },
+            {
+              "file": "content/posts/dotnet-to-go-nil.md",
+              "matches": [
+                {
+                  "lineNumber": 99,
+                  "content": "This one is genuinely confusing. An interface can be nil in two ways:"
+                }
+              ]
+            },
+            {
+              "file": "content/posts/dotnet-to-go-what-i-miss.md",
+              "matches": [
+                {
+                  "lineNumber": 52,
+                  "content": "C# 8's nullable reference types are genuinely excellent:"
+                },
+                {
+                  "lineNumber": 179,
+                  "content": "The &#96;when&#96; guards and the expression form are genuinely missed."
+                },
+                {
+                  "lineNumber": 227,
+                  "content": "*Next up: the features I'll never go back for. The Go patterns that have genuinely ruined me for other languages.*"
+                }
+              ]
+            },
+            {
+              "file": "content/posts/seven-dollars-and-twenty-five-years.md",
+              "matches": [
+                {
+                  "lineNumber": 92,
+                  "content": "I genuinely don't know how to calculate this. The $7 is measurable. The 2 hours has an opportunity cost. But the 25 years? That's harder. It's not like I was saving those years specifically for this moment. They were happening anyway, building other things, learning other lessons."
+                }
+              ]
+            },
+            {
+              "file": "content/posts/building-3d-scenes-with-mcp.md",
+              "matches": [
+                {
+                  "lineNumber": 8,
+                  "content": "I've been noodling around with the Model Context Protocol lately, and I wanted to share something I've built that demonstrates what I think is a genuinely interesting pattern: how you can split responsibilities between an AI and a server in a way that plays to each of their strengths."
+                }
+              ]
+            },
+            {
+              "file": "content/posts/dotnet-to-go-structs.md",
+              "matches": [
+                {
+                  "lineNumber": 8,
+                  "content": "Here's something that'll feel wrong for about a week: Go doesn't have classes. Not \"Go has classes but calls them something else\". It genuinely doesn't have them. No inheritance. No class hierarchies. No &#96;virtual&#96; or &#96;override&#96;. No &#96;protected&#96;."
+                },
+                {
+                  "lineNumber": 174,
+                  "content": "Here's where Go gets genuinely interesting. Interfaces are satisfied implicitly. No &#96;implements&#96; keyword."
+                }
+              ]
+            },
+            {
+              "file": "content/posts/dotnet-to-go-toolchain.md",
+              "matches": [
+                {
+                  "lineNumber": 10,
+                  "content": "This is the first post in a series documenting that journey. Not a tutorial (the Go docs are excellent), but an honest account of where my C# muscle memory helps, where it hinders, and what makes Go feel genuinely different rather than just superficially unfamiliar."
+                },
+                {
+                  "lineNumber": 65,
+                  "content": "This is where things get genuinely different, and honestly? It took me a while to stop fighting it."
+                },
+                {
+                  "lineNumber": 180,
+                  "content": "- Build speed. It's genuinely fast."
+                }
+              ]
+            },
+            {
+              "file": "content/posts/dotnet-to-go-pointers.md",
+              "matches": [
+                {
+                  "lineNumber": 261,
+                  "content": "C#'s &#96;ref struct&#96; and &#96;Span&lt;T&gt;&#96; are genuinely more sophisticated than anything Go offers. If you're doing zero-allocation parsing or high-performance buffer manipulation, .NET's tooling is better."
+                }
+              ]
+            },
+            {
+              "file": "content/posts/dotnet-to-go-escape-analysis.md",
+              "matches": [
+                {
+                  "lineNumber": 66,
+                  "content": "This is genuinely useful for performance work. You can see exactly what's allocating."
+                },
+                {
+                  "lineNumber": 284,
+                  "content": "For 90% of software, Go's escape analysis is fine. The GC is good. You won't notice. For the other 10%, .NET genuinely has better tools."
+                }
+              ]
+            },
+            {
+              "file": "content/posts/dotnet-to-go-visibility.md",
+              "matches": [
+                {
+                  "lineNumber": 270,
+                  "content": "- **Computed properties**. &#96;user.FullName&#96; is nicer than &#96;user.FullName()&#96; when it's genuinely just a computed value."
+                }
+              ]
+            },
+            {
+              "file": "content/posts/dotnet-to-go-generics.md",
+              "matches": [
+                {
+                  "lineNumber": 212,
+                  "content": "Go 1.21+ added generic functions to the standard library. These are genuinely useful:"
+                }
+              ]
+            },
+            {
+              "file": "content/posts/dotnet-to-go-enums.md",
+              "matches": [
+                {
+                  "lineNumber": 8,
+                  "content": "Go doesn't have enums. Not \"Go has something enum-like\". It genuinely doesn't have a dedicated enum construct. What it has instead is constants, a clever auto-incrementing keyword called &#96;iota&#96;, and convention."
+                }
+              ]
+            },
+            {
+              "file": "content/posts/dotnet-to-go-panic.md",
+              "matches": [
+                {
+                  "lineNumber": 293,
+                  "content": "- Genuinely impossible conditions (defensive programming)"
+                }
+              ]
+            },
+            {
+              "file": "content/posts/dotnet-to-go-switch.md",
+              "matches": [
+                {
+                  "lineNumber": 8,
+                  "content": "C#'s switch statement has evolved a lot over the years. Pattern matching, switch expressions, when guards. It's become genuinely powerful. But Go's switch has some tricks that'll make you wish C# worked this way."
+                },
+                {
+                  "lineNumber": 99,
+                  "content": "Sometimes you genuinely need fallthrough. Go has a &#96;fallthrough&#96; keyword:"
+                },
+                {
+                  "lineNumber": 246,
+                  "content": "This is one area where C# is genuinely more elegant."
+                }
+              ]
+            },
+            {
+              "file": "content/posts/dotnet-to-go-any.md",
+              "matches": [
+                {
+                  "lineNumber": 52,
+                  "content": "Sometimes you genuinely don't know the type:"
+                }
+              ]
+            },
+            {
+              "file": "content/posts/dotnet-to-go-benchmarks.md",
+              "matches": [
+                {
+                  "lineNumber": 325,
+                  "content": "Go's built-in benchmarking is one of its genuinely great features. Zero setup, good enough for most needs."
+                }
+              ]
+            },
+            {
+              "file": "content/posts/dotnet-to-go-mocking.md",
+              "matches": [
+                {
+                  "lineNumber": 331,
+                  "content": "Start with hand-written fakes. Reach for testify/mock if you find yourself writing the same patterns repeatedly. Use generated mocks for genuinely large interfaces."
+                }
+              ]
+            },
+            {
+              "file": "content/posts/dotnet-to-go-goroutines.md",
+              "matches": [
+                {
+                  "lineNumber": 277,
+                  "content": "Go's concurrency model is simpler to start with and scales well. The lack of function colouring is genuinely liberating. No more \"async virus\" infecting your codebase."
+                }
+              ]
+            }
+          ],
+          "totalLines": 31,
+          "totalMatchedLines": 31
+        }
+      }
+    }
+  }
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "fundamentally",
+  "path": "/Users/andycross/src/personal/mcp-blogs/content/posts",
+  "context": 0,
+  "caseInsensitive": true
+}
+```
+Result:
+
+```json
+{
+  "success": {
+    "pattern": "fundamentally",
+    "path": "/Users/andycross/src/personal/mcp-blogs/content/posts",
+    "outputMode": "content",
+    "workspaceResults": {
+      "/Users/andycross/src/personal/mcp-blogs": {
+        "content": {
+          "matches": [
+            {
+              "file": "content/posts/no-emotions-in-runtime.md",
+              "matches": [
+                {
+                  "lineNumber": 30,
+                  "content": "If you genuinely believe your particular module is so precious that only your suffering-certified brain can be trusted with it, I have news for you: you're working on something too small to matter, or you've fundamentally misunderstood how modern software gets built."
+                },
+                {
+                  "lineNumber": 50,
+                  "content": "Why do we keep projecting emotions onto something so fundamentally indifferent?"
+                }
+              ]
+            },
+            {
+              "file": "content/posts/worklet-crashes-ios-force-quit.md",
+              "matches": [
+                {
+                  "lineNumber": 218,
+                  "content": "Probably not 100%. Race conditions are fundamentally about timing, and there's always a window where the stars align wrong. But these changes should reduce the crash rate significantly."
+                }
+              ]
+            },
+            {
+              "file": "content/posts/dotnet-to-go-health-checks.md",
+              "matches": [
+                {
+                  "lineNumber": 24,
+                  "content": "Liveness should answer: \"Is this process fundamentally broken?\""
+                },
+                {
+                  "lineNumber": 42,
+                  "content": "Liveness = \"Is my process fundamentally broken, like stuck in a deadlock?\""
+                }
+              ]
+            },
+            {
+              "file": "content/posts/dotnet-to-go-slices.md",
+              "matches": [
+                {
+                  "lineNumber": 34,
+                  "content": "This is fundamentally different from both C# arrays and &#96;List&lt;T&gt;&#96;."
+                },
+                {
+                  "lineNumber": 300,
+                  "content": "*That wraps up the memory section. Next we'll move into concurrency: goroutines, channels, and why Go's approach is fundamentally different from async/await.*"
+                }
+              ]
+            },
+            {
+              "file": "content/posts/dotnet-to-go-switch.md",
+              "matches": [
+                {
+                  "lineNumber": 431,
+                  "content": "*That wraps up Phase 3 on control flow and error handling. Next we'll move into concurrency: goroutines, channels, and why Go's approach to parallelism is fundamentally different from async/await.*"
+                }
+              ]
+            }
+          ],
+          "totalLines": 8,
+          "totalMatchedLines": 8
+        }
+      }
+    }
+  }
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+"genuinely" - 31 uses. Looking at these, most are legitimate:
+- "genuinely excellent" - okay
+- "genuinely interesting" - okay
+- "genuinely don't miss" - okay- "genuinely useful" - okay
+- "genuinely more sophisticated" - okayThese aren't empty intensifiers - they're usually contrasting with something that might have been expected to be lesser.
+
+"fundamentally" - 8 uses. These also seem legitimate:
+- "fundamentally misunderstood" - valid
+- "fundamentally indifferent" - valid
+- "fundamentally different" - valid (describing actual architectural differences)
+- "fundamentally broken" - valid (talking about liveness checks)These are accurate technical descriptions.
+
+Let me check for other AI patterns:
+- Excessive quotation marks for branded frameworks
+- Hedged confidence more broadly
+- Lists of three</details></think>
+
+---
+
+These "genuinely" and "fundamentally" uses are legitimate - they're adding actual meaning, not empty intensification. Let me check more patterns:
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "importantly",
+  "path": "/Users/andycross/src/personal/mcp-blogs/content/posts",
+  "context": 0,
+  "caseInsensitive": true
+}
+```
+Result:
+
+```json
+{
+  "success": {
+    "pattern": "importantly",
+    "path": "/Users/andycross/src/personal/mcp-blogs/content/posts",
+    "outputMode": "content",
+    "workspaceResults": {
+      "/Users/andycross/src/personal/mcp-blogs": {
+        "content": {}
+      }
+    }
+  }
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "crucially",
+  "path": "/Users/andycross/src/personal/mcp-blogs/content/posts",
+  "context": 0,
+  "caseInsensitive": true
+}
+```
+Result:
+
+```json
+{
+  "success": {
+    "pattern": "crucially",
+    "path": "/Users/andycross/src/personal/mcp-blogs/content/posts",
+    "outputMode": "content",
+    "workspaceResults": {
+      "/Users/andycross/src/personal/mcp-blogs": {
+        "content": {
+          "matches": [
+            {
+              "file": "content/posts/building-3d-scenes-with-mcp.md",
+              "matches": [
+                {
+                  "lineNumber": 71,
+                  "content": "1. &#96;get_object(\"Home\")&#96; → gets position and crucially, *orientation* (say, 180° = facing south)"
+                }
+              ]
+            }
+          ],
+          "totalLines": 1,
+          "totalMatchedLines": 1
+        }
+      }
+    }
+  }
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "ultimately",
+  "path": "/Users/andycross/src/personal/mcp-blogs/content/posts",
+  "context": 0,
+  "caseInsensitive": true
+}
+```
+Result:
+
+```json
+{
+  "success": {
+    "pattern": "ultimately",
+    "path": "/Users/andycross/src/personal/mcp-blogs/content/posts",
+    "outputMode": "content",
+    "workspaceResults": {
+      "/Users/andycross/src/personal/mcp-blogs": {
+        "content": {
+          "matches": [
+            {
+              "file": "content/posts/seven-dollars-and-twenty-five-years.md",
+              "matches": [
+                {
+                  "lineNumber": 8,
+                  "content": "I'm building an AI training tool for small language models that ultimately deploys on mobile. Nothing revolutionary there. It's a natural endpoint for a lot of the SLM work happening right now. But I hit a snag: Google Sign-In on Android."
+                }
+              ]
+            },
+            {
+              "file": "content/posts/dotnet-to-go-escape-analysis.md",
+              "matches": [
+                {
+                  "lineNumber": 150,
+                  "content": "The compiler traces through calls to see if pointers ultimately escape."
+                }
+              ]
+            }
+          ],
+          "totalLines": 2,
+          "totalMatchedLines": 2
+        }
+      }
+    }
+  }
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "powerful",
+  "path": "/Users/andycross/src/personal/mcp-blogs/content/posts",
+  "context": 0,
+  "caseInsensitive": true
+}
+```
+Result:
+
+```json
+{
+  "success": {
+    "pattern": "powerful",
+    "path": "/Users/andycross/src/personal/mcp-blogs/content/posts",
+    "outputMode": "content",
+    "workspaceResults": {
+      "/Users/andycross/src/personal/mcp-blogs": {
+        "content": {
+          "matches": [
+            {
+              "file": "content/posts/dotnet-to-go-select.md",
+              "matches": [
+                {
+                  "lineNumber": 8,
+                  "content": "The &#96;select&#96; statement is where Go's channel system goes from \"neat\" to \"powerful.\" It lets you wait on multiple channel operations simultaneously, handle timeouts, and do non-blocking checks. All with clean syntax."
+                }
+              ]
+            },
+            {
+              "file": "content/posts/dotnet-to-go-composition.md",
+              "matches": [
+                {
+                  "lineNumber": 335,
+                  "content": "Inheritance is a sharp tool. It's powerful when used well and creates brittle, tangled hierarchies when used poorly. Go removes the temptation."
+                }
+              ]
+            },
+            {
+              "file": "content/posts/dotnet-to-go-what-i-miss.md",
+              "matches": [
+                {
+                  "lineNumber": 106,
+                  "content": "Yes, goroutines are more powerful. Yes, no coloured functions is elegant. But sometimes I just want:"
+                },
+                {
+                  "lineNumber": 163,
+                  "content": "Go's type switches are good but not as powerful:"
+                }
+              ]
+            },
+            {
+              "file": "content/posts/dotnet-to-go-modules.md",
+              "matches": [
+                {
+                  "lineNumber": 142,
+                  "content": "This flexibility is powerful but creates problems:"
+                }
+              ]
+            },
+            {
+              "file": "content/posts/dotnet-to-go-enums.md",
+              "matches": [
+                {
+                  "lineNumber": 45,
+                  "content": "The &#96;iota&#96; keyword resets to 0 at each &#96;const&#96; block and increments for each line. It's surprisingly powerful:"
+                }
+              ]
+            },
+            {
+              "file": "content/posts/dotnet-to-go-panic.md",
+              "matches": [
+                {
+                  "lineNumber": 315,
+                  "content": "*Coming up: Go's switch statement. More powerful than C#'s, with type switching, expression cases, and some surprises around fallthrough.*"
+                }
+              ]
+            },
+            {
+              "file": "content/posts/dotnet-to-go-slices.md",
+              "matches": [
+                {
+                  "lineNumber": 294,
+                  "content": "Slices are powerful and efficient. They're also a sharp tool that will cut you. Every Go developer has been bitten by shared backing arrays or forgotten &#96;append&#96; returns."
+                }
+              ]
+            },
+            {
+              "file": "content/posts/dotnet-to-go-switch.md",
+              "matches": [
+                {
+                  "lineNumber": 8,
+                  "content": "C#'s switch statement has evolved a lot over the years. Pattern matching, switch expressions, when guards. It's become genuinely powerful. But Go's switch has some tricks that'll make you wish C# worked this way."
+                },
+                {
+                  "lineNumber": 274,
+                  "content": "Not quite as powerful as full pattern matching, but covers most cases."
+                }
+              ]
+            },
+            {
+              "file": "content/posts/dotnet-to-go-monorepo.md",
+              "matches": [
+                {
+                  "lineNumber": 230,
+                  "content": "- Independent versioning is powerful"
+                }
+              ]
+            },
+            {
+              "file": "content/posts/dotnet-to-go-linting.md",
+              "matches": [
+                {
+                  "lineNumber": 134,
+                  "content": "The most powerful individual linter. It catches subtle bugs:"
+                },
+                {
+                  "lineNumber": 249,
+                  "content": "- Roslyn analyzers are very powerful"
+                }
+              ]
+            },
+            {
+              "file": "content/posts/dotnet-to-go-config.md",
+              "matches": [
+                {
+                  "lineNumber": 10,
+                  "content": "Go doesn't have a standard configuration library. The community uses environment variables, simple file parsing, or third-party libraries. It's less powerful and often exactly what you need."
+                },
+                {
+                  "lineNumber": 171,
+                  "content": "Viper is powerful but adds complexity. Use it when you need it."
+                }
+              ]
+            },
+            {
+              "file": "content/posts/dotnet-to-go-any.md",
+              "matches": [
+                {
+                  "lineNumber": 300,
+                  "content": "Go's type switch is simpler but less powerful."
+                },
+                {
+                  "lineNumber": 328,
+                  "content": "*That wraps up the interfaces and composition section. Go's approach is simpler than C#'s: implicit interfaces, embedding instead of inheritance, and a minimal &#96;any&#96; type for the truly dynamic cases. It's less powerful in some ways, but the constraints push you toward cleaner designs.*"
+                }
+              ]
+            },
+            {
+              "file": "content/posts/dotnet-to-go-mocking.md",
+              "matches": [
+                {
+                  "lineNumber": 36,
+                  "content": "Clean, expressive, powerful. Moq generates a proxy class at runtime that implements the interface and records calls."
+                },
+                {
+                  "lineNumber": 324,
+                  "content": "- Powerful verification syntax"
+                }
+              ]
+            },
+            {
+              "file": "content/posts/dotnet-to-go-testing.md",
+              "matches": [
+                {
+                  "lineNumber": 305,
+                  "content": "- Table-driven tests are powerful"
+                }
+              ]
+            },
+            {
+              "file": "content/posts/dotnet-to-go-context.md",
+              "matches": [
+                {
+                  "lineNumber": 333,
+                  "content": "*That wraps up the concurrency section. Go's model is different from async/await, but it's powerful and consistent. Goroutines for concurrency, channels for communication, context for cancellation and request-scoping. Learn those three and you've got Go's concurrency story.*"
+                }
+              ]
+            },
+            {
+              "file": "content/posts/dotnet-to-go-interfaces.md",
+              "matches": [
+                {
+                  "lineNumber": 245,
+                  "content": "The interface belongs to the consumer, not the producer. That inversion takes time to internalise, but it's powerful."
+                }
+              ]
+            }
+          ],
+          "totalLines": 22,
+          "totalMatchedLines": 22
+        }
+      }
+    }
+  }
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "elegant",
+  "path": "/Users/andycross/src/personal/mcp-blogs/content/posts",
+  "context": 0,
+  "caseInsensitive": true
+}
+```
+Result:
+
+```json
+{
+  "success": {
+    "pattern": "elegant",
+    "path": "/Users/andycross/src/personal/mcp-blogs/content/posts",
+    "outputMode": "content",
+    "workspaceResults": {
+      "/Users/andycross/src/personal/mcp-blogs": {
+        "content": {
+          "matches": [
+            {
+              "file": "content/posts/dotnet-to-go-never-go-back.md",
+              "matches": [
+                {
+                  "lineNumber": 73,
+                  "content": "The producer-consumer pattern in one elegant construct."
+                }
+              ]
+            },
+            {
+              "file": "content/posts/dotnet-to-go-select.md",
+              "matches": [
+                {
+                  "lineNumber": 259,
+                  "content": "| &#96;select&#96; on multiple channels | &#96;Task.WhenAny&#96; | Less elegant syntax |"
+                }
+              ]
+            },
+            {
+              "file": "content/posts/dotnet-to-go-composition.md",
+              "matches": [
+                {
+                  "lineNumber": 227,
+                  "content": "Let's be honest: there are patterns that inheritance handles elegantly."
+                }
+              ]
+            },
+            {
+              "file": "content/posts/dotnet-to-go-channels.md",
+              "matches": [
+                {
+                  "lineNumber": 321,
+                  "content": "Channels are genuinely elegant. They're built into the language, they compose well, and they make producer-consumer patterns trivial."
+                }
+              ]
+            },
+            {
+              "file": "content/posts/dotnet-to-go-what-i-miss.md",
+              "matches": [
+                {
+                  "lineNumber": 48,
+                  "content": "But it's not the same. LINQ is integrated into the language. It's type-safe. It composes elegantly. Go's approach works but lacks the expressiveness."
+                },
+                {
+                  "lineNumber": 106,
+                  "content": "Yes, goroutines are more powerful. Yes, no coloured functions is elegant. But sometimes I just want:"
+                }
+              ]
+            },
+            {
+              "file": "content/posts/dotnet-to-go-github-actions.md",
+              "matches": [
+                {
+                  "lineNumber": 396,
+                  "content": "Setting up CI for Go is straightforward. The standard toolchain does most of what you need. GoReleaser handles releases elegantly."
+                }
+              ]
+            },
+            {
+              "file": "content/posts/dotnet-to-go-visibility.md",
+              "matches": [
+                {
+                  "lineNumber": 265,
+                  "content": "- **The &#96;internal&#96; convention**. Solves the \"internal to this module\" case elegantly."
+                }
+              ]
+            },
+            {
+              "file": "content/posts/dotnet-to-go-generics.md",
+              "matches": [
+                {
+                  "lineNumber": 289,
+                  "content": "Functional, but not as elegant."
+                }
+              ]
+            },
+            {
+              "file": "content/posts/dotnet-to-go-switch.md",
+              "matches": [
+                {
+                  "lineNumber": 246,
+                  "content": "This is one area where C# is genuinely more elegant."
+                },
+                {
+                  "lineNumber": 427,
+                  "content": "Go's switch is simpler and covers the common cases elegantly. C#'s switch has more features for complex matching. Use what each language gives you."
+                }
+              ]
+            },
+            {
+              "file": "content/posts/dotnet-to-go-monorepo.md",
+              "matches": [
+                {
+                  "lineNumber": 240,
+                  "content": "- Solution files coordinate multiple projects elegantly"
+                }
+              ]
+            }
+          ],
+          "totalLines": 12,
+          "totalMatchedLines": 12
+        }
+      }
+    }
+  }
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "straightforward",
+  "path": "/Users/andycross/src/personal/mcp-blogs/content/posts",
+  "outputMode": "count",
+  "caseInsensitive": true
+}
+```
+Result:
+
+```json
+{
+  "success": {
+    "pattern": "straightforward",
+    "path": "/Users/andycross/src/personal/mcp-blogs/content/posts",
+    "outputMode": "count",
+    "workspaceResults": {
+      "/Users/andycross/src/personal/mcp-blogs": {
+        "count": {
+          "counts": [
+            {
+              "file": "content/posts/dotnet-to-go-build-tags.md",
+              "count": 1
+            },
+            {
+              "file": "content/posts/seven-dollars-and-twenty-five-years.md",
+              "count": 3
+            },
+            {
+              "file": "content/posts/dotnet-to-go-escape-analysis.md",
+              "count": 1
+            },
+            {
+              "file": "content/posts/dotnet-to-go-github-actions.md",
+              "count": 1
+            },
+            {
+              "file": "content/posts/dotnet-to-go-visibility.md",
+              "count": 1
+            },
+            {
+              "file": "content/posts/dotnet-to-go-http.md",
+              "count": 1
+            },
+            {
+              "file": "content/posts/dotnet-to-go-json.md",
+              "count": 1
+            },
+            {
+              "file": "content/posts/streaming-json-partial-parser.md",
+              "count": 1
+            }
+          ],
+          "totalFiles": 8,
+          "totalMatches": 10
+        }
+      }
+    }
+  }
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+Most of these are legitimate technical descriptions. "Powerful" and "elegant" are being used to describe actual language features with specific meanings, not as empty marketing speak.
+
+Let me search for a few more AI patterns:
+- "Here's the thing"
+- "Let me be clear"
+- "make no mistake"- "at the end of the day"</details></think>
+
+---
+
+These are technical descriptions, not buzzwords. Let me check for common AI filler phrases:
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "Here's the thing",
+  "path": "/Users/andycross/src/personal/mcp-blogs/content/posts",
+  "context": 0,
+  "caseInsensitive": true
+}
+```
+Result:
+
+```json
+{
+  "success": {
+    "pattern": "Here's the thing",
+    "path": "/Users/andycross/src/personal/mcp-blogs/content/posts",
+    "outputMode": "content",
+    "workspaceResults": {
+      "/Users/andycross/src/personal/mcp-blogs": {
+        "content": {
+          "matches": [
+            {
+              "file": "content/posts/no-emotions-in-runtime.md",
+              "matches": [
+                {
+                  "lineNumber": 14,
+                  "content": "Here's the thing about suffering: it's wildly subjective. What destroys one developer is another's Tuesday afternoon. I've watched juniors spend three days on something I could solve in an hour. Not because I'm smarter, but because I've already suffered through that particular flavour of hell a decade ago. Does their code become more trustworthy because they bled for it? Does mine become suspect because it didn't cost me enough?"
+                }
+              ]
+            },
+            {
+              "file": "content/posts/dotnet-to-go-single-binary.md",
+              "matches": [
+                {
+                  "lineNumber": 8,
+                  "content": "Here's the thing that sold me on Go for production: you build a binary, you copy it to a server, you run it. No runtime to install. No framework version matching. No dependency hell. Just a file."
+                }
+              ]
+            },
+            {
+              "file": "content/posts/seven-dollars-and-twenty-five-years.md",
+              "matches": [
+                {
+                  "lineNumber": 14,
+                  "content": "Here's the thing: solutions exist. Expo has a vibrant plugin ecosystem. But the ones that solve this particular problem (native Credential Manager with nonce support) are almost all behind paywalls. Subscription services. Premium tiers. Enterprise plans."
+                }
+              ]
+            },
+            {
+              "file": "content/posts/conversational-consent-pattern.md",
+              "matches": [
+                {
+                  "lineNumber": 185,
+                  "content": "Here's the thing: privacy regulations aren't going away. If anything, they're getting stricter. The companies that figure out how to make privacy *feel good* are going to have a massive advantage."
+                }
+              ]
+            },
+            {
+              "file": "content/posts/worklet-crashes-ios-force-quit.md",
+              "matches": [
+                {
+                  "lineNumber": 284,
+                  "content": "Here's the thing: **&#96;applicationWillTerminate&#96; is not reliably called on iOS 13+**."
+                }
+              ]
+            },
+            {
+              "file": "content/posts/dotnet-to-go-modules.md",
+              "matches": [
+                {
+                  "lineNumber": 78,
+                  "content": "Here's the thing that confused me coming from NuGet: Go doesn't have a package registry."
+                }
+              ]
+            },
+            {
+              "file": "content/posts/dotnet-to-go-visibility.md",
+              "matches": [
+                {
+                  "lineNumber": 123,
+                  "content": "But here's the thing: now the call site makes it obvious that something's happening."
+                }
+              ]
+            },
+            {
+              "file": "content/posts/dotnet-to-go-panic.md",
+              "matches": [
+                {
+                  "lineNumber": 10,
+                  "content": "Here's the thing: if you use them like exceptions, other Go developers will judge you. Harshly. Let's understand why they exist, when to use them, and why the judgment is (mostly) deserved."
+                }
+              ]
+            },
+            {
+              "file": "content/posts/dotnet-to-go-goroutines.md",
+              "matches": [
+                {
+                  "lineNumber": 8,
+                  "content": "Here's the thing about Go's concurrency model: it's going to feel backwards. You've spent years learning that async operations need &#96;async&#96; keywords, &#96;await&#96; expressions, &#96;Task&lt;T&gt;&#96; return types, and careful thought about which thread you're on."
+                }
+              ]
+            }
+          ],
+          "totalLines": 9,
+          "totalMatchedLines": 9
+        }
+      }
+    }
+  }
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "Let me be clear",
+  "path": "/Users/andycross/src/personal/mcp-blogs/content/posts",
+  "outputMode": "count",
+  "caseInsensitive": true
+}
+```
+Result:
+
+```json
+{
+  "success": {
+    "pattern": "Let me be clear",
+    "path": "/Users/andycross/src/personal/mcp-blogs/content/posts",
+    "outputMode": "count",
+    "workspaceResults": {
+      "/Users/andycross/src/personal/mcp-blogs": {
+        "count": {}
+      }
+    }
+  }
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "at the end of the day",
+  "path": "/Users/andycross/src/personal/mcp-blogs/content/posts",
+  "outputMode": "count",
+  "caseInsensitive": true
+}
+```
+Result:
+
+```json
+{
+  "success": {
+    "pattern": "at the end of the day",
+    "path": "/Users/andycross/src/personal/mcp-blogs/content/posts",
+    "outputMode": "count",
+    "workspaceResults": {
+      "/Users/andycross/src/personal/mcp-blogs": {
+        "count": {}
+      }
+    }
+  }
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "make no mistake",
+  "path": "/Users/andycross/src/personal/mcp-blogs/content/posts",
+  "outputMode": "count",
+  "caseInsensitive": true
+}
+```
+Result:
+
+```json
+{
+  "success": {
+    "pattern": "make no mistake",
+    "path": "/Users/andycross/src/personal/mcp-blogs/content/posts",
+    "outputMode": "count",
+    "workspaceResults": {
+      "/Users/andycross/src/personal/mcp-blogs": {
+        "count": {}
+      }
+    }
+  }
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "in other words",
+  "path": "/Users/andycross/src/personal/mcp-blogs/content/posts",
+  "outputMode": "count",
+  "caseInsensitive": true
+}
+```
+Result:
+
+```json
+{
+  "success": {
+    "pattern": "in other words",
+    "path": "/Users/andycross/src/personal/mcp-blogs/content/posts",
+    "outputMode": "count",
+    "workspaceResults": {
+      "/Users/andycross/src/personal/mcp-blogs": {
+        "count": {}
+      }
+    }
+  }
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "needless to say",
+  "path": "/Users/andycross/src/personal/mcp-blogs/content/posts",
+  "outputMode": "count",
+  "caseInsensitive": true
+}
+```
+Result:
+
+```json
+{
+  "success": {
+    "pattern": "needless to say",
+    "path": "/Users/andycross/src/personal/mcp-blogs/content/posts",
+    "outputMode": "count",
+    "workspaceResults": {
+      "/Users/andycross/src/personal/mcp-blogs": {
+        "count": {}
+      }
+    }
+  }
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "it goes without saying",
+  "path": "/Users/andycross/src/personal/mcp-blogs/content/posts",
+  "outputMode": "count",
+  "caseInsensitive": true
+}
+```
+Result:
+
+```json
+{
+  "success": {
+    "pattern": "it goes without saying",
+    "path": "/Users/andycross/src/personal/mcp-blogs/content/posts",
+    "outputMode": "count",
+    "workspaceResults": {
+      "/Users/andycross/src/personal/mcp-blogs": {
+        "count": {}
+      }
+    }
+  }
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "delve",
+  "path": "/Users/andycross/src/personal/mcp-blogs/content/posts",
+  "outputMode": "count",
+  "caseInsensitive": true
+}
+```
+Result:
+
+```json
+{
+  "success": {
+    "pattern": "delve",
+    "path": "/Users/andycross/src/personal/mcp-blogs/content/posts",
+    "outputMode": "count",
+    "workspaceResults": {
+      "/Users/andycross/src/personal/mcp-blogs": {
+        "count": {
+          "counts": [
+            {
+              "file": "content/posts/dotnet-to-go-debugging.md",
+              "count": 12
+            },
+            {
+              "file": "content/posts/dotnet-to-go-generate.md",
+              "count": 1
+            }
+          ],
+          "totalFiles": 2,
+          "totalMatches": 13
+        }
+      }
+    }
+  }
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "dive into",
+  "path": "/Users/andycross/src/personal/mcp-blogs/content/posts",
+  "outputMode": "count",
+  "caseInsensitive": true
+}
+```
+Result:
+
+```json
+{
+  "success": {
+    "pattern": "dive into",
+    "path": "/Users/andycross/src/personal/mcp-blogs/content/posts",
+    "outputMode": "count",
+    "workspaceResults": {
+      "/Users/andycross/src/personal/mcp-blogs": {
+        "count": {}
+      }
+    }
+  }
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "let's dive",
+  "path": "/Users/andycross/src/personal/mcp-blogs/content/posts",
+  "outputMode": "count",
+  "caseInsensitive": true
+}
+```
+Result:
+
+```json
+{
+  "success": {
+    "pattern": "let's dive",
+    "path": "/Users/andycross/src/personal/mcp-blogs/content/posts",
+    "outputMode": "count",
+    "workspaceResults": {
+      "/Users/andycross/src/personal/mcp-blogs": {
+        "count": {}
+      }
+    }
+  }
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+"Here's the thing" appears 9 times. This is a conversational opener that could be considered an AI pattern when overused. Let me check "delve" - that's a classic AI marker.
+
+Wait, looking at the delve count - 13 matches, mostly in one file. Let me see what that's about.</details></think>
+
+---
+
+9 instances of "Here's the thing" - a bit formulaic. Let me see the "delve" hits and check a few more patterns:
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "delve",
+  "path": "/Users/andycross/src/personal/mcp-blogs/content/posts",
+  "context": 0,
+  "caseInsensitive": true
+}
+```
+Result:
+
+```json
+{
+  "success": {
+    "pattern": "delve",
+    "path": "/Users/andycross/src/personal/mcp-blogs/content/posts",
+    "outputMode": "content",
+    "workspaceResults": {
+      "/Users/andycross/src/personal/mcp-blogs": {
+        "content": {
+          "matches": [
+            {
+              "file": "content/posts/dotnet-to-go-debugging.md",
+              "matches": [
+                {
+                  "lineNumber": 2,
+                  "content": "title = \"Debugging: Delve vs Visual Studio's Comfort\""
+                },
+                {
+                  "lineNumber": 10,
+                  "content": "Go's debugger is Delve (&#96;dlv&#96;). It's good. It's not Visual Studio."
+                },
+                {
+                  "lineNumber": 14,
+                  "content": "## Delve Basics"
+                },
+                {
+                  "lineNumber": 19,
+                  "content": "go install github.com/go-delve/delve/cmd/dlv@latest"
+                },
+                {
+                  "lineNumber": 64,
+                  "content": "The Go extension integrates Delve. Create &#96;.vscode/launch.json&#96;:"
+                },
+                {
+                  "lineNumber": 185,
+                  "content": "Add Delve to your container:"
+                },
+                {
+                  "lineNumber": 189,
+                  "content": "RUN go install github.com/go-delve/delve/cmd/dlv@latest"
+                },
+                {
+                  "lineNumber": 204,
+                  "content": "| Feature | Visual Studio | Delve |"
+                },
+                {
+                  "lineNumber": 280,
+                  "content": "Delve is competent. It's not Visual Studio."
+                },
+                {
+                  "lineNumber": 282,
+                  "content": "**What Delve does well:**"
+                },
+                {
+                  "lineNumber": 296,
+                  "content": "You'll miss Visual Studio's refinement. GoLand gets closest to that experience. VS Code with Delve is good enough for most debugging."
+                },
+                {
+                  "lineNumber": 300,
+                  "content": "Adjust your expectations, learn Delve's commands, and you'll be productive. Just don't expect Visual Studio's magic."
+                }
+              ]
+            },
+            {
+              "file": "content/posts/dotnet-to-go-generate.md",
+              "matches": [
+                {
+                  "lineNumber": 310,
+                  "content": "*Next up: debugging with Delve. Getting productive with dlv after Visual Studio's polished debugging experience.*"
+                }
+              ]
+            }
+          ],
+          "totalLines": 13,
+          "totalMatchedLines": 13
+        }
+      }
+    }
+  }
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "it's worth noting",
+  "path": "/Users/andycross/src/personal/mcp-blogs/content/posts",
+  "outputMode": "count",
+  "caseInsensitive": true
+}
+```
+Result:
+
+```json
+{
+  "success": {
+    "pattern": "it's worth noting",
+    "path": "/Users/andycross/src/personal/mcp-blogs/content/posts",
+    "outputMode": "count",
+    "workspaceResults": {
+      "/Users/andycross/src/personal/mcp-blogs": {
+        "count": {}
+      }
+    }
+  }
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "interestingly",
+  "path": "/Users/andycross/src/personal/mcp-blogs/content/posts",
+  "outputMode": "count",
+  "caseInsensitive": true
+}
+```
+Result:
+
+```json
+{
+  "success": {
+    "pattern": "interestingly",
+    "path": "/Users/andycross/src/personal/mcp-blogs/content/posts",
+    "outputMode": "count",
+    "workspaceResults": {
+      "/Users/andycross/src/personal/mcp-blogs": {
+        "count": {}
+      }
+    }
+  }
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "notably",
+  "path": "/Users/andycross/src/personal/mcp-blogs/content/posts",
+  "outputMode": "count",
+  "caseInsensitive": true
+}
+```
+Result:
+
+```json
+{
+  "success": {
+    "pattern": "notably",
+    "path": "/Users/andycross/src/personal/mcp-blogs/content/posts",
+    "outputMode": "count",
+    "workspaceResults": {
+      "/Users/andycross/src/personal/mcp-blogs": {
+        "count": {}
+      }
+    }
+  }
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "however,",
+  "path": "/Users/andycross/src/personal/mcp-blogs/content/posts",
+  "outputMode": "count",
+  "caseInsensitive": true
+}
+```
+Result:
+
+```json
+{
+  "success": {
+    "pattern": "however,",
+    "path": "/Users/andycross/src/personal/mcp-blogs/content/posts",
+    "outputMode": "count",
+    "workspaceResults": {
+      "/Users/andycross/src/personal/mcp-blogs": {
+        "count": {}
+      }
+    }
+  }
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+The "delve" hits are all about Delve, the Go debugger - not the AI word "delve into". That's legitimate.
+
+The "Here's the thing" phrase appears 9 times. It's a bit formulaic but it's also a natural conversational opener. Let me consider if this needs fixing. It's used to set up an important point - it's not empty. But 9 times across all the posts is probably okay.
+
+Let me check for a few more AI patterns:- "Let's" constructions- Lists of adjectives with commas ending in "and"- Excessive use of "simply"</details></think>
+
+---
+
+The "delve" hits are all about Delve, the Go debugger - not the AI filler word. Let me check a few more:
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "simply put",
+  "path": "/Users/andycross/src/personal/mcp-blogs/content/posts",
+  "outputMode": "count",
+  "caseInsensitive": true
+}
+```
+Result:
+
+```json
+{
+  "success": {
+    "pattern": "simply put",
+    "path": "/Users/andycross/src/personal/mcp-blogs/content/posts",
+    "outputMode": "count",
+    "workspaceResults": {
+      "/Users/andycross/src/personal/mcp-blogs": {
+        "count": {}
+      }
+    }
+  }
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "\\bsimply\\b",
+  "path": "/Users/andycross/src/personal/mcp-blogs/content/posts",
+  "outputMode": "count",
+  "caseInsensitive": true
+}
+```
+Result:
+
+```json
+{
+  "success": {
+    "pattern": "\\bsimply\\b",
+    "path": "/Users/andycross/src/personal/mcp-blogs/content/posts",
+    "outputMode": "count",
+    "workspaceResults": {
+      "/Users/andycross/src/personal/mcp-blogs": {
+        "count": {
+          "counts": [
+            {
+              "file": "content/posts/dotnet-to-go-never-go-back.md",
+              "count": 1
+            },
+            {
+              "file": "content/posts/invisible-models-ios-3d-debugging.md",
+              "count": 1
+            }
+          ],
+          "totalFiles": 2,
+          "totalMatches": 2
+        }
+      }
+    }
+  }
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "game-?changing",
+  "path": "/Users/andycross/src/personal/mcp-blogs/content/posts",
+  "outputMode": "count",
+  "caseInsensitive": true
+}
+```
+Result:
+
+```json
+{
+  "success": {
+    "pattern": "game-?changing",
+    "path": "/Users/andycross/src/personal/mcp-blogs/content/posts",
+    "outputMode": "count",
+    "workspaceResults": {
+      "/Users/andycross/src/personal/mcp-blogs": {
+        "count": {}
+      }
+    }
+  }
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "landscape",
+  "path": "/Users/andycross/src/personal/mcp-blogs/content/posts",
+  "outputMode": "count",
+  "caseInsensitive": true
+}
+```
+Result:
+
+```json
+{
+  "success": {
+    "pattern": "landscape",
+    "path": "/Users/andycross/src/personal/mcp-blogs/content/posts",
+    "outputMode": "count",
+    "workspaceResults": {
+      "/Users/andycross/src/personal/mcp-blogs": {
+        "count": {
+          "counts": [
+            {
+              "file": "content/posts/dotnet-to-go-nil.md",
+              "count": 1
+            }
+          ],
+          "totalFiles": 1,
+          "totalMatches": 1
+        }
+      }
+    }
+  }
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "navigate",
+  "path": "/Users/andycross/src/personal/mcp-blogs/content/posts",
+  "context": 0,
+  "caseInsensitive": true
+}
+```
+Result:
+
+```json
+{
+  "success": {
+    "pattern": "navigate",
+    "path": "/Users/andycross/src/personal/mcp-blogs/content/posts",
+    "outputMode": "content",
+    "workspaceResults": {
+      "/Users/andycross/src/personal/mcp-blogs": {
+        "content": {
+          "matches": [
+            {
+              "file": "content/posts/no-emotions-in-runtime.md",
+              "matches": [
+                {
+                  "lineNumber": 16,
+                  "content": "The argument, taken to its logical conclusion, suggests that experts (people who've accumulated enough scar tissue to navigate problems efficiently) are somehow less invested in their work. That proficiency breeds detachment."
+                }
+              ]
+            },
+            {
+              "file": "content/posts/seven-dollars-and-twenty-five-years.md",
+              "matches": [
+                {
+                  "lineNumber": 80,
+                  "content": "This plugin took me about 2 hours to build. The LLM token cost was around $7, mostly Claude helping me navigate the Credential Manager API and Expo's config plugin system."
+                }
+              ]
+            },
+            {
+              "file": "content/posts/dotnet-to-go-toolchain.md",
+              "matches": [
+                {
+                  "lineNumber": 159,
+                  "content": "This feels restrictive at first. Then you realise it makes codebases significantly easier to navigate. You always know what package a file belongs to. Just look at where it lives."
+                }
+              ]
+            }
+          ],
+          "totalLines": 3,
+          "totalMatchedLines": 3
+        }
+      }
+    }
+  }
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "unlock",
+  "path": "/Users/andycross/src/personal/mcp-blogs/content/posts",
+  "outputMode": "count",
+  "caseInsensitive": true
+}
+```
+Result:
+
+```json
+{
+  "success": {
+    "pattern": "unlock",
+    "path": "/Users/andycross/src/personal/mcp-blogs/content/posts",
+    "outputMode": "count",
+    "workspaceResults": {
+      "/Users/andycross/src/personal/mcp-blogs": {
+        "count": {
+          "counts": [
+            {
+              "file": "content/posts/dotnet-to-go-phrasebook.md",
+              "count": 1
+            },
+            {
+              "file": "content/posts/dotnet-to-go-pointers.md",
+              "count": 1
+            },
+            {
+              "file": "content/posts/dotnet-to-go-sync.md",
+              "count": 11
+            }
+          ],
+          "totalFiles": 3,
+          "totalMatches": 13
+        }
+      }
+    }
+  }
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "empower",
+  "path": "/Users/andycross/src/personal/mcp-blogs/content/posts",
+  "outputMode": "count",
+  "caseInsensitive": true
+}
+```
+Result:
+
+```json
+{
+  "success": {
+    "pattern": "empower",
+    "path": "/Users/andycross/src/personal/mcp-blogs/content/posts",
+    "outputMode": "count",
+    "workspaceResults": {
+      "/Users/andycross/src/personal/mcp-blogs": {
+        "count": {
+          "counts": [
+            {
+              "file": "content/posts/conversational-consent-pattern.md",
+              "count": 1
+            }
+          ],
+          "totalFiles": 1,
+          "totalMatches": 1
+        }
+      }
+    }
+  }
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+Let me check the "unlock" uses - 13 in one file is suspicious:</details></think>
+
+---
+
+Let me check those "unlock" hits:
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "unlock",
+  "path": "/Users/andycross/src/personal/mcp-blogs/content/posts",
+  "context": 0,
+  "caseInsensitive": true
+}
+```
+Result:
+
+```json
+{
+  "success": {
+    "pattern": "unlock",
+    "path": "/Users/andycross/src/personal/mcp-blogs/content/posts",
+    "outputMode": "content",
+    "workspaceResults": {
+      "/Users/andycross/src/personal/mcp-blogs": {
+        "content": {
+          "matches": [
+            {
+              "file": "content/posts/dotnet-to-go-phrasebook.md",
+              "matches": [
+                {
+                  "lineNumber": 28,
+                  "content": "| &#96;lock&#96; | &#96;sync.Mutex&#96; | Manual lock/unlock |"
+                }
+              ]
+            },
+            {
+              "file": "content/posts/dotnet-to-go-pointers.md",
+              "matches": [
+                {
+                  "lineNumber": 198,
+                  "content": "   var mu sync.Mutex  // zero Mutex is valid, unlocked"
+                }
+              ]
+            },
+            {
+              "file": "content/posts/dotnet-to-go-sync.md",
+              "matches": [
+                {
+                  "lineNumber": 22,
+                  "content": "    defer c.mu.Unlock()"
+                },
+                {
+                  "lineNumber": 28,
+                  "content": "    defer c.mu.Unlock()"
+                },
+                {
+                  "lineNumber": 53,
+                  "content": "Pretty similar. Go doesn't have a &#96;lock&#96; keyword, so you explicitly call &#96;Lock()&#96; and &#96;Unlock()&#96;. The &#96;defer&#96; ensures unlock even if the code panics."
+                },
+                {
+                  "lineNumber": 67,
+                  "content": "    defer c.mu.RUnlock()"
+                },
+                {
+                  "lineNumber": 74,
+                  "content": "    defer c.mu.Unlock()"
+                },
+                {
+                  "lineNumber": 186,
+                  "content": "    defer q.cond.L.Unlock()"
+                },
+                {
+                  "lineNumber": 194,
+                  "content": "    defer q.cond.L.Unlock()"
+                },
+                {
+                  "lineNumber": 310,
+                  "content": "    m.mu.Unlock()"
+                },
+                {
+                  "lineNumber": 349,
+                  "content": "| &#96;lock&#96; | &#96;sync.Mutex&#96; | Manual Lock/Unlock |"
+                },
+                {
+                  "lineNumber": 364,
+                  "content": "- &#96;defer&#96; makes unlock reliable"
+                },
+                {
+                  "lineNumber": 368,
+                  "content": "- &#96;lock&#96; keyword is more concise than Lock/Unlock"
+                }
+              ]
+            }
+          ],
+          "totalLines": 13,
+          "totalMatchedLines": 13
+        }
+      }
+    }
+  }
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+All legitimate uses - "unlock" is the actual Go mutex method, not marketing speak. The writing is clean.Let me do a final check for any remaining patterns:
+- Excessive "the fact that"
+- "In conclusion"
+- "To summarize"- "Moving forward"</details></think>
+
+---
+
+All legitimate mutex terminology. Let me check a few final patterns:
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "the fact that",
+  "path": "/Users/andycross/src/personal/mcp-blogs/content/posts",
+  "context": 0,
+  "caseInsensitive": true
+}
+```
+Result:
+
+```json
+{
+  "success": {
+    "pattern": "the fact that",
+    "path": "/Users/andycross/src/personal/mcp-blogs/content/posts",
+    "outputMode": "content",
+    "workspaceResults": {
+      "/Users/andycross/src/personal/mcp-blogs": {
+        "content": {
+          "matches": [
+            {
+              "file": "content/posts/streaming-json-partial-parser.md",
+              "matches": [
+                {
+                  "lineNumber": 31,
+                  "content": "3. Handle the fact that for most of the stream, the JSON is *incomplete*"
+                }
+              ]
+            }
+          ],
+          "totalLines": 1,
+          "totalMatchedLines": 1
+        }
+      }
+    }
+  }
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "in conclusion",
+  "path": "/Users/andycross/src/personal/mcp-blogs/content/posts",
+  "outputMode": "count",
+  "caseInsensitive": true
+}
+```
+Result:
+
+```json
+{
+  "success": {
+    "pattern": "in conclusion",
+    "path": "/Users/andycross/src/personal/mcp-blogs/content/posts",
+    "outputMode": "count",
+    "workspaceResults": {
+      "/Users/andycross/src/personal/mcp-blogs": {
+        "count": {}
+      }
+    }
+  }
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "moving forward",
+  "path": "/Users/andycross/src/personal/mcp-blogs/content/posts",
+  "outputMode": "count",
+  "caseInsensitive": true
+}
+```
+Result:
+
+```json
+{
+  "success": {
+    "pattern": "moving forward",
+    "path": "/Users/andycross/src/personal/mcp-blogs/content/posts",
+    "outputMode": "count",
+    "workspaceResults": {
+      "/Users/andycross/src/personal/mcp-blogs": {
+        "count": {}
+      }
+    }
+  }
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "to summarize",
+  "path": "/Users/andycross/src/personal/mcp-blogs/content/posts",
+  "outputMode": "count",
+  "caseInsensitive": true
+}
+```
+Result:
+
+```json
+{
+  "success": {
+    "pattern": "to summarize",
+    "path": "/Users/andycross/src/personal/mcp-blogs/content/posts",
+    "outputMode": "count",
+    "workspaceResults": {
+      "/Users/andycross/src/personal/mcp-blogs": {
+        "count": {}
+      }
+    }
+  }
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "incredibly",
+  "path": "/Users/andycross/src/personal/mcp-blogs/content/posts",
+  "context": 0,
+  "caseInsensitive": true
+}
+```
+Result:
+
+```json
+{
+  "success": {
+    "pattern": "incredibly",
+    "path": "/Users/andycross/src/personal/mcp-blogs/content/posts",
+    "outputMode": "content",
+    "workspaceResults": {
+      "/Users/andycross/src/personal/mcp-blogs": {
+        "content": {
+          "matches": [
+            {
+              "file": "content/posts/invisible-models-ios-3d-debugging.md",
+              "matches": [
+                {
+                  "lineNumber": 130,
+                  "content": "Not entirely, obviously. It's incredibly useful for rapid iteration. But there's a class of bugs that only exist on physical hardware, especially where native code interacts with platform-specific graphics APIs. iOS's Metal implementation has quirks that simply don't manifest in the simulated environment."
+                }
+              ]
+            }
+          ],
+          "totalLines": 1,
+          "totalMatchedLines": 1
+        }
+      }
+    }
+  }
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+These are mostly clean. The "incredibly" usage is actually legitimate - it's not hyperbole, it's describing the simulator as genuinely very useful.
+
+Summary of what I found:
+
+**Already clean (no hits):**
+- leverage, utilize, holistic, synergy, scalable, value proposition
+- best-in-class, cutting-edge, seamless, robust
+- we believe, could potentially, it's possible
+- let me be clear, at the end of the day, make no mistake
+- needless to say, it goes without saying
+- dive into, let's dive
+- in conclusion, to summarize, moving forward
+- game-changer, game-changing
+
+**Legitimate technical uses (not issues):**
+- ecosystem (14) - all describing actual software ecosystems
+- paradigm (3) - all valid programming paradigm references
+- fundamentally (8) - all technical descriptions
+- genuinely (31) - used to make real distinctions, not empty
+- powerful (22) - describing actual language features
+- elegant (12) - comparative technical descriptions
+- delve (13) - all about Go's debugger, not the AI word
+- unlock (13) - all mutex methods
+- navigate (3) - all legitimate uses
+
+**Minor items (not worth changing):**
+- revolutionary (1) - "Nothing revolutionary" - self-deprecating
+- transformative (1) - FIXED to "changes how you work"
+- Here's the thing (9) - slightly formulaic but natural opener
+- incredibly (1) - legitimate use
+
+The blog posts are quite clean! The em dashes were the main issue, and those are now all fixed.</details></think>
+
+---
+
+Your blog posts are remarkably clean. Here's the summary:
+
+**Eliminated completely:**
+- Em dashes: 315 → 0
+
+**Already clean (zero hits):**
+- leverage, utilize, holistic, synergy, scalable, value proposition
+- best-in-class, cutting-edge, seamless, robust  
+- we believe, could potentially, it's possible
+- let me be clear, at the end of the day, make no mistake
+- in conclusion, to summarize, moving forward
+- game-changer, dive into, let's dive, needless to say
+
+**Legitimate technical uses (not issues):**
+- "ecosystem" (14) - all describing actual software ecosystems
+- "paradigm" (3) - valid programming concept
+- "genuinely" (31) - making real distinctions, not empty
+- "delve" (13) - all about Go's debugger, not the AI word
+- "unlock" (13) - all mutex methods
+
+**Fixed:**
+- "transformative" (1) → "changes how you work"
+
+**Minor but acceptable:**
+- "Here's the thing" (9 uses) - slightly formulaic but serves a purpose as a setup phrase
+
+The em dashes were the main culprit. The rest of your writing is already free of the consultant buzzword / AI hedging patterns. The voice reads as genuinely human.
+
+---
+
+_**User**_
+
+Let's get rid of those 'here's the thing' 
+
+half the number of genuinely, use soemthing flowery in each sense, flowery for a UK person anyway
+
+---
+
+_**Agent (model claude-4.5-opus-high-thinking, mode Agent)**_
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Status: **loading**
+
+
+</details>
+</tool-use>
+
+---
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/no-emotions-in-runtime.md</summary>
+
 Status: **loading**
 
 </details>
@@ -8778,7 +15004,15 @@ Status: **loading**
 
 ---
 
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
 
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/dotnet-to-go-single-binary.md</summary>
+
+Status: **loading**
+
+</details>
+
+</tool-use>
 
 ---
 
@@ -8796,7 +15030,7 @@ Status: **loading**
 
 <tool-use data-tool-type="write" data-tool-name="edit_file_v2">
 
-<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/seven-dollars-and-twenty-five-years.md</summary>
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/conversational-consent-pattern.md</summary>
 
 Status: **loading**
 
@@ -8808,7 +15042,7 @@ Status: **loading**
 
 <tool-use data-tool-type="write" data-tool-name="edit_file_v2">
 
-<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/seven-dollars-and-twenty-five-years.md</summary>
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/worklet-crashes-ios-force-quit.md</summary>
 
 Status: **loading**
 
@@ -8820,7 +15054,7 @@ Status: **loading**
 
 <tool-use data-tool-type="write" data-tool-name="edit_file_v2">
 
-<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/seven-dollars-and-twenty-five-years.md</summary>
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/dotnet-to-go-modules.md</summary>
 
 Status: **loading**
 
@@ -8832,7 +15066,7 @@ Status: **loading**
 
 <tool-use data-tool-type="write" data-tool-name="edit_file_v2">
 
-<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/seven-dollars-and-twenty-five-years.md</summary>
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/dotnet-to-go-visibility.md</summary>
 
 Status: **loading**
 
@@ -8844,43 +15078,7 @@ Status: **loading**
 
 <tool-use data-tool-type="write" data-tool-name="edit_file_v2">
 
-<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/seven-dollars-and-twenty-five-years.md</summary>
-
-Status: **loading**
-
-</details>
-
-</tool-use>
-
----
-
-<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
-
-<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/seven-dollars-and-twenty-five-years.md</summary>
-
-Status: **loading**
-
-</details>
-
-</tool-use>
-
----
-
-<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
-
-<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/seven-dollars-and-twenty-five-years.md</summary>
-
-Status: **loading**
-
-</details>
-
-</tool-use>
-
----
-
-<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
-
-<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/seven-dollars-and-twenty-five-years.md</summary>
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/dotnet-to-go-panic.md</summary>
 
 Status: **loading**
 

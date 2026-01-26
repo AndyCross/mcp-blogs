@@ -120,7 +120,7 @@ func (u *User) SetEmail(email string) error {
 
 This is more verbose than C# properties. Undeniably. You write more code.
 
-But here's the thing: now the call site makes it obvious that something's happening.
+But now the call site makes it obvious that something's happening.
 
 ```go
 // Caller knows this might fail
@@ -267,7 +267,7 @@ After months of Go, here's where I've landed:
 **Things I miss from C#:**
 
 - **`protected` for library extension**. Sometimes you want "derived types only" access.
-- **Computed properties**. `user.FullName` is nicer than `user.FullName()` when it's genuinely just a computed value.
+- **Computed properties**. `user.FullName` is nicer than `user.FullName()` when it's actually just a computed value.
 - **Init-only setters**. Go has no equivalent to `init` for construction-time-only setting.
 - **Attributes**. Struct tags work but aren't type-safe.
 
