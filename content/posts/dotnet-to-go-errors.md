@@ -3,6 +3,7 @@ title = "if err != nil: Your New Reality"
 date = "2024-12-30"
 draft = false
 tags = ["go", "dotnet", "errors", "csharp"]
+series = ["step-over-to-go"]
 +++
 
 Let's address the elephant in the room. You're going to write `if err != nil` hundreds of times. Thousands, probably. And for the first week, you're going to hate it.

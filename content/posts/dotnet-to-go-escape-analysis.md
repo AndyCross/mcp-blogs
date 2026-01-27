@@ -3,6 +3,7 @@ title = "Stack vs Heap: Go's Escape Analysis"
 date = "2024-12-31"
 draft = false
 tags = ["go", "dotnet", "memory", "performance", "csharp"]
+series = ["step-over-to-go"]
 +++
 
 In C#, you mostly don't think about where variables live. Value types go on the stack (usually). Reference types go on the heap (always). The runtime and JIT make optimisations. You trust the process.

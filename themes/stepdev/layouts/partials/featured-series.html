@@ -1,0 +1,13 @@
+{{- $series := .series }}
+{{- $site := .site }}
+<div class="featured-series-card">
+  <div class="featured-series-badge">Featured Series</div>
+  <h2 class="featured-series-title">{{ $site.Params.featuredSeriesTitle | default $series.Title }}</h2>
+  <p class="featured-series-description">{{ $site.Params.featuredSeriesDescription | default $series.Description }}</p>
+  <div class="featured-series-meta">
+    <span class="featured-series-count">{{ len $series.Pages }} posts</span>
+  </div>
+  <a href="{{ $series.Permalink }}" class="featured-series-cta">
+    Start the series <span class="cta-arrow">→</span>
+  </a>
+</div>

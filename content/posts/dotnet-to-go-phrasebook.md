@@ -3,6 +3,7 @@ title = "The Phrasebook: C# Concepts in Go Terms"
 date = "2024-12-28"
 draft = false
 tags = ["go", "dotnet", "syntax", "csharp"]
+series = ["step-over-to-go"]
 +++
 
 Before we get into the weeds of types and patterns, let's establish some vocabulary. Go uses different names for familiar concepts, and has operators you've never seen. This post is a reference. Skim it now, bookmark it for later.

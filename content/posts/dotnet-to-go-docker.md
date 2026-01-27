@@ -3,6 +3,7 @@ title = "Dockerfile for Go: Simpler Than You'd Think"
 date = "2025-01-05"
 draft = false
 tags = ["go", "dotnet", "docker", "containers", "csharp"]
+series = ["step-over-to-go"]
 +++
 
 Go's static binaries make for tiny Docker images. Where a .NET container might be 200MB+, a Go container can be under 20MB. Sometimes under 10MB.

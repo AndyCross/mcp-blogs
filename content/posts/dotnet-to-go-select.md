@@ -3,6 +3,7 @@ title = "select: Multiplexing Like a Pro"
 date = "2025-01-01"
 draft = false
 tags = ["go", "dotnet", "concurrency", "channels", "csharp"]
+series = ["step-over-to-go"]
 +++
 
 The `select` statement is where Go's channel system goes from "neat" to "powerful." It lets you wait on multiple channel operations simultaneously, handle timeouts, and do non-blocking checks. All with clean syntax.

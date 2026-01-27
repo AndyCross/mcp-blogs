@@ -3,6 +3,7 @@ title = "JSON: Struct Tags and the Marshal Dance"
 date = "2025-01-04"
 draft = false
 tags = ["go", "dotnet", "json", "serialization", "csharp"]
+series = ["step-over-to-go"]
 +++
 
 In C#, you add `[JsonProperty("name")]` or rely on naming conventions. The serializer figures out the rest. Newtonsoft.Json has been battle-tested for over a decade, and System.Text.Json is catching up fast.

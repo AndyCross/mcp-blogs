@@ -3,6 +3,7 @@ title = "Health Checks and Readiness Probes"
 date = "2025-01-05"
 draft = false
 tags = ["go", "dotnet", "health-checks", "kubernetes", "csharp"]
+series = ["step-over-to-go"]
 +++
 
 We touched on health checks in the Kubernetes post. Let's go deeper. Proper health checks that actually tell orchestrators useful information.

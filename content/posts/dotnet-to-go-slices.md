@@ -3,6 +3,7 @@ title = "Slices Are Not Arrays (And Neither Is List<T>)"
 date = "2024-12-31"
 draft = false
 tags = ["go", "dotnet", "memory", "slices", "csharp"]
+series = ["step-over-to-go"]
 +++
 
 Every C# developer coming to Go makes the same mistake: they see `[]int` and think "array" or "list." It's neither. It's a slice, and it has semantics that will bite you if you don't understand them.

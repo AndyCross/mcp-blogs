@@ -3,6 +3,7 @@ title = "You Know .NET, Now Meet the Go Toolchain"
 date = "2024-12-28"
 draft = false
 tags = ["go", "dotnet", "tooling", "csharp"]
+series = ["step-over-to-go"]
 +++
 
 After twenty-odd years writing C#, I'm learning Go. Not because .NET has failed me (it hasn't) but because some problems want a different shape of solution. Small binaries. Fast startup. Simple deployment. The kind of thing Go does without breaking a sweat.

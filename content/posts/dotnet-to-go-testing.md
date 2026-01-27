@@ -3,6 +3,7 @@ title = "Testing Without a Framework"
 date = "2025-01-03"
 draft = false
 tags = ["go", "dotnet", "testing", "csharp"]
+series = ["step-over-to-go"]
 +++
 
 In C#, you pick a test framework: xUnit, NUnit, MSTest. You install packages. You learn attributes. You configure test runners.

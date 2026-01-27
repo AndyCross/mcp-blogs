@@ -3,6 +3,7 @@ title = "Logging: slog and the Structured Logging Story"
 date = "2025-01-04"
 draft = false
 tags = ["go", "dotnet", "logging", "slog", "csharp"]
+series = ["step-over-to-go"]
 +++
 
 For years, Go's logging story was "use the `log` package or pick a third-party library." The standard `log` package is basic: no levels, no structure, no context. Everyone used zerolog, zap, or logrus.

@@ -3,6 +3,7 @@ title = "Implicit Interfaces: Scary Then Brilliant"
 date = "2025-01-02"
 draft = false
 tags = ["go", "dotnet", "interfaces", "csharp"]
+series = ["step-over-to-go"]
 +++
 
 Here's a sentence that'll make every C# developer uncomfortable: Go interfaces don't require an `implements` keyword. You never explicitly declare that a type implements an interface. If your type has the right methods, it implements the interface. Automatically. Implicitly.

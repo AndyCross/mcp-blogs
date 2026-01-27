@@ -3,6 +3,7 @@ title = "Mutexes and WaitGroups: When Channels Aren't the Answer"
 date = "2025-01-01"
 draft = false
 tags = ["go", "dotnet", "concurrency", "sync", "csharp"]
+series = ["step-over-to-go"]
 +++
 
 Go's mantra is "share memory by communicating," but sometimes you just need a bloody mutex. The `sync` package has all the primitives you know from C#, and knowing when to use them vs channels is part of becoming proficient in Go.

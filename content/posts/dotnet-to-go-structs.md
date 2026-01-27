@@ -3,6 +3,7 @@ title = "Your Class Is Now a Struct (And That's Fine)"
 date = "2024-12-29"
 draft = false
 tags = ["go", "dotnet", "types", "csharp"]
+series = ["step-over-to-go"]
 +++
 
 Here's something that'll feel wrong for about a week: Go doesn't have classes. Not "Go has classes but calls them something else". It really doesn't have them. No inheritance. No class hierarchies. No `virtual` or `override`. No `protected`.

@@ -3,6 +3,7 @@ title = "HTTP Services: net/http vs ASP.NET Core"
 date = "2025-01-04"
 draft = false
 tags = ["go", "dotnet", "http", "web", "csharp"]
+series = ["step-over-to-go"]
 +++
 
 ASP.NET Core is a sophisticated web framework. Dependency injection, middleware pipelines, model binding, routing with attributes, OpenAPI generation... it does a lot for you.

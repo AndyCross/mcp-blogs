@@ -3,6 +3,7 @@ title = "Kubernetes and Go: A Natural Fit"
 date = "2025-01-05"
 draft = false
 tags = ["go", "dotnet", "kubernetes", "containers", "csharp"]
+series = ["step-over-to-go"]
 +++
 
 Kubernetes is written in Go. The CLI tools are Go. The ecosystem is Go. Running Go services on Kubernetes feels natural. The patterns align.

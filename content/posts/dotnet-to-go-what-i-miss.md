@@ -3,6 +3,7 @@ title = "What I Actually Miss From C#"
 date = "2025-01-15"
 draft = false
 tags = ["go", "dotnet", "reflection", "csharp"]
+series = ["step-over-to-go"]
 +++
 
 I've been writing Go full-time for a couple of months now. I like it. I'm productive. But let's be honest: there are things I miss from C#. Not everything Go does differently is better, and pretending otherwise would be tribal nonsense.

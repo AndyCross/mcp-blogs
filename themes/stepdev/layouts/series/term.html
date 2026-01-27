@@ -1,0 +1,49 @@
+{{ define "main" }}
+<div class="container">
+  <header class="page-header series-header">
+    <div class="series-badge">Series</div>
+    <h1 class="page-title">{{ .Title }}</h1>
+    {{- with .Description }}
+    <p class="page-description">{{ . }}</p>
+    {{- end }}
+    <div class="series-stats">
+      <span class="series-stat">{{ len .Pages }} posts</span>
+      {{- $pages := .Pages.ByDate }}
+      {{- if gt (len $pages) 0 }}
+      <span class="series-stat-separator">·</span>
+      <span class="series-stat">{{ (index $pages 0).Date.Format "Jan 2006" }} – {{ (index $pages (sub (len $pages) 1)).Date.Format "Jan 2006" }}</span>
+      {{- end }}
+    </div>
+  </header>
+  
+  {{- with .Content }}
+  <div class="series-intro prose">
+    {{ . }}
+  </div>
+  {{- end }}
+  
+  <div class="series-posts">
+    <h2 class="section-header">All Posts in Order</h2>
+    <ol class="series-posts-list">
+      {{- range .Pages.ByDate }}
+      <li class="series-post-item">
+        <a href="{{ .Permalink }}" class="series-post-link">
+          <div class="series-post-number"></div>
+          <div class="series-post-content">
+            <h3 class="series-post-title">{{ .Title }}</h3>
+            <p class="series-post-excerpt">{{ .Summary | plainify | truncate 120 }}</p>
+            <div class="series-post-meta">
+              <time datetime="{{ .Date.Format "2006-01-02" }}">{{ .Date.Format "2 Jan 2006" }}</time>
+              <span class="meta-separator">·</span>
+              <span>{{ .ReadingTime }} min read</span>
+            </div>
+          </div>
+        </a>
+      </li>
+      {{- end }}
+    </ol>
+  </div>
+  
+  {{- partial "newsletter.html" . }}
+</div>
+{{ end }}

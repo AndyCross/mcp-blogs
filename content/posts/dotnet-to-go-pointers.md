@@ -3,6 +3,7 @@ title = "Pointers Without the Pain"
 date = "2024-12-31"
 draft = false
 tags = ["go", "dotnet", "memory", "pointers", "csharp"]
+series = ["step-over-to-go"]
 +++
 
 Right, let's talk about pointers. If you've spent your career in C#, you've probably used pointers approximately never. Maybe you've seen `unsafe` blocks in performance-critical library code. Maybe you've used `ref` and `Span<T>` and felt rather clever about it.

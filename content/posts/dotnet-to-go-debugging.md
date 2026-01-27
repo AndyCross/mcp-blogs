@@ -3,6 +3,7 @@ title = "Debugging: Delve vs Visual Studio's Comfort"
 date = "2025-01-04"
 draft = false
 tags = ["go", "dotnet", "tooling", "debugging", "csharp"]
+series = ["step-over-to-go"]
 +++
 
 Visual Studio's debugger is exceptional. Breakpoints, watch expressions, edit-and-continue, conditional breakpoints, data tips, memory inspection, async debugging... You can debug anything, easily.

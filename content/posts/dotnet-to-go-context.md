@@ -3,6 +3,7 @@ title = "Context Is King"
 date = "2025-01-01"
 draft = false
 tags = ["go", "dotnet", "concurrency", "context", "csharp"]
+series = ["step-over-to-go"]
 +++
 
 Every Go function that does I/O, might take a while, or should be cancellable will take a `context.Context` as its first parameter. It's Go's answer to `CancellationToken`, plus request-scoped values, all in one.

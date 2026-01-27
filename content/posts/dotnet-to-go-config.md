@@ -3,6 +3,7 @@ title = "Configuration Without IOptions<T>"
 date = "2025-01-04"
 draft = false
 tags = ["go", "dotnet", "configuration", "csharp"]
+series = ["step-over-to-go"]
 +++
 
 In ASP.NET Core, configuration is a whole subsystem. `IConfiguration`, `IOptions<T>`, `IOptionsSnapshot<T>`, `IOptionsMonitor<T>`, multiple providers, hot reload, dependency injection integration... It's sophisticated. Maybe too sophisticated.

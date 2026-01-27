@@ -3,6 +3,7 @@ title = "Benchmarks and Profiling Out of the Box"
 date = "2025-01-03"
 draft = false
 tags = ["go", "dotnet", "testing", "performance", "benchmarks", "csharp"]
+series = ["step-over-to-go"]
 +++
 
 Here's something that surprised me: Go has built-in benchmarking. No BenchmarkDotNet to install. No configuration. Write a function, run `go test -bench`, get numbers.

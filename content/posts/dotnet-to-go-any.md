@@ -3,6 +3,7 @@ title = "The Empty Interface and Type Assertions"
 date = "2025-01-02"
 draft = false
 tags = ["go", "dotnet", "interfaces", "any", "csharp"]
+series = ["step-over-to-go"]
 +++
 
 Go has a type called `any`. Before Go 1.18, it was written `interface{}`. Same thing, nicer name. And it's basically Go's version of `object`, the type that can hold anything.

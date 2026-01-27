@@ -3,6 +3,7 @@ title = "Database Access: database/sql vs Entity Framework"
 date = "2025-01-04"
 draft = false
 tags = ["go", "dotnet", "database", "sql", "csharp"]
+series = ["step-over-to-go"]
 +++
 
 Entity Framework is an ORM. It maps objects to tables, generates SQL, tracks changes, handles migrations. You can build entire applications barely writing SQL.

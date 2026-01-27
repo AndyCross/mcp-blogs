@@ -3,6 +3,7 @@ title = "Channels: The sync You Didn't Know You Wanted"
 date = "2025-01-01"
 draft = false
 tags = ["go", "dotnet", "concurrency", "channels", "csharp"]
+series = ["step-over-to-go"]
 +++
 
 If goroutines are Go's lightweight threads, channels are how they talk to each other. Think `BlockingCollection<T>` meets message passing, with first-class language support.

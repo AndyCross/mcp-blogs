@@ -1,0 +1,25 @@
+{{ define "main" }}
+<div class="container">
+  <header class="page-header">
+    <h1 class="page-title">Series</h1>
+    <p class="page-description">Deep-dive collections on specific topics</p>
+  </header>
+  
+  <div class="series-grid">
+    {{- range .Pages }}
+    <a href="{{ .Permalink }}" class="series-card">
+      <div class="series-card-content">
+        <h2 class="series-card-title">{{ .Title }}</h2>
+        {{- with .Description }}
+        <p class="series-card-description">{{ . }}</p>
+        {{- end }}
+        <div class="series-card-meta">
+          <span class="series-post-count">{{ len .Pages }} posts</span>
+          <span class="series-card-arrow">→</span>
+        </div>
+      </div>
+    </a>
+    {{- end }}
+  </div>
+</div>
+{{ end }}

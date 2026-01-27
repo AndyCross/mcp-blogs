@@ -3,6 +3,7 @@ title = "No Enums? No Problem (Sort Of)"
 date = "2024-12-29"
 draft = false
 tags = ["go", "dotnet", "enums", "csharp"]
+series = ["step-over-to-go"]
 +++
 
 Go doesn't have enums. Not "Go has something enum-like". It genuinely doesn't have a dedicated enum construct. What it has instead is constants, a clever auto-incrementing keyword called `iota`, and convention.

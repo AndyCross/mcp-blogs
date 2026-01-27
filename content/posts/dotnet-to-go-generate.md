@@ -3,6 +3,7 @@ title = "Generate All the Things"
 date = "2025-01-04"
 draft = false
 tags = ["go", "dotnet", "tooling", "codegen", "csharp"]
+series = ["step-over-to-go"]
 +++
 
 Go developers love code generation. Where C# uses reflection, attributes, and source generators, Go often uses tools that generate code before compilation.

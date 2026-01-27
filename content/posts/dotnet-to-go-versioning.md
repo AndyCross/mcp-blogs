@@ -3,6 +3,7 @@ title = "Versioning Your Modules"
 date = "2025-01-05"
 draft = false
 tags = ["go", "dotnet", "versioning", "modules", "csharp"]
+series = ["step-over-to-go"]
 +++
 
 Versioning in Go is simple in concept (semantic versioning with git tags) but has quirks that'll catch you if you're coming from NuGet's more flexible model.

@@ -3,6 +3,7 @@ title = "GitHub Actions for Go Projects"
 date = "2025-01-05"
 draft = false
 tags = ["go", "dotnet", "ci-cd", "github-actions", "csharp"]
+series = ["step-over-to-go"]
 +++
 
 CI/CD for Go projects is refreshingly simple. Fast builds, built-in testing, cross-compilation. Everything you need is in the standard toolchain.

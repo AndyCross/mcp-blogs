@@ -3,6 +3,7 @@ title = "Six Months In: Was It Worth It?"
 date = "2025-06-28"
 draft = false
 tags = ["go", "dotnet", "retrospective", "career", "csharp"]
+series = ["step-over-to-go"]
 +++
 
 Six months ago, I started this series with a simple goal: document learning Go as an experienced C# developer. Not a tutorial (there are plenty of those) but an honest account of the transition.

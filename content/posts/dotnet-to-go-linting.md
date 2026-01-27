@@ -3,6 +3,7 @@ title = "Linting and Formatting: gofmt Is Non-Negotiable"
 date = "2025-01-04"
 draft = false
 tags = ["go", "dotnet", "tooling", "linting", "csharp"]
+series = ["step-over-to-go"]
 +++
 
 In C#, code formatting is a matter of preference. Tabs or spaces? Braces on the same line or next? Teams debate, `.editorconfig` files proliferate, and nobody quite agrees.

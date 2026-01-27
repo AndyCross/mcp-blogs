@@ -3,6 +3,7 @@ title = "GORM and Friends: When You Do Want an ORM"
 date = "2025-01-04"
 draft = false
 tags = ["go", "dotnet", "database", "orm", "gorm", "csharp"]
+series = ["step-over-to-go"]
 +++
 
 Despite Go's "just write SQL" culture, ORMs exist and are popular. GORM is the most widely used. If you're coming from Entity Framework and miss the productivity, GORM might ease the transition.

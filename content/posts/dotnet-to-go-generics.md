@@ -3,6 +3,7 @@ title = "Generics: Late to the Party"
 date = "2024-12-29"
 draft = false
 tags = ["go", "dotnet", "generics", "csharp"]
+series = ["step-over-to-go"]
 +++
 
 Go shipped generics in version 1.18 (March 2022). C# has had them since 2.0 (November 2005). That's a seventeen-year head start, and it shows.

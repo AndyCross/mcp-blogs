@@ -3,6 +3,7 @@ title = "Single Binary Deploys: The Killer Feature"
 date = "2025-01-05"
 draft = false
 tags = ["go", "dotnet", "deployment", "cross-compilation", "csharp"]
+series = ["step-over-to-go"]
 +++
 
 What sold me on Go for production: you build a binary, you copy it to a server, you run it. No runtime to install. No framework version matching. No dependency hell. Just a file.

@@ -3,6 +3,7 @@ title = "Composition Over Inheritance (For Real This Time)"
 date = "2025-01-02"
 draft = false
 tags = ["go", "dotnet", "composition", "embedding", "csharp"]
+series = ["step-over-to-go"]
 +++
 
 We've all heard "favour composition over inheritance." We've all nodded sagely. And then we've all written class hierarchies three levels deep because, well, it's right there and it's easy.

@@ -3,6 +3,7 @@ title = "The switch Statement You Always Wanted"
 date = "2024-12-30"
 draft = false
 tags = ["go", "dotnet", "control-flow", "csharp"]
+series = ["step-over-to-go"]
 +++
 
 C#'s switch statement has evolved a lot over the years. Pattern matching, switch expressions, when guards. It's become genuinely powerful. But Go's switch has some tricks that'll make you wish C# worked this way.

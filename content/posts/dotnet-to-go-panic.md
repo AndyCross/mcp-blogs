@@ -3,6 +3,7 @@ title = "Panic and Recover: The Emergency Exit"
 date = "2024-12-30"
 draft = false
 tags = ["go", "dotnet", "errors", "csharp"]
+series = ["step-over-to-go"]
 +++
 
 So Go doesn't have exceptions. Except... it kind of does. They're called `panic` and `recover`, and they work almost exactly like throw and catch.

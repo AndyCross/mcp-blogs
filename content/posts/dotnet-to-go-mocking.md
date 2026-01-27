@@ -3,6 +3,7 @@ title = "Mocking in a Language Without Mockito"
 date = "2025-01-03"
 draft = false
 tags = ["go", "dotnet", "testing", "mocking", "csharp"]
+series = ["step-over-to-go"]
 +++
 
 In C#, you reach for Moq or NSubstitute without thinking. Interface? Mock it. Verify calls? Easy. Set up return values? One line.

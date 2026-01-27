@@ -3,6 +3,7 @@ title = "What I'll Never Go Back For"
 date = "2025-02-01"
 draft = false
 tags = ["go", "dotnet", "reflection", "csharp"]
+series = ["step-over-to-go"]
 +++
 
 Last time I talked about what I miss from C#. Now let's flip it: what has Go given me that I'd properly struggle to give up?

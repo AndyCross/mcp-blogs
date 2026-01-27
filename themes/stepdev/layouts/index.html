@@ -1,19 +1,39 @@
 {{ define "main" }}
 <div class="container">
-  <!-- Hero Section -->
+  <!-- Hero Section with Intro Overlay -->
   <section class="hero-section">
-    <h1 class="hero-title">{{ .Site.Params.heroTitle | default "Building with AI & 3D" }}</h1>
-    <p class="hero-subtitle">{{ .Site.Params.heroSubtitle | default .Site.Params.description }}</p>
-    
     <div class="hero-image">
       <div class="hero-image-inner">
         <div class="hero-grid-overlay"></div>
         {{- with .Site.Params.heroImage }}
         <img src="{{ . | relURL }}" alt="Featured image" class="hero-img">
         {{- end }}
+        
+        <!-- Intro Overlay -->
+        <div class="hero-intro-overlay">
+          <h1 class="hero-title">{{ .Site.Params.heroTitle | default "Building with AI & 3D" }}</h1>
+          <p class="hero-subtitle">{{ .Site.Params.heroSubtitle | default .Site.Params.description }}</p>
+        </div>
       </div>
     </div>
   </section>
+  
+  <!-- Featured Series Section -->
+  {{- with .Site.Params.featuredSeries }}
+  {{- $series := site.GetPage (printf "/series/%s" .) }}
+  {{- if $series }}
+  <section class="featured-series-section">
+    {{- partial "featured-series.html" (dict "series" $series "site" site) }}
+  </section>
+  {{- end }}
+  {{- end }}
+  
+  <!-- Topic Highlights Section -->
+  {{- with .Site.Params.topicHighlights }}
+  <section class="topic-highlights-section">
+    {{- partial "topic-highlights.html" (dict "topics" . "site" site) }}
+  </section>
+  {{- end }}
   
   <!-- Latest Posts Section -->
   <section class="posts-section">
@@ -37,4 +57,3 @@
   {{- partial "newsletter.html" . }}
 </div>
 {{ end }}
-

@@ -3,6 +3,7 @@ title = "Metrics, Traces, and Logs: The OpenTelemetry Way"
 date = "2025-01-05"
 draft = false
 tags = ["go", "dotnet", "observability", "opentelemetry", "csharp"]
+series = ["step-over-to-go"]
 +++
 
 Observability in production means three things: metrics (what's happening), traces (how requests flow), and logs (what went wrong). OpenTelemetry unifies all three.

@@ -3,6 +3,7 @@ title = "Organising a Real Project"
 date = "2025-01-03"
 draft = false
 tags = ["go", "dotnet", "project-structure", "packages", "csharp"]
+series = ["step-over-to-go"]
 +++
 
 So you've got the basics. You can write Go code. Now you need to organise it into something that won't become a tangled mess in six months.

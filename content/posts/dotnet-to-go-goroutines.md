@@ -3,6 +3,7 @@ title = "Async/Await vs Goroutines: A Mindset Shift"
 date = "2025-01-01"
 draft = false
 tags = ["go", "dotnet", "concurrency", "async", "csharp"]
+series = ["step-over-to-go"]
 +++
 
 Go's concurrency model is going to feel backwards. You've spent years learning that async operations need `async` keywords, `await` expressions, `Task<T>` return types, and careful thought about which thread you're on.

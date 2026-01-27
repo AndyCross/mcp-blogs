@@ -3,6 +3,7 @@ title = "Where Did My Properties Go?"
 date = "2024-12-29"
 draft = false
 tags = ["go", "dotnet", "types", "csharp"]
+series = ["step-over-to-go"]
 +++
 
 Coming from C#, one of the first things you'll notice is that Go structs look... naked. Where are the `{ get; set; }` blocks? Where's `private` and `public`? How do you encapsulate anything?

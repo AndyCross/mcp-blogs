@@ -3,6 +3,7 @@ title = "Shrinking Binaries and Build Tags"
 date = "2025-01-05"
 draft = false
 tags = ["go", "dotnet", "deployment", "build-tags", "csharp"]
+series = ["step-over-to-go"]
 +++
 
 Go binaries are already small compared to .NET self-contained deployments. But sometimes you want smaller: Lambda deployments, embedded systems, or just because.

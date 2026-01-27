@@ -3,6 +3,7 @@ title = "Goodbye .csproj, Hello go.mod"
 date = "2024-12-28"
 draft = false
 tags = ["go", "dotnet", "dependencies", "csharp"]
+series = ["step-over-to-go"]
 +++
 
 Right, let's talk about dependencies. In .NET land, we've got NuGet, `.csproj` files, `PackageReference` elements, version ranges, transitive dependencies, and `packages.lock.json` if we're being careful. It's a mature ecosystem with excellent tooling.

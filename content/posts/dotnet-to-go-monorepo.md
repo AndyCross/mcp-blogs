@@ -3,6 +3,7 @@ title = "Multi-Module Repos: Monorepo Thinking"
 date = "2025-01-03"
 draft = false
 tags = ["go", "dotnet", "modules", "monorepo", "csharp"]
+series = ["step-over-to-go"]
 +++
 
 Most Go projects have one `go.mod` file at the root. One module, one version, simple. But what happens when your repo grows? When you have shared libraries, multiple services, and teams stepping on each other's toes?

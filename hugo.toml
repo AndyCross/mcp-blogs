@@ -3,6 +3,11 @@ languageCode = "en-gb"
 title = "Step Into Dev"
 theme = "stepdev"
 
+# Taxonomies
+[taxonomies]
+  tag = "tags"
+  series = "series"
+
 # Pagination
 [pagination]
   pagerSize = 10
@@ -21,6 +26,14 @@ theme = "stepdev"
   showNewsletter = true
   newsletterUsername = "andycross"
   newsletterDescription = "Get notified about new posts on AI, MCP development, and building things that matter."
+  
+  # Featured Series
+  featuredSeries = "step-over-to-go"
+  featuredSeriesTitle = "Step Over to Go (C# You Later)"
+  featuredSeriesDescription = "A comprehensive guide for .NET developers making the jump to Go. 48 posts covering everything from basic syntax to production deployment."
+  
+  # Topic Highlights
+  topicHighlights = ["ai", "mcp", "react-native"]
 
   [[params.socialIcons]]
     name = "github"
@@ -32,6 +45,12 @@ theme = "stepdev"
     name = "Posts"
     url = "/posts/"
     weight = 10
+  
+  [[menu.main]]
+    identifier = "series"
+    name = "Series"
+    url = "/series/"
+    weight = 15
   
   [[menu.main]]
     identifier = "about"

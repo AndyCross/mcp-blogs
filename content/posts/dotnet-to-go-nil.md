@@ -3,6 +3,7 @@ title = "The Million Dollar Mistake, Differently"
 date = "2024-12-29"
 draft = false
 tags = ["go", "dotnet", "nil", "csharp"]
+series = ["step-over-to-go"]
 +++
 
 Tony Hoare called null references his "billion dollar mistake." Both C# and Go inherited some form of this mistake, but they've evolved to handle it differently. Neither solution is perfect.

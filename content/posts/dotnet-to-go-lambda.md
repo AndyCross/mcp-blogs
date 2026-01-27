@@ -3,6 +3,7 @@ title = "AWS Lambda and Go: Cold Starts That Don't Hurt"
 date = "2025-01-05"
 draft = false
 tags = ["go", "dotnet", "aws", "lambda", "serverless", "csharp"]
+series = ["step-over-to-go"]
 +++
 
 If you've run .NET on Lambda, you know the cold start pain. 3-5 seconds for a managed runtime. Even Native AOT helps but doesn't eliminate it.
