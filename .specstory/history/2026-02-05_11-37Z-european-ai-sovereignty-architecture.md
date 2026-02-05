@@ -248,11 +248,103 @@ Now I understand the format and style. Let me transform this piece, removing the
 
 <details><summary>Tool use: **edit_file_v2** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/european-ai-sovereignty.md</summary>
 
-Status: **loading**
-
 </details>
 
 </tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+I've created the blog post. Let me review the key style changes I made:
+
+1. **Removed em dashes**: 
+   - "what kind of AI platforms these constraints produce—and whether they might" → "what kind of AI platforms these constraints produce. And whether they might"
+   - "artefacts—static, auditable, downloadable" → "artefacts. Static, auditable, downloadable."
+   - "The model is a commodity—powerful, yes, but interchangeable" → "The model is a commodity. Powerful, yes, but interchangeable."
+   - Multiple instances of ":" used for introducing lists instead of em dashes
+   - Parentheses used for asides: "(healthcare, legal, government, critical infrastructure)"
+
+2. **Removed formulaic openers**:
+   - "Here is where the analysis must shift" → "This is where the analysis needs to shift"
+
+3. **Replaced "ecosystem" with "system"**:
+   - "European ecosystem" → "European system"
+
+4. **Made more conversational**:
+   - "This paper begins from a red line" → "I want to start from a red line"
+   - Added "I'd call" instead of "we might call"
+
+5. **Removed "secret sauce"** - Changed to "The valuable bit" which is more conversational UK English
+
+6. **Removed theatrical "robust"** - Changed to more specific language
+
+7. **Kept the deliberate repetition** "The model is not the platform. The platform is not the model." - this is stylistic emphasis, not an AI tell
+
+The piece is still formal in places because it's discussing serious infrastructure topics, but it's now more conversational and free of the main AI tells.</details></think>
+
+---
+
+Done. I've created the post at `content/posts/european-ai-sovereignty.md` with the following style corrections applied:
+
+**Em dashes removed:**
+- Replaced with full stops for dramatic pause: "what kind of AI platforms these constraints produce. And whether they might..."
+- Replaced with parentheses for asides: "(Falcon, BLOOM, and the long tail of Hugging Face)" and "(healthcare, legal, government, critical infrastructure)"
+- Replaced with commas for light continuation in several places
+
+**Consultant buzzwords:**
+- "ecosystem" → "system" 
+- Removed "secret sauce" → "The valuable bit"
+- Removed "robust" entirely (was in a list "more robust, more auditable")
+
+**Made more conversational:**
+- "This paper begins from a red line" → "I want to start from a red line"
+- "what we might call pragmatic sovereignty" → "what I'd call pragmatic sovereignty"
+- "Here is where the analysis must shift" → "This is where the analysis needs to shift"
+
+**Theatrical contrasts toned down:**
+- The "Sovereignty is not a limitation. It is an architecture." stays because it's the concluding thesis, but the build-up to it is less theatrical
+
+**Hedged confidence removed:**
+- Made direct statements rather than "it is possible that" constructions
+
+The piece still has a formal register in places because it's discussing serious infrastructure policy, but it now reads more like something a human would write rather than AI-generated content.
+
+---
+
+_**User**_
+
+This is a well-structured post. The three-tier sovereignty spectrum is a nice framing. But you're right — there's a significant gap in the analysis around the **tooling layer**.
+
+## What's Missing: The OSS Tooling Problem
+
+The post treats models as artifacts that can be "pulled into European data centres, run on European hardware." But it glosses over what *runs* them. The entire AI software stack sits on American-maintained open source:
+
+- **PyTorch** (Meta)
+- **TensorFlow / JAX** (Google)  
+- **CUDA / cuDNN** (NVIDIA — not even OSS, just proprietary)
+- **Transformers, Accelerate, PEFT** (Hugging Face — French-founded, but now heavily US-VC backed)
+
+This creates an awkward middle category that doesn't fit cleanly into the sovereignty spectrum:
+
+**At the pragmatic level**, you're not just using "frozen weights" — you're using constantly-updated frameworks. Do you freeze PyTorch at a specific version? Then you miss security patches. Do you update? Then you're trusting American maintainers with every commit.
+
+**At the operational level**, the post talks about European HSMs and European observability. But what about European *ML frameworks*? Forking PyTorch is theoretically possible but practically a massive maintenance burden. No one's doing it.
+
+**At the strict level**, the logic breaks down entirely. You can have Mistral train on European compute with European data — but they're still using PyTorch. The "European-founded model lab" is still dependent on American tooling.
+
+## A Possible Angle
+
+You could add a section on how OSS complicates the sovereignty story:
+
+1. **OSS is a gift and a trap** — it provides auditability in theory, but in practice no one audits every PyTorch commit. The XZ Utils backdoor showed how sophisticated supply chain attacks can be.
+
+2. **The inference/training split** — maybe you can run inference on lighter-weight, auditable runtimes (ONNX, llama.cpp, etc.), but training at scale basically requires the American ecosystem.
+
+3. **Hardware lock-in compounds this** — CUDA is proprietary. Even ROCm (AMD) is American. The software sovereignty question can't be separated from the hardware question.
+
+The post's argument that "the model is a commodity" could be extended: the *framework* is also becoming commoditized, but unlike models, you can't just snapshot it and walk away. It's a living dependency.
+
+Would you want me to draft a section you could slot in?
 
 ---
 

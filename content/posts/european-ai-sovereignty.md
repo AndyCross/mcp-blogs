@@ -57,6 +57,49 @@ For applications where trust is the product (healthcare, legal, government, crit
 
 ---
 
+## The Uncomfortable Layer: OSS Tooling
+
+The sovereignty spectrum above is tidier than reality. I've described models as artefacts that can be "pulled into European data centres, run on European hardware." But I've glossed over what *runs* them.
+
+The entire AI software stack sits on American-maintained open source:
+
+- **PyTorch** (Meta)
+- **TensorFlow / JAX** (Google)
+- **CUDA / cuDNN** (NVIDIA, and not even open source, just proprietary)
+- **Transformers, Accelerate, PEFT** (Hugging Face, French-founded but now heavily US-VC backed)
+
+This creates an awkward middle category that doesn't fit cleanly into the sovereignty spectrum.
+
+At the pragmatic level, you're not just using "frozen weights." You're using constantly-updated frameworks. Do you freeze PyTorch at a specific version? Then you miss security patches. Do you update? Then you're trusting American maintainers with every commit.
+
+At the operational level, I talked about European HSMs and European observability. But what about European ML frameworks? Forking PyTorch is theoretically possible but practically a massive maintenance burden. Nobody's doing it.
+
+At the strict level, the logic breaks down entirely. Mistral can train on European compute with European data. But they're still using PyTorch. The "European-founded model lab" remains dependent on American tooling.
+
+### Open Source Is Both Gift and Trap
+
+Open source provides auditability in theory. In practice, nobody audits every PyTorch commit. The XZ Utils backdoor in 2024 showed how sophisticated supply chain attacks can be: a patient, multi-year social engineering campaign that nearly compromised SSH on most Linux distributions. The attacker gained maintainer trust, then introduced obfuscated malicious code. It was caught by accident, by one engineer noticing a half-second latency regression.
+
+PyTorch has far more contributors, far more complexity, and far more surface area than XZ Utils. The odds that every commit is benign are... optimistic.
+
+### The Inference/Training Split
+
+There may be a partial escape hatch. Inference can run on lighter-weight, more auditable runtimes: ONNX, llama.cpp, vLLM with careful dependency management. These are smaller codebases. Auditing them is at least conceivable.
+
+Training at scale is a different story. Training a frontier model basically requires the American toolchain. There is no European alternative to PyTorch that operates at that scale. If you want strict sovereignty all the way down to the framework layer, you either accept a massive engineering burden or you accept that training happens on American tooling.
+
+This is uncomfortable. But it's honest.
+
+### Hardware Lock-in Compounds Everything
+
+The software sovereignty question cannot be separated from the hardware question. CUDA is proprietary. Even ROCm (AMD's alternative) is American. The European chip efforts (SiPearl, various national initiatives) are years from production ML workloads.
+
+So the practical situation is this: even a "strictly sovereign" European AI platform runs American frameworks on American silicon. The sovereignty exists at the data layer, the policy layer, the control layer. But the execution layer remains dependent.
+
+I don't have a clean answer to this. The best I can offer is honesty about where the sovereignty actually lives and where it doesn't. Models can be commoditised and swapped. Frameworks are harder. Hardware is hardest of all.
+
+---
+
 ## The Platform Is Not the Model
 
 This is where the analysis needs to shift. Under sovereignty constraints, the interesting engineering happens not inside the model but around it.
@@ -109,6 +152,10 @@ The path forward for European AI is not to pretend that American services do not
 
 Pragmatic sovereignty gets you started. Operational sovereignty gets you control. Strict sovereignty gets you guarantees. All three have their place, and the choice among them depends on your threat model, your regulatory environment, and your tolerance for trade-offs.
 
-But across the entire spectrum, the lesson is the same. The model is not the platform. The platform is not the model. The organisations that understand this, that build the orchestration, the policy layers, the retrieval systems, the evaluation frameworks, the data flywheels, will be the ones that thrive under sovereignty constraints.
+But I should be honest about the limits. The OSS tooling layer, the framework dependencies, the hardware lock-in: these represent genuine gaps in the sovereignty story. You can control your data, your policies, your infrastructure. You cannot, today, control the full stack down to silicon. Pretending otherwise would be dishonest.
 
-Sovereignty is not a limitation. It is an architecture. And it may be the architecture that matters most.
+What you *can* do is understand where sovereignty actually lives and invest there. The model is not the platform. The platform is not the model. The organisations that understand this, that build the orchestration, the policy layers, the retrieval systems, the evaluation frameworks, the data flywheels, will be the ones that thrive under sovereignty constraints.
+
+And perhaps, over time, the tooling gap will close. European chip initiatives may mature. Auditable inference runtimes may become standard. The dependency on American frameworks may become manageable rather than total.
+
+But that's a bet on the future. The architecture you can build today is still valuable. Sovereignty is not a limitation. It is an architecture. And it may be the architecture that matters most.
