@@ -1,5 +1,5 @@
 +++
-title = "Compliance-as-Code: Architecting for Two Europes"
+title = "Architecting for Two Europes with Compliance-as-Code"
 date = "2026-02-10"
 draft = false
 tags = ["ai", "europe", "compliance", "architecture", "regulation"]

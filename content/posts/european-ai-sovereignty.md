@@ -1,5 +1,5 @@
 +++
-title = "Building AI Platforms Under European Sovereignty: Jurisdiction as Architecture"
+title = "Building AI Platforms Under European Sovereignty"
 date = "2026-02-05"
 draft = false
 tags = ["ai", "europe", "sovereignty", "architecture", "infrastructure"]

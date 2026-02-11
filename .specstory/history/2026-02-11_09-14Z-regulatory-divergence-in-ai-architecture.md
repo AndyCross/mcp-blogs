@@ -2875,3 +2875,319 @@ Done. The home page now features the European AI Sovereignty series.
 
 ---
 
+_**User**_
+
+Drop the MCP part of the tagline, and add 'in Europe and the World' 
+
+---
+
+_**Agent (model claude-4.6-opus-high-thinking, mode Agent)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "MCP|Model Context Protocol",
+  "path": "/Users/andycross/src/personal/mcp-blogs/hugo.toml",
+  "caseInsensitive": false
+}
+```
+Result:
+
+```json
+{
+  "success": {
+    "pattern": "MCP|Model Context Protocol",
+    "path": "/Users/andycross/src/personal/mcp-blogs/hugo.toml",
+    "outputMode": "content",
+    "workspaceResults": {
+      "/Users/andycross/src/personal/mcp-blogs": {
+        "content": {
+          "matches": [
+            {
+              "file": "hugo.toml",
+              "matches": [
+                {
+                  "lineNumber": 17,
+                  "content": "  description = \"Exploring the intersection of AI, 3D rendering, and the Model Context Protocol.\""
+                },
+                {
+                  "lineNumber": 22,
+                  "content": "  heroSubtitle = \"Exploring the intersection of AI, 3D rendering, and the Model Context Protocol.\""
+                },
+                {
+                  "lineNumber": 28,
+                  "content": "  newsletterDescription = \"Get notified about new posts on AI, MCP development, and building things that matter.\""
+                }
+              ]
+            }
+          ],
+          "totalLines": 3,
+          "totalMatchedLines": 3
+        }
+      }
+    }
+  }
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/andycross/src/personal/mcp-blogs/hugo.toml</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/andycross/src/personal/mcp-blogs/hugo.toml</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+Done. Both the meta description and hero subtitle now read "Exploring the intersection of AI, 3D rendering, in Europe and the World." The newsletter description still mentions MCP. Want me to update that too?
+
+---
+
+_**User**_
+
+yes
+
+---
+
+_**Agent (model claude-4.6-opus-high-thinking, mode Agent)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/andycross/src/personal/mcp-blogs/hugo.toml</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+Done.
+
+---
+
+_**User**_
+
+Can you change the post title? to have. To be more natural, not have a colon. So I've got things like the European sovereign inference stack, colon, a practical guide. That doesn't need a practical guide at the end of it. you could write a practical guide to European sovereign inference. you And there's another one. Components of code colon architecture with two Europes. It could be archived with 2 euros with compliance as code. And then building AI platforms under European sovereignty, go on, jurisdiction as architecture. We just don't need jurisdiction as architecture there. That can just be part of the text. So have a look at some of the those three most recent posts Really rework the title for me.
+
+---
+
+_**Agent (model claude-4.6-opus-high-thinking, mode Agent)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "^title",
+  "path": "/Users/andycross/src/personal/mcp-blogs/content/posts/european-ai-sovereignty.md",
+  "caseInsensitive": false
+}
+```
+Result:
+
+```json
+{
+  "success": {
+    "pattern": "^title",
+    "path": "/Users/andycross/src/personal/mcp-blogs/content/posts/european-ai-sovereignty.md",
+    "outputMode": "content",
+    "workspaceResults": {
+      "/Users/andycross/src/personal/mcp-blogs": {
+        "content": {
+          "matches": [
+            {
+              "file": "content/posts/european-ai-sovereignty.md",
+              "matches": [
+                {
+                  "lineNumber": 2,
+                  "content": "title = \"Building AI Platforms Under European Sovereignty: Jurisdiction as Architecture\""
+                }
+              ]
+            }
+          ],
+          "totalLines": 1,
+          "totalMatchedLines": 1
+        }
+      }
+    }
+  }
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "^title",
+  "path": "/Users/andycross/src/personal/mcp-blogs/content/posts/compliance-as-code-two-europes.md",
+  "caseInsensitive": false
+}
+```
+Result:
+
+```json
+{
+  "success": {
+    "pattern": "^title",
+    "path": "/Users/andycross/src/personal/mcp-blogs/content/posts/compliance-as-code-two-europes.md",
+    "outputMode": "content",
+    "workspaceResults": {
+      "/Users/andycross/src/personal/mcp-blogs": {
+        "content": {
+          "matches": [
+            {
+              "file": "content/posts/compliance-as-code-two-europes.md",
+              "matches": [
+                {
+                  "lineNumber": 2,
+                  "content": "title = \"Compliance-as-Code: Architecting for Two Europes\""
+                }
+              ]
+            }
+          ],
+          "totalLines": 1,
+          "totalMatchedLines": 1
+        }
+      }
+    }
+  }
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "^title",
+  "path": "/Users/andycross/src/personal/mcp-blogs/content/posts/sovereign-inference-stack.md",
+  "caseInsensitive": false
+}
+```
+Result:
+
+```json
+{
+  "success": {
+    "pattern": "^title",
+    "path": "/Users/andycross/src/personal/mcp-blogs/content/posts/sovereign-inference-stack.md",
+    "outputMode": "content",
+    "workspaceResults": {
+      "/Users/andycross/src/personal/mcp-blogs": {
+        "content": {
+          "matches": [
+            {
+              "file": "content/posts/sovereign-inference-stack.md",
+              "matches": [
+                {
+                  "lineNumber": 2,
+                  "content": "title = \"The European Sovereign Inference Stack: A Practical Guide\""
+                }
+              ]
+            }
+          ],
+          "totalLines": 1,
+          "totalMatchedLines": 1
+        }
+      }
+    }
+  }
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/european-ai-sovereignty.md</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/compliance-as-code-two-europes.md</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/sovereign-inference-stack.md</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+Done. The three titles now read:
+
+1. **Building AI Platforms Under European Sovereignty**
+2. **Architecting for Two Europes with Compliance-as-Code**
+3. **A
+
+---
+

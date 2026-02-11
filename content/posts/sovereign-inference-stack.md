@@ -1,5 +1,5 @@
 +++
-title = "The European Sovereign Inference Stack: A Practical Guide"
+title = "A Practical Guide to the European Sovereign Inference Stack"
 date = "2026-02-11"
 draft = false
 tags = ["ai", "europe", "sovereignty", "infrastructure", "inference"]
