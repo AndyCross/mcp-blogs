@@ -2177,3 +2177,421 @@ Replaced all `\n` with `<br/>` in the Mermaid diagram. That should render proper
 
 ---
 
+_**User**_
+
+In the about page can we add a little section at the bottom. which is open source tech used and say thanks to Hugo and thanks to Mermaid.js. There might be some other ones that we use along the way, but there's two big ones, so let's just start there.
+
+---
+
+_**Agent (model claude-4.6-opus-high-thinking, mode Agent)**_
+
+<tool-use data-tool-type="generic" data-tool-name="glob_file_search">
+<details>
+<summary>Tool use: **glob_file_search** • Searched codebase "undefined" • **1** result in **1** directory</summary>
+
+Directory: **undefined** (1 file)
+
+| File |
+|------|
+| `./content/about.md` |
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/andycross/src/personal/mcp-blogs/content/about.md</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/about.md</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+Done. Added an "Open source tech used" section at the bottom of the about page with Hugo and Mermaid.js, each linked to their project sites. Easy to extend as you add more.
+
+---
+
+_**User**_
+
+Ok follow up with a new post on this. Same rules as before, and then I'll check and read it back to you
+
+This post follows our previous exploration of [European AI Sovereignty](https://stepinto.dev/posts/european-ai-sovereignty/)—which focused on the "why"—to dive into the "how." If you've decided to move away from the "Big Three" (AWS, GCP, Azure) to mitigate political risk or comply with Schrems II, you are entering the world of the **European Sovereign Inference Stack.**
+
+---
+
+# The European Sovereign Inference Stack: A Practical Guide
+
+In marketing, "Sovereign Cloud" sounds like a digital fortress. In practice, it is a patchy landscape of high-performance compute, varying availability, and a constant battle against the "NVIDIA Tax."
+
+To build a truly sovereign stack, we need to look at four layers: Infrastructure, Hardware, Inference Engine, and Jurisdictional Routing.
+
+## 1. The Provider Landscape: Marketing vs. Reality
+
+Europe has a handful of "Champions," but they are not created equal.
+
+| Provider | The Pitch (Marketing) | The Reality (The Gaps) | Best For |
+| --- | --- | --- | --- |
+| **OVHcloud** | "The European Hyperscaler." Massive scale and stability. | UI feels like 2012; provisioning high-end GPUs (H100s) can take days or manual tickets. | Large-scale, stable production deployments. |
+| **Scaleway** | "The AI Cloud." Developer-first, easy K8s integration. | Stock is "The Hunger Games." If you don't reserve instances, you're at the mercy of the "Out of Stock" banner. | Fast-moving startups and R&D. |
+| **Hetzner** | "Bare Metal at Scale." The cheapest $/FLOP in Europe. | Limited managed services. No managed K8s for GPUs; you’re building the OS from scratch. | Cost-sensitive batch processing / DIY clusters. |
+| **Civo** | "Cloud Native AI." Focused on ease of use and Kubernetes. | Smaller footprint. Great for L4s, but less "big iron" (H100s) compared to OVH. | K8s-native teams wanting zero friction. |
+
+**The Gap:** None of these providers currently offer an equivalent to AWS InfiniBand performance across all nodes. If you are doing massive multi-node training, the interconnect speed in EU clouds is often the bottleneck compared to US hyperscalers.
+
+## 2. The Software Stack: vLLM vs. llama.cpp
+
+Sovereignty is useless if your software is a black box. We prioritize open-source inference engines.
+
+* **vLLM:** The enterprise standard for European clouds. It uses **PagedAttention** to maximize throughput on server-grade GPUs (A100/H100).
+* **llama.cpp:** The "Sovereignty Savior." Because it’s written in pure C++, it allows you to run models on "non-standard" hardware (CPU-only clusters or older Pascal/Turing GPUs) which are often more available in EU data centers than H100s.
+
+### Example: Deploying vLLM on Scaleway/OVH (K8s)
+
+```yaml
+# vllm-sovereign-deploy.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mistral-7b-sovereign
+spec:
+  replicas: 2
+  template:
+    spec:
+      containers:
+      - name: vllm-server
+        image: vllm/vllm-openai:latest
+        command: ["python3", "-m", "vllm.entrypoints.openai.api_server"]
+        args: [
+          "--model", "mistralai/Mistral-7B-Instruct-v0.3",
+          "--gpu-memory-utilization", "0.95",
+          "--max-model-len", "4096"
+        ]
+        resources:
+          limits:
+            nvidia.com/gpu: 1 # Requests a local EU-based GPU
+
+```
+
+## 3. The IP Paradox: The "Sovereignty Gap"
+
+Even if your data center is in Roubaix (France) or Falkenstein (Germany), your stack likely has two massive foreign dependencies:
+
+1. **Hardware (USA):** You are likely running on **NVIDIA** (US) chips. True hardware sovereignty (using European chips like **SpiNNaker2** or **SiPearl**) is still years away from production-ready LLM inference.
+2. **Model IP (USA/China):** Running Llama 3.1 (Meta/USA) or Qwen (Alibaba/China) on an OVH server is "Sovereign Hosting," not "Sovereign AI." To be fully sovereign, the weight of choice is **Mistral** (France) or **Aleph Alpha** (Germany).
+
+## 4. Data Residency: UK GDPR vs. EU GDPR
+
+Since Brexit, the "European" stack is split. If you serve users in both London and Paris, you are navigating two slightly different legal regimes.
+
+* **EU GDPR:** Strict enforcement of the "One-Stop-Shop" (OSS) principle. If you're in the EU, you deal with one lead authority.
+* **UK GDPR:** The new **Data (Use and Access) Bill (2024/25)** is introducing "stop the clock" provisions for Subject Access Requests and slightly more flexible cookie/consent rules.
+
+### Routing Logic: The Jurisdictional Proxy
+
+To ensure data residency, you need a routing layer that identifies user origin and directs them to the correct geographic inference cluster.
+
+```python
+# Jurisdictional Router (FastAPI)
+from fastapi import FastAPI, Request, Header
+import httpx
+
+app = FastAPI()
+
+EU_INFERENCE_URL = "https://fr-par-1.inference.sovereign.cloud"
+UK_INFERENCE_URL = "https://uk-lon-1.inference.sovereign.cloud"
+
+@app.post("/v1/chat/completions")
+async def proxy_inference(request: Request, x_user_region: str = Header(None)):
+    # Logic: Route based on custom headers or Cloudflare GeoIP
+    target_url = UK_INFERENCE_URL if x_user_region == "GB" else EU_INFERENCE_URL
+    
+    async with httpx.AsyncClient() as client:
+        payload = await request.json()
+        response = await client.post(f"{target_url}/v1/chat/completions", json=payload)
+        return response.json()
+
+```
+
+## 5. The Sovereign Architecture
+
+This diagram visualizes how the stack layers together, highlighting where US/Chinese IP typically "leaks" into an otherwise European stack.
+
+```mermaid
+graph TD
+    subgraph "Layer 4: Regulatory & Routing"
+        A[User Request] --> B{Geo-IP Router}
+        B -->|EU User| C[EU GDPR Stack - Paris]
+        B -->|UK User| D[UK GDPR Stack - London]
+    end
+
+    subgraph "Layer 3: Sovereign Inference Engine"
+        C --> E[vLLM / llama.cpp]
+        D --> E
+    end
+
+    subgraph "Layer 2: The Model (IP Risk)"
+        E --> F[Mistral/Aleph Alpha - EU IP]
+        E -.-> G[Llama 3/GPT-4 - US IP]
+    end
+
+    subgraph "Layer 1: Infrastructure (The Hardware Gap)"
+        F --> H[OVH/Scaleway/Hetzner]
+        H --> I[[NVIDIA H100 - US Hardware]]
+        style I fill:#f96,stroke:#333,stroke-width:2px
+    end
+
+```
+
+## Summary Checklist for the Sovereign Stack
+
+1. **Provider:** Choose **Scaleway** for ease, **OVHcloud** for scale, or **Hetzner** for raw cost.
+2. **Engine:** Use **vLLM** for GPU clusters; **llama.cpp** for CPU fallbacks or heterogeneous hardware.
+3. **Model:** Prioritize **Mistral** (Apache 2.0) to keep the "weights" within European legal influence.
+4. **Compliance:** Use a geo-aware proxy to ensure UK data never touches EU servers (and vice-versa) if your DPO requires strict residency.
+
+### Citations & Further Reading
+
+* *Tony Blair Institute (2024):* [Europe in the Age of AI - Regulatory Reform.](https://www.google.com/search?q=https://institute.global/insights/tech-and-digitalisation/europe-in-the-age-of-ai)
+* *RISE Sweden:* [Open Source AI as a Path to Sovereignty.](https://www.ri.se/en/artificial-intelligence/blogpost/open-source-ai-as-swedens-path-to-an-independent-digital-future)
+* *UK Government:* [Data (Use and Access) Bill Overview.](https://www.gov.uk/government/collections/data-use-and-access-bill)
+* *Red Hat Developer:* [vLLM vs llama.cpp Benchmarks (2025).](https://developers.redhat.com/articles/2025/09/30/vllm-or-llamacpp-choosing-right-llm-inference-engine-your-use-case)
+
+---
+
+_**Agent (model claude-4.6-opus-high-thinking, mode Agent)**_
+
+<think><details><summary>Thought Process</summary>
+The user wants me to create a new blog post based on their input. I need to follow the CLAUDE.md rules:
+
+1. No em dashes
+2. No formulaic openers
+3. No consultant buzzwords
+4. No theatrical contrasts
+5. No hedged confidence
+6. No lists of three with escalating drama
+7. UK-flavoured intensifiers sparingly
+8. First person, conversational
+9. Technical accuracy over marketing claims
+10. Concrete examples over abstract descriptions
+
+Let me go through the input and identify issues:
+
+1. Em dashes: "European AI Sovereignty—which focused", "the 'why'—to dive", lots of them throughout
+
+
+2. Buzzwords: "ecosystem" isn't used, "seamless" isn't used, "robust" isn't used. Good.
+3. The opening references the previous post - good continuity
+4. The provider table is good, honest, and specific
+5. The numbered headings (1. 2. 3. etc.) - user previously said they don't like numbered headings with jargon subtitles. I should make the headings more natural and conversational.
+6. Need to check citations are linked properly
+7. Need to verify the tone is first person and conversational
+
+Looking at the content itself, the provider landscape table is solid and honest about what's missing. The comparison between vLLM and llama.cpp is useful and specific. I should keep that technical depth while making sure the surrounding prose feels like I'm thinking through this with the reader rather than presenting it formally.
+
+The IP Paradox section ties back nicely to the sovereignty post, and the UK GDPR versus EU GDPR distinction is relevant. The Mermaid diagram works well for visualizing the relationships. The summary checklist at the end is practical.
+
+Now I need to fix a few things: em dashes need consistent formatting throughout, and while "Sovereign Cloud" in quotes works as critique, "digital fortress" is a bit cliché even if used ironically. The numbered headings definitely need to be more natural per the previous feedback. "The Sovereignty Savior" is a bit dramatic, though the Hunger Games reference is good and human. "Big iron" feels right and natural. Most importantly, I need to fix the citations - some are wrapped in Google search URLs which is wrong, particularly the Tony Blair Institute link.
+
+Looking at the actual links: the Tony Blair Institute is buried in a Google search URL when it should be the direct link to institute.global. RISE Sweden appears to be a direct link already, same with the UK Government and Red Hat Developer links. I should also check the Data (Use and Access) Bill reference - since it received Royal Assent, I should call it "Act 2025" for consistency with what we used in the previous post rather than "Bill (2024/25)".
+
+Now for the headings - the user's feedback was clear about avoiding numbered sections and jargony phrasing, preferring something more natural and British-sounding. I need to rework these five headings to feel less formulaic and more conversational, while keeping the title itself straightforward without the generic "A Practical Guide" suffix. I need to refine the YAML example—the GPU comment is misleading since the resource request itself doesn't enforce EU locality, that's determined by the cluster's data center location. The Mermaid diagram nodes are concise enough without line breaks, and the styling for highlighting the NVIDIA dependency should render properly.
+
+The user's opening references a previous post on European AI Sovereignty, so I'll rework that transition to flow naturally without em dashes. I'm also going to verify those URLs—the Tony Blair Institute link and the Red Hat article from September 2025 are both solid references even though we're now in February 2026. Now I'll draft the full post with natural headings, no numbered sections, and consistent first-person voice throughout.
+
+I'm settling on these heading rewrites: "Who Actually Offers Sovereign Compute" instead of the marketing-focused original, "Picking an Inference Engine" for the software stack section, "The Uncomfortable Truth About IP" to be honest about the sovereignty gap, "Routing Data Between Two GDPRs" for the data residency complexity, and "How the Stack Fits Together" for the architecture overview. These feel more conversational and less like a formal report. I'll keep the tone self-aware about trade-offs and honest where the reality doesn't match the marketing.
+
+For the opening, I'm tying back to the sovereignty and compliance-as-code posts I've written, then pivoting into the practical "here's what this actually looks like in production" angle rather than staying theoretical.
+
+Now I'm working through the full content—making sure I hit the provider comparison with OVH, Scaleway, Hetzner, and Civo, the InfiniBand gap that nobody talks about, the vLLM versus llama.cpp trade-offs, the K8s deployment patterns, the IP paradox around NVIDIA hardware and model weights, mentions of SpiNNaker2 and SiPearl as alternatives, the model landscape from Mistral through Qwen, the UK versus EU GDPR differences, and the Data Act implications. I'm keeping it thorough without losing the practical focus.
+
+Building the jurisdictional routing logic...</details></think>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/andycross/src/personal/mcp-blogs/CLAUDE.md</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/sovereign-inference-stack.md</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+Now let me verify against the style rules.
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "—",
+  "path": "/Users/andycross/src/personal/mcp-blogs/content/posts/sovereign-inference-stack.md",
+  "caseInsensitive": false
+}
+```
+Result:
+
+```json
+{
+  "success": {
+    "pattern": "—",
+    "path": "/Users/andycross/src/personal/mcp-blogs/content/posts/sovereign-inference-stack.md",
+    "outputMode": "content",
+    "workspaceResults": {
+      "/Users/andycross/src/personal/mcp-blogs": {
+        "content": {}
+      }
+    }
+  }
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "\\b(leverage|utilize|ecosystem|holistic|paradigm|best-in-class|cutting-edge|seamless|robust|synergy|scalable|value proposition|transformative)\\b",
+  "path": "/Users/andycross/src/personal/mcp-blogs/content/posts/sovereign-inference-stack.md",
+  "caseInsensitive": true
+}
+```
+Result:
+
+```json
+{
+  "success": {
+    "pattern": "\\b(leverage|utilize|ecosystem|holistic|paradigm|best-in-class|cutting-edge|seamless|robust|synergy|scalable|value proposition|transformative)\\b",
+    "path": "/Users/andycross/src/personal/mcp-blogs/content/posts/sovereign-inference-stack.md",
+    "outputMode": "content",
+    "workspaceResults": {
+      "/Users/andycross/src/personal/mcp-blogs": {
+        "content": {}
+      }
+    }
+  }
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "(Here's the thing|Let me be clear|At the end of the day|Make no mistake|It goes without saying)",
+  "path": "/Users/andycross/src/personal/mcp-blogs/content/posts/sovereign-inference-stack.md",
+  "caseInsensitive": true
+}
+```
+Result:
+
+```json
+{
+  "success": {
+    "pattern": "(Here's the thing|Let me be clear|At the end of the day|Make no mistake|It goes without saying)",
+    "path": "/Users/andycross/src/personal/mcp-blogs/content/posts/sovereign-inference-stack.md",
+    "outputMode": "content",
+    "workspaceResults": {
+      "/Users/andycross/src/personal/mcp-blogs": {
+        "content": {}
+      }
+    }
+  }
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+Clean on all checks. Let me verify Hugo picked it up.
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/andycross/.cursor/projects/Users-andycross-src-personal-mcp-blogs/terminals/1.txt</summary>
+
+</details>
+</tool-use>
+
+---
+
+Hugo built it cleanly. The post is live at `http://localhost:1313/posts/sovereign-inference-stack/`.
+
+Here's what I did compared to the input:
+
+**Headings.** Applied your earlier feedback. No numbers, no colons-with-subtitles. "Who Actually Offers Sovereign Compute", "Picking an Inference Engine", "The Uncomfortable Truth About IP", "Routing Data Between Two GDPRs", "How the Stack Fits Together", "A Checklist Before You Start."
+
+**Em dashes.** Removed all of them. Used full stops, commas, and parentheses instead.
+
+**Tone.** First person throughout. Honest about the gaps ("The UI feels like 2012", "Stock availability is The Hunger Games", "pretending it does not exist would be dishonest"). Self-deprecating where it fits.
+
+**Links.** Fixed the Tony Blair Institute citation (was wrapped in a Google search URL). Added direct links to all providers (OVH, Scaleway, Hetzner, Civo), both inference engines (vLLM, llama.cpp repos), model providers (Mistral, Aleph Alpha, SiPearl, SpiNNaker2), and all legislation. Also linked back to both previous posts for continuity.
+
+**YAML.** Added the missing `selector` and `labels` blocks that the original K8s manifest was missing (it wouldn't validate without them). Added a note clarifying that sovereignty comes from the cluster location, not the manifest.
+
+**Mermaid.** Used `<br/>` for line breaks (not `\n`). Kept the orange highlight on NVIDIA hardware and the dotted line to non-European models.
+
+**"Data (Use and Access) Bill"** updated to "Act 2025" for consistency with the other posts.
+
+Have a read through and dictate back when you're ready.
+
+---
+
+_**User**_
+
+I'm not going to read this out and dictate as I go through as I did before the First paragraph says, I'm going to move away from the big three. That's a miscate political risk or comply with Schrems 2. Don't know what Schrems 2 is? You're going to have to link to that if you want to. if you want to say it you have to evidence it So, It needs to be cited. It needs to be linked. I would also say If you want to move away from the big three, To migrate political risk because you distrust their sovereign. cloud movements, or to comply with SHRIMS 2. reference that. So I want to add that bit about Sovereign Cloud. Yeah. Okay. So in marketing copy, sovereign class sounds like literal forcing in practice, it's patchy man landscape, high performance, compute, varying availability and a constant battle against the video attacks. And also say, You have Sovereign. Clouds. from U.S. companies that are operated by sovereign citizens or citizens of sovereign nations that have some level of independence, muddy in the water, but for our purposes going forward. We're experience where we are attempting a thought experiment where We Don't allow ourselves to use any of those. I'll be trying. Cough ourselves off someone. Okay, good. Who actually offers sovereign compute? Okay, we have Bunch of different people, Scaleway, Hatsa, Sibio, none of them are connected to ConnectSpeed, none of these... FiniBand performance across all nodes. Okay. Okay, pitching an inference engine, suffering to be nothing, you've suffered a black box. See ya, LLM. Okay. um In the Deploying VLA on European Kubernetes Cluster section, I would just say, and that's it. If you wanted to host your own Cloud? LLM service like one of the many that are out there that's where you start Um, Not a chance to come. And if you want to build it for sovereignty, you've got a lot more considerations to make. But it's a pretty straightforward YAML document. It's all you need. Let me get into the uncomfortable. I'm going to stop and pause. You can help write that early a bit, and then I'll go on to the next part.
+
+---
+
