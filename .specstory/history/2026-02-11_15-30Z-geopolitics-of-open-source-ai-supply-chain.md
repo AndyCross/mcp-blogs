@@ -884,11 +884,344 @@ Good, I have all three sections in view. Let me make the three refinements.
 
 <details><summary>Tool use: **edit_file_v2** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/securing-open-source-ai-supply-chain.md</summary>
 
-Status: **loading**
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/securing-open-source-ai-supply-chain.md</summary>
 
 </details>
 
 </tool-use>
+
+---
+
+Now let me also add a bridging sentence after the Nix code block to tie the two approaches together.
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/andycross/src/personal/mcp-blogs/content/posts/securing-open-source-ai-supply-chain.md</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/securing-open-source-ai-supply-chain.md</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+Let me do a quick em-dash check on the new text to make sure I stayed clean.
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "—",
+  "path": "/Users/andycross/src/personal/mcp-blogs/content/posts/securing-open-source-ai-supply-chain.md",
+  "caseInsensitive": false
+}
+```
+Result:
+
+```json
+{
+  "success": {
+    "pattern": "—",
+    "path": "/Users/andycross/src/personal/mcp-blogs/content/posts/securing-open-source-ai-supply-chain.md",
+    "outputMode": "content",
+    "workspaceResults": {
+      "/Users/andycross/src/personal/mcp-blogs": {
+        "content": {}
+      }
+    }
+  }
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+All three refinements are in. Here's what changed:
+
+1. **CUDA section** now has a concrete interim strategy after the "worth tracking" line: containerise CUDA as a pinned artefact, use device-agnostic PyTorch APIs, target ONNX/TorchScript export paths, and build CI/CD so swapping the hardware abstraction layer is a config change. Frames it as building an exit path rather than waiting for one to appear.
+
+2. **Llama section** now connects the CVE-2024-50050 example directly to the operational consequences of Meta's control: no say in disclosure timelines, no visibility into internal review, no guarantee fixes prioritise your deployment patterns. Makes the "open washing" argument land with a concrete "you were waiting for a US company to decide when to fix an RCE in your production environment" punchline.
+
+3. **Reproducible builds section** is now titled "Reproducible Environments and Dependency Locking" and opens with `pip-tools`, `uv`, and Poetry as the common-case tools before introducing Nix as the full-stack option for teams whose threat model includes native library attacks. Nix is properly contextualised as the steeper but more complete option rather than the only option.
+
+---
+
+_**User**_
+
+We need to update the Series, its only showing 3 posts
+
+---
+
+_**Agent (model claude-4.6-opus-high-thinking, mode Agent)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "series.*european-ai-sovereignty",
+  "path": "/Users/andycross/src/personal/mcp-blogs/content/posts",
+  "outputMode": "files_with_matches",
+  "caseInsensitive": false
+}
+```
+Result:
+
+```json
+{
+  "success": {
+    "pattern": "series.*european-ai-sovereignty",
+    "path": "/Users/andycross/src/personal/mcp-blogs/content/posts",
+    "outputMode": "files_with_matches",
+    "workspaceResults": {
+      "/Users/andycross/src/personal/mcp-blogs": {
+        "files": {
+          "files": [
+            "content/posts/securing-open-source-ai-supply-chain.md",
+            "content/posts/european-ai-sovereignty.md",
+            "content/posts/sovereign-inference-stack.md",
+            "content/posts/compliance-as-code-two-europes.md"
+          ],
+          "totalFiles": 4
+        }
+      }
+    }
+  }
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+All four posts already have the `series = ["european-ai-sovereignty"]` tag. Hugo should pick that up automatically. Let me check if there's a separate series definition or layout file that might be listing posts manually.
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "european-ai-sovereignty",
+  "outputMode": "files_with_matches",
+  "caseInsensitive": false
+}
+```
+Result:
+
+```json
+{
+  "success": {
+    "pattern": "european-ai-sovereignty",
+    "outputMode": "files_with_matches",
+    "workspaceResults": {
+      "/Users/andycross/src/personal/mcp-blogs": {
+        "files": {
+          "files": [
+            "./content/posts/securing-open-source-ai-supply-chain.md",
+            "./.specstory/history/2026-02-11_15-30Z-geopolitics-of-open-source-ai-supply-chain.md",
+            "./.specstory/history/2026-02-11_09-14Z-regulatory-divergence-in-ai-architecture.md",
+            "./content/posts/european-ai-sovereignty.md",
+            "./content/posts/sovereign-inference-stack.md",
+            "./content/posts/compliance-as-code-two-europes.md",
+            "./hugo.toml",
+            "./.specstory/history/2026-02-05_11-37Z-european-ai-sovereignty-architecture.md"
+          ],
+          "totalFiles": 8
+        }
+      }
+    }
+  }
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/andycross/src/personal/mcp-blogs/hugo.toml</summary>
+
+</details>
+</tool-use>
+
+---
+
+Hugo's taxonomy config looks correct. Let me check if there's a theme template that might be hardcoding the series list or limiting it.
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "featuredSeries|european-ai-sovereignty",
+  "path": "/Users/andycross/src/personal/mcp-blogs/themes",
+  "outputMode": "files_with_matches",
+  "caseInsensitive": false
+}
+```
+Result:
+
+```json
+{
+  "success": {
+    "pattern": "featuredSeries|european-ai-sovereignty",
+    "path": "/Users/andycross/src/personal/mcp-blogs/themes",
+    "outputMode": "files_with_matches",
+    "workspaceResults": {
+      "/Users/andycross/src/personal/mcp-blogs": {
+        "files": {
+          "files": [
+            "themes/stepdev/layouts/partials/featured-series.html",
+            "themes/stepdev/layouts/index.html"
+          ],
+          "totalFiles": 2
+        }
+      }
+    }
+  }
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/andycross/src/personal/mcp-blogs/themes/stepdev/layouts/partials/featured-series.html</summary>
+
+</details>
+</tool-use>
+
+---
+
+The template uses `{{ len $series.Pages }}` which should count dynamically. The issue is likely that the new post is dated February 13th (in the future) and Hugo doesn't render future-dated posts by default. Let me check the series taxonomy page too.
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "series",
+  "path": "/Users/andycross/src/personal/mcp-blogs/themes/stepdev/layouts",
+  "outputMode": "files_with_matches",
+  "caseInsensitive": false
+}
+```
+Result:
+
+```json
+{
+  "success": {
+    "pattern": "series",
+    "path": "/Users/andycross/src/personal/mcp-blogs/themes/stepdev/layouts",
+    "outputMode": "files_with_matches",
+    "workspaceResults": {
+      "/Users/andycross/src/personal/mcp-blogs": {
+        "files": {
+          "files": [
+            "themes/stepdev/layouts/series/term.html",
+            "themes/stepdev/layouts/partials/featured-series.html",
+            "themes/stepdev/layouts/index.html",
+            "themes/stepdev/layouts/series/list.html"
+          ],
+          "totalFiles": 4
+        }
+      }
+    }
+  }
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/andycross/src/personal/mcp-blogs/themes/stepdev/layouts/series/term.html</summary>
+
+</details>
+</tool-use>
+
+---
+
+The templates are all dynamic. The issue is that the new post is dated 2026-02-13, which is in the future (today is February 11th). Hugo skips future-dated content by default unless you run it with `--buildFuture`.
+
+There are two options: either add `buildFuture = true` to the Hugo config, or keep the future date knowing it will appear automatically on the 13th. Since the other posts in the series are already published and you specifically wanted a future date, the series will show 4 posts once Feb
+
+---
+
+_**User**_
+
+
+
+---
+
+_**Agent (model claude-4.6-opus-high-thinking, mode Agent)**_
+
+<think><details><summary>Thought Process</summary>
+The user is showing me that the series page shows "</details></think>
 
 ---
 

@@ -1,6 +1,6 @@
 +++
 title = "Securing the Open Source AI Supply Chain"
-date = "2026-02-13"
+date = "2026-02-11"
 draft = false
 tags = ["ai", "europe", "sovereignty", "security", "supply-chain"]
 series = ["european-ai-sovereignty"]

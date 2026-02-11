@@ -1,6 +1,6 @@
 +++
 title = "Architecting for Two Europes with Compliance-as-Code"
-date = "2026-02-10"
+date = "2026-02-08"
 draft = false
 tags = ["ai", "europe", "compliance", "architecture", "regulation"]
 series = ["european-ai-sovereignty"]

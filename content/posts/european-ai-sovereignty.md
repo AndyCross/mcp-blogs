@@ -1,6 +1,6 @@
 +++
 title = "Building AI Platforms Under European Sovereignty"
-date = "2026-02-05"
+date = "2026-02-03"
 draft = false
 tags = ["ai", "europe", "sovereignty", "architecture", "infrastructure"]
 series = ["european-ai-sovereignty"]

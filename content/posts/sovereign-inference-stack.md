@@ -1,6 +1,6 @@
 +++
 title = "A Practical Guide to the European Sovereign Inference Stack"
-date = "2026-02-11"
+date = "2026-02-09"
 draft = false
 tags = ["ai", "europe", "sovereignty", "infrastructure", "inference"]
 series = ["european-ai-sovereignty"]
