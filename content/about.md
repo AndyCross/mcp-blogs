@@ -24,3 +24,10 @@ I started thinking about developer tooling that brought AI and devs closer toget
 ## Get in touch
 
 Best way to reach me is through GitHub. Always happy to chat about this stuff.
+
+## Open source tech used
+
+This site is built with open source tools that I'm grateful for:
+
+- **[Hugo](https://gohugo.io/)** for static site generation. Properly fast, no fuss.
+- **[Mermaid.js](https://mermaid.js.org/)** for diagrams rendered straight from Markdown.
