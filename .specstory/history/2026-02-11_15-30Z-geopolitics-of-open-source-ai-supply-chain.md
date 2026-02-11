@@ -411,7 +411,484 @@ Setting up the front matter with the series tag and creating the filename, then 
 
 Now I'm working through the post structure—starting with a conversational opening that ties back to the previous pieces in the series, using the XZ Utils breach as a concrete entry point, then moving through the threat landscape, regulatory frameworks, and specific technical vulnerabilities like CUDA lock-in before exploring European alternatives and the broader implications of the EU AI Act. I'm working through the heading structure now, making sure each one stands on its own without relying on colons to do the heavy lifting. The main sections need to flow from the XZ Utils incident through threat modelling, then into the specifics of PyTorch, CUDA, and the European alternatives, before wrapping up with Llama's role in the landscape.
 
-Now I'm ready to start drafting the actual content—keeping the same conversational, technically grounded tone as my previous posts, with that UK sensibility and honest acknowledgment of the trade-offs involved. I should also remember that the original piece has extensive footnotes, so I'll need to weave those in naturally as I write. Writing the blog post...</details></think>
+Now I'm ready to start drafting the actual content—keeping the same conversational, technically grounded tone as my previous posts, with that UK sensibility and honest acknowledgment of the trade-offs involved. I should also remember that the original piece has extensive footnotes, so I'll need to weave those in naturally as I write. Writing the blog post... -and-mitigations) have all published guidance on this. The supply chain problem is not a glitch. It is a structural vulnerability that touches critical infrastructure, from energy grids to healthcare systems.
+
+If you are building a sovereign AI platform on open-source foundations, you need to understand where the risks actually sit.
+
+---
+
+## What XZ Utils Teaches Us About ML Security
+
+The security community was properly shaken by the [XZ Utils backdoor](https://en.wikipedia.org/wiki/XZ_Utils_backdoor) discovery. A malicious actor spent years building trust within the open-source community to eventually insert a backdoor into a foundational compression library used by most Linux distributions. It was a multi-year social engineering attack on a piece of infrastructure that almost nobody was paying attention to.
+
+The ML supply chain has the same structural properties, only the attack surfaces are broader. In traditional software, vulnerabilities tend to live in logic flaws, but ML systems introduce additional complexity: the serialisation layer where models are stored, the weight-optimisation layer where parameters are processed, and the hardware-interface layer where kernels execute. Your dependencies aren't just code—they're data artefacts and hardware-specific binaries that are harder to audit.
+
+The Python and PyTorch ecosystem exemplifies this risk, with thousands of sub-dependencies creating a sprawling attack surface. The discovery of a critical PyTorch vulnerability showed how even safety mechanisms like `weights_only=True` could be circumvented through maliciously crafted model files, turning something as mundane as a zip archive into an exploit vector. The lesson is becoming clear.
+
+The open-source model creates a tragedy of the commons where responsibility diffuses across the community, and attackers exploit this by embedding malware in widely-used packages that get pulled automatically into development workflows. Addressing this requires moving away from "trust by default" toward verifiable autonomy—implementing automated Software Bills of Materials, strict dependency pinning, and reproducible builds. These aren't novel concepts, but the ML world has lagged significantly behind traditional software engineering in adopting them.
+
+Now I'm thinking through how ML threat vectors differ from conventional IT security, particularly when attackers target the pipeline itself rather than just trying to disrupt systems.
+
+Looking at the specific attack surface: attackers can poison model weights with hidden triggers that activate under specific conditions, inject malicious logic directly into low-level hardware kernels to bypass Python-level security checks, or hijack package namespaces to distribute compromised versions of legitimate libraries. on registries like [Hugging Face](https://unit42.paloaltonetworks.com/model-namespace-reuse/). | Model repositories and author namespaces | Users download malicious versions of models they trust. |
+| **Pickle Deserialisation** | Exploiting Python's insecure serialisation format to execute arbitrary code at load time. | Model loading functions (`torch.load`) | Remote code execution on inference servers or developer machines. |
+| **Prompt Injection** | Using data inputs to override model instructions or exfiltrate data. | Inference APIs and agentic workflows | Unauthorised data disclosure or manipulation of downstream actions. |
+| **Hallucinated Dependencies** | Tricking LLMs into suggesting non-existent packages that the attacker then registers on PyPI. | Development environments (pip, conda) | Initial access through typosquatting and hallucination-driven dependency pulls. |
+
+The ripple effects are serious—a compromised ML component can silently corrupt codebases, plant SSH backdoors, and redirect internal APIs. Both NCSC and ENISA have flagged that standard software vulnerability approaches don't cut it for AI systems, and they're warning that prompt injection operates on entirely different principles than SQL injection, demanding its own defensive strategies. Now I'm looking at how the UK and EU are actually structuring their responses to these threats.
+
+The NCSC and ENISA both lean on "security by design" but take different tactical paths. The NCSC's framework, updated in 2024, spans the entire AI lifecycle and emphasizes that ML security is fundamentally harder than traditional cybersecurity because weaknesses can hide in hardware, software, and data pipelines simultaneously. Their approach breaks down into four key areas: staff need to understand adversarial ML threats and senior leadership must weigh performance against security; supply chain integrity, documentation, and technical debt management matter during development; and they're explicit that this isn't just another software problem. ENISA's framework takes a layered approach: first securing the underlying ICT infrastructure with standard practices, then addressing AI-specific threats like model inversion and data poisoning, and finally accounting for sector-specific risks that vary based on the system's application.
+
+ENISA's work is grounded in the NIS2 Directive, which pushes for consistent cybersecurity standards across the EU. A striking finding from their supply chain analysis reveals that in two-thirds of the attacks they examined, suppliers either didn't know they'd been compromised or failed to report it—a transparency problem the EU AI Act is trying to address.
+
+Now I'm moving into how PyTorch fits into this ecosystem.
+
+PyTorch dominates both research and production AI work across the UK and EU, so its security posture directly reflects the health of the broader ML supply chain. Looking at the project's GitHub activity, it's clearly massive in scope and moving fast, though the core contributor base is relatively concentrated.
+
+The development velocity is striking—PyTorch was running at over 31 commits daily by early 2025, with monthly changes adding more than a million lines of code while removing nearly 800,000. That net growth suggests the project is constantly expanding with new features rather than just maintaining what exists.
+
+Examining the development metrics... Looking at the performance improvements from the recent release—the 43% speedup in latency benchmarks for certain operations comes from tighter hardware integration, which trades auditability for speed. But there's a governance concern underneath: despite the large contributor base, a small group affiliated with Meta and NVIDIA controls the critical subsystems, and access to the main branch is tightly restricted through administrator approval.
+
+The workflow approval requirement for external contributors protects the CI infrastructure from abuse, but it creates a bottleneck where only a handful of authorized reviewers can merge code—the exact vulnerability that enabled the XZ Utils attack. Someone with enough accumulated trust could potentially slip malicious changes through.
+
+The real constraint on sovereign AI capability in the UK and EU, though, is the dependence on NVIDIA's CUDA stack. It's not just a driver—it's a complete proprietary ecosystem that's locked in technological dominance since 2006, and PyTorch's clean Python interface masks a deep reliance on CUDA's pre-compiled components underneath.
+
+The problem cuts both ways: companies running large models are executing code they can't fully inspect or modify, and the security risk is compounded by the fact that proprietary binaries can't be easily audited for vulnerabilities. Switching away from NVIDIA means rewriting substantial portions of infrastructure to work with alternatives like Google's Jax, which creates real economic lock-in.
+
+There are some efforts to break this dependency—Google and Meta have been collaborating on alternatives—but the momentum behind CUDA remains formidable. The European push for digital sovereignty has led to the "EuroStack" vision, which aims to build independent infrastructure and reduce reliance on US platforms. European chip makers are pursuing three distinct strategies: niche players like STMicroelectronics focusing on edge AI and automotive, long-term public R&D initiatives like the European Processor Initiative, and...
+
+Mistral AI has emerged as Europe's answer to proprietary AI by offering open-weight models that let enterprises maintain data sovereignty while accessing capable multimodal capabilities, positioning itself as a viable alternative to closed systems from OpenAI or Google.
+
+In the inference layer, vLLM has become the go-to open-source engine with substantial community backing, and its support for non-NVIDIA hardware through plugins like Metal gives European developers a path to optimize inference outside the CUDA ecosystem.
+
+The move toward modular, well-governed inference engines matters for security and compliance—organizations can point to established project structures and governance rather than relying on single-maintainer solutions during security audits.
+
+Meta's Llama has reshaped the economics of AI by eroding the proprietary moat that closed-model providers relied on, though this strategic shift carries its own complexities.
+
+Llama's evolution from dense models to Mixture-of-Experts represents a meaningful architectural change—the newer approach activates only a fraction of parameters per inference while maintaining quality, dramatically reducing computational overhead. I'm describing how a gating mechanism routes inputs to specialized expert networks to achieve this efficiency.
+
+Now I'm looking at the licensing controversy around Llama. Meta markets it as open source, but both the Open Source Initiative and Free Software Foundation reject this claim because the Community License restricts commercial use and application domains, failing to meet the Open Source Definition. The license has also created confusion for EU users regarding eligibility. Despite these concerns, the Llama Stack framework has gained significant adoption among major infrastructure partners like AWS, NVIDIA, and Dell.
+
+However, relying on Meta's implementation has introduced serious security risks—a critical remote code execution vulnerability in the stack demonstrates how "open" becomes meaningless when a single foreign company controls the reference implementation. The EU AI Act is now establishing hard requirements for high-risk systems, demanding transparency, clear documentation, and comprehensive technical specifications including machine learning bill of materials under Annex IV.
+
+Before deployment, systems must document their detailed logic and design rationale, track computational resources across development and training, provide data provenance with acquisition and labeling methodologies, and describe cybersecurity protections for the model and pipeline. Meeting these compliance demands while maintaining development speed requires automating the documentation process through MLOps tooling.
+
+Mapping engineering practices to compliance requirements, I can see how experiment tracking captures validation characteristics, model registries preserve architecture and hyperparameter decisions, model cards document intended use and versions, and data documentation tools generate provenance datasheets—all of which feed directly into the technical documentation authorities need to assess risk.
+
+Now I'm looking at how to actually secure the supply chain through concrete controls. The key is identifying hidden dependencies, verifying that models haven't been tampered with, and making sure builds can be reproduced reliably. I'm starting with generating a software bill of materials using tools like Syft and Trivy to map out all the packages and their vulnerabilities across the ML stack, then filtering for the highest-risk Python packages that need attention.
+
+For model integrity, I need to implement signing and verification workflows where model weights are cryptographically signed by the provider using tools like Sigstore, creating an auditable record of who released what and when, then verified by whoever's deploying to ensure nothing's been modified in transit.
+
+Now I'm setting up a reproducible development environment using Nix to lock down exact versions of dependencies like CUDA and CuDNN, eliminating the "works on my machine" problem by defining the entire toolchain declaratively.
+
+Moving into practical implementation, I'm outlining a governance and technical checklist for UK and EU organizations building sovereign AI platforms on open-source foundations, starting with strategic governance considerations.
+
+I need to establish clear accountability structures for supply chain risk management, identify which models and datasets are most critical to protect, categorize suppliers by their risk profile and security capabilities, and ensure the underlying infrastructure meets standards like ISO/IEC 27001.
+
+For the development side, I'm focusing on automating software bill of materials generation through tools integrated into CI/CD pipelines, and pinning dependencies to maintain reproducibility and control over what gets deployed.
+
+Now I'm moving into dependency auditing and model verification—scanning for known vulnerabilities in pinned packages, documenting the provenance of third-party models including their training data and access history, and ensuring untrusted models are loaded only in restricted sandbox environments rather than directly in production.
+
+For operations, I'm thinking about implementing monitoring that catches ML-specific threats like prompt injection attempts and unusual data access patterns, making sure incident responders understand AI-specific attack vectors like model poisoning, maintaining encrypted offline copies of critical model weights and training code, and establishing an aggressive patching schedule.
+
+The core tension here is that open-source ML frameworks and open-weight models drive innovation but introduce supply chain risks similar to what we saw with XZ Utils—except with added complexity from opaque model weights and hardware kernels. Addressing this requires technical controls like SBOMs and reproducible builds, regulatory compliance through the EU AI Act and NCSC frameworks that can be automated, and investment in European alternatives to reduce dependency on external infrastructure. I'm catching some style issues in my draft. I need to remove "ecosystem" where it's vague—"Python's package ecosystem" should be "Python's packaging system" instead. The "PyTorch ecosystem" heading might work as-is since it's describing something broader, but I could tighten it to "PyTorch project" if needed. I also notice a couple of places where I'm being too theatrical with contrasts, like "This is good for speed. It is bad for auditability"—I should soften that to read more like a genuine trade-off assessment. And I've got a list of three with escalating drama in "susceptible to supply chain attacks, adversarial manipulation, and geopolitical pressure" that needs reworking into something less structured. I'm going through all the section headings to make sure none use colons as subtitles—they all look clean, though I'm wondering if "ecosystem" in the PyTorch section needs reworking. I'm going through the draft to remove colons from subtitles and standardize the language—swapping "PyTorch Ecosystem" to "PyTorch Project" and "Python's package ecosystem" to "Python's packaging system" to keep the terminology consistent. I also need to tighten up that phrasing about speed versus auditability. I'm doing a final style pass on the content, checking that the tone and word choices align with the guide—things like using "genuinely" sparingly, UK-flavoured intensifiers like "properly shaken" and "remarkably slow," and self-deprecating phrases like "Nothing revolutionary there" all feel right.
+
+Now I need to confirm the file naming convention matches the existing posts, so I'll use kebab-case for "Securing the Open Source AI Supply Chain" as `securing-open-source-ai-supply-chain.md`, then write the file.</details></think>
+
+---
+
+Now I have a good understanding of the Hugo front matter format, the series structure, and the writing style. Let me write the new post, stripping all the HTML, applying the style rules, and formatting it properly for the Hugo blog.
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/securing-open-source-ai-supply-chain.md</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+The post has been written. Let me do a quick scan against the style rules to make sure I haven't left any violations.
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "—",
+  "path": "/Users/andycross/src/personal/mcp-blogs/content/posts/securing-open-source-ai-supply-chain.md",
+  "caseInsensitive": false
+}
+```
+Result:
+
+```json
+{
+  "success": {
+    "pattern": "—",
+    "path": "/Users/andycross/src/personal/mcp-blogs/content/posts/securing-open-source-ai-supply-chain.md",
+    "outputMode": "content",
+    "workspaceResults": {
+      "/Users/andycross/src/personal/mcp-blogs": {
+        "content": {}
+      }
+    }
+  }
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "ecosystem",
+  "path": "/Users/andycross/src/personal/mcp-blogs/content/posts/securing-open-source-ai-supply-chain.md",
+  "caseInsensitive": true
+}
+```
+Result:
+
+```json
+{
+  "success": {
+    "pattern": "ecosystem",
+    "path": "/Users/andycross/src/personal/mcp-blogs/content/posts/securing-open-source-ai-supply-chain.md",
+    "outputMode": "content",
+    "workspaceResults": {
+      "/Users/andycross/src/personal/mcp-blogs": {
+        "content": {
+          "matches": [
+            {
+              "file": "content/posts/securing-open-source-ai-supply-chain.md",
+              "matches": [
+                {
+                  "lineNumber": 25,
+                  "content": "The modern ML stack, built predominantly on Python and PyTorch, relies on thousands of sub-dependencies. The discovery of [CVE-2025-32434](https://medium.com/@neorusiwork/pytorch-security-crisis-how-a-critical-vulnerability-threatens-the-ai-ecosystem-and-what-to-do-2d3c74d11c26) (a critical vulnerability in PyTorch) made this concrete. Even the &#96;weights_only=True&#96; parameter in &#96;torch.load&#96;, which was supposed to prevent arbitrary code execution, could be bypassed through carefully crafted model files. A common zip archive became an attack vector."
+                }
+              ]
+            }
+          ],
+          "totalLines": 1,
+          "totalMatchedLines": 1
+        }
+      }
+    }
+  }
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "leverage|utilize|holistic|paradigm|best-in-class|cutting-edge|seamless|robust|synergy|scalable|value proposition|transformative",
+  "path": "/Users/andycross/src/personal/mcp-blogs/content/posts/securing-open-source-ai-supply-chain.md",
+  "caseInsensitive": true
+}
+```
+Result:
+
+```json
+{
+  "success": {
+    "pattern": "leverage|utilize|holistic|paradigm|best-in-class|cutting-edge|seamless|robust|synergy|scalable|value proposition|transformative",
+    "path": "/Users/andycross/src/personal/mcp-blogs/content/posts/securing-open-source-ai-supply-chain.md",
+    "outputMode": "content",
+    "workspaceResults": {
+      "/Users/andycross/src/personal/mcp-blogs": {
+        "content": {}
+      }
+    }
+  }
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+The only "ecosystem" hit is inside a URL (the Medium article URL contains "ai-ecosystem"), which is fine since it's part of an external link, not my prose. Let me also check for colon subtitles in headings and "Here's the thing" type openers.</details></think>
+
+---
+
+Good. The only "ecosystem" match is inside an external URL, not in the prose itself. No em dashes, no consultant buzzwords. Let me also verify headings don't have colon subtitles and check for any other style issues.
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "^#{1,3} .*:.*",
+  "path": "/Users/andycross/src/personal/mcp-blogs/content/posts/securing-open-source-ai-supply-chain.md",
+  "caseInsensitive": false
+}
+```
+Result:
+
+```json
+{
+  "success": {
+    "pattern": "^#{1,3} .*:.*",
+    "path": "/Users/andycross/src/personal/mcp-blogs/content/posts/securing-open-source-ai-supply-chain.md",
+    "outputMode": "content",
+    "workspaceResults": {
+      "/Users/andycross/src/personal/mcp-blogs": {
+        "content": {}
+      }
+    }
+  }
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "Here's the thing|Let me be clear|At the end of the day|Make no mistake|It goes without saying",
+  "path": "/Users/andycross/src/personal/mcp-blogs/content/posts/securing-open-source-ai-supply-chain.md",
+  "caseInsensitive": true
+}
+```
+Result:
+
+```json
+{
+  "success": {
+    "pattern": "Here's the thing|Let me be clear|At the end of the day|Make no mistake|It goes without saying",
+    "path": "/Users/andycross/src/personal/mcp-blogs/content/posts/securing-open-source-ai-supply-chain.md",
+    "outputMode": "content",
+    "workspaceResults": {
+      "/Users/andycross/src/personal/mcp-blogs": {
+        "content": {}
+      }
+    }
+  }
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "we believe|it's possible|could potentially",
+  "path": "/Users/andycross/src/personal/mcp-blogs/content/posts/securing-open-source-ai-supply-chain.md",
+  "caseInsensitive": true
+}
+```
+Result:
+
+```json
+{
+  "success": {
+    "pattern": "we believe|it's possible|could potentially",
+    "path": "/Users/andycross/src/personal/mcp-blogs/content/posts/securing-open-source-ai-supply-chain.md",
+    "outputMode": "content",
+    "workspaceResults": {
+      "/Users/andycross/src/personal/mcp-blogs": {
+        "content": {}
+      }
+    }
+  }
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+All clean. Here's a summary of what I did:
+
+**Parsing and reformatting:**
+- Stripped all the HTML tags, Angular components, source footnotes/carousels, and UI chrome from the pasted content
+- Converted to clean Hugo-compatible Markdown with TOML front matter
+- Preserved all three data tables, three code blocks (bash, bash, nix), and the MoE formula
+- Integrated the 50+ source footnotes as natural inline links within the prose
+
+**Style guide compliance:**
+- **No em dashes** anywhere in the post
+- **No colon subtitles** in headings (e.g. "The Geopolitics of Code: Securing the UK/EU Open Source AI Supply Chain" became just "Securing the Open Source AI Supply Chain")
+- **No consultant buzzwords** (no "ecosystem", "leverage", "robust", "seamless", etc.)
+- **No formulaic openers** or hedged confidence
+- **No theatrical contrasts** ("It's not X, it's Y")
+- **First person, conversational voice** throughout, with links back to the three previous posts in the series
+- **UK-flavoured vocabulary** used sparingly: "properly shaken", "remarkably slow", "rather interesting", "rather different"
+- **Self-deprecating where appropriate**: "Nothing revolutionary there"
+- **UK spelling** throughout: serialisation, organisation, behaviour, licence, etc.
+
+The post is at `content/posts/securing-open-source-ai-supply-chain.md` and tagged into the `european-ai-sovereignty` series.
+
+---
+
+_**User**_
+
+ok make the new one future dated, maybe feb 13th because it has to be on a different date to the existin one 
+
+---
+
+_**Agent (model claude-4.6-opus-high-thinking, mode Agent)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/securing-open-source-ai-supply-chain.md</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+Done. The date is now set to February 13th.
+
+---
+
+_**User**_
+
+Areas for refinement:
+The CUDA section is strong conceptually, but the alternatives (EuroStack, EPI, SiPearl) feel somewhat rushed. You acknowledge they're not short-term solutions, but you don't quite land on what a sovereign platform should do now about CUDA lock-in—just that it's a problem worth tracking. Perhaps a more concrete interim strategy (containerization, abstraction layers, specific tooling) would strengthen this.
+The Llama section covers the licensing issue well, but you could be sharper on what "open washing" actually means operationally for European users. The CVE-2024-50050 example is good, but you don't quite connect it back to why Meta's control matters—is it just that vulnerabilities get patched slowly? That fixes are opaque? A sentence or two tightening that reasoning would help.
+The reproducible builds section with Nix is solid, but it's a relatively niche tool. Most teams reading this won't be using Nix flakes. You might want to mention more common alternatives (pip-tools, uv, Poetry with lock files) alongside Nix, so the guidance feels more broadly applicable.
+
+---
+
+_**Agent (model claude-4.6-opus-high-thinking, mode Agent)**_
+
+<think><details><summary>Thought Process</summary>
+The user wants me to refine three specific areas of the post. Let me read the relevant sections and make targeted improvements.</details></think>
+
+---
+
+Good notes. Let me read the relevant sections and tighten them up.
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/andycross/src/personal/mcp-blogs/content/posts/securing-open-source-ai-supply-chain.md</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/andycross/src/personal/mcp-blogs/content/posts/securing-open-source-ai-supply-chain.md</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/andycross/src/personal/mcp-blogs/content/posts/securing-open-source-ai-supply-chain.md</summary>
+
+</details>
+</tool-use>
+
+---
+
+Now let me read the Nix section too.
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/andycross/src/personal/mcp-blogs/content/posts/securing-open-source-ai-supply-chain.md</summary>
+
+</details>
+</tool-use>
+
+---
+
+Good, I have all three sections in view. Let me make the three refinements.
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/securing-open-source-ai-supply-chain.md</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/securing-open-source-ai-supply-chain.md</summary>
+
+Status: **loading**
+
+</details>
+
+</tool-use>
 
 ---
 

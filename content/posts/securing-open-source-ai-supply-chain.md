@@ -131,7 +131,11 @@ The drive for digital sovereignty has produced the ["EuroStack" vision](https://
 2. **Long-term public R&D.** The European Processor Initiative (EPI) and SiPearl aim to develop homegrown processors based on open architectures like RISC-V. Strategically necessary, but these are high-risk bets that must compete with the rapid hardware development cycle in the US.
 3. **Underfunded challengers.** Startups with the technology but not the capital to compete with NVIDIA or the US hyperscalers.
 
-None of these are a short-term answer to the CUDA problem. But they are worth tracking.
+None of these are a short-term answer to the CUDA problem. So what do you do now, today, if you are building a sovereign platform on NVIDIA hardware you cannot fully audit?
+
+The practical interim strategy is to isolate the CUDA dependency as aggressively as possible. Containerise your training and inference workloads so the CUDA runtime is a pinned, versioned artefact rather than something installed on bare metal. Use PyTorch's device-agnostic APIs (`torch.device`, the `accelerate` library) rather than writing CUDA-specific code directly. Target the ONNX Runtime or TorchScript export paths where you can, so your models are not permanently welded to a single backend. And build your CI/CD pipeline so that swapping the hardware abstraction layer is a configuration change, not a rewrite.
+
+This will not give you sovereignty over the CUDA binaries themselves. But it will give you a credible exit path when the European alternatives mature, and it limits the blast radius if a CUDA-layer vulnerability is discovered.
 
 ### Mistral and Open Weights
 
@@ -167,7 +171,9 @@ This sparsity is what allows a model like "Scout" to support context windows of 
 
 Meta brands Llama as "Open Source." Both the [Open Source Initiative](https://opensource.org/blog/metas-llama-license-is-still-not-open-source) and the Free Software Foundation disagree. The Llama Community License restricts commercial scale and fields of use, which fails the Open Source Definition. For European users specifically, the licence has at times excluded EU residents from using models without clear explanation.
 
-Despite this, the ["Llama Stack"](https://thealliance.ai/blog/ai-alliance-accelerating-open-source-ai-innovation) (a framework for standardising generative AI application building blocks) has gained traction with major partners including AWS, NVIDIA, and Dell. But reliance on Meta's reference implementation has already produced critical vulnerabilities, including the [ZeroMQ/Pickle RCE (CVE-2024-50050)](https://www.oligo.security/blog/cve-2024-50050-critical-vulnerability-in-meta-llama-llama-stack). When your "open" framework is under the singular control of a foreign platform, "open" means something rather different from what most people assume.
+Despite this, the ["Llama Stack"](https://thealliance.ai/blog/ai-alliance-accelerating-open-source-ai-innovation) (a framework for standardising generative AI application building blocks) has gained traction with major partners including AWS, NVIDIA, and Dell. But reliance on Meta's reference implementation has already produced critical vulnerabilities, including the [ZeroMQ/Pickle RCE (CVE-2024-50050)](https://www.oligo.security/blog/cve-2024-50050-critical-vulnerability-in-meta-llama-llama-stack).
+
+This is where "open washing" has operational consequences. When Meta controls the reference implementation, European users have no say in vulnerability disclosure timelines, no visibility into internal security review processes, and no guarantee that fixes will prioritise their deployment patterns. The CVE-2024-50050 patch came from Meta on Meta's schedule. If you had built your sovereign inference pipeline on Llama Stack, you were waiting for a US company to decide when to fix a remote code execution vulnerability in your production environment. That is a rather uncomfortable position for a platform claiming jurisdictional independence.
 
 ---
 
@@ -235,9 +241,13 @@ model_signing verify /path/to/pytorch_model.bin \
   --identity_provider https://github.com/login/oauth
 ```
 
-### Reproducible Environments with Nix
+### Reproducible Environments and Dependency Locking
 
-To avoid "it works on my machine" security problems and ensure that dependencies like CUDA and cuDNN are exactly as specified, you need functional package management. [Nix](https://discourse.nixos.org/t/how-to-properly-setup-an-environment-with-pytorch/69711) provides this.
+The "it works on my machine" problem is a security problem. If your training environment and your production environment resolve different versions of the same package, you have an unaudited gap in your supply chain.
+
+Most teams will start with what they already know. `pip-tools` (with `pip-compile` generating a fully pinned `requirements.txt` from a loose `requirements.in`) is the simplest path. `uv` is a faster, Rust-based alternative that produces the same lockfile format and is gaining traction quickly. Poetry with its `poetry.lock` file achieves the same goal with a different workflow. The point is not which tool you pick. The point is that every dependency, including transitive ones, must be pinned to an exact version and hash.
+
+For teams that need stronger guarantees (particularly around CUDA and cuDNN versions, which live outside Python's packaging world), [Nix](https://discourse.nixos.org/t/how-to-properly-setup-an-environment-with-pytorch/69711) provides full-stack reproducibility. A Nix flake pins everything from the Python interpreter to the GPU driver:
 
 ```nix
 # A basic Nix flake for a reproducible PyTorch-CUDA environment
@@ -262,6 +272,8 @@ To avoid "it works on my machine" security problems and ensure that dependencies
   };
 }
 ```
+
+Nix is admittedly a steeper learning curve than `pip-tools` or `uv`. But if your threat model includes supply chain attacks on native libraries (and if you are reading this post, it should), Nix is the only tool that locks the full stack rather than just the Python layer.
 
 ---
 
