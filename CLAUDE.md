@@ -54,6 +54,16 @@ Replace "we believe", "it's possible", "could potentially" with direct statement
 
 "Faster, smarter, better" and similar constructions read as marketing copy. Break the pattern.
 
+### No Colon Subtitles in Headings
+
+Avoid "Main Title: Explanatory Subtitle" in post titles and section headings. Restructure as natural phrases instead.
+
+- "Compliance-as-Code: Architecting for Two Europes" → "Architecting for Two Europes with Compliance-as-Code"
+- "The Sovereign Inference Stack: A Practical Guide" → "A Practical Guide to the European Sovereign Inference Stack"
+- "Dynamic Transparency: The Wrapper Constraint" → "Letting Users Know They're Talking to an AI"
+
+If the subtitle adds nothing, just drop it.
+
 ## Preferred Vocabulary
 
 Use UK-flavoured intensifiers sparingly:
