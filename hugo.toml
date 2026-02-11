@@ -14,23 +14,23 @@ theme = "stepdev"
 
 [params]
   env = "production"
-  description = "Exploring the intersection of AI, 3D rendering, and the Model Context Protocol."
+  description = "Exploring the intersection of AI, 3D rendering, in Europe and the World."
   author = "Andy Cross"
   
   # Step Into Dev Theme Settings
   heroTitle = "Building with AI & 3D"
-  heroSubtitle = "Exploring the intersection of AI, 3D rendering, and the Model Context Protocol."
+  heroSubtitle = "Exploring the intersection of AI, 3D rendering, in Europe and the World."
   heroImage = "/images/hero.png"
   
   # Newsletter (Buttondown)
   showNewsletter = true
   newsletterUsername = "andycross"
-  newsletterDescription = "Get notified about new posts on AI, MCP development, and building things that matter."
+  newsletterDescription = "Get notified about new posts on AI, 3D rendering, and building things that matter."
   
   # Featured Series
-  featuredSeries = "step-over-to-go"
-  featuredSeriesTitle = "Step Over to Go (C# You Later)"
-  featuredSeriesDescription = "A comprehensive guide for .NET developers making the jump to Go. 48 posts covering everything from basic syntax to production deployment."
+  featuredSeries = "european-ai-sovereignty"
+  featuredSeriesTitle = "European AI Sovereignty"
+  featuredSeriesDescription = "Building AI platforms under European jurisdiction. From sovereignty constraints and regulatory divergence to practical infrastructure choices."
   
   # Topic Highlights
   topicHighlights = ["ai", "mcp", "react-native"]

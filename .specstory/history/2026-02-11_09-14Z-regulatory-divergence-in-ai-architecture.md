@@ -2821,3 +2821,57 @@ mkdir -p /Users/andycross/src/personal/mcp-blogs/content/series/european-ai-sove
 
 ---
 
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/series/european-ai-sovereignty/_index.md</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+Let me verify Hugo picked it all up cleanly.
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/andycross/.cursor/projects/Users-andycross-src-personal-mcp-blogs/terminals/1.txt</summary>
+
+</details>
+</tool-use>
+
+---
+
+All built cleanly. All three posts now belong to the `european-ai-sovereignty` series:
+
+1. **Building AI Platforms Under European Sovereignty: Jurisdiction as Architecture** (Feb 5)
+2. **Compliance-as-Code: Architecting for Two Europes** (Feb 11)
+3. **The European Sovereign Inference Stack: A Practical Guide** (Feb 11)
+
+The series page is at `http://localhost:1313/series/european-ai-sovereignty/` and should list all three in date order.
+
+---
+
+_**User**_
+
+Change the featured series on the home page to the new one
+
+---
+
+_**Agent (model claude-4.6-opus-high-thinking, mode Agent)**_
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/andycross/src/personal/mcp-blogs/hugo.toml</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+Done. The home page now features the European AI Sovereignty series.
+
+---
+
