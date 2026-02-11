@@ -3187,7 +3187,39 @@ Done. The three titles now read:
 
 1. **Building AI Platforms Under European Sovereignty**
 2. **Architecting for Two Europes with Compliance-as-Code**
-3. **A
+3. **A Practical Guide to the European Sovereign Inference Stack**
+
+No colons, no dangling subtitles.
+
+---
+
+_**User**_
+
+add that rule to @CLAUDE.md 
+
+---
+
+_**Agent (model claude-4.6-opus-high-thinking, mode Agent)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/andycross/src/personal/mcp-blogs/CLAUDE.md</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/andycross/src/personal/mcp-blogs/CLAUDE.md</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+Done. Added a "No Colon Subtitles in Headings" rule to the Big Rules section, with the examples from what we just fixed.
 
 ---
 
