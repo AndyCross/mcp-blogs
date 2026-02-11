@@ -3,6 +3,7 @@ title = "The European Sovereign Inference Stack: A Practical Guide"
 date = "2026-02-11"
 draft = false
 tags = ["ai", "europe", "sovereignty", "infrastructure", "inference"]
+series = ["european-ai-sovereignty"]
 +++
 
 I wrote previously about [why jurisdiction matters for European AI platforms](/posts/european-ai-sovereignty/) and then about [how to handle the UK-EU compliance split in code](/posts/compliance-as-code-two-europes/). Those posts covered the "why" and the regulatory "how." This one covers the practical "how." If you want to move away from the Big Three (AWS, GCP, Azure), whether to mitigate political risk because you distrust their sovereign cloud offerings, or to comply with [Schrems II](https://www.europarl.europa.eu/doceo/document/TA-9-2021-0026_EN.html) (the 2020 CJEU ruling that invalidated the EU-US Privacy Shield), you are entering the world of the European sovereign inference stack.

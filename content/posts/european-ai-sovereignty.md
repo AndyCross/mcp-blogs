@@ -3,6 +3,7 @@ title = "Building AI Platforms Under European Sovereignty: Jurisdiction as Archi
 date = "2026-02-05"
 draft = false
 tags = ["ai", "europe", "sovereignty", "architecture", "infrastructure"]
+series = ["european-ai-sovereignty"]
 +++
 
 ## The Problem Is Not Capability

@@ -3,6 +3,7 @@ title = "Compliance-as-Code: Architecting for Two Europes"
 date = "2026-02-10"
 draft = false
 tags = ["ai", "europe", "compliance", "architecture", "regulation"]
+series = ["european-ai-sovereignty"]
 +++
 
 I wrote recently about [building AI platforms under European sovereignty constraints](/posts/european-ai-sovereignty/). That post treated "Europe" as broadly singular. The reality is messier.

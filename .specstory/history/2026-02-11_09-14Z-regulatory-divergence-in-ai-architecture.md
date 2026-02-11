@@ -2595,3 +2595,229 @@ I'm not going to read this out and dictate as I go through as I did before the F
 
 ---
 
+_**Agent (model claude-4.6-opus-high-thinking, mode Agent)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/andycross/src/personal/mcp-blogs/content/posts/sovereign-inference-stack.md</summary>
+
+</details>
+</tool-use>
+
+---
+
+Three changes needed. Let me make them all.
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/sovereign-inference-stack.md</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/sovereign-inference-stack.md</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+Three changes made:
+
+1. **Schrems II** is now linked and explained in parentheses (the 2020 CJEU ruling that invalidated the EU-US Privacy Shield). Also added "because you distrust their sovereign cloud offerings" to the motivation for moving away from the Big Three.
+
+2. **Sovereign Cloud from US companies.** Added a paragraph acknowledging that AWS, Azure, and Google all offer sovereign cloud products operated with some independence, and that this muddies the water. Then sets up the thought experiment clearly: we are cutting ourselves off from all of them. No AWS Sovereign Cloud, no Azure Confidential Computing, no Google Distributed Cloud.
+
+3. **After the YAML.** Reworded to say "And that is it" with a note that this is where you start if you want to host your own LLM service. It is a straightforward YAML document. The deployment is not the hard part. The sovereignty considerations are, and the rest of the post covers them.
+
+Ready for the next section when you are.
+
+---
+
+_**User**_
+
+All right, so now I'm on the section of the uncomfortable truth about IP. Even if your data center is in Dubai or Falkenstein or London, Please put, or London. Your stack almost certainly has four dependencies that you can use to remove hardware, Nvidia, and American chips. Years away. Yep. so Okay, that's a good section. I would... Add another paragraph towards the end. Because... The last paragraph in that section brings back another question. A frozen mystery model, blah, blah, blah, blah. Um, Actually, no, that's fine. Ignore me. That's absolutely fine. Uh, Okay, cool. Next. Routing data between two GDPRs. We have a whole document about already cool. Ah. I'll appreciate that use. Yeah, okay, yeah, I'm happy with that. It's really straightforward. We have a fast API service, which is just routes. Okay, cool. Then we have a house that has a villa. okay Okay, actually I'm really happy with all that. Cool. Make that change about... London and a few other bits.
+
+---
+
+_**Agent (model claude-4.6-opus-high-thinking, mode Agent)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/andycross/src/personal/mcp-blogs/content/posts/sovereign-inference-stack.md</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/sovereign-inference-stack.md</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+Done. Added London to the list of data centre locations. The rest of the post you're happy with, so no other changes needed. Ready when you are.
+
+---
+
+_**User**_
+
+Please group these three into a new series like the dotnet to go ones. 
+
+---
+
+_**Agent (model claude-4.6-opus-high-thinking, mode Agent)**_
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "series",
+  "path": "/Users/andycross/src/personal/mcp-blogs/hugo.toml",
+  "caseInsensitive": false
+}
+```
+Result:
+
+```json
+{
+  "success": {
+    "pattern": "series",
+    "path": "/Users/andycross/src/personal/mcp-blogs/hugo.toml",
+    "outputMode": "content",
+    "workspaceResults": {
+      "/Users/andycross/src/personal/mcp-blogs": {
+        "content": {
+          "matches": [
+            {
+              "file": "hugo.toml",
+              "matches": [
+                {
+                  "lineNumber": 9,
+                  "content": "  series = \"series\""
+                },
+                {
+                  "lineNumber": 50,
+                  "content": "    identifier = \"series\""
+                },
+                {
+                  "lineNumber": 52,
+                  "content": "    url = \"/series/\""
+                }
+              ]
+            }
+          ],
+          "totalLines": 3,
+          "totalMatchedLines": 3
+        }
+      }
+    }
+  }
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/andycross/src/personal/mcp-blogs/content/posts/dotnet-to-go-composition.md</summary>
+
+</details>
+</tool-use>
+
+---
+
+Good, I can see the pattern. Series are defined as a frontmatter array. Let me add the series to all three posts.
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/european-ai-sovereignty.md</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/compliance-as-code-two-europes.md</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/sovereign-inference-stack.md</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+Now let me check if there's a series content page needed, like how the step-over-to-go series might have one.
+
+---
+
+<tool-use data-tool-type="generic" data-tool-name="glob_file_search">
+<details>
+<summary>Tool use: **glob_file_search** • Searched codebase "undefined" • **3** results in **1** directory</summary>
+
+Directory: **undefined** (3 files)
+
+| File |
+|------|
+| `./themes/stepdev/layouts/series/term.html` |
+| `./themes/stepdev/layouts/series/list.html` |
+| `./content/series/step-over-to-go/_index.md` |
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/andycross/src/personal/mcp-blogs/content/series/step-over-to-go/_index.md</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: mkdir -p /Users/andycross/src/personal/mcp-blogs/content/series/european-ai-sovereignty</summary>
+
+```bash
+mkdir -p /Users/andycross/src/personal/mcp-blogs/content/series/european-ai-sovereignty
+```
+</details>
+</tool-use>
+
+---
+
