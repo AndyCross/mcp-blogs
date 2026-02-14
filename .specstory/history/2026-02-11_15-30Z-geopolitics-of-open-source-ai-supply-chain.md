@@ -1214,14 +1214,272 @@ There are two options: either add `buildFuture = true` to the Hugo config, or ke
 
 _**User**_
 
-
+ok then let's move back all the dates by 2 days so we can fit ita ll in the 'present' window
 
 ---
 
 _**Agent (model claude-4.6-opus-high-thinking, mode Agent)**_
 
-<think><details><summary>Thought Process</summary>
-The user is showing me that the series page shows "</details></think>
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "^date = ",
+  "path": "/Users/andycross/src/personal/mcp-blogs/content/posts/european-ai-sovereignty.md",
+  "caseInsensitive": false
+}
+```
+Result:
+
+```json
+{
+  "success": {
+    "pattern": "^date = ",
+    "path": "/Users/andycross/src/personal/mcp-blogs/content/posts/european-ai-sovereignty.md",
+    "outputMode": "content",
+    "workspaceResults": {
+      "/Users/andycross/src/personal/mcp-blogs": {
+        "content": {
+          "matches": [
+            {
+              "file": "content/posts/european-ai-sovereignty.md",
+              "matches": [
+                {
+                  "lineNumber": 3,
+                  "content": "date = \"2026-02-05\""
+                }
+              ]
+            }
+          ],
+          "totalLines": 1,
+          "totalMatchedLines": 1
+        }
+      }
+    }
+  }
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "^date = ",
+  "path": "/Users/andycross/src/personal/mcp-blogs/content/posts/compliance-as-code-two-europes.md",
+  "caseInsensitive": false
+}
+```
+Result:
+
+```json
+{
+  "success": {
+    "pattern": "^date = ",
+    "path": "/Users/andycross/src/personal/mcp-blogs/content/posts/compliance-as-code-two-europes.md",
+    "outputMode": "content",
+    "workspaceResults": {
+      "/Users/andycross/src/personal/mcp-blogs": {
+        "content": {
+          "matches": [
+            {
+              "file": "content/posts/compliance-as-code-two-europes.md",
+              "matches": [
+                {
+                  "lineNumber": 3,
+                  "content": "date = \"2026-02-10\""
+                }
+              ]
+            }
+          ],
+          "totalLines": 1,
+          "totalMatchedLines": 1
+        }
+      }
+    }
+  }
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "^date = ",
+  "path": "/Users/andycross/src/personal/mcp-blogs/content/posts/sovereign-inference-stack.md",
+  "caseInsensitive": false
+}
+```
+Result:
+
+```json
+{
+  "success": {
+    "pattern": "^date = ",
+    "path": "/Users/andycross/src/personal/mcp-blogs/content/posts/sovereign-inference-stack.md",
+    "outputMode": "content",
+    "workspaceResults": {
+      "/Users/andycross/src/personal/mcp-blogs": {
+        "content": {
+          "matches": [
+            {
+              "file": "content/posts/sovereign-inference-stack.md",
+              "matches": [
+                {
+                  "lineNumber": 3,
+                  "content": "date = \"2026-02-11\""
+                }
+              ]
+            }
+          ],
+          "totalLines": 1,
+          "totalMatchedLines": 1
+        }
+      }
+    }
+  }
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "^date = ",
+  "path": "/Users/andycross/src/personal/mcp-blogs/content/posts/securing-open-source-ai-supply-chain.md",
+  "caseInsensitive": false
+}
+```
+Result:
+
+```json
+{
+  "success": {
+    "pattern": "^date = ",
+    "path": "/Users/andycross/src/personal/mcp-blogs/content/posts/securing-open-source-ai-supply-chain.md",
+    "outputMode": "content",
+    "workspaceResults": {
+      "/Users/andycross/src/personal/mcp-blogs": {
+        "content": {
+          "matches": [
+            {
+              "file": "content/posts/securing-open-source-ai-supply-chain.md",
+              "matches": [
+                {
+                  "lineNumber": 3,
+                  "content": "date = \"2026-02-13\""
+                }
+              ]
+            }
+          ],
+          "totalLines": 1,
+          "totalMatchedLines": 1
+        }
+      }
+    }
+  }
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+Current dates: Feb 5, Feb 10, Feb 11, Feb 13. Shifting all back by 2 days gives Feb 3, Feb 8, Feb 9, Feb 11 (today).
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/european-ai-sovereignty.md</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/compliance-as-code-two-europes.md</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/sovereign-inference-stack.md</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/securing-open-source-ai-supply-chain.md</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+Done. The series dates are now:
+
+1. **Building AI Platforms Under European Sovereignty** - Feb 3
+2. **Architecting for Two Europes with Compliance-as-Code** - Feb 8
+3. **A Practical Guide to the European Sovereign Inference Stack** - Feb 9
+4. **Securing the Open Source AI Supply Chain** - Feb 11 (today)
+
+All four should now appear in Hugo without needing the `--buildFuture` flag.
 
 ---
 

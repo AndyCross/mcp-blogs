@@ -24,6 +24,16 @@ Avoid:
 
 Just make the point directly.
 
+### No Announced Observations
+
+Don't flag the significance of what you're about to say. Phrases like "This is a remarkable position," "There is a genuine absurdity here," or "The critical insight is" are preambles that tell the reader how to feel before they've read the actual point. Just make the point. Let it land on its own.
+
+- "This is a significant expansion. A data protection regulator is now asking..." → "A data protection regulator is now asking..."
+- "There is a genuine absurdity here. You need an LLM to work out..." → "You need an LLM to work out..."
+- "The critical insight is that erasure compliance needs to be designed in at training time" → "Erasure compliance needs to be designed in at training time"
+
+If the observation is surprising, the reader will notice without being told.
+
 ### No Consultant Buzzwords
 
 | Avoid | Use Instead |
