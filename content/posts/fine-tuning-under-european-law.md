@@ -242,7 +242,7 @@ This documentation requirement covers all stages of training, including fine-tun
 
 ---
 
-## The Strawberry in the Smoothie
+## Why You Can't Delete Data from a Trained Model
 
 The right to erasure under [Article 17 of the GDPR](https://gdpr-info.eu/art-17-gdpr/) requires controllers to delete personal data "without undue delay" when requested. In a traditional database, you find the record and delete it. In a trained neural network, the data has been blended into billions of parameters. Researchers have compared it to trying to retrieve a specific strawberry from a smoothie. Once the weights have been updated, the influence of any single data point is diffused throughout the model.
 
@@ -252,7 +252,7 @@ If someone whose data appeared in your fine-tuning set requests erasure, what do
 
 The [EDPB's Support Pool of Experts](https://www.edpb.europa.eu/our-work-tools/our-documents/other/ai-complex-algorithms-and-effective-data-protection_en) has mapped out the options, from the most rigorous to the most pragmatic:
 
-**Full retraining.** Delete the data from the training set and retrain the model from scratch. This is the gold standard for compliance. It is also ruinously expensive. For large models, a single training run can cost millions of euros in compute. Retraining every time someone exercises their Article 17 rights is not viable for most organisations.
+**Full retraining.** Delete the data from the training set and retrain the model from scratch. This is the gold standard for compliance. It is also ruinously expensive. For large models, a single training run can cost millions of euros in compute. Retraining every time someone exercises their Article 17 rights is not viable for anyone.
 
 **SISA (Sharded, Isolated, Sliced, Aggregated).** Split the training data into independent shards. Train separate sub-models on each shard. Aggregate them for inference. When an erasure request arrives, identify which shard contained the data, and retrain only that shard. The rest of the model is untouched. This is currently considered the most viable approach for deep neural networks that need to support deletion.
 

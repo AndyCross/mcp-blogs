@@ -762,7 +762,123 @@ Looking back at the compliance-as-code piece, the author writes things like "The
 
 The real distinction is between essay-register labels like "remarkable," "significant," "genuine," "critical," "noteworthy" — those detached adjectives that pre-judge the observation — versus the author's more immediate, personal way of engaging with ideas. The test isn't whether "This is X" appears, but whether X is doing the work of announcing importance rather than describing a genuine reaction.
 
-Re-examining the sovereignty post with this lens</details></think>
+Re-examining the sovereignty post with this lens, lines like "The deepest advantage of a sovereignty-constrained platform is also its most counterintuitive" do lean on superlatives that tell the reader how to feel. But the author consistently makes strong, opinionated claims throughout, so these feel more like the author's natural voice than essay-register moves. The "most counterintuitive" phrasing is the sticking point, though in context it's probably acceptable. These are marginal cases.
+
+The compliance post reads much more conversational—phrases like "Nothing revolutionary there" and "I have mixed feelings about this one" are clearly personal reactions rather than announcements. No real violations there.
+
+Moving into the sovereign inference stack post now, checking for the same pattern.
+
+Post 4 has that line "That is genuinely remarkable" which initially seemed like it might be announcing how to react, but looking at it in context, it's actually just a direct statement of opinion responding to the point about democratizing access. It's not setting up an observation—it's the observation itself. I think that one holds up fine.
+
+The "most significant bottleneck" phrasing in line 107 is doing real work as a thesis statement for that section, so that feels justified too.
+
+Let me dig deeper into the other posts to see if there are clearer style violations I'm missing. Looking back through all four posts carefully, they're actually quite clean—the voice stays strong and conversational throughout, with occasional formal moments that serve a real purpose rather than padding. The anti-pattern I was concerned about really only showed up in the new post I generated, which makes sense since that's where the AI scaffolding became more visible.
+
+Let me do a final check for those telltale phrases that signal empty preambles, scanning through the existing posts for patterns like "This is a," "There is a," "It is worth," and similar announcement structures. Going through european-ai-sovereignty.md, I'm finding phrases like "This framing is a trap" and "This is sovereignty as systems engineering"—but these are doing actual work, making blunt claims or defining concepts rather than just warming up the reader.
+
+The borderline cases are trickier. "This is the framing that makes the sovereignty constraint productive" functions as a thesis statement wrapping up a section, and "This is the counterintuitive promise of sovereignty" announces something, but both feel intentional given how strong the author's voice is throughout.
+
+In compliance-as-code-two-europes.md, "If there is one section of this post that significantly adds complexity, it's this one" is doing double duty—it's both an announced observation and a structural signal about what matters in the post, which makes it harder to dismiss outright.
+
+The rest of these feel genuinely fine. "There is an obvious fragility here, though" is matter-of-fact rather than essay-register, and "There is something uncomfortable about pouring engineering effort into compliance machinery while your competitors are shipping features" is personal and conversational. In sovereign-inference-stack.md, "it is worth noting" is mild enough that it works as parenthetical information rather than a preamble. And in securing-open-source-ai-supply-chain.md, "That is genuinely remarkable" reads as a personal reaction, which fits the voice.
+
+The data points like "stands out" and "most significant bottleneck" are doing practical work—flagging specific information and setting up section structure—so they land fine in context. After going through all of this, I think the existing tone is actually working as intended.
+
+Let me double-check one more time though, since the user asked me to be thorough. Looking at "The deepest advantage of a sovereignty-constrained platform is also its most counterintuitive: the data cannot leave"—the double announcement of "deepest" and "most counterintuitive" is a bit much, but the colon immediately delivers the actual observation, and the author is making a substantive claim here rather than just padding. The sentence structure carries weight.
+
+Then there's "This is the counterintuitive promise of sovereignty: by constraining where data can go, you force architectures that use data better." The word "counterintuitive" appears twice in this section, which does feel slightly mechanical, but this sentence is functioning as a section summary and doing structural work.
+
+I think these four posts are genuinely clean. The anti-pattern I flagged really does seem concentrated in the new post I generated, which makes sense—it's an AI writing habit that wouldn't naturally appear in the human author's voice.
+
+Though wait, the CLAUDE.md file says these posts were written with AI assistance, so I did contribute somehow. But the human clearly edited heavily to match their own voice and remove those patterns.
+
+Let me do one final check for "It is [adjective] that..." constructions. Nothing jumps out. I'm satisfied these posts are clean. I should report my findings to the user.
+
+Actually, let me take another look at the supply chain post since it was the most recently generated with AI help. Scanning through it again, I see a few borderline cases like "This is where 'open washing' has operational consequences" which has some essay-register phrasing, but it's doing structural work and gets followed by concrete details. The other instances are fine—direct references or natural transitions. I think this one passes too.
+
+Now I'm checking for any announcement-style adjectives like "crucial," "fundamental," or "remarkable" used as preambles across all four posts. The existing three are clean. In the supply chain post, "genuinely remarkable" appears as a personal reaction rather than a preamble, and "remarkably slow" is just a UK intensifier. Both are fine. I'm satisfied the existing posts are solid—the only real issues were in the new piece I wrote myself.</details></think>
+
+---
+
+I've gone through all four posts carefully. Here's what I found:
+
+**european-ai-sovereignty.md** - Clean. The voice is strong throughout. Phrases like "This framing is a trap" (line 11) and "This is uncomfortable. But it's honest" (line 92) are personal reactions, not essay-register announcements. They land because they're blunt and conversational.
+
+**compliance-as-code-two-europes.md** - Clean. Lines like "Nothing revolutionary there" (line 40), "I have mixed feelings about this one" (line 269), and "That post might also be a rant" (line 271) are the author reacting, not announcing. No violations.
+
+**sovereign-inference-stack.md** - Clean. Direct and practical throughout. No announced observations.
+
+**securing-open-source-ai-supply-chain.md** - Clean. "That is genuinely remarkable" (line 12) is a personal reaction to a specific claim, not a preamble. "Remarkably slow" (line 29) is a UK intensifier used well. No violations.
+
+The anti-pattern was concentrated in the new post I generated. That makes sense. "This is a remarkable position," "This creates a genuine tension," and "The critical insight is" are AI writing tics. The existing posts, where your voice is already in control, don't have this problem. Nothing to correct in the other four.
+
+---
+
+_**User**_
+
+What on earth is the strawberry in the smoothie?!
+
+---
+
+_**Agent (model claude-4.6-opus-high-thinking, mode Agent)**_
+
+<think><details><summary>Thought Process</summary>
+The user is questioning the "Strawberry in the Smoothie" section heading and metaphor. Let me re-read it.
+
+The metaphor comes from the source material they pasted - researchers comparing deleting data from a trained LLM to "trying to retrieve a specific strawberry from a smoothie." It's used to explain why the right to erasure (Article 17 GDPR) is technically difficult for neural networks.
+
+The user seems to find it jarring or out of place. Let me look at it in context.
+
+Looking at the section:
+
+```
+## The Strawberry in the Smoothie
+
+The right to erasure under Article 17 of the GDPR requires controllers to delete personal data "without undue delay" when requested. In a traditional database, you find the record and delete it. 
+
+In a trained neural network, the data has been blended into billions of parameters. Researchers have compared it to trying to retrieve a specific strawberry from a smoothie. Once the weights have been updated, the influence of any single data point is diffused throughout the model.
+```
+
+The metaphor is attributed to "researchers" in the source material. It's a real analogy used in the machine unlearning literature. But the user might find the heading too whimsical for the tone of the series, or the metaphor itself unclear or silly. Looking at the other section headings, they're more straightforward and formal, so this one does stand out tonally.
+
+In a trained neural network, once data gets blended into billions of parameters and weights are updated, any single data point's influence becomes diffused throughout the model—researchers have compared this to trying to retrieve a specific strawberry from a smoothie. The heading feels more literary than the rest of the series, which uses direct, descriptive titles, so it might be worth reconsidering whether this metaphor fits the overall tone.
+
+I should suggest a more straightforward heading that aligns with the series style—something like "Why You Can't Delete Data from a Trained Model" or "The Erasure Problem"—and ask if they'd prefer the metaphor removed entirely or just the heading changed to be more direct.</details></think>
+
+---
+
+Fair point. The heading is too cute for the rest of the series. Compare it against the other section headings:
+
+- "Do You Have the Right to Use That Data?"
+- "The Opt-Out Detection Problem"
+- "When Fine-Tuning Makes You a Provider"
+- "Legitimate Interest Is Not a Free Pass"
+
+Those are all direct and descriptive. "The Strawberry in the Smoothie" reads like a chapter title from a pop-science book.
+
+The metaphor itself is fine in the body text (it's from the machine unlearning literature and it does explain the problem well), but the heading should say what the section is actually about.
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/andycross/src/personal/mcp-blogs/content/posts/fine-tuning-under-european-law.md</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+The smoothie metaphor still appears in the paragraph below to explain the concept, which is where it belongs. The heading now tells you what the section is about, like every other heading in the series.
+
+---
+
+_**User**_
+
+Retraining every time someone exercises their Article 17 rights is not viable for most organisations.
+
+FOR ANYONE
 
 ---
 
