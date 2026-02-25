@@ -24,6 +24,7 @@ Europe has a handful of champions, but they are not created equal. I have used m
 | **[Scaleway](https://www.scaleway.com/)** | "The AI Cloud." Developer-first, easy K8s integration. | Stock availability is The Hunger Games. If you don't reserve instances ahead of time, you are at the mercy of the "Out of Stock" banner. | Fast-moving startups and R&D. |
 | **[Hetzner](https://www.hetzner.com/)** | "Bare Metal at Scale." The cheapest cost per FLOP in Europe. | Limited managed services. No managed Kubernetes for GPUs. You are building from the OS up. | Cost-sensitive batch processing and DIY clusters. |
 | **[Civo](https://www.civo.com/)** | "Cloud Native AI." Focused on ease of use and Kubernetes. | Smaller footprint. Great for L4s, but less big iron (H100s) compared to OVH. | K8s-native teams who want zero friction. |
+| **[Berget AI](https://berget.ai/)** | "Sovereign, Open, Sustainable AI." Swedish-hosted, OpenAI-compatible API, strong compliance story. | Newer and smaller. Serverless inference is live, but dedicated instances and their broader platform are still "Coming Soon." | Teams that need a quick, compliant inference endpoint without managing infrastructure. |
 
 The gap that none of them have closed: interconnect speed. None of these providers currently offer an equivalent to AWS InfiniBand performance across all nodes. If you are doing large multi-node training runs, the interconnect in EU clouds is often the bottleneck. For inference workloads this matters less, but for training it is a real constraint and worth factoring in early.
 
@@ -84,6 +85,18 @@ Even if your data centre is in Roubaix, Falkenstein, or London, your stack almos
 **Hardware.** You are likely running on NVIDIA chips. American chips. True hardware sovereignty (European silicon like [SiPearl](https://sipearl.com/) or [SpiNNaker2](https://spinnaker2.io/)) is still years away from production-ready LLM inference. I covered this in the [sovereignty post](/posts/european-ai-sovereignty/) and the honest answer has not changed: you can control the data layer and the policy layer, but the execution layer remains dependent on American hardware.
 
 **Model IP.** Running Llama 3.1 (Meta, USA) or Qwen (Alibaba, China) on an OVH server gives you sovereign hosting. It does not give you sovereign AI. The weights were trained elsewhere, on data you did not curate, under legal regimes you do not control. For full sovereignty over the model itself, [Mistral](https://mistral.ai/) (France, Apache 2.0 licensed) and [Aleph Alpha](https://aleph-alpha.com/) (Germany) are the options with European provenance. Whether the capability trade-off is acceptable depends on your use case.
+
+It is worth spelling out what the risks actually look like, because "non-European IP" sounds abstract until something goes wrong.
+
+**Licence revocation or change.** Meta's Llama licence is not Apache 2.0. It is a custom community licence with restrictions, including an [Acceptable Use Policy](https://www.llama.com/llama3/use-policy/) that Meta can update. Llama 2 and 3 explicitly prohibited using model outputs to train competing models. Llama 3.1 relaxed that, but the point stands: you are building on terms that a single US company controls. If your product depends on those weights, you are one licence revision away from a compliance headache.
+
+**Export controls.** The US already restricts the export of high-end NVIDIA chips to certain countries. There is nothing stopping similar restrictions being applied to model weights. If geopolitical tensions escalate (and they have a track record of doing so), a US executive order could restrict distribution of frontier model weights to specific jurisdictions. Your self-hosted copy would still run, but updates, fine-tuned variants, and community tooling could dry up overnight.
+
+**Training data liability.** Under the [EU AI Act](https://eur-lex.europa.eu/eli/reg/2024/1689/oj), providers of general-purpose AI models must publish sufficiently detailed summaries of training data, including content covered by copyright. Meta trained Llama on a corpus that almost certainly includes copyrighted European content. If that becomes a legal problem (and [several lawsuits](https://www.morganlewis.com/pubs/2024/02/eu-ai-act-how-far-will-eu-copyright-principles-extend) are testing exactly this), downstream users face uncertainty about whether outputs derived from infringing training data carry liability. You did not train the model, but you are serving its outputs to your customers.
+
+**No audit trail.** You cannot inspect or verify what data went into training a foreign model. For regulated industries, especially finance and healthcare, this is a gap in your compliance story. If a regulator asks "what data was this model trained on?" the honest answer for Llama or Qwen is "we do not know, and we have no way to find out."
+
+None of these risks are guaranteed to materialise. But they are also not theoretical. They track real regulatory trends and real geopolitical behaviour. If you are reaching for a foreign model because it benchmarks better, make sure you have documented that decision and the risks you are accepting.
 
 This is not a dealbreaker for most deployments. A frozen Mistral model running on NVIDIA hardware in a French data centre, serving inference to European users with no call home, is functionally sovereign for most practical purposes. But be honest with yourself about where the sovereignty actually stops.
 
@@ -191,3 +204,9 @@ The dotted line from the inference engine to Llama 3 / Qwen is intentional. You 
 - **[vLLM vs llama.cpp Benchmarks](https://developers.redhat.com/articles/2025/09/30/vllm-or-llamacpp-choosing-right-llm-inference-engine-your-use-case)**, Red Hat Developer (2025). Practical comparison of inference engines for different workloads.
 - **[EU AI Act (Regulation 2024/1689)](https://eur-lex.europa.eu/eli/reg/2024/1689/oj)**, EUR-Lex. The full text of the regulation.
 - **[Mistral AI](https://mistral.ai/)**. European-founded model provider, Apache 2.0 licensed models.
+- **[Berget AI](https://berget.ai/)**. Swedish sovereign inference provider with serverless, OpenAI-compatible API and EU-only infrastructure.
+- **[Meta Llama 3 License](https://www.llama.com/llama3/license/)**. The community licence governing Llama model weights and their permitted use.
+
+---
+
+*Thanks to Philipp Bauer for the feedback that the model IP section needed to spell out the actual risks rather than just flag them, and to Robert Folkesson for the pointer to Berget AI as a Swedish sovereign inference provider. Both suggestions made this post better.*
