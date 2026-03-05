@@ -8,11 +8,9 @@ series = ["european-ai-sovereignty"]
 
 ## The Problem Is Not Capability
 
-The debate over European AI often begins in the wrong place. It starts with benchmarks, parameter counts, and the gap between what Mistral can do and what GPT-4 can do. This framing is a trap. It assumes the primary constraint is capability, that Europe is simply behind, and that sovereignty is a handicap to be overcome once we catch up.
+Most conversations about European AI start with benchmarks: parameter counts, the gap between Mistral and GPT-4, how far behind Europe is on raw capability. It's the wrong starting point. The primary constraint isn't capability. Europe isn't simply losing a race it could win if it spent more. The constraint is jurisdiction.
 
-The real constraint is jurisdiction.
-
-Modern AI is no longer just models. It is supply chains, control planes, update paths, and legal exposure. It is the question of who can compel disclosure, who can modify weights silently, who controls the keys to your fine-tuned checkpoints, and who decides whether your inference logs become evidence in a foreign court. When you call an American API, you are not merely renting compute. You are subjecting your data, your users, and your organisation to a legal regime you do not control and cannot predict.
+Modern AI is no longer just models. The supply chain matters, the control plane matters, the update path matters. So does the legal exposure: who can compel disclosure, who can silently modify weights, who controls the keys to your fine-tuned checkpoints, whether your inference logs could become evidence in a foreign court. When you call an American API, you are not merely renting compute. You are subjecting your data, your users, and your organisation to a legal regime you do not control and cannot predict.
 
 I want to start from a red line: no American clouds, no US-controlled APIs, no vendors subject to CLOUD Act reach-through, and no opaque managed services that could silently shift data or weights. Everything must either be European by governance or fully self-hosted on European soil with auditable control.
 
@@ -97,13 +95,15 @@ The software sovereignty question cannot be separated from the hardware question
 
 So the practical situation is this: even a "strictly sovereign" European AI platform runs American frameworks on American silicon. The sovereignty exists at the data layer, the policy layer, the control layer. But the execution layer remains dependent.
 
+There is also the cost. Running serious ML workloads on OVH or Scaleway rather than AWS or Azure typically carries a meaningful premium, with less GPU availability during demand spikes and higher latency to some population centres. Sovereign infrastructure is more expensive, at least today. That belongs in any honest business case.
+
 I don't have a clean answer to this. The best I can offer is honesty about where the sovereignty actually lives and where it doesn't. Models can be commoditised and swapped. Frameworks are harder. Hardware is hardest of all.
 
 ---
 
 ## The Platform Is Not the Model
 
-This is where the analysis needs to shift. Under sovereignty constraints, the interesting engineering happens not inside the model but around it.
+Under sovereignty constraints, the interesting engineering happens not inside the model but around it.
 
 A modern AI platform is an orchestrated system. It includes model routing: deciding which of several models handles which request, based on cost, capability, latency, or policy. It includes policy-aware inference, rules that govern what data can flow to which model, what outputs must be filtered, what requests must be logged or refused. It includes fine-tuning pipelines, infrastructure for adapting base models to specific domains without exposing training data to external systems. It includes vector search and retrieval, the RAG architectures that turn generic models into specialists by grounding them in proprietary knowledge. It includes evaluation, continuous measurement of model quality, drift, and alignment with organisational standards. It includes human-in-the-loop feedback, mechanisms for users to correct, approve, or reject model outputs, feeding back into fine-tuning and policy.
 
@@ -131,9 +131,9 @@ This is the counterintuitive promise of sovereignty: by constraining where data 
 
 ## What Kind of AI Does Europe Want to Build?
 
-The question that frames this entire discussion is not "can Europe build AI without America?" The answer to that question is obviously yes. Europe can host models, run inference, fine-tune, build applications. The technology exists. The engineering talent exists. The capital, increasingly, exists.
+Can Europe build AI without America? Obviously yes. Europe can host models, run inference, fine-tune, build applications. The technology exists. The engineering talent exists. The capital, increasingly, exists.
 
-The real question is: what kind of AI does Europe want to build?
+The more interesting question is: what kind of AI does Europe want to build?
 
 One answer is: AI that competes on American terms. Raw benchmark dominance, largest models, most parameters, highest scores on standardised evaluations. This path requires massive compute investment, aggressive data acquisition, and a willingness to operate at the same ethical and legal boundaries as American and Chinese competitors. It is possible. But it is not clear that Europe will win this race, or that winning it would serve European interests.
 
