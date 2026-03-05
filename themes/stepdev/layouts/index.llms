@@ -1,0 +1,9 @@
+# {{ .Site.Title }}
+
+> {{ .Site.Params.description }}
+
+## Pages
+
+{{- range .Site.RegularPages }}
+- [{{ .Title }}]({{ .Permalink }}index.md): {{ .Summary | plainify | truncate 120 }}
+{{- end }}

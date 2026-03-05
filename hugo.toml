@@ -58,8 +58,24 @@ theme = "stepdev"
     url = "/about/"
     weight = 20
 
+[mediaTypes]
+  [mediaTypes."text/markdown"]
+    suffixes = ["md"]
+
+[outputFormats]
+  [outputFormats.Markdown]
+    mediaType = "text/markdown"
+    baseName  = "index"
+    isPlainText = true
+
+  [outputFormats.LLMS]
+    mediaType = "text/plain"
+    baseName  = "llms"
+    isPlainText = true
+
 [outputs]
-  home = ["HTML", "RSS", "JSON"]
+  home = ["HTML", "RSS", "JSON", "LLMS"]
+  page = ["HTML", "Markdown"]
 
 [markup]
   [markup.highlight]

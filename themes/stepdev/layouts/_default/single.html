@@ -15,6 +15,8 @@
         <span class="meta-separator">·</span>
         <span>{{ math.Round (div (countwords .Content) 200.0) }} min read</span>
         {{- end }}
+        <span class="meta-separator">·</span>
+        <button id="copy-md-btn" class="copy-md-btn" title="Copy this post as Markdown">Copy as Markdown</button>
       </div>
       
       {{- with .Params.tags }}
@@ -60,5 +62,6 @@
     {{- partial "newsletter.html" . }}
   </div>
 </article>
+<script src="{{ "js/copy-markdown.js" | relURL }}"></script>
 {{ end }}
 

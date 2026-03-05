@@ -1,7 +1,7 @@
 {
   "navigationFallback": {
     "rewrite": "/index.html",
-    "exclude": ["/images/*.{png,jpg,gif,svg}", "/css/*", "/js/*", "/*.xml", "/*.json"]
+    "exclude": ["/images/*.{png,jpg,gif,svg}", "/css/*", "/js/*", "/*.xml", "/*.json", "/*.md", "/*.txt"]
   },
   "globalHeaders": {
     "X-Content-Type-Options": "nosniff",
@@ -10,7 +10,9 @@
   },
   "mimeTypes": {
     ".xml": "application/xml",
-    ".json": "application/json"
+    ".json": "application/json",
+    ".md": "text/markdown",
+    ".txt": "text/plain"
   }
 }
 
