@@ -56,7 +56,9 @@ Compete for the people directly. Elite researchers are mobile, so immigration po
 
 Pick a niche and own it. Trying to match American brute-force scaling is a losing trade for a mid-tier nation. Hardware-efficient architectures, low-precision training, custom compilers, the DeepSeek style of doing more with less, is a defensible specialism, and it happens to be where research cleverness beats capital most reliably.
 
-None of that is as photogenic as a supercomputer launch, which is presumably why a compute fund is what we got. But Bram's instinct was right. The frontier isn't a pile of chips you haven't bought yet. It's a few hundred people doing work nobody has published, and you don't get them by renting them a cluster. You get them by being the place that pays for the experiment that fails. Thanks, Bram.
+There's a people problem before any of that, mind. I've read through the grants and the funding actually on offer, and it's depressingly middle management. The whole apparatus has the energy of the Golgafrincham Ark Fleet Ship B, the one Douglas Adams loaded with the telephone sanitisers and the management consultants and fired off to colonise a planet while everyone who could actually do something stayed home. Plenty of delivery partners, governance frameworks and stakeholder workshops, not much sign of anyone who has shipped a model that mattered. It could be so much better than this. My business partner has worked inside funds like these before, and I'd hand him the cheque a thousand times over before I'd hand it to this lot.
+
+None of the right answers are as photogenic as a supercomputer launch, which is presumably why a compute fund is what we got. But Bram was right. The frontier isn't a pile of chips you haven't bought yet. It's a few hundred people doing work nobody has published, and you don't get them by renting them a cluster. You get them by being the place that pays for the experiment that fails. Thanks, Bram.
 
 ---
 
