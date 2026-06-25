@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Art — Step Into Dev</title>
+<style>
+  :root {
+    --bg-primary: #030712;
+    --bg-card: rgba(255, 255, 255, 0.03);
+    --bg-card-hover: rgba(255, 255, 255, 0.08);
+    --border-default: rgba(255, 255, 255, 0.08);
+    --border-hover: rgba(59, 130, 246, 0.5);
+    --blue-400: #60a5fa;
+    --cyan-400: #22d3ee;
+    --text-primary: #ffffff;
+    --text-secondary: #9ca3af;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 960px; margin: 0 auto; padding: 4rem 1.5rem; }
+  a.back { color: var(--text-secondary); text-decoration: none; font-size: 0.9rem; }
+  a.back:hover { color: var(--blue-400); }
+  h1 {
+    font-size: 2.5rem;
+    letter-spacing: -0.02em;
+    margin: 1.5rem 0 0.5rem;
+    background: linear-gradient(135deg, var(--blue-400), var(--cyan-400));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .lede { color: var(--text-secondary); font-size: 1.1rem; margin: 0 0 3rem; max-width: 38rem; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem; }
+  .card {
+    display: block;
+    padding: 1.75rem;
+    background: var(--bg-card);
+    border: 1px solid var(--border-default);
+    border-radius: 16px;
+    text-decoration: none;
+    color: inherit;
+    transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+  }
+  .card:hover {
+    background: var(--bg-card-hover);
+    border-color: var(--border-hover);
+    transform: translateY(-2px);
+  }
+  .card h2 { font-size: 1.25rem; margin: 0 0 0.5rem; }
+  .card p { color: var(--text-secondary); margin: 0; font-size: 0.95rem; }
+  .date { display: block; margin-top: 0.9rem; font-size: 0.78rem; color: var(--text-secondary); opacity: 0.7; letter-spacing: 0.03em; }
+  .tag { display: inline-block; margin-top: 0.4rem; font-size: 0.8rem; color: var(--cyan-400); }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <a class="back" href="/">← Step Into Dev</a>
+    <h1>Art</h1>
+    <p class="lede">Interactive WebGL experiments. Best viewed full-screen on a machine with a GPU. Move the mouse, see what happens.</p>
+    <div class="grid">
+      <a class="card" href="/art/condemned.html">
+        <h2>condemned to love and lose</h2>
+        <p>A rose that blooms, comes apart, and returns. Move closer and it leaves sooner.</p>
+        <time class="date" datetime="2026-06-25">25 June 2026</time>
+        <span class="tag">Open →</span>
+      </a>
+      <a class="card" href="/art/devil.html">
+        <h2>I think you are the devil itself</h2>
+        <p>A shader piece that responds to the cursor.</p>
+        <time class="date" datetime="2026-06-16">16 June 2026</time>
+        <span class="tag">Open →</span>
+      </a>
+      <a class="card" href="/art/fade.html">
+        <h2>before the colours fade</h2>
+        <p>Colour and motion, fading at the edges.</p>
+        <time class="date" datetime="2026-06-03">3 June 2026</time>
+        <span class="tag">Open →</span>
+      </a>
+    </div>
+  </div>
+</body>
+</html>

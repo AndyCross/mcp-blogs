@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>before the colours fade</title>
+<style>
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; background: #05060a; }
+    /* museum dark: a cold navy that sinks to black at the edges */
+    #bg {
+        position: fixed; inset: 0; z-index: 0;
+        background:
+            radial-gradient(120% 90% at 50% 38%, #14161f 0%, #0a0b12 45%, #05060a 78%, #020205 100%);
+    }
+    canvas { display: block; width: 100vw; height: 100vh; position: relative; z-index: 1; cursor: ns-resize; }
+
+    /* ---- the held line that surfaces at the end of time ---- */
+    #held {
+        position: fixed; inset: 0; z-index: 5;
+        display: flex; align-items: center; justify-content: center;
+        pointer-events: none; text-align: center; padding: 0 8vw;
+        font-family: "Times New Roman", Georgia, serif;
+        font-style: italic; letter-spacing: 0.06em;
+        font-size: clamp(24px, 5vw, 70px);
+        color: #e9e6e0;
+        text-shadow: 0 0 24px rgba(0,0,0,0.9), 0 2px 40px rgba(0,0,0,0.8);
+        opacity: 0; transition: opacity 0.6s ease;
+    }
+    /* ---- faint hint, fades in then lingers low ---- */
+    #hint {
+        position: fixed; bottom: 30px; left: 0; right: 0; z-index: 6;
+        text-align: center; pointer-events: none;
+        font-family: "Courier New", monospace;
+        font-size: clamp(9px, 1.1vw, 12px);
+        letter-spacing: 0.34em; text-transform: uppercase;
+        color: rgba(210,206,198,0.55);
+        text-shadow: 0 0 12px rgba(0,0,0,0.9);
+        opacity: 0; animation: fadeUp 2.6s ease 0.8s forwards;
+    }
+    #hint b { color: rgba(225,200,170,0.8); font-weight: 400; }
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* thin vignette to seat the figure in the dark */
+    #vig { position: fixed; inset: 0; z-index: 4; pointer-events: none;
+           box-shadow: inset 0 0 240px 60px rgba(0,0,0,0.7); }
+
+    .lil-gui { z-index: 20; --background-color: rgba(8,10,16,0.88); --title-background-color: #161a26; }
+</style>
+</head>
+<body>
+
+<div id="bg"></div>
+<div id="held">regret comes not before the colours fade</div>
+<div id="vig"></div>
+<div id="hint"><b>swipe up</b> to let time pass&nbsp;&nbsp;·&nbsp;&nbsp;<b>swipe down</b> to go back</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/lil-gui@0.19.1/dist/lil-gui.umd.min.js"></script>
+<script>
+"use strict";
+
+// ----------------------------------------------------------------------------
+//  before the colours fade
+//  An implied figure made of pigment. Time runs with the scroll: forward it
+//  flakes away to marble then ash; back, the dust re-blooms into colour.
+// ----------------------------------------------------------------------------
+
+const params = {
+    dpr: Math.min(window.devicePixelRatio || 1, 2),
+    count: 60000,        // pigment motes (set before load)
+    decay: 0.0,          // 0 alive .. 1 dust (driven by scroll)
+    spread: 2.6,         // how far pigment drifts when it leaves
+    sway: 1.0,           // idle breathing / parallax amount
+    chroma: 1.12,        // colour richness while alive
+    exposure: 1.0,
+    size: 1.0
+};
+
+const scene  = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(42, innerWidth/innerHeight, 0.1, 100);
+camera.position.set(0, 0, 5.2);
+
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+renderer.setSize(innerWidth, innerHeight);
+renderer.setPixelRatio(params.dpr);
+document.body.appendChild(renderer.domElement);
+
+const group = new THREE.Group();   // tilted gently by the mouse for parallax
+scene.add(group);
+
+// ----------------------------------------------------------------------------
+//  Paint a stylised draped figure to an offscreen canvas, then sample it.
+//  Colours echo the polychrome statue: green robe, rose + gold hem, pale skin.
+//  We never show this image — it only seeds the positions and colours.
+// ----------------------------------------------------------------------------
+function paintFigure(){
+    const W = 380, H = 820;
+    const c = document.createElement('canvas');
+    c.width = W; c.height = H;
+    const g = c.getContext('2d');
+    g.fillStyle = '#000'; g.fillRect(0, 0, W, H);
+    const cx = 190;
+
+    // ---- the rough marble plinth ----
+    const base = g.createLinearGradient(0, 760, 0, 812);
+    base.addColorStop(0, '#d3cec3'); base.addColorStop(1, '#7f7b71');
+    g.fillStyle = base;
+    g.beginPath(); g.ellipse(cx + 4, 786, 150, 26, 0, 0, Math.PI*2); g.fill();
+
+    // a sandalled foot peeking from the hem
+    g.fillStyle = '#e3bf9b';
+    g.beginPath(); g.ellipse(cx - 18, 762, 26, 11, -0.12, 0, Math.PI*2); g.fill();
+    g.fillStyle = 'rgba(150,110,80,0.5)';
+    g.beginPath(); g.ellipse(cx - 18, 766, 26, 6, -0.12, 0, Math.PI*2); g.fill();
+
+    // ---- the gown (chiton): a long column flaring to the floor, weight on one leg ----
+    const robe = new Path2D();
+    robe.moveTo(cx - 46, 196);                                   // left shoulder
+    robe.bezierCurveTo(cx - 96, 300, cx - 112, 520, cx - 128, 768);
+    robe.lineTo(cx + 138, 768);                                  // hem
+    robe.bezierCurveTo(cx + 120, 520, cx + 116, 300, cx + 52, 196);
+    robe.bezierCurveTo(cx + 34, 168, cx - 28, 168, cx - 46, 196); // across the shoulders
+    robe.closePath();
+
+    const gown = g.createLinearGradient(0, 180, 0, 780);
+    gown.addColorStop(0.00, '#aedcc2');
+    gown.addColorStop(0.28, '#7cc09c');
+    gown.addColorStop(0.60, '#4f9d77');   // the deep green of the drapery
+    gown.addColorStop(0.86, '#579f7e');
+    gown.addColorStop(1.00, '#6aa98a');
+    g.fillStyle = gown; g.fill(robe);
+
+    g.save(); g.clip(robe);
+
+    // modelled light from the upper right; left side falls into shadow
+    const lit = g.createLinearGradient(cx - 140, 0, cx + 140, 0);
+    lit.addColorStop(0.0, 'rgba(8,30,22,0.45)');
+    lit.addColorStop(0.5, 'rgba(0,0,0,0)');
+    lit.addColorStop(1.0, 'rgba(210,245,228,0.18)');
+    g.fillStyle = lit; g.fillRect(0, 150, W, 650);
+
+    // vertical drapery folds — shadow then a highlight beside it
+    g.lineCap = 'round';
+    const folds = [-104,-78,-52,-26,2,28,54,80,108];
+    for(let i = 0; i < folds.length; i++){
+        const fx = folds[i];
+        g.strokeStyle = 'rgba(24,64,48,0.34)';
+        g.lineWidth = 11 + (i % 2) * 5;
+        g.beginPath();
+        g.moveTo(cx + fx * 0.45, 210);
+        g.quadraticCurveTo(cx + fx * 0.9, 470, cx + fx * 1.18, 760);
+        g.stroke();
+        g.strokeStyle = 'rgba(200,236,214,0.30)';
+        g.lineWidth = 5;
+        g.beginPath();
+        g.moveTo(cx + fx * 0.45 + 6, 214);
+        g.quadraticCurveTo(cx + fx * 0.9 + 7, 470, cx + fx * 1.18 + 8, 760);
+        g.stroke();
+    }
+
+    // the painted hem border: rose, blue, gold bands
+    g.fillStyle = '#dca0bd'; g.fillRect(0, 700, W, 26);
+    g.fillStyle = '#cf9a3f'; g.fillRect(0, 696, W, 5);
+    g.fillStyle = '#5f86c8'; g.fillRect(0, 728, W, 9);
+    g.fillStyle = '#cf9a3f'; g.fillRect(0, 740, W, 6);
+    // little gold cross-motifs scattered on the gown (as on the statue)
+    g.fillStyle = 'rgba(206,160,70,0.85)';
+    for(const [mx,my] of [[-60,360],[20,300],[60,470],[-30,540],[40,620],[-70,640]]){
+        g.fillRect(cx + mx - 4, cx*0 + my - 1, 8, 2);
+        g.fillRect(cx + mx - 1, my - 4, 2, 8);
+    }
+    g.restore();
+
+    // ---- the mantle (himation) drawn over one shoulder and across the body ----
+    const mantle = new Path2D();
+    mantle.moveTo(cx - 58, 188);
+    mantle.bezierCurveTo(cx - 96, 250, cx - 64, 330, cx + 18, 356);
+    mantle.bezierCurveTo(cx + 96, 380, cx + 116, 500, cx + 74, 600);
+    mantle.lineTo(cx + 40, 600);
+    mantle.bezierCurveTo(cx + 78, 500, cx + 40, 392, cx - 22, 366);
+    mantle.bezierCurveTo(cx - 86, 342, cx - 92, 250, cx - 70, 196);
+    mantle.closePath();
+    const man = g.createLinearGradient(0, 180, 0, 600);
+    man.addColorStop(0, '#cfeada'); man.addColorStop(1, '#92ccb1');
+    g.save(); g.clip(mantle);
+    g.fillStyle = man; g.fillRect(0,0,W,H);
+    g.strokeStyle = 'rgba(70,140,110,0.4)'; g.lineWidth = 7; g.lineCap='round';
+    for(const ox of [-40,-10,20,50]){
+        g.beginPath();
+        g.moveTo(cx + ox, 210);
+        g.quadraticCurveTo(cx + ox + 30, 400, cx + ox + 10, 590);
+        g.stroke();
+    }
+    g.restore();
+    // fringe along the mantle's lower edge
+    g.fillStyle = '#cf9a3f';
+    for(let i = 0; i < 14; i++){
+        g.fillRect(cx + 40 + i*2.4, 596 + (i%3), 1.6, 12);
+    }
+
+    // ---- skin: chest, the bent forearm and hand holding the mantle ----
+    g.fillStyle = '#e8c4a0';
+    g.beginPath(); g.moveTo(cx-30,196); g.lineTo(cx+34,196);
+    g.lineTo(cx+10,236); g.lineTo(cx-14,236); g.closePath(); g.fill();   // upper chest V
+    // forearm crossing the body (elbow at right hip up to hand at sternum)
+    g.save();
+    g.strokeStyle = '#e6c09b'; g.lineWidth = 26; g.lineCap = 'round';
+    g.beginPath(); g.moveTo(cx + 96, 470); g.lineTo(cx + 2, 372); g.stroke();
+    g.strokeStyle = 'rgba(150,108,78,0.35)'; g.lineWidth = 26;
+    g.beginPath(); g.moveTo(cx + 96, 478); g.lineTo(cx + 6, 380); g.stroke();
+    g.restore();
+    g.fillStyle = '#ecc7a2';
+    g.beginPath(); g.ellipse(cx - 6, 366, 16, 13, -0.5, 0, Math.PI*2); g.fill(); // hand
+    g.strokeStyle = 'rgba(150,108,78,0.4)'; g.lineWidth = 1.4;
+    for(let i=0;i<4;i++){ g.beginPath(); g.moveTo(cx-16+i*6,360); g.lineTo(cx-20+i*6,376); g.stroke(); }
+
+    // ---- neck ----
+    g.fillStyle = '#e9c5a0';
+    g.beginPath(); g.moveTo(cx-15,150); g.lineTo(cx+15,150);
+    g.bezierCurveTo(cx+18,180,cx+16,196,cx+10,200);
+    g.lineTo(cx-10,200); g.bezierCurveTo(cx-16,196,cx-18,180,cx-15,150); g.closePath(); g.fill();
+    g.fillStyle = 'rgba(150,108,78,0.30)';                                // throat shadow
+    g.beginPath(); g.ellipse(cx, 192, 12, 8, 0, 0, Math.PI*2); g.fill();
+
+    // ---- head ----
+    g.fillStyle = '#ecc7a2';
+    g.beginPath(); g.ellipse(cx, 104, 41, 52, 0, 0, Math.PI*2); g.fill();      // face
+    g.fillStyle = 'rgba(150,108,78,0.28)';                                     // shadow side
+    g.beginPath(); g.ellipse(cx - 24, 110, 16, 40, 0, 0, Math.PI*2); g.fill();
+
+    // hair: centre-parted, waved, drawn back
+    g.fillStyle = '#5e3f28';
+    g.beginPath(); g.ellipse(cx, 70, 50, 42, 0, Math.PI*0.98, Math.PI*2.02); g.fill(); // crown
+    g.beginPath(); g.ellipse(cx - 40, 112, 16, 44, 0.18, 0, Math.PI*2); g.fill();      // left fall
+    g.beginPath(); g.ellipse(cx + 40, 112, 16, 44,-0.18, 0, Math.PI*2); g.fill();      // right fall
+    g.beginPath(); g.ellipse(cx, 150, 20, 15, 0, 0, Math.PI*2); g.fill();              // nape bun
+    g.fillStyle = 'rgba(40,26,16,0.5)';                                                // centre part shadow
+    g.beginPath(); g.ellipse(cx, 58, 3, 14, 0, 0, Math.PI*2); g.fill();
+    g.fillStyle = 'rgba(120,86,54,0.6)';                                               // wave highlights
+    g.beginPath(); g.ellipse(cx-22, 66, 12, 8, 0.3, 0, Math.PI*2); g.fill();
+    g.beginPath(); g.ellipse(cx+22, 66, 12, 8,-0.3, 0, Math.PI*2); g.fill();
+
+    // features
+    g.fillStyle = 'rgba(78,52,38,0.85)';
+    g.beginPath(); g.ellipse(cx - 15, 100, 5.5, 3.2, 0.08, 0, Math.PI*2); g.fill();   // eyes
+    g.beginPath(); g.ellipse(cx + 15, 100, 5.5, 3.2,-0.08, 0, Math.PI*2); g.fill();
+    g.strokeStyle = 'rgba(78,52,38,0.6)'; g.lineWidth = 2;
+    g.beginPath(); g.moveTo(cx-23,92); g.quadraticCurveTo(cx-15,88,cx-7,92); g.stroke(); // brows
+    g.beginPath(); g.moveTo(cx+7,92);  g.quadraticCurveTo(cx+15,88,cx+23,92); g.stroke();
+    g.strokeStyle = 'rgba(150,108,78,0.5)'; g.lineWidth = 2.4;
+    g.beginPath(); g.moveTo(cx, 104); g.lineTo(cx - 3, 124); g.stroke();               // nose
+    g.fillStyle = '#c97b74';
+    g.beginPath(); g.ellipse(cx, 134, 9, 4.2, 0, 0, Math.PI*2); g.fill();              // lips
+    g.fillStyle = 'rgba(150,108,78,0.22)';
+    g.beginPath(); g.ellipse(cx - 22, 118, 8, 6, 0, 0, Math.PI*2); g.fill();           // cheek
+    g.beginPath(); g.ellipse(cx + 22, 118, 8, 6, 0, 0, Math.PI*2); g.fill();
+
+    return { data: g.getImageData(0, 0, W, H).data, W, H };
+}
+
+// ----------------------------------------------------------------------------
+//  Sample the painted figure into pigment motes.
+// ----------------------------------------------------------------------------
+function buildPigment(){
+    const { data, W, H } = paintFigure();
+
+    // collect every painted pixel as a candidate
+    const cand = [];
+    for(let y = 0; y < H; y++){
+        for(let x = 0; x < W; x++){
+            const i = (y * W + x) * 4;
+            const r = data[i], gr = data[i+1], b = data[i+2];
+            if(r + gr + b < 24) continue;                 // background
+            cand.push([x, y, r/255, gr/255, b/255]);
+        }
+    }
+    // shuffle and take up to params.count
+    for(let i = cand.length - 1; i > 0; i--){
+        const j = Math.floor(Math.random() * (i + 1));
+        const t = cand[i]; cand[i] = cand[j]; cand[j] = t;
+    }
+    const N = Math.min(params.count, cand.length);
+
+    const aHome  = new Float32Array(N * 3);
+    const aDrift = new Float32Array(N * 3);
+    const aColor = new Float32Array(N * 3);
+    const aOff   = new Float32Array(N);
+    const aSize  = new Float32Array(N);
+
+    const scale = 3.8 / H;                 // world height of the figure
+    const cx = W * 0.5, cy = H * 0.5;
+
+    for(let k = 0; k < N; k++){
+        const [px, py, r, g, b] = cand[k];
+        // world position (canvas y is down) + tiny depth + jitter
+        const wx = (px - cx) * scale + (Math.random() - 0.5) * 0.012;
+        const wy = (cy - py) * scale + (Math.random() - 0.5) * 0.012;
+        const wz = (Math.random() - 0.5) * 0.18;
+        aHome[k*3] = wx; aHome[k*3+1] = wy; aHome[k*3+2] = wz;
+
+        // drift: rise + push out from the central axis, with a random scatter
+        const out = wx * 0.4 + (Math.random() - 0.5) * 1.4;
+        const up  = 0.5 + Math.random() * 1.3;
+        const dz  = (Math.random() - 0.5) * 1.6;
+        const mag = (0.6 + Math.random() * 0.9) * params.spread;
+        aDrift[k*3] = out * mag; aDrift[k*3+1] = up * mag; aDrift[k*3+2] = dz * mag;
+
+        aColor[k*3] = r; aColor[k*3+1] = g; aColor[k*3+2] = b;
+
+        // patchy flaking: neighbouring pigment leaves together (paint comes off in flakes),
+        // and lower-down pigment tends to cling a little longer
+        const patch = 0.5 + 0.5 * Math.sin(wx * 5.0 + wy * 4.0) * Math.cos(wx * 3.0 - wy * 6.0);
+        const cling = (py / H) * 0.12;          // hems hold on slightly longer
+        aOff[k] = Math.min(0.55, patch * 0.42 + cling + Math.random() * 0.08);
+
+        aSize[k] = 1.0 + Math.random() * 1.5;
+    }
+
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(aHome.slice(), 3)); // placeholder
+    geo.setAttribute('aHome',  new THREE.BufferAttribute(aHome, 3));
+    geo.setAttribute('aDrift', new THREE.BufferAttribute(aDrift, 3));
+    geo.setAttribute('aColor', new THREE.BufferAttribute(aColor, 3));
+    geo.setAttribute('aOff',   new THREE.BufferAttribute(aOff, 1));
+    geo.setAttribute('aSize',  new THREE.BufferAttribute(aSize, 1));
+    return geo;
+}
+
+const uniforms = {
+    u_time:     { value: 0 },
+    u_decay:    { value: 0 },
+    u_pr:       { value: params.dpr },
+    u_sway:     { value: params.sway },
+    u_chroma:   { value: params.chroma },
+    u_size:     { value: params.size },
+    u_exposure: { value: params.exposure }
+};
+
+const vertexShader = `
+    uniform float u_time, u_decay, u_pr, u_sway, u_chroma, u_size;
+    attribute vec3 aHome, aDrift, aColor;
+    attribute float aOff, aSize;
+    varying vec3 vColor;
+    varying float vAlpha;
+
+    void main(){
+        // per-mote progress: pigment lifts as time passes its own threshold
+        float p = smoothstep(aOff, aOff + 0.5, u_decay);
+
+        // idle breath while it is still alive — a slow swell and shimmer
+        vec3 home = aHome;
+        float alive = 1.0 - p;
+        float br = sin(u_time * 0.5) * 0.5 + 0.5;
+        home *= 1.0 + 0.012 * br * u_sway * alive;          // breathe
+        home.x += sin(u_time * 0.7 + aHome.y * 7.0) * 0.006 * u_sway * alive;
+        home.y += cos(u_time * 0.55 + aHome.x * 6.0) * 0.005 * u_sway * alive;
+
+        // drift away: rise, swirl, scatter — accelerating as it goes
+        float swirl = u_time * 0.25 + aOff * 40.0;
+        vec3 pos = home + aDrift * (p * (0.6 + p));
+        pos.x += sin(swirl) * 0.22 * p;
+        pos.z += cos(swirl) * 0.22 * p;
+        pos.y += p * p * 0.5;                                // the slow exhale upward
+
+        // colour: pigment -> marble grey -> cold ash
+        vec3 marble = vec3(0.60, 0.585, 0.55);
+        vec3 ash    = vec3(0.085, 0.09, 0.11);
+        vec3 col = aColor;
+        // saturate slightly while alive
+        float lum = dot(col, vec3(0.299, 0.587, 0.114));
+        col = mix(vec3(lum), col, u_chroma);
+        col = mix(col, marble, smoothstep(0.0, 0.55, p));
+        col = mix(col, ash,    smoothstep(0.55, 1.0, p));
+        vColor = col;
+
+        // alive pigment is near-opaque (builds solid colour); ash thins into the dark
+        vAlpha = 0.20 + 0.78 * alive;
+
+        vec4 mv = modelViewMatrix * vec4(pos, 1.0);
+        gl_Position = projectionMatrix * mv;
+        gl_PointSize = aSize * u_size * u_pr * (1.0 + p * 0.5) * (260.0 / -mv.z);
+    }
+`;
+
+const fragmentShader = `
+    precision highp float;
+    uniform float u_exposure;
+    varying vec3 vColor;
+    varying float vAlpha;
+    void main(){
+        vec2 c = gl_PointCoord - 0.5;
+        float d = length(c);
+        if(d > 0.5) discard;
+        // a soft-edged but solid-cored disc so overlapping motes read as painted colour
+        float a = smoothstep(0.5, 0.14, d);
+        vec3 col = vColor * u_exposure;
+        gl_FragColor = vec4(col, a * vAlpha);
+    }
+`;
+
+const material = new THREE.ShaderMaterial({
+    uniforms, vertexShader, fragmentShader,
+    transparent: true,
+    blending: THREE.NormalBlending,
+    depthTest: false, depthWrite: false
+});
+
+let points = new THREE.Points(buildPigment(), material);
+group.add(points);
+
+// ----------------------------------------------------------------------------
+//  interaction: scroll = time, mouse = parallax, drag = scrub
+// ----------------------------------------------------------------------------
+let decayTarget = 0.0;
+const mouse = { x: 0, y: 0, tx: 0, ty: 0 };
+let dragging = false, lastY = 0;
+
+addEventListener('wheel', e => {
+    decayTarget = Math.min(1, Math.max(0, decayTarget + e.deltaY * 0.00085));
+}, { passive: true });
+
+addEventListener('pointermove', e => {
+    mouse.tx = (e.clientX / innerWidth) * 2 - 1;
+    mouse.ty = -((e.clientY / innerHeight) * 2 - 1);
+    if(dragging){
+        decayTarget = Math.min(1, Math.max(0, decayTarget + (e.clientY - lastY) * 0.0022));
+        lastY = e.clientY;
+    }
+});
+addEventListener('pointerdown', e => { dragging = true; lastY = e.clientY; });
+addEventListener('pointerup',   () => { dragging = false; });
+
+addEventListener('keydown', e => {
+    if(e.key === 'ArrowDown') decayTarget = Math.min(1, decayTarget + 0.08);
+    if(e.key === 'ArrowUp')   decayTarget = Math.max(0, decayTarget - 0.08);
+    if(e.key === 'g' || e.key === 'G'){ guiShown = !guiShown; gui.domElement.style.display = guiShown ? '' : 'none'; }
+});
+
+// ----------------------------------------------------------------------------
+//  GUI (hidden; press G) — find values by eye, then bake the good ones in
+// ----------------------------------------------------------------------------
+const gui = new lil.GUI({ title: 'before the colours fade' });
+gui.add(params, 'decay', 0, 1, 0.001).name('Time').listen().onChange(v => decayTarget = v);
+gui.add(params, 'spread', 0.5, 5).name('Drift').onChange(rebuild);
+gui.add(params, 'sway', 0, 3).name('Breath').onChange(v => uniforms.u_sway.value = v);
+gui.add(params, 'chroma', 0.5, 1.8).name('Colour').onChange(v => uniforms.u_chroma.value = v);
+gui.add(params, 'size', 0.4, 2.5).name('Mote Size').onChange(v => uniforms.u_size.value = v);
+gui.add(params, 'exposure', 0.4, 2).name('Exposure').onChange(v => uniforms.u_exposure.value = v);
+gui.add(params, 'count', 6000, 60000, 1000).name('Motes').onChange(rebuild);
+gui.domElement.style.display = 'none';
+let guiShown = false;
+
+function rebuild(){
+    group.remove(points);
+    points.geometry.dispose();
+    points = new THREE.Points(buildPigment(), material);
+    group.add(points);
+}
+
+function onResize(){
+    camera.aspect = innerWidth / innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(innerWidth, innerHeight);
+    uniforms.u_pr.value = renderer.getPixelRatio();
+}
+addEventListener('resize', onResize);
+
+// ----------------------------------------------------------------------------
+//  loop
+// ----------------------------------------------------------------------------
+const heldEl = document.getElementById('held');
+const clock = new THREE.Clock();
+
+function animate(){
+    requestAnimationFrame(animate);
+    uniforms.u_time.value = clock.getElapsedTime();
+
+    // ease time toward the scroll target
+    uniforms.u_decay.value += (decayTarget - uniforms.u_decay.value) * 0.05;
+    params.decay = uniforms.u_decay.value;
+
+    // gentle parallax — the figure turns a little toward you
+    mouse.x += (mouse.tx - mouse.x) * 0.05;
+    mouse.y += (mouse.ty - mouse.y) * 0.05;
+    group.rotation.y = mouse.x * 0.28 * params.sway;
+    group.rotation.x = -mouse.y * 0.14 * params.sway;
+
+    // the held line surfaces as the last of the colour goes
+    heldEl.style.opacity = Math.max(0, Math.min(1, (uniforms.u_decay.value - 0.82) / 0.16)).toFixed(3);
+
+    renderer.render(scene, camera);
+}
+animate();
+</script>
+</body>
+</html>

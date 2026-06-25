@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>I think you are the devil itself</title>
+<style>
+    :root { --ember: #ff5a1f; }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; background: #000; }
+    canvas { display: block; width: 100vw; height: 100vh; cursor: crosshair; }
+
+    /* ---- Title ---- */
+    #title {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        pointer-events: none;
+        z-index: 10;
+        text-align: center;
+        padding: 0 6vw;
+    }
+    #title h1 {
+        margin: 0;
+        font-family: "Times New Roman", Georgia, serif;
+        font-weight: 400;
+        font-style: italic;
+        letter-spacing: 0.06em;
+        line-height: 1.15;
+        font-size: clamp(28px, 6.2vw, 92px);
+        color: #f3d9c0;
+        text-shadow:
+            0 0 14px rgba(255,90,31,0.55),
+            0 0 40px rgba(255,40,0,0.45),
+            0 0 90px rgba(120,0,0,0.6);
+        animation: flicker 5.2s infinite;
+    }
+    /* dark scrim so text reads against the fire */
+    #scrim {
+        position: fixed;
+        left: 0; right: 0; bottom: 0;
+        height: 130px;
+        z-index: 10;
+        pointer-events: none;
+        background: linear-gradient(to top, rgba(0,0,0,0.6), rgba(0,0,0,0));
+    }
+    #controls {
+        position: fixed;
+        bottom: 26px; left: 0; right: 0;
+        text-align: center;
+        z-index: 11;
+        pointer-events: none;
+        font-family: "Courier New", monospace;
+        font-size: clamp(9px, 1.15vw, 13px);
+        letter-spacing: 0.34em;
+        text-transform: uppercase;
+        color: rgba(255,196,158,0.95);
+        text-shadow:
+            0 0 3px rgba(0,0,0,0.98),
+            0 1px 12px rgba(0,0,0,0.95),
+            0 0 24px rgba(255,80,0,0.5);
+        opacity: 0;
+        animation: fadeUp 2.4s ease 0.9s forwards;
+    }
+    #controls b { color: rgba(255,150,90,0.9); font-weight: 400; }
+    @keyframes flicker {
+        0%,100% { opacity: 0.96; }
+        2% { opacity: 0.5; }
+        4% { opacity: 0.95; }
+        8% { opacity: 0.35; }
+        9% { opacity: 0.9; }
+        40% { opacity: 0.98; }
+        43% { opacity: 0.6; }
+        70% { opacity: 0.97; }
+        72% { opacity: 0.4; }
+        73% { opacity: 0.95; }
+    }
+    @keyframes fadeUp {
+        from { opacity: 0; transform: translateY(8px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ---- the line that surfaces when you fall in ---- */
+    #whisper {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 9;
+        pointer-events: none;
+        text-align: center;
+        padding: 0 8vw;
+        font-family: "Times New Roman", Georgia, serif;
+        font-style: italic;
+        letter-spacing: 0.05em;
+        font-size: clamp(22px, 4.6vw, 64px);
+        color: #ffd9b0;
+        text-shadow:
+            0 0 18px rgba(255,70,0,0.85),
+            0 0 60px rgba(255,30,0,0.7),
+            0 0 120px rgba(120,0,0,0.8);
+        opacity: 0;
+        transition: opacity 0.5s ease;
+    }
+
+    .lil-gui { z-index: 20; --background-color: rgba(15,2,0,0.85); --title-background-color: #2a0600; }
+</style>
+</head>
+<body>
+
+<div id="title">
+    <h1>I think you<br>are the devil itself</h1>
+</div>
+<div id="whisper">you came looking for me</div>
+<div id="scrim"></div>
+<div id="controls"><b>move</b> to be watched&nbsp;&nbsp;·&nbsp;&nbsp;<b>click</b> to enrage&nbsp;&nbsp;·&nbsp;&nbsp;<b>scroll</b> to descend</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/lil-gui@0.19.1/dist/lil-gui.umd.min.js"></script>
+<script>
+"use strict";
+
+const scene  = new THREE.Scene();
+const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 10);
+camera.position.z = 1;
+
+const renderer = new THREE.WebGLRenderer({ antialias: false });
+renderer.setSize(window.innerWidth, window.innerHeight);
+document.body.appendChild(renderer.domElement);
+
+const params = {
+    dpr: 0.75,
+    camSpeed: 0.10,
+    beatBPM: 52,        // resting heart rate of the thing
+    iterations: 14,
+    rotX: 0.62,
+    rotY: 2.18,
+    rotZ: 0.51,
+    kMult: 8.10,
+    clampMin: -0.60,
+    clampMax: 72.0,
+    expandX: 0.30,
+    expandY: 1.62,
+    expandZ: 0.58,
+    thickness: -1.85,
+    bounds: 6.6
+};
+renderer.setPixelRatio(params.dpr);
+
+const uniforms = {
+    u_time:       { value: 0.0 },
+    u_resolution: { value: new THREE.Vector2(innerWidth * params.dpr, innerHeight * params.dpr) },
+    u_camSpeed:   { value: params.camSpeed },
+    u_pulse:      { value: 0.0 },                 // heartbeat 0..1
+    u_rage:       { value: 0.0 },                 // 0 calm .. 1 furious
+    u_mouse:      { value: new THREE.Vector2(0, 0) },   // smoothed -1..1
+    u_gaze:       { value: new THREE.Vector3(0, 0, -1) },// where the eye looks
+    u_zoom:       { value: 1.0 },
+    u_proximity:  { value: 0.0 },                 // 0 far .. 1 falling in
+    u_shake:      { value: new THREE.Vector2(0, 0) },
+    u_iterations: { value: params.iterations },
+    u_rot:        { value: new THREE.Vector3(params.rotX, params.rotY, params.rotZ) },
+    u_kMult:      { value: params.kMult },
+    u_clamp:      { value: new THREE.Vector2(params.clampMin, params.clampMax) },
+    u_expand:     { value: new THREE.Vector3(params.expandX, params.expandY, params.expandZ) },
+    u_thickness:  { value: params.thickness },
+    u_bounds:     { value: params.bounds }
+};
+
+const geometry = new THREE.PlaneGeometry(2, 2);
+
+const vertexShader = `
+    void main() { gl_Position = vec4(position, 1.0); }
+`;
+
+const fragmentShader = `
+    precision highp float;
+
+    uniform float u_time;
+    uniform vec2  u_resolution;
+    uniform float u_camSpeed;
+    uniform float u_pulse;
+    uniform float u_rage;
+    uniform vec2  u_mouse;
+    uniform vec3  u_gaze;
+    uniform float u_zoom;
+    uniform float u_proximity;
+    uniform vec2  u_shake;
+    uniform int   u_iterations;
+    uniform vec3  u_rot;
+    uniform float u_kMult;
+    uniform vec2  u_clamp;
+    uniform vec3  u_expand;
+    uniform float u_thickness;
+    uniform float u_bounds;
+
+    mat2 rot(float a){ float s=sin(a), c=cos(a); return mat2(c,-s,s,c); }
+
+    // Thorny infernal sigil — spherical-inversion KIFS, beating like a heart.
+    float map(vec3 p){
+        vec3 q = p;
+        float scale = 2.3;
+
+        // breathe / clench with the heartbeat (and harder when enraged) — kept subtle
+        float beat = u_pulse * (0.04 + 0.16 * u_rage);
+        q *= 1.0 - beat * 0.10;
+        q += vec3(sin(u_time*0.4)*0.12, cos(u_time*0.3)*0.12, 0.0);
+
+        float rage = u_rage;
+        for(int i=0; i<20; i++){
+            if(i >= u_iterations) break;
+            q = abs(q);
+            q.xy *= rot(u_rot.x + rage*0.12);
+            q.xz *= rot(u_rot.y);
+            q.yz *= rot(u_rot.z - rage*0.10);
+            float r2 = dot(q,q);
+            float k = u_kMult / clamp(r2, u_clamp.x, u_clamp.y);
+            q *= k;
+            scale *= k;
+            q -= u_expand;
+        }
+
+        float rays   = (length(q.xy) - u_thickness) / scale;
+        float bounds = length(p) - u_bounds;
+        return max(rays, bounds);
+    }
+
+    void main(){
+        vec2 uv = (gl_FragCoord.xy * 2.0 - u_resolution.xy) / u_resolution.y;
+        uv += u_shake;
+
+        // ----- camera: orbit + look toward cursor -----
+        float az = u_time * u_camSpeed + u_mouse.x * 1.35;
+        float el = 0.5 + u_mouse.y * 0.9;
+        float rad = 3.4 * u_zoom;
+        vec3 ro = vec3(sin(az)*rad, sin(el)*1.2, cos(az)*rad);
+
+        vec3 fwd   = normalize(-ro);
+        vec3 right = normalize(cross(vec3(0.0,1.0,0.0), fwd));
+        vec3 up    = cross(fwd, right);
+
+        vec2 rolled = uv * rot(sin(u_time*0.1)*0.12 + u_mouse.x*0.15);
+        vec3 rd = normalize(fwd + right*rolled.x + up*rolled.y);
+
+        float t = 0.0;
+        vec3 glow = vec3(0.0);
+        float rage = u_rage;
+
+        for(int i=0; i<78; i++){
+            vec3 p = ro + rd * t;
+            float d = map(p);
+            float r = length(p);
+
+            // ----- infernal palette: blood -> ember -> molten gold -----
+            // strictly warm ramp — flowing bands of blood -> red -> molten gold (never green)
+            float drive = r*0.5 - dot(normalize(p), rd)*0.6 + u_time*0.18;
+            float h = 0.5 + 0.5*sin(6.28318 * drive);
+            vec3 cBlood = vec3(0.20, 0.012, 0.0);
+            vec3 cRed   = vec3(0.85, 0.12, 0.02);
+            vec3 cGold  = vec3(1.00, 0.55, 0.14);
+            vec3 col = mix(cBlood, cRed, smoothstep(0.0, 0.55, h));
+            col = mix(col, cGold, smoothstep(0.55, 1.0, h));
+
+            // molten core that brightens & reddens with rage / as you fall in
+            col += vec3(1.0, 0.35, 0.04) * (0.6 + rage + u_proximity*1.8) * exp(-r * 2.0);
+
+            // white-hot fissures racing across the surface (faster when enraged)
+            float sp = 1.5 + rage*4.0;
+            float pulse = sin(p.x*12.0 - u_time*sp)
+                        * sin(p.y*10.0 + u_time*sp*1.3)
+                        * sin(r*12.0 - u_time*0.5);
+            float sharp = pow(max(0.62, pulse), 14.0);
+            col += vec3(3.2, 1.6, 0.6) * sharp * exp(-abs(d)*40.0);
+
+            float halo = 0.006 / (0.003 + abs(d));
+            float hi   = 0.001 / (0.0001 + d*d);
+            glow += col * (halo + hi*0.15);
+
+            t += d * 0.6;
+            if(t > 7.5) break;
+        }
+
+        vec3 color = glow * (0.052 + rage*0.03);
+
+        // smoldering atmosphere so the void breathes smoke instead of dying to black
+        float atmo = exp(-length(uv)*0.85);
+        color += vec3(0.18, 0.04, 0.01) * atmo * (0.5 + rage*0.8);
+        color += vec3(0.05, 0.012, 0.004);             // faint ember floor in the corners
+
+        // ----- THE PUPIL: a dark void at the centre that watches you -----
+        // closest approach of the view ray to the eye centre (origin)
+        float along = max(dot(rd, -ro), 0.0);
+        vec3  near  = ro + rd*along;
+        float toEye = length(near);
+        // a slit / iris that turns toward the gaze direction
+        float gazeAlign = dot(rd, normalize(u_gaze));
+        float iris = exp(-toEye*toEye*3.0);
+        // hot rim of the iris
+        color += vec3(1.0, 0.5, 0.12) * iris * (0.9 + 1.6*rage) * (0.5 + 0.5*gazeAlign);
+        // the black pupil itself, swelling with rage — and yawning wide open as you descend
+        float pupilR = 0.22 + 0.10*sin(u_time*0.7) + rage*0.06 + u_proximity*u_proximity*0.9;
+        float pupil = smoothstep(pupilR, pupilR*0.6, toEye);
+        color *= 1.0 - pupil*0.92;
+        // catch-light: a thin bright ring around the void
+        color += vec3(1.0,0.45,0.1) * smoothstep(pupilR*1.18, pupilR, toEye)
+                                     * (1.0 - smoothstep(pupilR, pupilR*0.85, toEye))
+                                     * (1.2 + 2.0*rage);
+
+        // inward fire-rays streaking toward the void — they accelerate as you fall in
+        float ang = atan(uv.y, uv.x);
+        float ray = pow(0.5 + 0.5*sin(ang*22.0 + u_time*2.5), 9.0);
+        ray *= exp(-length(uv)*1.3) * u_proximity;
+        color += vec3(1.0, 0.4, 0.08) * ray * 2.2;
+
+        // vignette closes in the deeper you go
+        color *= 1.0 - (0.34 + u_proximity*0.55) * length(uv);
+        color = (color*(2.51*color+0.03)) / (color*(2.43*color+0.59)+0.14); // ACES
+
+        // ----- rising embers -----
+        vec3 embers = vec3(0.0);
+        for(float i=0.0; i<90.0; i++){
+            vec3 h = fract(sin(vec3(i, i*13.3, i*31.7)) * 43758.5453);
+            vec3 dir = normalize(h*2.0 - 1.0);
+            float radius = 1.4 + h.x*1.9;
+            vec3 pos = dir*radius;
+            // drift upward + swirl, faster when enraged
+            pos.y += mod(u_time*(0.25 + h.x*0.5) + h.y*6.0, 5.0) - 2.5;
+            pos.xz *= rot(u_time*0.15 + h.z*6.0 + rage*0.6);
+            vec3 w = pos - ro;
+            float proj = dot(rd, w);
+            if(proj > 0.0 && proj < t){
+                float dRay = length(w - rd*proj);
+                float size = 0.0025 + h.z*0.022;
+                float core = smoothstep(size, size*0.4, dRay);
+                float g = exp(-dRay*170.0)*0.4;
+                float flick = 0.6 + 0.4*sin(u_time*8.0 + i);
+                embers += (core + g) * flick * vec3(1.0, 0.42, 0.12);
+            }
+        }
+        color += embers * (0.8 + rage*1.2);
+
+        color = pow(color, vec3(1.0/2.2));              // gamma
+        gl_FragColor = vec4(color, 1.0);
+    }
+`;
+
+const material = new THREE.ShaderMaterial({ vertexShader, fragmentShader, uniforms });
+scene.add(new THREE.Mesh(geometry, material));
+
+// ---------- 128 brutal truths it whispers when you fall in ----------
+const TRUTHS = [
+    "the lies you tell yourself",
+    "you are afraid you are ordinary",
+    "no one is coming to save you",
+    "you wanted this",
+    "you knew, and you did it anyway",
+    "you perform a kindness you do not feel",
+    "you are not as good as you pretend",
+    "you mistake comfort for happiness",
+    "you are running out of time",
+    "you will not be remembered",
+    "you settle, and call it peace",
+    "you love the idea of them, not them",
+    "you are bored of your own life",
+    "you keep score and call it love",
+    "you are still waiting to begin",
+    "you are exactly where you chose to be",
+    "you blame them to spare yourself",
+    "you are afraid of being seen",
+    "you would do it again",
+    "you are lonelier than you admit",
+    "you envy them and smile",
+    "you are wasting it",
+    "you have already given up",
+    "you are pretending to be fine",
+    "you need the approval you mock",
+    "you are not the hero of this",
+    "you let the best ones go",
+    "you confuse noise for meaning",
+    "you are addicted to almost",
+    "you are softer than your threats",
+    "you forgive yourself too easily",
+    "you are the thing you warn others about",
+    "you stopped trying years ago",
+    "you are afraid of the quiet",
+    "you say later because you mean never",
+    "you are smaller than your excuses",
+    "you cannot stand to be alone with you",
+    "you keep the wound because it is warm",
+    "you want to be pitied, not helped",
+    "you envy who you could have been",
+    "you hide behind being busy",
+    "you are unkind to those who stay",
+    "you still perform for people who left",
+    "you are not misunderstood, you are avoided",
+    "you traded your dreams for safety",
+    "you are angry at yourself, not them",
+    "you will die with the song still in you",
+    "you are easier to replace than you think",
+    "you mistake intensity for love",
+    "you punish them for your own choices",
+    "you are tired of pretending to be brave",
+    "you abandoned yourself first",
+    "you are nostalgic for a life you hated",
+    "you keep the door open for ghosts",
+    "you are afraid the silence is right",
+    "you are kind only when watched",
+    "you want the credit without the work",
+    "you are still that frightened child",
+    "you let your fear make your choices",
+    "you are not too busy, you are afraid",
+    "you are starving for a yes you owe yourself",
+    "you call it loyalty, it is fear",
+    "you are addicted to being needed",
+    "you would rather be right than happy",
+    "you romanticize your own suffering",
+    "you are waiting for permission that will not come",
+    "you are the obstacle",
+    "you have known the answer for years",
+    "you are exhausted from holding the mask",
+    "you flinch from your own reflection",
+    "you are not lost, you are hiding",
+    "you keep choosing the familiar pain",
+    "you are afraid of how much you want",
+    "you spend love you have not earned",
+    "you are quietly disappointed in everyone",
+    "you wanted them to fail a little",
+    "you are kinder to strangers than your own",
+    "you are postponing your whole life",
+    "you are afraid you already peaked",
+    "you mistake control for love",
+    "you have rehearsed this misery",
+    "you are not humble, you are scared",
+    "you let them shrink you and stayed",
+    "you are fighting a war that already ended",
+    "you cannot name what you actually want",
+    "you abandoned the version of you they loved",
+    "you are afraid that this is all there is",
+    "you are nicer in your apologies than your life",
+    "you are addicted to the wanting",
+    "you keep secrets to feel powerful",
+    "you measure your worth in other people's eyes",
+    "you never asked for help, and resent that no one offered",
+    "you are angry that no one sees you drowning",
+    "you have made peace with too little",
+    "you are the reason you are alone tonight",
+    "honesty would empty the room, and you know it",
+    "you call your numbness maturity",
+    "you are still apologizing for taking up space",
+    "you keep waiting for them to change",
+    "you only pretend you have forgiven them",
+    "you want to be chosen without choosing",
+    "you are afraid of your own appetite",
+    "you let the years take what you would not give",
+    "you are more comfortable losing than risking",
+    "you are saving your best self for no one",
+    "you have outgrown them and stay anyway",
+    "you are addicted to the story of your wound",
+    "you ruin the good things before they can leave",
+    "you keep proving you are unlovable to be right",
+    "you are exhausted by a face that is not yours",
+    "you wanted them to beg",
+    "you are afraid you do not deserve the rest",
+    "you mistake your prison for a home",
+    "you are angrier at the truth than the lie",
+    "you are still asking permission to be yourself",
+    "you are gentle with everyone but the mirror",
+    "you are not waiting for the right time, you are afraid",
+    "you have already decided you will fail",
+    "you are addicted to almost being enough",
+    "you keep the people who keep you small",
+    "you decline joy so it cannot be taken",
+    "you keep loving people who cannot love you",
+    "you are the last to know what everyone sees",
+    "you are quieter than your potential",
+    "you have buried more of yourself than you have lived",
+    "you are afraid this is the truest thing you've heard",
+    "you came looking for me",
+    "and now you cannot unhear it"
+];
+
+// ---------- interaction ----------
+const targetMouse = new THREE.Vector2(0, 0);
+let rageTarget = 0.0;
+let zoomTarget = 1.0;
+let shakeMag = 0.0;
+let firstMove = true;
+
+const titleEl = document.getElementById('title');
+const whisperEl = document.getElementById('whisper');
+let titleHidden = false;
+let titleVis = 1.0;
+let wasDeep = false;     // so each fresh descent picks a new truth
+
+function setFromPointer(x, y){
+    targetMouse.x = (x / innerWidth)  * 2.0 - 1.0;
+    targetMouse.y = -((y / innerHeight) * 2.0 - 1.0);
+    if(firstMove){ firstMove = false; }
+}
+window.addEventListener('pointermove', e => setFromPointer(e.clientX, e.clientY));
+
+function enrage(){
+    rageTarget = 1.0;
+    shakeMag = 0.022;
+    titleHidden = true;
+}
+window.addEventListener('pointerdown', e => { initAudio(); setFromPointer(e.clientX, e.clientY); enrage(); });
+window.addEventListener('pointerup',   () => { rageTarget = 0.0; });
+
+window.addEventListener('wheel', e => {
+    // continuous + much deeper: small zoom = falling into the void
+    zoomTarget = Math.min(1.7, Math.max(0.16, zoomTarget + e.deltaY * 0.0012));
+}, { passive: true });
+
+// ---------- synthesized heartbeat (Web Audio, no external files) ----------
+let actx = null, master = null;
+function initAudio(){
+    if(actx) { if(actx.state === 'suspended') actx.resume(); return; }
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if(!AC) return;
+    actx = new AC();
+    master = actx.createGain();
+    master.gain.value = 0.0;          // eased up after first gesture
+    master.connect(actx.destination);
+}
+// one soft, fleshy thump: low sine that drops in pitch with a fast envelope
+function thump(at, freq, gain){
+    if(!actx) return;
+    const osc = actx.createOscillator();
+    const g   = actx.createGain();
+    const lp  = actx.createBiquadFilter();
+    lp.type = 'lowpass'; lp.frequency.value = 220;
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(freq, at);
+    osc.frequency.exponentialRampToValueAtTime(freq * 0.5, at + 0.16);
+    g.gain.setValueAtTime(0.0001, at);
+    g.gain.exponentialRampToValueAtTime(gain, at + 0.012);
+    g.gain.exponentialRampToValueAtTime(0.0001, at + 0.22);
+    osc.connect(g); g.connect(lp); lp.connect(master);
+    osc.start(at); osc.stop(at + 0.3);
+}
+// "lub-dub" — second beat softer and slightly higher
+function heartbeat(vol){
+    if(!actx) return;
+    const now = actx.currentTime;
+    thump(now,        46, vol);
+    thump(now + 0.14, 60, vol * 0.62);
+}
+
+// ---------- GUI (hidden; press G) ----------
+const gui = new lil.GUI({ title: 'commune with it' });
+gui.add(params, 'dpr', 0.1, 2.0, 0.05).name('Resolution').onChange(v => { renderer.setPixelRatio(v); onResize(); });
+gui.add(params, 'camSpeed', 0.0, 1.0).name('Orbit Speed').onChange(v => uniforms.u_camSpeed.value = v);
+gui.add(params, 'beatBPM', 20, 160, 1).name('Heart Rate');
+const m = gui.addFolder('Sigil');
+m.add(params, 'iterations', 1, 20, 1).onChange(v => uniforms.u_iterations.value = v);
+m.add(params, 'rotX', 0, 6.28).onChange(v => uniforms.u_rot.value.x = v);
+m.add(params, 'rotY', 0, 6.28).onChange(v => uniforms.u_rot.value.y = v);
+m.add(params, 'rotZ', 0, 6.28).onChange(v => uniforms.u_rot.value.z = v);
+m.add(params, 'kMult', 1, 15).onChange(v => uniforms.u_kMult.value = v);
+m.add(params, 'thickness', -5, 1).onChange(v => uniforms.u_thickness.value = v);
+m.add(params, 'bounds', 1, 10).onChange(v => uniforms.u_bounds.value = v);
+gui.domElement.style.display = 'none';
+let guiShown = false;
+window.addEventListener('keydown', e => {
+    if(e.key === 'g' || e.key === 'G'){
+        guiShown = !guiShown;
+        gui.domElement.style.display = guiShown ? '' : 'none';
+    }
+    if(e.key === 'h' || e.key === 'H'){
+        titleHidden = !titleHidden;
+    }
+});
+
+function onResize(){
+    renderer.setSize(innerWidth, innerHeight);
+    const dpr = renderer.getPixelRatio();
+    uniforms.u_resolution.value.set(innerWidth*dpr, innerHeight*dpr);
+}
+window.addEventListener('resize', onResize);
+
+// ---------- loop ----------
+const clock = new THREE.Clock();
+let prevPhase = 0.0;
+function animate(){
+    requestAnimationFrame(animate);
+    const tt = clock.getElapsedTime();
+    uniforms.u_time.value = tt;
+
+    // smooth the mouse so the gaze glides
+    uniforms.u_mouse.value.x += (targetMouse.x - uniforms.u_mouse.value.x) * 0.06;
+    uniforms.u_mouse.value.y += (targetMouse.y - uniforms.u_mouse.value.y) * 0.06;
+
+    // gaze direction roughly toward the cursor in world space
+    uniforms.u_gaze.value.set(targetMouse.x, targetMouse.y * 0.6, -1.0).normalize();
+
+    // rage easing (rises fast, decays slow)
+    const cur = uniforms.u_rage.value;
+    const ease = rageTarget > cur ? 0.10 : 0.012;
+    uniforms.u_rage.value += (rageTarget - cur) * ease;
+
+    // heartbeat — sharp systolic spike, faster with rage
+    const bpm = params.beatBPM * (1.0 + uniforms.u_rage.value * 1.6 + uniforms.u_proximity.value * 1.3);
+    const ph = (tt * bpm / 60.0) % 1.0;
+    const beat = Math.exp(-ph*9.0) + 0.6*Math.exp(-Math.max(0.0, ph-0.18)*9.0);
+    uniforms.u_pulse.value = Math.min(1.0, beat);
+
+    // sound the heartbeat the instant the cycle restarts
+    if(actx){
+        // ease the master volume in once audio is unlocked
+        master.gain.value += (0.5 - master.gain.value) * 0.02;
+        if(ph < prevPhase){
+            heartbeat(0.18 + uniforms.u_rage.value * 0.45 + uniforms.u_proximity.value * 0.4);
+        }
+    }
+    prevPhase = ph;
+
+    // zoom — eased
+    uniforms.u_zoom.value += (zoomTarget - uniforms.u_zoom.value) * 0.06;
+
+    // proximity: 0 far .. 1 falling into the void (smoothstep on zoom)
+    const z = uniforms.u_zoom.value;
+    let prox = Math.min(1, Math.max(0, (0.80 - z) / (0.80 - 0.22)));
+    prox = prox * prox * (3.0 - 2.0 * prox);
+    uniforms.u_proximity.value = prox;
+
+    // pick a fresh truth each time a new descent begins
+    if(prox > 0.5 && !wasDeep){
+        wasDeep = true;
+        whisperEl.textContent = TRUTHS[Math.floor(Math.random() * TRUTHS.length)];
+    } else if(prox < 0.32){
+        wasDeep = false;
+    }
+
+    // title recedes / the whisper surfaces as you descend
+    titleVis += ((titleHidden ? 0 : 1) - titleVis) * 0.08;
+    titleEl.style.opacity = (titleVis * Math.max(0, 1 - prox * 1.7)).toFixed(3);
+    whisperEl.style.opacity = Math.max(0, Math.min(1, (prox - 0.45) / 0.35)).toFixed(3);
+
+    // screen shake on enrage, decaying
+    shakeMag *= 0.9;
+    const s = shakeMag * (0.4 + uniforms.u_rage.value) * uniforms.u_pulse.value;
+    uniforms.u_shake.value.set((Math.sin(tt*97.0))*s, (Math.cos(tt*89.0))*s);
+
+    renderer.render(scene, camera);
+}
+animate();
+</script>
+</body>
+</html>

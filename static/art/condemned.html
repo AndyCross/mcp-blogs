@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>condemned to love and lose</title>
+<style>
+    :root { --crimson: #b3122e; }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; background: #000; }
+    #container { position: fixed; inset: 0; }
+    canvas { display: block; width: 100vw; height: 100vh; cursor: crosshair; }
+
+    /* ---- Title ---- */
+    #title {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        pointer-events: none;
+        z-index: 10;
+        text-align: center;
+        padding: 1.5rem;
+        transition: opacity 4s ease 1.5s;
+    }
+    #title.gone { opacity: 0; }
+    #title h1 {
+        font-family: "Georgia", "Times New Roman", serif;
+        font-weight: 400;
+        font-style: italic;
+        font-size: clamp(1.8rem, 6vw, 4rem);
+        letter-spacing: 0.02em;
+        color: #f3d9df;
+        margin: 0;
+        text-shadow: 0 0 30px rgba(179, 18, 46, 0.6);
+        opacity: 0;
+        animation: bloom 5s ease forwards 0.8s;
+    }
+    #whisper {
+        font-family: "Georgia", serif;
+        font-style: italic;
+        font-size: clamp(0.85rem, 2.2vw, 1.05rem);
+        color: rgba(243, 217, 223, 0.55);
+        margin-top: 1.4rem;
+        opacity: 0;
+        animation: bloom 5s ease forwards 2.6s;
+    }
+    @keyframes bloom {
+        from { opacity: 0; filter: blur(8px); transform: translateY(8px); }
+        to   { opacity: 1; filter: blur(0);   transform: translateY(0); }
+    }
+
+    /* ---- Hint ---- */
+    #hint {
+        position: fixed;
+        bottom: 1.4rem;
+        left: 0; right: 0;
+        text-align: center;
+        font-family: "Georgia", serif;
+        font-style: italic;
+        font-size: 0.8rem;
+        color: rgba(243, 217, 223, 0.35);
+        pointer-events: none;
+        z-index: 9;
+        opacity: 0;
+        animation: bloom 3s ease forwards 7s;
+    }
+</style>
+</head>
+<body>
+    <div id="container"></div>
+    <div id="title">
+        <h1>Te amaré siempre.</h1>
+        <div id="whisper">Aunque te vayas, siempre florecerás dentro de mí.</div>
+    </div>
+    <div id="hint">move closer and it goes sooner</div>
+
+    <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/",
+        "lil-gui": "https://cdn.jsdelivr.net/npm/lil-gui@0.19.1/dist/lil-gui.esm.min.js"
+      }
+    }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+        import GUI from 'lil-gui';
+
+        // --- Core Variables ---
+        let camera, scene, renderer, controls, material;
+        let clock = new THREE.Clock();
+
+        // The loop that condemns it: phase walks forward forever.
+        // morph = 0 -> the rose is whole.  morph = 1 -> it has come apart.
+        let phase = 0.0;
+        let mouseEnergy = 0.0; // touching it hastens the loss
+        let lastCycle = 0;     // tracks reblooms so each return re-rolls the rose
+
+        // --- Configuration Parameters ---
+        const params = {
+            dpr: Math.min(window.devicePixelRatio, 1.5),
+            cameraElevation: 8,     // degrees above the horizon
+            cameraDistance: 9,      // distance from the bloom
+            roseTilt: 50,           // degrees: pitch the bloom toward the camera
+            rotationSpeed: 0.6,
+            loopSpeed: 0.18,        // base speed of bloom/loss cycle
+            sphereSpinSpeed: 0.048,
+            warpSpeed: 0.06,
+            colorWarm: '#c4122e',   // crimson at full bloom
+            colorCold: '#5a4cff',   // cold blue-violet as it dissolves
+            aberration: 0.6,
+            particleDensity: 0.018,
+            sphereRadius: 3.2,
+            edgeFade: 0.6,
+            glowIntensity: 0.013,
+            petalCount: 22
+        };
+
+        init();
+        animate();
+
+        function init() {
+            const container = document.getElementById('container');
+
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
+            // Start the orbit at this azimuth (degrees); applyCamera() sets the
+            // elevation and distance, auto-rotate carries it on from here.
+            const startAz = THREE.MathUtils.degToRad(-135.9);
+            camera.position.set(Math.sin(startAz), 0.15, Math.cos(startAz));
+
+            renderer = new THREE.WebGLRenderer({ antialias: false, powerPreference: "high-performance" });
+            renderer.setPixelRatio(params.dpr);
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            container.appendChild(renderer.domElement);
+
+            controls = new OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+            controls.enableZoom = true;
+            controls.autoRotate = true;
+            controls.autoRotateSpeed = params.rotationSpeed;
+
+            const geometry = new THREE.PlaneGeometry(2, 2);
+
+            material = new THREE.ShaderMaterial({
+                uniforms: {
+                    uTime: { value: 0.0 },
+                    uMorph: { value: 0.0 },
+                    uSeed: { value: 0.0 },
+                    uResolution: { value: new THREE.Vector2(window.innerWidth * params.dpr, window.innerHeight * params.dpr) },
+                    cameraWorldMatrix: { value: camera.matrixWorld },
+                    cameraProjectionMatrixInverse: { value: camera.projectionMatrixInverse },
+                    uColorWarm: { value: new THREE.Color(params.colorWarm) },
+                    uColorCold: { value: new THREE.Color(params.colorCold) },
+                    uSphereRadius: { value: params.sphereRadius },
+                    uEdgeFade: { value: params.edgeFade },
+                    uGlowIntensity: { value: params.glowIntensity },
+                    uWarpSpeed: { value: params.warpSpeed },
+                    uSphereSpin: { value: 0.0 },
+                    uTilt: { value: THREE.MathUtils.degToRad(params.roseTilt) },
+                    uAberration: { value: params.aberration },
+                    uParticleDensity: { value: params.particleDensity },
+                    uPetalCount: { value: params.petalCount }
+                },
+                vertexShader: `
+                    varying vec2 vUv;
+                    void main() {
+                        vUv = uv;
+                        gl_Position = vec4(position, 1.0);
+                    }
+                `,
+                fragmentShader: `
+                    uniform float uTime;
+                    uniform float uMorph;
+                    uniform float uSeed;
+                    uniform vec2 uResolution;
+                    uniform vec3 uColorWarm;
+                    uniform vec3 uColorCold;
+                    uniform float uSphereRadius;
+                    uniform float uEdgeFade;
+                    uniform float uGlowIntensity;
+                    uniform float uWarpSpeed;
+                    uniform float uSphereSpin;
+                    uniform float uTilt;
+                    uniform float uAberration;
+                    uniform float uParticleDensity;
+                    uniform float uPetalCount;
+
+                    uniform mat4 cameraWorldMatrix;
+                    uniform mat4 cameraProjectionMatrixInverse;
+
+                    varying vec2 vUv;
+
+                    const float GOLDEN = 2.39996323; // golden angle, phyllotaxis
+
+                    mat2 rot(float a) {
+                        float s = sin(a), c = cos(a);
+                        return mat2(c, -s, s, c);
+                    }
+
+                    float hash(vec2 p) {
+                        return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453);
+                    }
+
+                    float hash31(vec3 p3) {
+                        p3  = fract(p3 * 0.1031);
+                        p3 += dot(p3, p3.yzx + 33.33);
+                        return fract((p3.x + p3.y) * p3.z);
+                    }
+
+                    // Polynomial smooth minimum: melts petals into one another
+                    float smin(float a, float b, float k) {
+                        float h = clamp(0.5 + 0.5 * (b - a) / k, 0.0, 1.0);
+                        return mix(b, a, h) - k * h * (1.0 - h);
+                    }
+
+                    // The dissolution state: a smooth iterated gyroid tangle.
+                    float gyroid(vec3 p) {
+                        float d = 100.0;
+                        float scale = 0.4;
+                        p += vec3(12.6, 4.4, 5.57);
+                        for (int i = 1; i < 4; i++) {
+                            p.xy *= rot(uTime * uWarpSpeed + 0.2);
+                            p.yz *= rot(uTime * (uWarpSpeed * 1.5) - 0.1);
+                            float dotp = dot(sin(p), cos(p.zxy));
+                            float g = sqrt(dotp * dotp + 0.055) - 0.137;
+                            d = smin(d, g / abs(scale), 0.15);
+                            p *= 0.76;
+                            scale *= 2.2;
+                            p += vec3(-1.7, 1.2, 3.5);
+                        }
+                        return d;
+                    }
+
+                    // The rose: petals spiralled by the golden angle, curling tighter
+                    // toward the centre. As morph rises the petals peel open, curl
+                    // harder, and drift apart on a widening melt.
+                    float rose(vec3 p, float m) {
+                        const float PI = 3.14159265;
+                        float d = 1e5;
+                        float k = mix(0.06, 0.34, m);           // melt widens as it loses
+                        int N = int(uPetalCount);
+                        for (int i = 0; i < 40; i++) {
+                            if (i >= N) break;
+                            float fi = float(i);
+                            float t = fi / uPetalCount;          // 0 centre -> 1 outer rim
+                            float ang = fi * GOLDEN + uSeed;     // seed re-rolls each return
+
+                            vec3 radial = vec3(cos(ang), 0.0, sin(ang));
+                            vec3 tang   = vec3(-sin(ang), 0.0, cos(ang));
+                            vec3 up     = vec3(0.0, 1.0, 0.0);
+
+                            // Tight and near-vertical at the centre, flaring outward at the
+                            // rim. The bloom opens further as it is loved, over-opens as it goes.
+                            float openA = mix(0.18, 0.95, t) + m * 0.6;
+                            vec3 S  = normalize(cos(openA) * up + sin(openA) * radial); // petal length axis
+                            vec3 Nn = normalize(cross(tang, S));                         // thin face normal
+
+                            float baseRadius = mix(0.08, 1.05, t) * (1.0 + m * 0.4);
+                            float baseHeight = mix(0.55, -0.30, t);
+                            vec3 base = radial * baseRadius + up * baseHeight;
+
+                            vec3 dv = p - base;
+                            float ls = dot(dv, S);    // along the petal (base -> tip)
+                            float lw = dot(dv, tang); // across its width
+                            float ln = dot(dv, Nn);   // through its thin face
+
+                            float halfLen = mix(0.62, 0.92, t);
+                            float along = clamp(ls / (2.0 * halfLen), 0.0, 1.0);
+                            float wProfile = pow(sin(along * PI), 0.45);      // broad paddle, not a needle
+                            float halfWid = mix(0.34, 0.55, t) * (0.45 + 0.55 * wProfile);
+
+                            // Cup the petal around the centre and curl its tip inward.
+                            float cup  = 0.7 + m * 1.3;
+                            float curl = 0.4 + m * 1.8;
+                            float lnc = ln - cup * lw * lw - curl * 0.12 * along * along;
+
+                            float thick = 0.13;
+                            vec3 s = vec3((ls - halfLen) / halfLen,
+                                          lw / max(halfWid, 0.001),
+                                          lnc / thick);
+                            float petal = (length(s) - 1.0) * thick * 0.85;
+                            d = smin(d, petal, k);
+                        }
+                        // The heart of the bloom: a dense core so the centre reads filled.
+                        float core = length(p - vec3(0.0, 0.25, 0.0)) - (0.22 + m * 0.1);
+                        d = smin(d, core, 0.18);
+                        return d;
+                    }
+
+                    // The form at time t: a rose that becomes a tangle and returns.
+                    float map(vec3 p) {
+                        // domain wobble grows with the loss
+                        vec3 w = p;
+                        w.xz *= rot(uTime * 0.05);
+                        w += uMorph * 0.35 * sin(w.yzx * 2.5 + uTime * 0.7);
+
+                        float r = rose(w, uMorph);
+                        float g = gyroid(w);
+                        // crossfade into chaos near the peak of the loss, then back
+                        float toChaos = smoothstep(0.55, 0.95, uMorph);
+                        return mix(r, g, toChaos);
+                    }
+
+                    vec2 intersectSphere(vec3 ro, vec3 rd, float r) {
+                        float b = dot(ro, rd);
+                        float c = dot(ro, ro) - r * r;
+                        float h = b * b - c;
+                        if (h < 0.0) return vec2(0.0);
+                        h = sqrt(h);
+                        return vec2(-b - h, -b + h);
+                    }
+
+                    // Warm when loved, cold when lost.
+                    vec3 palette(float t) {
+                        vec3 base = mix(uColorWarm, uColorCold, smoothstep(0.2, 0.85, uMorph));
+                        float blend = sin(t * 1.4) * 0.5 + 0.5;
+                        return mix(base * 0.55, base, blend);
+                    }
+
+                    void main() {
+                        vec2 ndc = (vUv - 0.5) * 2.0;
+                        vec4 clipPos = vec4(ndc, -1.0, 1.0);
+                        vec4 viewPos = cameraProjectionMatrixInverse * clipPos;
+                        vec3 rd = normalize((cameraWorldMatrix * vec4(viewPos.xyz, 0.0)).xyz);
+                        vec3 ro = cameraPosition;
+
+                        mat2 spinRot = rot(uSphereSpin);
+                        ro.xz *= spinRot;
+                        rd.xz *= spinRot;
+
+                        // Pitch the bloom toward the camera so we can see into the top.
+                        mat2 tiltRot = rot(uTilt);
+                        ro.yz *= tiltRot;
+                        rd.yz *= tiltRot;
+
+                        vec2 hit = intersectSphere(ro, rd, uSphereRadius);
+                        if (hit.y <= 0.0) {
+                            gl_FragColor = vec4(0.005, 0.0, 0.01, 1.0);
+                            return;
+                        }
+
+                        float tNear = max(0.0, hit.x);
+                        float tFar = hit.y;
+                        float t = tNear + hash(gl_FragCoord.xy) * 0.20;
+
+                        vec3 acc = vec3(0.0);
+                        float ab = uAberration * (0.35 + uMorph * 1.3); // colours separate as it goes
+
+                        for (int i = 0; i < 84; i++) {
+                            if (t > tFar) break;
+                            vec3 p = ro + rd * t;
+                            float d = map(p);
+
+                            float distFromCenter = length(p);
+                            float fade = smoothstep(uSphereRadius, uSphereRadius - uEdgeFade, distFromCenter);
+
+                            float intensity = (uGlowIntensity / (abs(d) + 0.029)) * fade;
+
+                            float ph = length(p) * -0.4 - uTime * -0.1;
+                            vec3 holo;
+                            holo.r = palette(ph + ab * 0.1).r;
+                            holo.g = palette(ph).g;
+                            holo.b = palette(ph - ab * 0.1).b;
+                            acc += holo * intensity;
+
+                            // petals shedding: particles scatter as morph rises
+                            float drift = 1.0 + uMorph * 2.0;
+                            vec3 pPos = p * 24.0 + vec3(uTime * 1.5, uTime * (-2.0 * drift), uTime * 0.5);
+                            vec3 pCell = floor(pPos);
+                            vec3 pFract = fract(pPos) - 0.5;
+                            float isP = step(1.0 - uParticleDensity * drift, hash31(pCell));
+                            float pDist = length(pFract);
+                            float pI = 0.0015 / (pDist + 0.005);
+                            vec3 pColor = vec3(1.0) * pI * isP * (intensity * 25.0);
+                            acc += pColor + (acc * pColor * 2.5);
+
+                            t += max(abs(d) * 0.7, 0.02);
+                        }
+
+                        if (hit.x > 0.0) {
+                            vec3 sn = normalize(ro + rd * hit.x);
+                            float rim = 0.5 - max(0.0, dot(-rd, sn));
+                            vec3 rimCol = mix(vec3(0.6, 0.0, 0.1), vec3(0.1, 0.0, 0.5), uMorph);
+                            acc += rimCol * pow(rim, 4.0) * 0.3;
+                        }
+
+                        acc = acc / (1.3 + acc);
+                        acc = pow(acc, vec3(0.4545));
+                        gl_FragColor = vec4(acc, 1.0);
+                    }
+                `
+            });
+
+            const mesh = new THREE.Mesh(geometry, material);
+            mesh.frustumCulled = false;
+            scene.add(mesh);
+
+            applyCamera();
+            setupGUI();
+            setupInteraction();
+
+            // Reveal the piece after the title has had its moment.
+            setTimeout(() => document.getElementById('title').classList.add('gone'), 8000);
+
+            window.addEventListener('resize', onWindowResize);
+        }
+
+        // Reposition the camera from elevation + distance, preserving the
+        // current azimuth so it doesn't jump while auto-rotating.
+        function applyCamera() {
+            const el = THREE.MathUtils.degToRad(params.cameraElevation);
+            const r = params.cameraDistance;
+            const az = Math.atan2(camera.position.x, camera.position.z);
+            camera.position.set(
+                r * Math.cos(el) * Math.sin(az),
+                r * Math.sin(el),
+                r * Math.cos(el) * Math.cos(az)
+            );
+            controls.update();
+        }
+
+        function setupInteraction() {
+            // Touching it makes it leave sooner: pointer movement feeds the loss.
+            const feed = (e, x, y) => { mouseEnergy = Math.min(mouseEnergy + 0.04, 1.2); };
+            window.addEventListener('pointermove', (e) => feed(e, e.clientX, e.clientY));
+            window.addEventListener('pointerdown', () => { mouseEnergy = Math.min(mouseEnergy + 0.4, 1.5); });
+        }
+
+        function setupGUI() {
+            const gui = new GUI({ title: 'condemned' });
+
+            const sys = gui.addFolder('System & Time');
+            sys.add(params, 'dpr', 0.5, 2.0, 0.1).name('Pixel Ratio').onChange(v => {
+                renderer.setPixelRatio(v);
+                material.uniforms.uResolution.value.set(window.innerWidth * v, window.innerHeight * v);
+            });
+            sys.add(params, 'cameraElevation', -10, 89, 1).name('Camera Elevation').onChange(applyCamera);
+            sys.add(params, 'cameraDistance', 3.0, 12.0, 0.1).name('Camera Distance').onChange(applyCamera);
+            sys.add(params, 'roseTilt', -90, 90, 1).name('Rose Tilt').onChange(v => material.uniforms.uTilt.value = THREE.MathUtils.degToRad(v));
+            sys.add(params, 'rotationSpeed', 0.0, 4.0).name('Camera Orbit').onChange(v => controls.autoRotateSpeed = v);
+            sys.add(params, 'loopSpeed', 0.02, 0.8).name('Bloom/Loss Speed');
+            sys.add(params, 'sphereSpinSpeed', -3.0, 3.0).name('Inner Spin');
+
+            const vis = gui.addFolder('Visuals');
+            vis.addColor(params, 'colorWarm').name('Bloom (warm)').onChange(v => material.uniforms.uColorWarm.value.set(v));
+            vis.addColor(params, 'colorCold').name('Loss (cold)').onChange(v => material.uniforms.uColorCold.value.set(v));
+            vis.add(params, 'glowIntensity', 0.001, 0.025, 0.001).name('Glow').onChange(v => material.uniforms.uGlowIntensity.value = v);
+            vis.add(params, 'aberration', 0.0, 2.0).name('Aberration').onChange(v => material.uniforms.uAberration.value = v);
+            vis.add(params, 'particleDensity', 0.0, 0.1, 0.001).name('Petals shed').onChange(v => material.uniforms.uParticleDensity.value = v);
+
+            const shape = gui.addFolder('The Rose');
+            shape.add(params, 'petalCount', 6, 32, 1).name('Petals').onChange(v => material.uniforms.uPetalCount.value = v);
+            shape.add(params, 'sphereRadius', 1.0, 8.0).name('Bounds').onChange(v => material.uniforms.uSphereRadius.value = v);
+            shape.add(params, 'edgeFade', 0.0, 3.0).name('Edge Fade').onChange(v => material.uniforms.uEdgeFade.value = v);
+            shape.add(params, 'warpSpeed', 0.0, 0.2).name('Warp Speed').onChange(v => material.uniforms.uWarpSpeed.value = v);
+
+            // Snapshot: dump every current value to the console so it can be
+            // pasted back as the starting defaults.
+            const actions = {
+                snapshot() {
+                    const az = Math.atan2(camera.position.x, camera.position.z) * 180 / Math.PI;
+                    const snap = { ...params, _cameraAzimuthDeg: +az.toFixed(1) };
+                    console.log('--- condemned: current values ---');
+                    console.log(JSON.stringify(snap, null, 2));
+                    console.table(snap);
+                }
+            };
+            gui.add(actions, 'snapshot').name('⎙ Log values to console');
+
+            gui.close();
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            const dpr = renderer.getPixelRatio();
+            material.uniforms.uResolution.value.set(window.innerWidth * dpr, window.innerHeight * dpr);
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            const dt = Math.min(clock.getDelta(), 0.05);
+            const t = clock.getElapsedTime();
+
+            // The loss decays back toward calm, but never stops advancing.
+            mouseEnergy *= 0.96;
+            phase += dt * (params.loopSpeed * (1.0 + mouseEnergy * 4.0));
+
+            // Eased 0 -> 1 -> 0: lingers at full bloom, then comes apart.
+            const morph = 0.5 - 0.5 * Math.cos(phase);
+
+            // Each return is a different rose: re-roll the spiral when it reblooms.
+            const cycle = Math.floor(phase / (Math.PI * 2.0));
+            if (cycle !== lastCycle) {
+                lastCycle = cycle;
+                material.uniforms.uSeed.value = cycle * 1.61803;
+            }
+
+            material.uniforms.uTime.value = t;
+            material.uniforms.uMorph.value = morph;
+            material.uniforms.uSphereSpin.value = t * params.sphereSpinSpeed;
+
+            controls.update();
+            material.uniforms.cameraWorldMatrix.value.copy(camera.matrixWorld);
+            material.uniforms.cameraProjectionMatrixInverse.value.copy(camera.projectionMatrixInverse);
+
+            renderer.render(scene, camera);
+        }
+    </script>
+</body>
+</html>
