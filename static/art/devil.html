@@ -8,7 +8,8 @@
     :root { --ember: #ff5a1f; }
     * { box-sizing: border-box; }
     html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; background: #000; }
-    canvas { display: block; width: 100vw; height: 100vh; cursor: crosshair; }
+    html, body { touch-action: none; overscroll-behavior: none; }
+    canvas { display: block; width: 100vw; height: 100vh; cursor: crosshair; touch-action: none; }
 
     /* ---- Title ---- */
     #title {
@@ -515,6 +516,37 @@ window.addEventListener('wheel', e => {
     // continuous + much deeper: small zoom = falling into the void
     zoomTarget = Math.min(1.7, Math.max(0.16, zoomTarget + e.deltaY * 0.0012));
 }, { passive: true });
+
+// ---------- pinch to zoom: the touch equivalent of the wheel ----------
+// Spread your fingers to fall in, pinch them to climb back out. We take the
+// gesture over from the browser so the page itself never zooms.
+let pinchDist = 0;
+function touchSpan(touches){
+    const dx = touches[0].clientX - touches[1].clientX;
+    const dy = touches[0].clientY - touches[1].clientY;
+    return Math.hypot(dx, dy);
+}
+window.addEventListener('touchstart', e => {
+    if(e.touches.length === 2){ initAudio(); pinchDist = touchSpan(e.touches); }
+}, { passive: false });
+window.addEventListener('touchmove', e => {
+    if(e.touches.length === 2){
+        e.preventDefault();                       // block the browser's own zoom
+        const d = touchSpan(e.touches);
+        if(pinchDist > 0 && d > 0){
+            // fingers apart (d grows) -> smaller zoom -> deeper descent
+            zoomTarget = Math.min(1.7, Math.max(0.16, zoomTarget * (pinchDist / d)));
+        }
+        pinchDist = d;
+    }
+}, { passive: false });
+function endPinch(e){ if(e.touches.length < 2) pinchDist = 0; }
+window.addEventListener('touchend', endPinch, { passive: false });
+window.addEventListener('touchcancel', endPinch, { passive: false });
+
+// iOS Safari ignores user-scalable=no and fires its own pinch gesture events.
+['gesturestart','gesturechange','gestureend'].forEach(ev =>
+    window.addEventListener(ev, e => e.preventDefault(), { passive: false }));
 
 // ---------- synthesized heartbeat (Web Audio, no external files) ----------
 let actx = null, master = null;

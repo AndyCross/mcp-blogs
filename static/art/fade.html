@@ -308,11 +308,19 @@ function buildPigment(){
 
         aColor[k*3] = r; aColor[k*3+1] = g; aColor[k*3+2] = b;
 
-        // patchy flaking: neighbouring pigment leaves together (paint comes off in flakes),
-        // and lower-down pigment tends to cling a little longer
+        // When does this mote begin to lift? This threshold sets the *shape* of the
+        // whole dissolve. The old version keyed it almost entirely off `patch` — a
+        // product of two sinusoids, whose values bunch tightly around 0.5 — so nearly
+        // every mote left within a narrow band of scroll. That gave a dead patch at
+        // the start (decay below ~0.2 moved almost nothing) and then an abrupt finish:
+        // slow, slow, suddenly done. Spread the thresholds roughly uniformly across
+        // the full scroll instead, so colour leaves at a steady rate from the first
+        // turn of the wheel to the last. Keep a 40% helping of `patch` so neighbouring
+        // motes still share a moment and paint comes off in flakes, not pixel by pixel.
         const patch = 0.5 + 0.5 * Math.sin(wx * 5.0 + wy * 4.0) * Math.cos(wx * 3.0 - wy * 6.0);
-        const cling = (py / H) * 0.12;          // hems hold on slightly longer
-        aOff[k] = Math.min(0.55, patch * 0.42 + cling + Math.random() * 0.08);
+        const u = Math.random();                // the uniform spread that paces it
+        const cling = (py / H) * 0.06;          // hems hold on slightly longer
+        aOff[k] = Math.min(0.6, 0.58 * (0.6 * u + 0.4 * patch) + cling);
 
         aSize[k] = 1.0 + Math.random() * 1.5;
     }
@@ -417,7 +425,9 @@ const mouse = { x: 0, y: 0, tx: 0, ty: 0 };
 let dragging = false, lastY = 0;
 
 addEventListener('wheel', e => {
-    decayTarget = Math.min(1, Math.max(0, decayTarget + e.deltaY * 0.00085));
+    // was 0.00085 — so gentle it took a dozen-plus notches to cross, which read as
+    // "nothing is happening". A little more per notch covers the arc comfortably.
+    decayTarget = Math.min(1, Math.max(0, decayTarget + e.deltaY * 0.0013));
 }, { passive: true });
 
 addEventListener('pointermove', e => {
@@ -476,8 +486,10 @@ function animate(){
     requestAnimationFrame(animate);
     uniforms.u_time.value = clock.getElapsedTime();
 
-    // ease time toward the scroll target
-    uniforms.u_decay.value += (decayTarget - uniforms.u_decay.value) * 0.05;
+    // Ease the shown time toward the scroll target. At 0.05 the lag was large enough
+    // that you'd out-scroll it, then watch it rush to catch up (part of the "suddenly
+    // done" feel). A snappier follow keeps the dissolve under your hand, still smooth.
+    uniforms.u_decay.value += (decayTarget - uniforms.u_decay.value) * 0.085;
     params.decay = uniforms.u_decay.value;
 
     // gentle parallax — the figure turns a little toward you
