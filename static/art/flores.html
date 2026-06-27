@@ -1,0 +1,885 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Flores entre nosotros</title>
+<style>
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; background: #04030a; }
+    #container { position: fixed; inset: 0; }
+    canvas { display: block; width: 100vw; height: 100vh; cursor: grab; }
+    canvas:active { cursor: grabbing; }
+
+    /* ---- Title ---- */
+    #title {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        pointer-events: none;
+        z-index: 10;
+        text-align: center;
+        padding: 1.5rem;
+        transition: opacity 4s ease 1s;
+    }
+    #title.gone { opacity: 0; }
+    #title h1 {
+        font-family: "Georgia", "Times New Roman", serif;
+        font-weight: 400;
+        font-style: italic;
+        font-size: clamp(2rem, 6.5vw, 4.4rem);
+        letter-spacing: 0.015em;
+        color: #f6e9ef;
+        margin: 0;
+        text-shadow: 0 0 38px rgba(255, 150, 190, 0.45), 0 0 90px rgba(120, 70, 160, 0.4);
+        opacity: 0;
+        animation: bloom 5s ease forwards 0.6s;
+    }
+    #whisper {
+        font-family: "Georgia", serif;
+        font-style: italic;
+        font-size: clamp(0.9rem, 2.3vw, 1.1rem);
+        color: rgba(246, 233, 239, 0.6);
+        margin-top: 1.5rem;
+        opacity: 0;
+        animation: bloom 5s ease forwards 2.4s;
+    }
+    @keyframes bloom {
+        from { opacity: 0; filter: blur(10px); transform: translateY(10px); }
+        to   { opacity: 1; filter: blur(0);    transform: translateY(0); }
+    }
+
+    /* ---- Hint ---- */
+    #hint {
+        position: fixed;
+        bottom: 1.5rem;
+        left: 0; right: 0;
+        text-align: center;
+        font-family: "Courier New", monospace;
+        font-size: 0.72rem;
+        letter-spacing: 0.32em;
+        text-transform: uppercase;
+        color: rgba(246, 233, 239, 0.34);
+        pointer-events: none;
+        z-index: 9;
+        opacity: 0;
+        animation: bloom 3s ease forwards 6.5s;
+    }
+    .lil-gui { z-index: 20; --background-color: rgba(10, 6, 18, 0.9); }
+</style>
+</head>
+<body>
+    <div id="container"></div>
+    <div id="title">
+        <h1>Flores entre nosotros</h1>
+        <div id="whisper">Florecen, se cruzan, se marchitan, y vuelven a nacer.</div>
+    </div>
+    <div id="hint">drag to look around &nbsp;·&nbsp; you are at the centre</div>
+
+    <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/",
+        "lil-gui": "https://cdn.jsdelivr.net/npm/lil-gui@0.19.1/dist/lil-gui.esm.min.js"
+      }
+    }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+        import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+        import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+        import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+        import GUI from 'lil-gui';
+
+        // ============================================================
+        //  FLOWER SHADERS
+        // ============================================================
+
+        // Vertex: orient + grow each instanced quad, with a soft sway.
+        const FLOWER_VERT = `
+            precision highp float;
+            attribute vec4 iCol0;
+            attribute vec4 iCol1;
+            attribute vec4 iCol2;
+            attribute vec4 iCol3;
+            attribute float aSize;
+            attribute vec4 aGen0;
+            attribute vec4 aGen1;
+            attribute vec4 aLife;
+
+            uniform float uTime;
+
+            varying vec2 vUv;
+            varying vec4 vGen0;
+            varying vec4 vGen1;
+            varying vec4 vLife;
+
+            void main(){
+                vUv = uv;
+                vGen0 = aGen0;
+                vGen1 = aGen1;
+                vLife = aLife;
+
+                // local quad point (-0.5..0.5 plane), scaled by growth + world size
+                vec3 p = position * aSize * vLife.w;
+
+                // gentle sway, larger when fully open, phased per flower
+                float sway = sin(uTime * 0.7 + aGen0.w * 6.2831) * 0.06 * vLife.x;
+                float s = sin(sway), c = cos(sway);
+                p.xy = mat2(c, -s, s, c) * p.xy;
+
+                // rebuild the per-instance orientation matrix from its columns
+                mat4 iMat = mat4(iCol0, iCol1, iCol2, iCol3);
+                vec4 world = iMat * vec4(p, 1.0);
+                gl_Position = projectionMatrix * viewMatrix * world;
+            }
+        `;
+
+        // Fragment: draw a procedural flower from its phenotype.
+        const FLOWER_FRAG = `
+            precision highp float;
+            uniform float uTime;
+            varying vec2 vUv;
+            varying vec4 vGen0;   // hue, shapeIndex, petalCount, seed
+            varying vec4 vGen1;   // luster, variegation, picotee, foliageHue
+            varying vec4 vLife;   // open, wilt, alpha, growth
+
+            float hash11(float p){ p = fract(p * 0.1031); p *= p + 33.33; p *= p + p; return fract(p); }
+            float hash21(vec2 p){ vec3 p3 = fract(vec3(p.xyx) * 0.1031); p3 += dot(p3, p3.yzx + 33.33); return fract((p3.x + p3.y) * p3.z); }
+
+            vec3 hsl2rgb(vec3 c){
+                vec3 rgb = clamp(abs(mod(c.x * 6.0 + vec3(0.0, 4.0, 2.0), 6.0) - 3.0) - 1.0, 0.0, 1.0);
+                return c.z + c.y * (rgb - 0.5) * (1.0 - abs(2.0 * c.z - 1.0));
+            }
+
+            void main(){
+                vec2 p = (vUv - 0.5) * 2.0;
+                float r = length(p);
+                float ang = atan(p.y, p.x);
+
+                float open  = vLife.x;
+                float wilt  = vLife.y;
+                float alpha = vLife.z;
+                if (alpha <= 0.002) discard;
+
+                float hue    = vGen0.x;
+                float shape  = vGen0.y;
+                float petals = max(3.0, vGen0.z);
+                float seed   = vGen0.w;
+                float luster = vGen1.x;
+                float varieg = vGen1.y;
+                float pico   = vGen1.z;
+                float foliage = vGen1.w;
+
+                // ---- shape parameters from the dominant petal shape ----
+                float sharp = 0.7, ruffle = 0.0, heartf = 0.0;
+                if (shape < 0.5)      { sharp = 0.65; }
+                else if (shape < 1.5) { sharp = 1.7; }
+                else if (shape < 2.5) { sharp = 1.0; ruffle = 1.0; }
+                else if (shape < 3.5) { sharp = 3.4; }                 // star
+                else                  { sharp = 1.5; heartf = 1.0; }   // heart
+
+                float k = petals;
+
+                // two interleaved rings of petals for a fuller corolla
+                float lb1 = 0.5 + 0.5 * cos(k * ang);
+                float lb2 = 0.5 + 0.5 * cos(k * ang + 3.14159265);
+                lb1 = pow(lb1, sharp);
+                lb2 = pow(lb2, sharp);
+                float ruf = 1.0 + ruffle * 0.16 * sin(k * 3.0 * ang + seed * 30.0);
+                // heart dimple at each petal tip
+                float dimple = heartf * 0.12 * smoothstep(0.82, 1.0, 0.5 + 0.5 * cos(k * ang));
+                float R1 = open * (0.42 + 0.22 * lb1) * ruf - dimple * open;
+                float R2 = open * 0.82 * (0.42 + 0.22 * lb2) * ruf;
+                float outer = max(R1, R2);
+
+                float aa = 0.07 + 0.03 * (1.0 - open);
+                float petalMask = smoothstep(outer, outer - aa, r);
+
+                // ---- petal colour: rich and saturated, deeper toward the rim ----
+                float radial = clamp(1.0 - r / max(outer, 0.001), 0.0, 1.0);
+                float sat = 0.62 + 0.12 * radial;
+                float light = mix(0.30, 0.50, radial);
+                vec3 col = hsl2rgb(vec3(hue, sat, light));
+
+                // darken the seams between petals so they read as separate
+                float seam = 0.5 + 0.5 * cos(k * ang);
+                col *= 0.80 + 0.20 * pow(seam, 0.7);
+
+                // picotee: a contrasting rim on the outer edge of the petals
+                float rim = smoothstep(outer - 0.12, outer, r) * petalMask;
+                vec3 picoCol = hsl2rgb(vec3(fract(hue + 0.52), 0.7, 0.42));
+                col = mix(col, picoCol, rim * pico * 0.9);
+
+                // variegation: bold sectoring — whole petals streaked near-white,
+                // with finer streaks over the rest, so a carrier reads clearly.
+                float petalIdx = floor((ang / 6.2831 + 0.5) * k);
+                float paleSeg = step(0.5, hash21(vec2(petalIdx, floor(seed * 97.0))));
+                float fineStreak = smoothstep(0.6, 0.95, 0.5 + 0.5 * sin(ang * k * 2.0 + seed * 50.0));
+                float vmask = max(paleSeg, fineStreak) * smoothstep(0.0, 0.55, radial);
+                col = mix(col, vec3(0.97, 0.96, 0.93), vmask * varieg * 0.82);
+
+                // luster: an iridescent shimmer that the bloom pass turns to light
+                float shim = 0.5 + 0.5 * sin(ang * 3.0 + r * 22.0 - uTime * 1.6 + seed * 30.0);
+                vec3 irid = 0.5 + 0.5 * cos(vec3(0.0, 2.094, 4.188) + hue * 6.2831 + shim * 3.0);
+                col += irid * luster * pow(shim, 4.0) * radial * 0.5;
+
+                // ---- centre disk (stamens) ----
+                float diskR = open * 0.17;
+                float disk = smoothstep(diskR, diskR - 0.03, r);
+                vec3 diskCol = hsl2rgb(vec3(0.13, 0.85, 0.55));
+                float speck = step(0.55, hash21(floor(p * 26.0)));
+                diskCol *= 0.7 + 0.6 * speck;
+                col = mix(col, diskCol, disk);
+
+                // ---- the bud, shown before the petals open ----
+                float budF = smoothstep(0.24, 0.05, open);     // 1 when nearly closed
+                float budR = 0.10 + 0.06 * open;
+                float budMask = smoothstep(budR, budR - 0.035, r);
+                vec3 budCol = hsl2rgb(vec3(foliage, 0.5, 0.32));
+                // a blush of the flower's colour at the very tip (toward -y)
+                budCol = mix(budCol, hsl2rgb(vec3(hue, 0.55, 0.5)), smoothstep(0.0, budR, -p.y) * 0.5);
+
+                col = mix(col, budCol, budF);
+                float bodyMask = mix(petalMask, budMask, budF);
+
+                // ---- wilt: drain to a soft brown and lose form ----
+                float lum = dot(col, vec3(0.33));
+                col = mix(col, vec3(lum), wilt * 0.5);
+                col = mix(col, vec3(0.30, 0.20, 0.12), wilt * 0.6);
+
+                // ---- a soft glowing heart, so only the cores catch the bloom ----
+                float core = smoothstep(0.22, 0.0, r) * open * (1.0 - budF);
+                col += hsl2rgb(vec3(hue, 0.7, 0.55)) * core * 0.35;
+
+                float a = bodyMask * alpha;
+                if (a <= 0.003) discard;
+                gl_FragColor = vec4(col, a);
+            }
+        `;
+
+        // ============================================================
+        //  GENETICS  — ported from the Bloomline engine (genetics.ts).
+        //  Diploid genotype, per-allele mutation, deterministic
+        //  genotype -> phenotype. The lineages you watch are real:
+        //  every flower here is the child of two that bloomed before it.
+        // ============================================================
+
+        const PETAL_SHAPES = ['round', 'pointed', 'ruffled', 'star', 'heart'];
+        const LEAF_HUE_BAND = [75, 150];
+        const MUTATION_RATE = 0.04;        // a touch livelier than the game
+        const NUMERIC_MUTATION_STDEV = 0.14;
+
+        const clamp01 = (x) => Math.max(0, Math.min(1, x));
+        const rnd = Math.random;
+        const gauss = (stdev) => {
+            const u = Math.max(1e-9, rnd()), v = rnd();
+            const g = Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+            return Math.max(-3, Math.min(3, g)) * stdev;
+        };
+        const pick = (arr) => arr[Math.floor(rnd() * arr.length)];
+        const chance = (p) => rnd() < p;
+
+        // A wild seed: common shapes, the rare alleles vanishingly scarce so a
+        // lustrous or picotee bloom is something you have to wait for.
+        function wildGenotype() {
+            const numPair = (mean, sd) => [clamp01(mean + gauss(sd)), clamp01(mean + gauss(sd))];
+            const wildShape = () => pick(['round', 'pointed', 'ruffled']);
+            const luster = () => (chance(0.01) ? 'lustrous' : 'plain');
+            const special = (p) => () => (chance(p) ? 'on' : 'plain');
+            const varieg = special(0.03);
+            const pico = special(0.04);
+            return {
+                hue: numPair(rnd(), 0.18),
+                petalShape: [wildShape(), wildShape()],
+                petalCount: numPair(0.5, 0.18),
+                flowerCount: numPair(0.2, 0.14),
+                height: numPair(0.5, 0.18),
+                growthSpeed: numPair(0.5, 0.16),
+                hardiness: numPair(0.5, 0.18),
+                luster: [luster(), luster()],
+                variegation: [varieg(), varieg()],
+                picotee: [pico(), pico()],
+                foliageHue: numPair(0.5, 0.22),
+                thorniness: numPair(0.25, 0.18),
+            };
+        }
+
+        const inherit = (pair) => (chance(0.5) ? pair[0] : pair[1]);
+        const mutNum = (v) => (chance(MUTATION_RATE) ? clamp01(v + gauss(NUMERIC_MUTATION_STDEV)) : v);
+        const mutShape = (s) => (chance(MUTATION_RATE) ? pick(PETAL_SHAPES) : s);
+        const mutLuster = (a) => (chance(MUTATION_RATE) ? (a === 'plain' ? 'lustrous' : 'plain') : a);
+        const mutSpecial = (a) => (chance(MUTATION_RATE) ? (a === 'plain' ? 'on' : 'plain') : a);
+
+        // Cross two parents: per gene, take one allele from each, then mutate.
+        function breed(a, b) {
+            const num = (ka, kb) => [mutNum(inherit(a[ka])), mutNum(inherit(b[kb]))];
+            return {
+                hue: num('hue', 'hue'),
+                petalShape: [mutShape(inherit(a.petalShape)), mutShape(inherit(b.petalShape))],
+                petalCount: num('petalCount', 'petalCount'),
+                flowerCount: num('flowerCount', 'flowerCount'),
+                height: num('height', 'height'),
+                growthSpeed: num('growthSpeed', 'growthSpeed'),
+                hardiness: num('hardiness', 'hardiness'),
+                luster: [mutLuster(inherit(a.luster)), mutLuster(inherit(b.luster))],
+                variegation: [mutSpecial(inherit(a.variegation)), mutSpecial(inherit(b.variegation))],
+                picotee: [mutSpecial(inherit(a.picotee)), mutSpecial(inherit(b.picotee))],
+                foliageHue: num('foliageHue', 'foliageHue'),
+                thorniness: num('thorniness', 'thorniness'),
+            };
+        }
+
+        const avg = (p) => (p[0] + p[1]) / 2;
+        // Dominant shape = the allele earliest in the dominance order.
+        const expressedShape = (pair) =>
+            PETAL_SHAPES.indexOf(pair[0]) <= PETAL_SHAPES.indexOf(pair[1]) ? pair[0] : pair[1];
+        const isOn = (pair) => pair[0] === 'on' && pair[1] === 'on';
+
+        // Deterministic genotype -> expressed traits we actually render.
+        function phenotype(g) {
+            const shape = expressedShape(g.petalShape);
+            const lustrous = g.luster[0] === 'lustrous' && g.luster[1] === 'lustrous';
+            return {
+                hueDeg: avg(g.hue) * 360,
+                petalShape: shape,
+                shapeIndex: PETAL_SHAPES.indexOf(shape),
+                petalCount: Math.round(5 + avg(g.petalCount) * 9),       // 5..14
+                heightScale: 0.6 + avg(g.height),                         // 0.6..1.6
+                growthSpeed: avg(g.growthSpeed),
+                hardiness: avg(g.hardiness),
+                lustrous,
+                variegated: isOn(g.variegation),
+                picotee: isOn(g.picotee),
+                foliageHueDeg: LEAF_HUE_BAND[0] + avg(g.foliageHue) * (LEAF_HUE_BAND[1] - LEAF_HUE_BAND[0]),
+            };
+        }
+
+        // ============================================================
+        //  THE SPHERE OF CELLS
+        //  A Fibonacci lattice of points on a sphere. Each is one cell of
+        //  a flower-Conway: it may hold a plant, breed with neighbours,
+        //  crowd, starve, and reseed. We sit at the centre looking out.
+        // ============================================================
+
+        const params = {
+            dpr: Math.min(window.devicePixelRatio, 1.6),
+            cells: 620,
+            radius: 34,
+            fov: 74,
+            tickSeconds: 0.34,
+            timeScale: 1.0,
+            autoDrift: 0.018,
+            bloomStrength: 0.5,
+            bloomRadius: 0.5,
+            bloomThreshold: 0.55,
+            exposure: 0.92,
+        };
+
+        const NEIGHBOURS = 6;
+        let cells = [];          // { dir, pos, size, plant|null, agingMul }
+        let neighbourIdx = [];   // Int per cell -> NEIGHBOURS neighbour indices
+
+        function buildSphere() {
+            cells = [];
+            const N = params.cells;
+            const golden = Math.PI * (3 - Math.sqrt(5));
+            for (let i = 0; i < N; i++) {
+                const y = 1 - (i / (N - 1)) * 2;          // 1 .. -1
+                const rad = Math.sqrt(Math.max(0, 1 - y * y));
+                const theta = golden * i;
+                const dir = new THREE.Vector3(Math.cos(theta) * rad, y, Math.sin(theta) * rad);
+                // A little radial jitter so looking around gives real parallax.
+                const r = params.radius * (0.9 + rnd() * 0.16);
+                cells.push({
+                    dir,
+                    pos: dir.clone().multiplyScalar(r),
+                    plant: null,
+                    agingMul: 1.0,
+                });
+            }
+            // k-nearest neighbours by direction (brute force; N is small).
+            neighbourIdx = [];
+            for (let i = 0; i < N; i++) {
+                const di = cells[i].dir;
+                const scored = [];
+                for (let j = 0; j < N; j++) {
+                    if (j === i) continue;
+                    scored.push([di.dot(cells[j].dir), j]);
+                }
+                scored.sort((a, b) => b[0] - a[0]);
+                neighbourIdx.push(scored.slice(0, NEIGHBOURS).map((s) => s[1]));
+            }
+        }
+
+        // Spawn a plant into cell i from a genotype. Gene attributes are written
+        // straight away (not deferred) so pre-aged seedlings render correctly.
+        function plant(i, gen, age = 0) {
+            const ph = phenotype(gen);
+            // Hardy + slow-growing flowers linger; quick ones flare and go.
+            const lifespan = 12 + ph.hardiness * 12 + (1 - ph.growthSpeed) * 8; // ~12..32s
+            cells[i].plant = { gen, ph, age, lifespan };
+            cells[i].agingMul = 1.0;
+            writeGenes(i, ph);
+        }
+
+        // Lifecycle curves shared by sim + render.
+        function lifeOf(pl) {
+            const p = pl.age / pl.lifespan;                       // 0..1
+            const opening = THREE.MathUtils.smoothstep(p, 0.10, 0.40);
+            const closing = 1 - THREE.MathUtils.smoothstep(p, 0.66, 0.92);
+            const open = Math.max(0, opening * closing);
+            const growth = THREE.MathUtils.smoothstep(p, 0.0, 0.12) * (1 - 0.22 * THREE.MathUtils.smoothstep(p, 0.8, 1.0));
+            const wilt = THREE.MathUtils.smoothstep(p, 0.6, 1.0);
+            const alpha = THREE.MathUtils.smoothstep(p, 0.0, 0.05) * (1 - THREE.MathUtils.smoothstep(p, 0.9, 1.0));
+            return { p, open, growth, wilt, alpha };
+        }
+
+        // One generation tick: births, crowding pressure, the wind.
+        function tick() {
+            const N = cells.length;
+            const blooming = new Array(N);
+            let bloomCount = 0;
+            for (let i = 0; i < N; i++) {
+                const pl = cells[i].plant;
+                blooming[i] = pl ? lifeOf(pl).open > 0.45 : false;
+                if (blooming[i]) bloomCount++;
+            }
+
+            for (let i = 0; i < N; i++) {
+                const cell = cells[i];
+                const nb = neighbourIdx[i];
+                let b = 0;
+                for (let k = 0; k < nb.length; k++) if (blooming[nb[k]]) b++;
+
+                if (!cell.plant) {
+                    // Birth (Conway B2/3-ish): a gap with the right company fills
+                    // with a child bred from two of its blooming neighbours.
+                    if (b >= 2) {
+                        const fertility = b === 2 || b === 3 ? 0.34 : 0.12;
+                        if (chance(fertility)) {
+                            const parents = nb.filter((j) => blooming[j]);
+                            const a = cells[parents[Math.floor(rnd() * parents.length)]].plant;
+                            const c = cells[parents[Math.floor(rnd() * parents.length)]].plant;
+                            plant(i, breed(a.gen, c.gen));
+                        }
+                    }
+                } else {
+                    // Survival pressure: lonely or crowded flowers age faster and
+                    // leave sooner. The sweet spot is two or three neighbours.
+                    if (b <= 1) cell.agingMul = 1.5;
+                    else if (b >= 5) cell.agingMul = 1.7;
+                    else cell.agingMul = 1.0;
+                }
+            }
+
+            // The wind carries fresh wild seed, more of it when the field thins,
+            // so the garden never falls fully dark.
+            const floor = N * 0.10;
+            const windRate = bloomCount < floor ? 0.9 : 0.18;
+            const gusts = rnd() < windRate ? 1 + Math.floor(rnd() * 3) : 0;
+            for (let g = 0; g < gusts; g++) {
+                const i = Math.floor(rnd() * N);
+                if (!cells[i].plant) plant(i, wildGenotype());
+            }
+        }
+
+        // ============================================================
+        //  THREE.JS SCENE
+        // ============================================================
+
+        let camera, scene, renderer, composer, bloomPass, flowers, material, sky, motes;
+        const clock = new THREE.Clock();
+        let tickAccum = 0;
+
+        // instanced attribute buffers
+        let aGen0, aGen1, aLife;
+
+        function init() {
+            const container = document.getElementById('container');
+
+            scene = new THREE.Scene();
+
+            camera = new THREE.PerspectiveCamera(params.fov, innerWidth / innerHeight, 0.1, 400);
+            camera.position.set(0, 0, 0);
+
+            renderer = new THREE.WebGLRenderer({ antialias: false, powerPreference: 'high-performance' });
+            renderer.setPixelRatio(params.dpr);
+            renderer.setSize(innerWidth, innerHeight);
+            renderer.toneMapping = THREE.ACESFilmicToneMapping;
+            renderer.toneMappingExposure = params.exposure;
+            container.appendChild(renderer.domElement);
+
+            buildSphere();
+            buildSky();
+            buildFlowers();
+            buildMotes();
+            seedField();
+            buildComposer();
+            setupControls();
+            setupGUI();
+
+            setTimeout(() => document.getElementById('title').classList.add('gone'), 7500);
+            window.addEventListener('resize', onResize);
+        }
+
+        // ---- background: a twilight sky with a warm horizon and faint stars ----
+        function buildSky() {
+            const geo = new THREE.SphereGeometry(160, 40, 40);
+            const mat = new THREE.ShaderMaterial({
+                side: THREE.BackSide,
+                depthWrite: false,
+                uniforms: { uTime: { value: 0 } },
+                vertexShader: `
+                    varying vec3 vDir;
+                    void main(){
+                        vDir = normalize(position);
+                        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+                    }
+                `,
+                fragmentShader: `
+                    precision highp float;
+                    uniform float uTime;
+                    varying vec3 vDir;
+                    float hash(vec3 p){ p=fract(p*0.3183+vec3(0.1,0.2,0.3)); p+=dot(p,p.yzx+19.19); return fract((p.x+p.y)*p.z); }
+                    void main(){
+                        float h = vDir.y * 0.5 + 0.5;                  // 0 down .. 1 up
+                        vec3 bot = vec3(0.10, 0.045, 0.075);
+                        vec3 mid = vec3(0.05, 0.03, 0.10);
+                        vec3 top = vec3(0.015, 0.015, 0.05);
+                        vec3 c = mix(bot, mid, smoothstep(0.0, 0.5, h));
+                        c = mix(c, top, smoothstep(0.5, 1.0, h));
+                        // warm glow around the horizon, drifting a little
+                        float glow = exp(-pow((h - 0.46) * 5.5, 2.0));
+                        c += vec3(0.16, 0.06, 0.05) * glow * (0.55 + 0.15 * sin(uTime * 0.1));
+                        // faint cool counter-glow overhead
+                        c += vec3(0.04, 0.05, 0.10) * smoothstep(0.7, 1.0, h) * 0.4;
+                        // sparse stars
+                        vec3 q = floor(vDir * 220.0);
+                        float s = hash(q);
+                        float star = smoothstep(0.9965, 1.0, s);
+                        float tw = 0.5 + 0.5 * sin(uTime * 2.0 + s * 100.0);
+                        c += vec3(0.8, 0.85, 1.0) * star * (0.4 + 0.6 * tw);
+                        gl_FragColor = vec4(c, 1.0);
+                    }
+                `,
+            });
+            sky = new THREE.Mesh(geo, mat);
+            sky.frustumCulled = false;
+            scene.add(sky);
+        }
+
+        // ---- the flowers: one instanced quad per cell, drawn in the shader ----
+        function buildFlowers() {
+            const N = cells.length;
+            const base = new THREE.PlaneGeometry(1, 1);
+            const inst = new THREE.InstancedBufferGeometry();
+            inst.index = base.index;
+            inst.attributes.position = base.attributes.position;
+            inst.attributes.uv = base.attributes.uv;
+            inst.instanceCount = N;
+
+            // aGen0 = (hue, shapeIndex, petalCount, seed)
+            // aGen1 = (luster, variegation, picotee, foliageHue)
+            // aLife = (open, wilt, alpha, growth)
+            aGen0 = new THREE.InstancedBufferAttribute(new Float32Array(N * 4), 4);
+            aGen1 = new THREE.InstancedBufferAttribute(new Float32Array(N * 4), 4);
+            aLife = new THREE.InstancedBufferAttribute(new Float32Array(N * 4), 4);
+            aGen0.setUsage(THREE.DynamicDrawUsage);
+            aGen1.setUsage(THREE.DynamicDrawUsage);
+            aLife.setUsage(THREE.DynamicDrawUsage);
+            inst.setAttribute('aGen0', aGen0);
+            inst.setAttribute('aGen1', aGen1);
+            inst.setAttribute('aLife', aLife);
+
+            // Orientation per cell: face the centre (= face the viewer, since we
+            // never leave the origin). Passed to the shader as four column vec4s.
+            const col0 = new THREE.InstancedBufferAttribute(new Float32Array(N * 4), 4);
+            const col1 = new THREE.InstancedBufferAttribute(new Float32Array(N * 4), 4);
+            const col2 = new THREE.InstancedBufferAttribute(new Float32Array(N * 4), 4);
+            const col3 = new THREE.InstancedBufferAttribute(new Float32Array(N * 4), 4);
+            const m = new THREE.Matrix4();
+            const arr = new Float32Array(16);
+            const right = new THREE.Vector3(), up = new THREE.Vector3(), n = new THREE.Vector3();
+            const upRef = new THREE.Vector3();
+            for (let i = 0; i < N; i++) {
+                const cell = cells[i];
+                n.copy(cell.dir).negate();                 // normal points inward
+                upRef.set(0, 1, 0);
+                if (Math.abs(n.y) > 0.98) upRef.set(1, 0, 0);
+                right.crossVectors(upRef, n).normalize();
+                up.crossVectors(n, right).normalize();
+                m.makeBasis(right, up, n);
+                m.setPosition(cell.pos);
+                m.toArray(arr, 0);
+                col0.setXYZW(i, arr[0], arr[1], arr[2], arr[3]);
+                col1.setXYZW(i, arr[4], arr[5], arr[6], arr[7]);
+                col2.setXYZW(i, arr[8], arr[9], arr[10], arr[11]);
+                col3.setXYZW(i, arr[12], arr[13], arr[14], arr[15]);
+            }
+            inst.setAttribute('iCol0', col0);
+            inst.setAttribute('iCol1', col1);
+            inst.setAttribute('iCol2', col2);
+            inst.setAttribute('iCol3', col3);
+
+            // per-flower world size (world units): lush overlap of neighbours,
+            // rewritten per birth to scale with the plant's height phenotype.
+            const spacing = params.radius * Math.sqrt((4 * Math.PI) / N);
+            const aSize = new THREE.InstancedBufferAttribute(new Float32Array(N), 1);
+            for (let i = 0; i < N; i++) aSize.setX(i, spacing * 1.55);
+            inst.setAttribute('aSize', aSize);
+            flowers = { aSize, spacing };
+
+            material = new THREE.ShaderMaterial({
+                transparent: true,
+                depthWrite: false,
+                depthTest: true,
+                blending: THREE.NormalBlending,
+                uniforms: { uTime: { value: 0 } },
+                vertexShader: FLOWER_VERT,
+                fragmentShader: FLOWER_FRAG,
+            });
+
+            const mesh = new THREE.Mesh(inst, material);
+            mesh.frustumCulled = false;
+            scene.add(mesh);
+            flowers.mesh = mesh;
+            flowers.geo = inst;
+        }
+
+        // drifting pollen / spores so the air between blooms is never empty
+        function buildMotes() {
+            const COUNT = 700;
+            const pos = new Float32Array(COUNT * 3);
+            const seed = new Float32Array(COUNT);
+            for (let i = 0; i < COUNT; i++) {
+                const r = 5 + rnd() * (params.radius - 7);
+                const u = rnd() * 2 - 1, t = rnd() * Math.PI * 2;
+                const s = Math.sqrt(1 - u * u);
+                pos[i * 3] = Math.cos(t) * s * r;
+                pos[i * 3 + 1] = u * r;
+                pos[i * 3 + 2] = Math.sin(t) * s * r;
+                seed[i] = rnd();
+            }
+            const geo = new THREE.BufferGeometry();
+            geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+            geo.setAttribute('aSeed', new THREE.BufferAttribute(seed, 1));
+            const mat = new THREE.ShaderMaterial({
+                transparent: true,
+                depthWrite: false,
+                blending: THREE.AdditiveBlending,
+                uniforms: { uTime: { value: 0 } },
+                vertexShader: `
+                    attribute float aSeed;
+                    uniform float uTime;
+                    varying float vTw;
+                    void main(){
+                        vec3 p = position;
+                        float t = uTime * (0.05 + aSeed * 0.08);
+                        p.x += sin(t + aSeed * 30.0) * 1.4;
+                        p.y += cos(t * 0.8 + aSeed * 17.0) * 1.4;
+                        p.z += sin(t * 1.1 + aSeed * 9.0) * 1.4;
+                        vTw = 0.4 + 0.6 * (0.5 + 0.5 * sin(uTime * 1.5 + aSeed * 40.0));
+                        vec4 mv = modelViewMatrix * vec4(p, 1.0);
+                        gl_PointSize = (12.0 + aSeed * 26.0) / max(1.0, -mv.z);
+                        gl_Position = projectionMatrix * mv;
+                    }
+                `,
+                fragmentShader: `
+                    precision highp float;
+                    varying float vTw;
+                    void main(){
+                        vec2 d = gl_PointCoord - 0.5;
+                        float a = smoothstep(0.5, 0.0, length(d));
+                        gl_FragColor = vec4(vec3(1.0, 0.92, 0.8) * vTw, a * vTw * 0.5);
+                    }
+                `,
+            });
+            motes = new THREE.Points(geo, mat);
+            motes.frustumCulled = false;
+            scene.add(motes);
+        }
+
+        function seedField() {
+            // Start lush: a few founder lineages so colour clusters into related
+            // populations, seeded across most of the sphere at staggered ages so
+            // the first frame already shows buds, full blooms and wilting alike.
+            const founders = [];
+            for (let f = 0; f < 7; f++) founders.push(wildGenotype());
+            const N = cells.length;
+            for (let i = 0; i < N; i++) {
+                if (rnd() > 0.62) continue;                 // ~62% of cells planted
+                let gen;
+                if (rnd() < 0.5) {
+                    gen = founders[Math.floor(rnd() * founders.length)];
+                } else {
+                    gen = breed(
+                        founders[Math.floor(rnd() * founders.length)],
+                        founders[Math.floor(rnd() * founders.length)]
+                    );
+                }
+                const ph = phenotype(gen);
+                const lifespan = 12 + ph.hardiness * 12 + (1 - ph.growthSpeed) * 8;
+                plant(i, gen, rnd() * lifespan * 0.95);
+            }
+        }
+
+        function buildComposer() {
+            composer = new EffectComposer(renderer);
+            composer.setPixelRatio(params.dpr);
+            composer.setSize(innerWidth, innerHeight);
+            composer.addPass(new RenderPass(scene, camera));
+            bloomPass = new UnrealBloomPass(
+                new THREE.Vector2(innerWidth, innerHeight),
+                params.bloomStrength, params.bloomRadius, params.bloomThreshold
+            );
+            composer.addPass(bloomPass);
+            composer.addPass(new OutputPass());
+        }
+
+        // ============================================================
+        //  LOOK-AROUND CONTROLS  (panorama from a fixed centre)
+        // ============================================================
+        let lon = 200, lat = -6;
+        let velLon = 0, velLat = 0;
+        let dragging = false, lastX = 0, lastY = 0, idleTime = 0;
+        const target = new THREE.Vector3();
+
+        function setupControls() {
+            const el = renderer.domElement;
+            const down = (x, y) => { dragging = true; lastX = x; lastY = y; velLon = velLat = 0; idleTime = 0; };
+            const move = (x, y) => {
+                if (!dragging) return;
+                const dx = x - lastX, dy = y - lastY;
+                lastX = x; lastY = y;
+                velLon = -dx * 0.11;
+                velLat = dy * 0.11;
+                lon += velLon;
+                lat += velLat;
+                lat = Math.max(-85, Math.min(85, lat));
+                idleTime = 0;
+            };
+            const up = () => { dragging = false; };
+
+            el.addEventListener('pointerdown', (e) => down(e.clientX, e.clientY));
+            window.addEventListener('pointermove', (e) => move(e.clientX, e.clientY));
+            window.addEventListener('pointerup', up);
+            window.addEventListener('pointercancel', up);
+        }
+
+        function updateCamera(dt) {
+            if (!dragging) {
+                lon += velLon;
+                lat += velLat;
+                velLon *= 0.94;
+                velLat *= 0.94;
+                lat = Math.max(-85, Math.min(85, lat));
+                idleTime += dt;
+                // after a quiet moment, drift gently so it breathes on its own
+                if (idleTime > 2.5 && Math.abs(velLon) < 0.02) {
+                    lon += params.autoDrift;
+                    lat += Math.sin(clock.elapsedTime * 0.05) * 0.004;
+                }
+            }
+            const phi = THREE.MathUtils.degToRad(90 - lat);
+            const theta = THREE.MathUtils.degToRad(lon);
+            target.set(
+                Math.sin(phi) * Math.cos(theta),
+                Math.cos(phi),
+                Math.sin(phi) * Math.sin(theta)
+            );
+            camera.lookAt(target);
+        }
+
+        // ============================================================
+        //  RENDER LOOP
+        // ============================================================
+        function animate() {
+            requestAnimationFrame(animate);
+            const dt = Math.min(clock.getDelta(), 0.05) * params.timeScale;
+            const t = clock.elapsedTime;
+
+            // advance every living plant; reap the spent ones, freeing the cell.
+            for (let i = 0; i < cells.length; i++) {
+                const cell = cells[i];
+                const pl = cell.plant;
+                if (!pl) { aLife.setXYZW(i, 0, 0, 0, 0); continue; }
+                pl.age += dt * cell.agingMul;
+                if (pl.age >= pl.lifespan) {
+                    cell.plant = null;
+                    cell.agingMul = 1.0;
+                    aLife.setXYZW(i, 0, 0, 0, 0);
+                    continue;
+                }
+                const L = lifeOf(pl);
+                aLife.setXYZW(i, L.open, L.wilt, L.alpha, L.growth);
+            }
+            aLife.needsUpdate = true;
+
+            // generation ticks at a steady cadence, independent of frame rate.
+            tickAccum += dt;
+            while (tickAccum >= params.tickSeconds) {
+                tick();
+                tickAccum -= params.tickSeconds;
+            }
+
+            material.uniforms.uTime.value = t;
+            sky.material.uniforms.uTime.value = t;
+            motes.material.uniforms.uTime.value = t;
+
+            updateCamera(dt);
+            composer.render();
+        }
+
+        function writeGenes(i, ph) {
+            aGen0.setXYZW(i, ph.hueDeg / 360, ph.shapeIndex, ph.petalCount, rnd());
+            aGen1.setXYZW(i, ph.lustrous ? 1 : 0, ph.variegated ? 1 : 0, ph.picotee ? 1 : 0, ph.foliageHueDeg / 360);
+            // taller phenotypes read as bigger blooms; rare lustrous ones a touch more.
+            const size = flowers.spacing * (1.35 + ph.heightScale * 0.35 + (ph.lustrous ? 0.2 : 0));
+            flowers.aSize.setX(i, size);
+            aGen0.needsUpdate = true;
+            aGen1.needsUpdate = true;
+            flowers.aSize.needsUpdate = true;
+        }
+
+        function onResize() {
+            camera.aspect = innerWidth / innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(innerWidth, innerHeight);
+            composer.setSize(innerWidth, innerHeight);
+        }
+
+        function setupGUI() {
+            const gui = new GUI({ title: 'el jardín' });
+            gui.add(params, 'timeScale', 0.1, 3.0, 0.05).name('Time');
+            gui.add(params, 'tickSeconds', 0.1, 1.2, 0.02).name('Generation (s)');
+            gui.add(params, 'autoDrift', 0.0, 0.1, 0.002).name('Idle drift');
+            const vis = gui.addFolder('Light');
+            vis.add(params, 'exposure', 0.4, 2.0, 0.02).name('Exposure').onChange((v) => renderer.toneMappingExposure = v);
+            vis.add(params, 'bloomStrength', 0.0, 2.0, 0.02).name('Bloom').onChange((v) => bloomPass.strength = v);
+            vis.add(params, 'bloomRadius', 0.0, 1.0, 0.02).name('Bloom radius').onChange((v) => bloomPass.radius = v);
+            vis.add(params, 'bloomThreshold', 0.0, 1.0, 0.02).name('Bloom threshold').onChange((v) => bloomPass.threshold = v);
+            gui.close();
+            // hide by default; press G to reveal
+            gui.domElement.style.display = 'none';
+            window.addEventListener('keydown', (e) => {
+                if (e.key === 'g' || e.key === 'G') {
+                    const d = gui.domElement.style;
+                    d.display = d.display === 'none' ? '' : 'none';
+                }
+            });
+        }
+
+        // Kick off only after every declaration above exists (animate() reaches
+        // into the control-state lets, so it must run last, not at the top).
+        init();
+        animate();
+    </script>
+</body>
+</html>
