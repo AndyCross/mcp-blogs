@@ -86,6 +86,16 @@ Use UK-flavoured intensifiers sparingly:
 
 These replace overuse of "genuinely", which should appear sparingly when you really mean it.
 
+## Static Art Pages
+
+Standalone art pages live in `static/art/` (Hugo copies them verbatim into `public/art/`). Every static art page must include the counter.dev tracking script in its `<head>`, placed right after the `<title>`:
+
+```html
+<script src="https://cdn.counter.dev/script.js" data-id="72d92ac8-56cf-4fdd-9899-b73adbab2e4d" data-utcoffset="0"></script>
+```
+
+When creating a new art page, add this snippet. When editing `static/art/`, mirror the change into the built `public/art/` copy so the two stay in sync.
+
 ## Voice
 
 - First person, conversational
