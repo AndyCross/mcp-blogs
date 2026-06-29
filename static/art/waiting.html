@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<!--
+  "Waiting" — a framed photograph on a desk in a drained grey office.
+  The clock on the wall pours forward; the moment in the photo holds still,
+  and is the only thing left in colour.
+
+  3D models (loaded from ./waiting-assets/, bundled locally):
+    · Desk          — "Desk" by Kenney                — CC0     — poly.pizza/m/6PbVkqPzEU
+    · Office chair  — "Office Chair" by Quaternius     — CC0     — poly.pizza/m/UfKvrZBK6C
+    · Monitor       — "Monitor" by Poly by Google      — CC-BY   — poly.pizza/m/0twMVGXRVDl
+    · Picture frame — "Wall Art 03" by Jarlan Perez     — CC-BY   — poly.pizza/m/0i3du0jtSu5
+    · Wall clock    — "Analog clock" by Poly by Google — CC-BY   — poly.pizza/m/5gAoMR2YHs3
+  CC-BY 3.0: https://creativecommons.org/licenses/by/3.0/ — sourced via poly.pizza.
+  The clock's two hands are added meshes (the originals are baked into one piece
+  and cannot turn); everything else is the genuine downloaded model.
+-->
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Waiting</title>
+<script src="https://cdn.counter.dev/script.js" data-id="72d92ac8-56cf-4fdd-9899-b73adbab2e4d" data-utcoffset="0"></script>
+<style>
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; background: #0a0a0c; }
+    #container { position: fixed; inset: 0; }
+    canvas { display: block; width: 100vw; height: 100vh; cursor: grab; }
+    canvas:active { cursor: grabbing; }
+
+    #title {
+        position: fixed; inset: 0;
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        pointer-events: none; z-index: 10; text-align: center; padding: 1.5rem;
+        transition: opacity 4s ease 1s;
+    }
+    #title.gone { opacity: 0; }
+    #title h1 {
+        font-family: "Georgia", "Times New Roman", serif;
+        font-weight: 400; font-style: italic;
+        font-size: clamp(2rem, 6.5vw, 4.2rem);
+        letter-spacing: 0.04em;
+        color: #eef0f3;
+        margin: 0;
+        text-shadow: 0 0 30px rgba(120, 140, 170, 0.45), 0 0 90px rgba(40, 50, 70, 0.5);
+        opacity: 0;
+        animation: bloom 5s ease forwards 0.6s;
+    }
+    #whisper {
+        font-family: "Georgia", serif; font-style: italic;
+        font-size: clamp(0.9rem, 2.3vw, 1.1rem);
+        color: rgba(238, 240, 243, 0.55);
+        margin-top: 1.4rem; opacity: 0;
+        animation: bloom 5s ease forwards 2.4s;
+    }
+    @keyframes bloom {
+        from { opacity: 0; filter: blur(10px); transform: translateY(10px); }
+        to   { opacity: 1; filter: blur(0);    transform: translateY(0); }
+    }
+
+    #hint {
+        position: fixed; bottom: 1.4rem; left: 0; right: 0; text-align: center;
+        font-family: "Courier New", monospace; font-size: 0.7rem;
+        letter-spacing: 0.32em; text-transform: uppercase;
+        color: rgba(238, 240, 243, 0.3); pointer-events: none; z-index: 9;
+        opacity: 0; animation: bloom 3s ease forwards 6.5s;
+    }
+    #credits {
+        position: fixed; bottom: 0.7rem; right: 0.9rem; z-index: 9;
+        font-family: "Courier New", monospace; font-size: 0.62rem;
+        color: rgba(238, 240, 243, 0.28);
+    }
+    #credits a { color: rgba(238, 240, 243, 0.4); text-decoration: none; }
+    #credits .body { display: none; max-width: 320px; text-align: right; line-height: 1.5; margin-top: 0.4rem; }
+    #credits.open .body { display: block; }
+    .lil-gui { z-index: 20; --background-color: rgba(8, 9, 12, 0.92); }
+</style>
+</head>
+<body>
+    <div id="container"></div>
+    <div id="title">
+        <h1>Waiting</h1>
+        <div id="whisper">The hours run on. The moment does not.</div>
+    </div>
+    <div id="hint">drag to look &nbsp;·&nbsp; the only thing left in colour</div>
+    <div id="credits">
+        <a href="#" id="creditsToggle">models ⓘ</a>
+        <div class="body">
+            Desk &amp; chair · Kenney, Quaternius (CC0) — Monitor &amp; clock · Poly by Google (CC&#8209;BY) — Frame · Jarlan Perez (CC&#8209;BY). Sourced via poly.pizza.
+        </div>
+    </div>
+
+    <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/",
+        "lil-gui": "https://cdn.jsdelivr.net/npm/lil-gui@0.19.1/dist/lil-gui.esm.min.js"
+      }
+    }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+        import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+        import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+        import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+        import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
+        import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+        import GUI from 'lil-gui';
+
+        const params = {
+            dpr: Math.min(window.devicePixelRatio, 1.6),
+            clockSpeed: 36,        // the minute hand sweeps a full turn every ~10s: time visibly pouring past
+            bloomStrength: 0.42,
+            bloomRadius: 0.55,
+            bloomThreshold: 0.62,
+            exposure: 1.22,
+            grain: 0.035,
+            vignette: 0.7,
+            aberration: 0.0016,
+            desat: 0.97,           // how grey the room is (1 = fully drained)
+            autoOrbit: 0.012,
+            pushIn: true,
+            pushTo: 2.55,          // radius the opening push-in settles at
+        };
+
+        // ---- assets to load: name -> [file, target size in metres, fit-axis] ----
+        const ASSETS = {
+            desk:    'waiting-assets/desk.glb',
+            chair:   'waiting-assets/chair.glb',
+            monitor: 'waiting-assets/monitor.glb',
+            keyboard:'waiting-assets/keyboard.glb',
+            frame:   'waiting-assets/frame.glb',
+            clock:   'waiting-assets/clock.glb',
+        };
+
+        // URL-query overrides, e.g. ?exposure=1.4&grain=0.02&radius=1.1&title=0 — for tuning.
+        const Q = new URLSearchParams(location.search);
+        function applyQueryParams() {
+            ['exposure','grain','vignette','aberration','desat','bloomStrength','bloomThreshold',
+             'bloomRadius','clockSpeed','autoOrbit'].forEach((k) => {
+                if (Q.has(k)) params[k] = parseFloat(Q.get(k));
+            });
+        }
+        applyQueryParams();
+
+        let camera, scene, renderer, composer, bloomPass, finalPass;
+        let hourHand, minuteHand, photoMesh;
+        const clock = new THREE.Clock();
+        const models = {};
+
+        // ============================================================
+        //  GREY-ROOM MATERIAL PATCH
+        //  Drain every lit material to a faintly cool grey so only the
+        //  photograph (an unlit, tone-mapping-exempt material) keeps colour.
+        // ============================================================
+        const patched = new WeakSet();
+        function drainColour(material) {
+            if (!material || patched.has(material)) return;
+            patched.add(material);
+            material.onBeforeCompile = (shader) => {
+                shader.uniforms.uDesat = { value: params.desat };
+                _desatUniforms.push(shader.uniforms.uDesat);
+                shader.fragmentShader = shader.fragmentShader
+                    .replace('void main() {', 'uniform float uDesat;\nvoid main() {')
+                    .replace(
+                        '#include <dithering_fragment>',
+                        `#include <dithering_fragment>
+                         float _l = dot(gl_FragColor.rgb, vec3(0.299, 0.587, 0.114));
+                         vec3 _grey = vec3(_l) * vec3(0.92, 0.96, 1.05);
+                         gl_FragColor.rgb = mix(gl_FragColor.rgb, _grey, uDesat);`
+                    );
+            };
+            material.needsUpdate = true;
+        }
+        const _desatUniforms = [];
+
+        // ============================================================
+        //  MODEL NORMALISATION
+        //  Models arrive at wildly different scales/origins. Measure each,
+        //  scale it to a real-world size, recentre on X/Z and sit it on y=0.
+        // ============================================================
+        function measure(obj) {
+            obj.updateMatrixWorld(true);
+            const box = new THREE.Box3().setFromObject(obj);
+            const size = new THREE.Vector3(), center = new THREE.Vector3();
+            box.getSize(size); box.getCenter(center);
+            return { box, size, center };
+        }
+        // Wrap a model in a pivot whose origin is the model's base-centre, scaled
+        // to a real-world size. Position/rotate the returned pivot freely; its
+        // unscaled local space is metres, so children (photo, hands) are easy.
+        function normalized(root, { width, height }) {
+            const pivot = new THREE.Group();
+            pivot.add(root);
+            let m = measure(root);
+            const s = width ? width / Math.max(m.size.x, m.size.z) : height / m.size.y;
+            root.scale.multiplyScalar(s);
+            m = measure(root);
+            root.position.x -= m.center.x;
+            root.position.z -= m.center.z;
+            root.position.y -= m.box.min.y;
+            const local = measure(root);          // pivot at origin → world == pivot-local
+            pivot.userData.size = local.size.clone();
+            return pivot;
+        }
+
+        function load() {
+            const loader = new GLTFLoader();
+            const keys = Object.keys(ASSETS);
+            return Promise.all(keys.map((k) => new Promise((res, rej) => {
+                loader.load(ASSETS[k], (gltf) => {
+                    const root = gltf.scene;
+                    root.traverse((o) => {
+                        if (o.isMesh) {
+                            o.castShadow = true; o.receiveShadow = true;
+                            const mats = Array.isArray(o.material) ? o.material : [o.material];
+                            mats.forEach(drainColour);
+                        }
+                    });
+                    models[k] = root; res();
+                }, undefined, rej);
+            })));
+        }
+
+        // ============================================================
+        //  SCENE
+        // ============================================================
+        function buildRoom() {
+            const wallMat = new THREE.MeshStandardMaterial({ color: 0x6f7480, roughness: 0.95, metalness: 0.0 });
+            const floorMat = new THREE.MeshStandardMaterial({ color: 0x55585f, roughness: 0.9, metalness: 0.0 });
+            drainColour(wallMat); drainColour(floorMat);
+
+            const floor = new THREE.Mesh(new THREE.PlaneGeometry(16, 16), floorMat);
+            floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true;
+            scene.add(floor);
+
+            const back = new THREE.Mesh(new THREE.PlaneGeometry(12, 6), wallMat);
+            back.position.set(0, 3, -1.7); back.receiveShadow = true;
+            scene.add(back);
+
+            const left = new THREE.Mesh(new THREE.PlaneGeometry(10, 6), wallMat);
+            left.rotation.y = Math.PI / 2; left.position.set(-2.6, 3, 0); left.receiveShadow = true;
+            scene.add(left);
+        }
+
+        function place() {
+            // --- desk: the anchor. Sits on the floor against the back wall. ---
+            const desk = normalized(models.desk, { width: 1.55 });
+            desk.position.set(0, 0, -1.0);
+            scene.add(desk); models.desk = desk;
+            const deskTop = desk.userData.size.y;       // base is at the pivot origin (y=0)
+
+            // --- chair: tucked in on the working side, turned to the desk. ---
+            const chair = normalized(models.chair, { width: 0.64 });
+            chair.rotation.y = Math.PI;                 // face -Z, toward the desk
+            chair.position.set(0.05, 0, -0.2);
+            scene.add(chair); models.chair = chair;
+
+            // --- monitor: at the back of the desk, screen turned to the chair. ---
+            const mon = normalized(models.monitor, { width: 0.52 });
+            mon.rotation.y = Math.PI;                   // face +Z, toward the seat
+            mon.position.set(0.32, deskTop, -1.28);
+            scene.add(mon); models.monitor = mon;
+
+            // --- keyboard: in front of the monitor, where the hands would rest. ---
+            const kbd = normalized(models.keyboard, { width: 0.42 });
+            kbd.position.set(0.30, deskTop, -0.92);
+            scene.add(kbd); models.keyboard = kbd;
+
+            // --- the framed photograph: stood at the back beside the monitor,
+            //     where you'd really keep it, turned to face the empty chair. ---
+            const frame = normalized(models.frame, { height: 0.26 });
+            frame.rotation.y = 0.34;                     // turned to face the empty chair
+            frame.position.set(-0.5, deskTop, -1.12);
+            scene.add(frame); models.frame = frame;
+            addPhoto(frame);
+
+            // --- wall clock: on the back wall, time pouring past. ---
+            const clk = normalized(models.clock, { width: 0.44 });
+            clk.rotation.y = -Math.PI / 2;              // its face points ±X by default → turn to +Z
+            clk.position.set(0.32, 1.6, -1.66);         // on the wall just above the monitor
+            scene.add(clk); models.clock = clk;
+            addHands(clk);
+
+            // frame the whole desk: photo low-left, clock high on the wall behind
+            controls.target.set(0.05, deskTop + 0.43, -1.2);
+        }
+
+        // A thin colour photo laid over the frame's front face. The frame is the
+        // real model; the photograph is the one surface that keeps its colour.
+        // The pivot's local space is unscaled metres, so we work directly in it.
+        function addPhoto(frame) {
+            const s = frame.userData.size;              // metres: x = width, y = height, z = thickness
+            const tex = new THREE.TextureLoader().load('waiting-assets/waiting.jpg');
+            tex.colorSpace = THREE.SRGBColorSpace;
+            tex.anisotropy = 8;
+            const aspect = 1122 / 1402;                 // portrait source photo
+            let h = s.y * 0.8, w = h * aspect;          // fit inside the aperture, keep aspect
+            if (w > s.x * 0.86) { w = s.x * 0.86; h = w / aspect; }
+            const mat = new THREE.MeshBasicMaterial({ map: tex, toneMapped: false });
+            photoMesh = new THREE.Mesh(new THREE.PlaneGeometry(w, h), mat);
+            photoMesh.position.set(0, s.y * 0.5, s.z * 0.5 + 0.006);   // centred, just proud of the front
+            frame.add(photoMesh);
+        }
+
+        // Two hands added to the clock (the model's own are baked into one mesh
+        // and cannot turn). Added in the clock's unscaled local space.
+        function addHands(clk) {
+            const s = clk.userData.size;
+            const dims = [s.x, s.y, s.z];
+            const nAxis = dims.indexOf(Math.min(...dims));     // face normal = thinnest axis
+            const radius = Math.min(...dims.filter((_, i) => i !== nAxis)) * 0.42;
+            const normal = new THREE.Vector3(nAxis === 0 ? 1 : 0, nAxis === 1 ? 1 : 0, nAxis === 2 ? 1 : 0);
+
+            const handGroup = new THREE.Group();
+            handGroup.position.set(0, s.y * 0.5, 0).addScaledVector(normal, dims[nAxis] * 0.5 + 0.004);
+            handGroup.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), normal);  // local +Z → face normal
+            clk.add(handGroup);
+
+            // hide the model's baked-in hands behind a clean disc matching the dial
+            // (kept inside the tick ring), then mount our own hands on top, so only
+            // one set of hands is ever visible and only ours turns.
+            const faceMat = new THREE.MeshStandardMaterial({ color: 0xbbbfc6, roughness: 0.92, metalness: 0.0 });
+            drainColour(faceMat);
+            const cover = new THREE.Mesh(new THREE.CircleGeometry(radius * 1.04, 48), faceMat);
+            cover.position.z = -0.002;                 // proud of the dial, behind the hands
+            cover.receiveShadow = true;
+            handGroup.add(cover);
+
+            // our own hour markers on the clean face
+            const tickMat = new THREE.MeshStandardMaterial({ color: 0x26282d, roughness: 0.85 });
+            drainColour(tickMat);
+            for (let h = 0; h < 12; h++) {
+                const major = h % 3 === 0;
+                const tl = radius * (major ? 0.17 : 0.10);
+                const tw = radius * (major ? 0.04 : 0.025);
+                const tick = new THREE.Mesh(new THREE.PlaneGeometry(tw, tl), tickMat);
+                const ang = (h / 12) * Math.PI * 2;
+                const rr = radius * 0.86;
+                tick.position.set(Math.sin(ang) * rr, Math.cos(ang) * rr, -0.0015);
+                tick.rotation.z = -ang;
+                handGroup.add(tick);
+            }
+
+            const mkHand = (len, wid, col) => {
+                const g = new THREE.BoxGeometry(wid, len, wid * 0.5);
+                g.translate(0, len * 0.5, 0);          // pivot at the hub end
+                const mat = new THREE.MeshStandardMaterial({ color: col, roughness: 0.6, metalness: 0.2 });
+                drainColour(mat);
+                const mesh = new THREE.Mesh(g, mat); mesh.castShadow = true;
+                return mesh;
+            };
+            minuteHand = mkHand(radius * 0.92, radius * 0.05, 0x15171c);
+            hourHand   = mkHand(radius * 0.58, radius * 0.075, 0x111317);
+            handGroup.add(hourHand, minuteHand);
+            const hubMat = new THREE.MeshStandardMaterial({ color: 0x111317, roughness: 0.6 });
+            drainColour(hubMat);
+            const hub = new THREE.Mesh(new THREE.CylinderGeometry(radius * 0.06, radius * 0.06, 0.012, 16), hubMat);
+            hub.rotation.x = Math.PI / 2; handGroup.add(hub);
+        }
+
+        // ============================================================
+        //  CAMERA — slow cinematic orbit around the photograph, drag to look
+        // ============================================================
+        const controls = {
+            target: new THREE.Vector3(0, 0.9, -0.6),
+            radius: 3.1, targetRadius: 2.55,
+            azimuth: 0.32, elevation: 0.1,
+            azVel: 0, elVel: 0, idle: 0,
+        };
+        function setupControls() {
+            const el = renderer.domElement;
+            let dragging = false, lx = 0, ly = 0;
+            el.addEventListener('pointerdown', (e) => { dragging = true; lx = e.clientX; ly = e.clientY; controls.idle = 0; });
+            window.addEventListener('pointermove', (e) => {
+                if (!dragging) return;
+                const dx = e.clientX - lx, dy = e.clientY - ly; lx = e.clientX; ly = e.clientY;
+                controls.azVel = -dx * 0.005; controls.elVel = -dy * 0.004;
+                controls.azimuth += controls.azVel; controls.elevation += controls.elVel;
+                controls.elevation = Math.max(-0.2, Math.min(0.7, controls.elevation));
+                controls.idle = 0;
+            });
+            const up = () => { dragging = false; };
+            window.addEventListener('pointerup', up);
+            window.addEventListener('pointercancel', up);
+            el.addEventListener('wheel', (e) => {
+                controls.targetRadius = Math.max(1.2, Math.min(4.0, controls.targetRadius + e.deltaY * 0.0012));
+                params.pushIn = false;
+            }, { passive: true });
+        }
+        function updateCamera(dt) {
+            controls.idle += dt;
+            if (params.pushIn) controls.targetRadius = params.pushTo;
+            controls.radius += (controls.targetRadius - controls.radius) * Math.min(1, dt * 0.8);
+            // ease residual drag momentum, then a slow idle orbit
+            controls.azimuth += controls.azVel; controls.elevation += controls.elVel;
+            controls.azVel *= 0.9; controls.elVel *= 0.9;
+            if (controls.idle > 2.0) controls.azimuth += params.autoOrbit * dt;
+            controls.elevation = Math.max(-0.2, Math.min(0.7, controls.elevation));
+            const r = controls.radius, a = controls.azimuth, e = controls.elevation;
+            camera.position.set(
+                controls.target.x + r * Math.cos(e) * Math.sin(a),
+                controls.target.y + r * Math.sin(e),
+                controls.target.z + r * Math.cos(e) * Math.cos(a)
+            );
+            camera.lookAt(controls.target);
+        }
+
+        // ============================================================
+        //  FINAL PASS — grain, vignette, a whisper of chromatic aberration
+        // ============================================================
+        const FinalShader = {
+            uniforms: {
+                tDiffuse: { value: null },
+                uTime: { value: 0 },
+                uGrain: { value: params.grain },
+                uVignette: { value: params.vignette },
+                uAberration: { value: params.aberration },
+            },
+            vertexShader: `varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
+            fragmentShader: `
+                precision highp float;
+                uniform sampler2D tDiffuse;
+                uniform float uTime, uGrain, uVignette, uAberration;
+                varying vec2 vUv;
+                // per-pixel hash on screen coords, reseeded each frame (no banding)
+                float hash(vec2 p){
+                    p = fract(p * 0.3183099 + vec2(0.71, 0.113));
+                    p *= 17.0;
+                    return fract(p.x * p.y * (p.x + p.y));
+                }
+                void main(){
+                    vec2 d = vUv - 0.5;
+                    float r2 = dot(d, d);
+                    // chromatic aberration grows toward the edges
+                    vec2 off = d * uAberration * (0.4 + r2 * 3.0);
+                    vec3 col;
+                    col.r = texture2D(tDiffuse, vUv + off).r;
+                    col.g = texture2D(tDiffuse, vUv).g;
+                    col.b = texture2D(tDiffuse, vUv - off).b;
+                    // film grain, monochrome, animated
+                    float g = hash(gl_FragCoord.xy + fract(uTime) * 311.7) - 0.5;
+                    col += g * uGrain;
+                    // vignette
+                    float vig = smoothstep(0.85, 0.18, r2 * uVignette);
+                    col *= mix(0.55, 1.0, vig);
+                    gl_FragColor = vec4(col, 1.0);
+                }
+            `,
+        };
+
+        function buildComposer() {
+            composer = new EffectComposer(renderer);
+            composer.setPixelRatio(params.dpr);
+            composer.setSize(innerWidth, innerHeight);
+            composer.addPass(new RenderPass(scene, camera));
+            bloomPass = new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight),
+                params.bloomStrength, params.bloomRadius, params.bloomThreshold);
+            composer.addPass(bloomPass);
+            finalPass = new ShaderPass(FinalShader);
+            composer.addPass(finalPass);
+            composer.addPass(new OutputPass());
+        }
+
+        function buildLights() {
+            scene.add(new THREE.HemisphereLight(0x8a93a6, 0x2a2d33, 0.65));
+            const key = new THREE.DirectionalLight(0xcdd6e6, 1.05);
+            key.position.set(-2.4, 3.2, 1.6);
+            key.castShadow = true;
+            key.shadow.mapSize.set(1024, 1024);
+            key.shadow.camera.near = 0.5; key.shadow.camera.far = 12;
+            key.shadow.camera.left = -3; key.shadow.camera.right = 3;
+            key.shadow.camera.top = 3; key.shadow.camera.bottom = -3;
+            key.shadow.bias = -0.0004; key.shadow.radius = 4;
+            scene.add(key);
+            const fill = new THREE.DirectionalLight(0x6b7790, 0.3);
+            fill.position.set(2.5, 1.5, 1.0);
+            scene.add(fill);
+        }
+
+        async function init() {
+            const container = document.getElementById('container');
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x0c0d10);
+            scene.fog = new THREE.Fog(0x0c0d10, 4.5, 9.0);
+
+            camera = new THREE.PerspectiveCamera(52, innerWidth / innerHeight, 0.1, 100);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+            renderer.setPixelRatio(params.dpr);
+            renderer.setSize(innerWidth, innerHeight);
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            renderer.toneMapping = THREE.ACESFilmicToneMapping;
+            renderer.toneMappingExposure = params.exposure;
+            renderer.outputColorSpace = THREE.SRGBColorSpace;
+            container.appendChild(renderer.domElement);
+
+            buildLights();
+            buildRoom();
+            await load();
+            place();
+            buildComposer();
+            setupControls();
+            setupGUI();
+
+            // camera query overrides (after controls/place so target is set)
+            if (Q.has('radius')) { controls.radius = controls.targetRadius = parseFloat(Q.get('radius')); params.pushIn = false; }
+            if (Q.has('az')) controls.azimuth = parseFloat(Q.get('az'));
+            if (Q.has('el')) controls.elevation = parseFloat(Q.get('el'));
+            if (Q.has('tx')) controls.target.x = parseFloat(Q.get('tx'));
+            if (Q.has('ty')) controls.target.y = parseFloat(Q.get('ty'));
+            if (Q.has('tz')) controls.target.z = parseFloat(Q.get('tz'));
+            if (Q.has('fov')) { camera.fov = parseFloat(Q.get('fov')); camera.updateProjectionMatrix(); }
+            if (Q.has('crot')) models.clock.rotation.y = parseFloat(Q.get('crot'));
+            if (Q.get('title') === '0') document.getElementById('title').style.display = 'none';
+
+            setTimeout(() => document.getElementById('title').classList.add('gone'), 8500);
+            window.addEventListener('resize', onResize);
+            animate();
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const dt = Math.min(clock.getDelta(), 0.05);
+            const t = clock.elapsedTime;
+
+            // time pours forward: the minute hand sweeps a full turn every ~10s,
+            // the hour hand 12x slower. The moment in the photo never moves.
+            const rate = params.clockSpeed;
+            if (minuteHand) minuteHand.rotation.z = -t * rate * (2 * Math.PI / 360);
+            if (hourHand)   hourHand.rotation.z   = -t * rate * (2 * Math.PI / 360) / 12;
+
+            finalPass.uniforms.uTime.value = t;
+            updateCamera(dt);
+            composer.render();
+        }
+
+        function onResize() {
+            camera.aspect = innerWidth / innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(innerWidth, innerHeight);
+            composer.setSize(innerWidth, innerHeight);
+        }
+
+        function setupGUI() {
+            const gui = new GUI({ title: 'waiting' });
+            gui.add(params, 'clockSpeed', 1, 120, 1).name('Clock speed');
+            const look = gui.addFolder('Look');
+            look.add(params, 'exposure', 0.4, 2.0, 0.02).onChange((v) => renderer.toneMappingExposure = v);
+            look.add(params, 'bloomStrength', 0, 1.5, 0.02).onChange((v) => bloomPass.strength = v);
+            look.add(params, 'bloomThreshold', 0, 1, 0.02).onChange((v) => bloomPass.threshold = v);
+            look.add(params, 'grain', 0, 0.2, 0.005).onChange((v) => finalPass.uniforms.uGrain.value = v);
+            look.add(params, 'vignette', 0, 2, 0.05).onChange((v) => finalPass.uniforms.uVignette.value = v);
+            look.add(params, 'aberration', 0, 0.006, 0.0002).onChange((v) => finalPass.uniforms.uAberration.value = v);
+            look.add(params, 'desat', 0, 1, 0.01).onChange((v) => _desatUniforms.forEach((u) => u.value = v));
+            const cam = gui.addFolder('Camera');
+            cam.add(controls, 'targetRadius', 1.2, 4, 0.05).name('distance').onChange(() => params.pushIn = false);
+            cam.add(controls, 'elevation', -0.2, 0.7, 0.01);
+            cam.add(params, 'autoOrbit', 0, 0.08, 0.002).name('idle orbit');
+            // transform nudgers for each placed model
+            const place = gui.addFolder('Placement'); place.close();
+            ['desk', 'chair', 'monitor', 'keyboard', 'frame', 'clock'].forEach((k) => {
+                const o = models[k]; if (!o) return;
+                const f = place.addFolder(k); f.close();
+                f.add(o.position, 'x', -3, 3, 0.01); f.add(o.position, 'y', 0, 3, 0.01); f.add(o.position, 'z', -3, 2, 0.01);
+                f.add(o.rotation, 'y', -Math.PI, Math.PI, 0.01).name('rotY');
+            });
+            gui.close();
+            gui.domElement.style.display = 'none';
+            window.addEventListener('keydown', (e) => {
+                if (e.key === 'g' || e.key === 'G') {
+                    const d = gui.domElement.style;
+                    d.display = d.display === 'none' ? '' : 'none';
+                }
+            });
+        }
+
+        document.getElementById('creditsToggle').addEventListener('click', (e) => {
+            e.preventDefault();
+            document.getElementById('credits').classList.toggle('open');
+        });
+
+        init();
+    </script>
+</body>
+</html>
