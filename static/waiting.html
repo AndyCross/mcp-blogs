@@ -123,6 +123,19 @@
             autoOrbit: 0.012,
             pushIn: true,
             pushTo: 2.55,          // radius the opening push-in settles at
+            // --- the dissolving photograph (a small particle simulation) ---
+            dissolveCycle: 34,     // seconds for one full come-apart-and-reform breath
+            dissolveHold: 0.3,     // share of the cycle the photo stays whole
+            windBase: 1.4,         // wind acceleration, direction turns with the clock
+            buoyancy: 0.7,         // upward lift on the specks
+            drift: 24,             // outward launch kick off the photo (impulse near home)
+            swirl: 2.4,            // circulation that makes the cloud churn round the room
+            turbulence: 2.4,       // random jitter for life and scatter
+            springK: 26,           // how hard the specks are pulled home to reform
+            damping: 0.965,        // velocity damping per frame (air resistance)
+            restitution: 0.6,      // energy kept on a wall bounce
+            dustSize: 2.6,         // point size
+            dustStride: 6,         // sample every Nth pixel of the photo
         };
 
         // ---- assets to load: name -> [file, target size in metres, fit-axis] ----
@@ -139,14 +152,18 @@
         const Q = new URLSearchParams(location.search);
         function applyQueryParams() {
             ['exposure','grain','vignette','aberration','desat','bloomStrength','bloomThreshold',
-             'bloomRadius','clockSpeed','autoOrbit'].forEach((k) => {
+             'bloomRadius','clockSpeed','autoOrbit','windBase','dustSize','dissolveCycle','dustStride',
+             'buoyancy','turbulence','springK','damping','restitution','drift','swirl'].forEach((k) => {
                 if (Q.has(k)) params[k] = parseFloat(Q.get(k));
             });
         }
         applyQueryParams();
 
         let camera, scene, renderer, composer, bloomPass, finalPass;
-        let hourHand, minuteHand, photoMesh;
+        let hourHand, minuteHand, photoMesh, dust, dustSim, _warmed = false;
+        // the volume the specks roam and bounce inside (world metres)
+        const ROOM = { minX: -2.45, maxX: 2.45, minY: 0.04, maxY: 2.9, minZ: -1.62, maxZ: 1.25 };
+        let colliders = [];        // solid bounding boxes (desk, monitor, chair...) to bounce off
         const clock = new THREE.Clock();
         const models = {};
 
@@ -284,13 +301,56 @@
             scene.add(clk); models.clock = clk;
             addHands(clk);
 
+            // solid boxes the specks bounce off (slightly padded so they skim the surface)
+            colliders = ['desk', 'monitor', 'chair', 'keyboard'].map((k) => {
+                const b = new THREE.Box3().setFromObject(models[k]).expandByScalar(0.01);
+                return { minX: b.min.x, maxX: b.max.x, minY: b.min.y, maxY: b.max.y, minZ: b.min.z, maxZ: b.max.z };
+            });
+
             // frame the whole desk: photo low-left, clock high on the wall behind
             controls.target.set(0.05, deskTop + 0.43, -1.2);
         }
 
-        // A thin colour photo laid over the frame's front face. The frame is the
-        // real model; the photograph is the one surface that keeps its colour.
-        // The pivot's local space is unscaled metres, so we work directly in it.
+        // ============================================================
+        //  THE DISSOLVING PHOTOGRAPH — particle shaders
+        //  Each speck rests on the photo, then lifts on a wind whose strength
+        //  and direction come from the clock. travel scales with `rel`, so when
+        //  the dissolve breathes back to 0 every speck returns home exactly and
+        //  the image reforms. Hidden (alpha 0) at home, where the plane shows.
+        // ============================================================
+        // The motion is simulated on the CPU (forces, wall bounce); the shader
+        // just draws each speck at its live world position and fades it in by how
+        // far it has strayed from home, so settled specks vanish under the plane.
+        const DUST_VERT = `
+            precision highp float;
+            attribute vec3 aColor;
+            attribute vec3 aHome;
+            uniform float uSize, uPixelRatio;
+            varying vec3 vColor;
+            varying float vAlpha;
+            void main(){
+                vColor = aColor;
+                vAlpha = smoothstep(0.006, 0.05, length(position - aHome));
+                vec4 mv = modelViewMatrix * vec4(position, 1.0);
+                gl_PointSize = uSize * uPixelRatio * (1.0 + vAlpha * 0.9) / max(0.05, -mv.z);
+                gl_Position = projectionMatrix * mv;
+            }
+        `;
+        const DUST_FRAG = `
+            precision highp float;
+            varying vec3 vColor;
+            varying float vAlpha;
+            void main(){
+                if (vAlpha < 0.01) discard;
+                vec2 d = gl_PointCoord - 0.5;
+                float a = smoothstep(0.5, 0.08, length(d));
+                gl_FragColor = vec4(vColor, a * vAlpha);
+            }
+        `;
+
+        // The photograph: a crisp plane at rest that fades out as the image comes
+        // apart, and a cloud of coloured specks (one per sampled pixel) that lift
+        // off, drift on the clock's wind, and settle back to reform it.
         function addPhoto(frame) {
             const s = frame.userData.size;              // metres: x = width, y = height, z = thickness
             const tex = new THREE.TextureLoader().load('waiting-assets/waiting.jpg');
@@ -299,10 +359,162 @@
             const aspect = 1122 / 1402;                 // portrait source photo
             let h = s.y * 0.8, w = h * aspect;          // fit inside the aperture, keep aspect
             if (w > s.x * 0.86) { w = s.x * 0.86; h = w / aspect; }
-            const mat = new THREE.MeshBasicMaterial({ map: tex, toneMapped: false });
+            const mat = new THREE.MeshBasicMaterial({ map: tex, toneMapped: false, transparent: true });
             photoMesh = new THREE.Mesh(new THREE.PlaneGeometry(w, h), mat);
-            photoMesh.position.set(0, s.y * 0.5, s.z * 0.5 + 0.006);   // centred, just proud of the front
+            const cx = 0, cy = s.y * 0.5, cz = s.z * 0.5 + 0.006;
+            photoMesh.position.set(cx, cy, cz);         // centred, just proud of the front
             frame.add(photoMesh);
+            buildDust(frame, { w, h, cx, cy, cz });
+        }
+
+        // sRGB → linear, so the specks match the tone-mapping-exempt photo plane.
+        const toLinear = (c) => (c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4));
+
+        // Read the photo's pixels into one particle each, positioned on the plane.
+        function buildDust(frame, P) {
+            const img = new Image();
+            img.onload = () => {
+                const stride = Math.max(2, Math.floor(params.dustStride));
+                const cols = Math.floor(img.width / stride);
+                const rows = Math.floor(img.height / stride);
+                const cv = document.createElement('canvas');
+                cv.width = cols; cv.height = rows;
+                const ctx = cv.getContext('2d', { willReadFrequently: true });
+                ctx.drawImage(img, 0, 0, cols, rows);
+                const data = ctx.getImageData(0, 0, cols, rows).data;
+
+                const N = cols * rows;
+                const pos = new Float32Array(N * 3);    // live world position (simulated)
+                const home = new Float32Array(N * 3);   // world rest position on the photo
+                const vel = new Float32Array(N * 3);    // velocity
+                const drift = new Float32Array(N * 3);  // each speck's own persistent heading
+                const col = new Float32Array(N * 3);
+                // map each pixel to its world rest position via the frame's transform
+                frame.updateMatrixWorld(true);
+                const m = frame.matrixWorld;
+                const tmp = new THREE.Vector3();
+                let k = 0;
+                for (let y = 0; y < rows; y++) {
+                    for (let x = 0; x < cols; x++) {
+                        const i = (y * cols + x) * 4;
+                        const u = x / (cols - 1), v = y / (rows - 1);
+                        tmp.set(P.cx + (u - 0.5) * P.w, P.cy + (0.5 - v) * P.h, P.cz).applyMatrix4(m);
+                        pos[k * 3] = home[k * 3] = tmp.x;
+                        pos[k * 3 + 1] = home[k * 3 + 1] = tmp.y;
+                        pos[k * 3 + 2] = home[k * 3 + 2] = tmp.z;
+                        col[k * 3]     = toLinear(data[i]     / 255);
+                        col[k * 3 + 1] = toLinear(data[i + 1] / 255);
+                        col[k * 3 + 2] = toLinear(data[i + 2] / 255);
+                        // a persistent random heading (with a little outward bias) so the
+                        // specks spread in every direction rather than diffusing in place
+                        let dx = Math.random() * 2 - 1, dy = Math.random() * 2 - 1, dz = Math.random() * 2 - 1;
+                        const dl = Math.hypot(dx, dy, dz) || 1;
+                        drift[k * 3] = dx / dl;
+                        drift[k * 3 + 1] = dy / dl;
+                        drift[k * 3 + 2] = dz / dl;
+                        k++;
+                    }
+                }
+                const geo = new THREE.BufferGeometry();
+                geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+                geo.setAttribute('aHome', new THREE.BufferAttribute(home, 3));
+                geo.setAttribute('aColor', new THREE.BufferAttribute(col, 3));
+
+                const mat = new THREE.ShaderMaterial({
+                    transparent: true,
+                    depthWrite: false,
+                    depthTest: true,
+                    blending: THREE.NormalBlending,
+                    uniforms: {
+                        uSize: { value: params.dustSize },
+                        uPixelRatio: { value: params.dpr },
+                    },
+                    vertexShader: DUST_VERT,
+                    fragmentShader: DUST_FRAG,
+                });
+                dust = new THREE.Points(geo, mat);
+                dust.frustumCulled = false;             // it roams the whole room
+                scene.add(dust);                        // world space, for wall collisions
+                dustSim = { pos, home, vel, drift, N, posAttr: geo.attributes.position };
+            };
+            img.src = 'waiting-assets/waiting.jpg';
+        }
+
+        // One step of the speck simulation. dissolve 0 → a home-spring holds the
+        // image whole; dissolve 1 → the spring releases and a clock-driven wind,
+        // buoyancy and random turbulence scatter the specks to fill the room,
+        // bouncing off its walls. Wind direction turns with the clock hand.
+        function simulateDust(D, clockAngle, dt) {
+            const { pos: P, home: H, vel: V, drift: G, N, posAttr } = dustSim;
+            const wind = params.windBase * (params.clockSpeed / 36);
+            const wx = Math.cos(clockAngle) * wind;
+            const wz = Math.sin(clockAngle) * wind;
+            const wy = params.buoyancy * (0.6 + 0.4 * Math.sin(clock.elapsedTime * 0.3));
+            const spring = params.springK * (1 - D);
+            const launch = params.drift * D;        // outward kick, only near home
+            const swirl = params.swirl * D;         // circulation around the room
+            const buoy = params.buoyancy * D;
+            const turb = params.turbulence * D;
+            // a swirl axis that tilts and turns with the clock → the churn relates to time
+            let axx = Math.sin(clockAngle) * 0.4, axy = 1.0, axz = Math.cos(clockAngle) * 0.4;
+            const al = Math.hypot(axx, axy, axz); axx /= al; axy /= al; axz /= al;
+            const cX = 0.0, cY = 1.35, cZ = -0.2;   // centre the swirl circles
+            // damp lightly while flying (so specks coast and bounce), firmly while
+            // reforming (so they settle home without ringing)
+            const damp = Math.pow(params.damping + (0.992 - params.damping) * D, dt * 60);
+            const rest = params.restitution;
+            const R = ROOM;
+            const kick = 0.12 + 0.25 * D;           // random scatter added on each bounce
+            for (let i = 0; i < N; i++) {
+                const x = i * 3, y = x + 1, z = x + 2;
+                let px = P[x], py = P[y], pz = P[z];
+                let vx = V[x], vy = V[y], vz = V[z];
+                // distance from home → the launch kick only fires while still on the photo
+                const hx = H[x] - px, hy = H[y] - py, hz = H[z] - pz;
+                const near = Math.exp(-(hx * hx + hy * hy + hz * hz) / 0.05);
+                // swirl = axis × (pos - centre): a tangential push that makes the cloud orbit
+                const rx = px - cX, ry = py - cY, rz = pz - cZ;
+                const sx = axy * rz - axz * ry, sy = axz * rx - axx * rz, sz = axx * ry - axy * rx;
+                vx += (hx * spring + G[x] * launch * near + sx * swirl + (Math.random() - 0.5) * turb + wx * D) * dt;
+                vy += (hy * spring + G[y] * launch * near + sy * swirl + buoy + (Math.random() - 0.5) * turb + wy) * dt;
+                vz += (hz * spring + G[z] * launch * near + sz * swirl + (Math.random() - 0.5) * turb + wz * D) * dt;
+                vx *= damp; vy *= damp; vz *= damp;
+                const sp2 = vx * vx + vy * vy + vz * vz;        // cap speed for stability
+                if (sp2 > 36) { const f = 6 / Math.sqrt(sp2); vx *= f; vy *= f; vz *= f; }
+                px += vx * dt; py += vy * dt; pz += vz * dt;
+                // bounce off the room walls: reflect, lose energy, scatter a little
+                if (px < R.minX) { px = R.minX; vx = Math.abs(vx) * rest + (Math.random() - 0.5) * kick; }
+                else if (px > R.maxX) { px = R.maxX; vx = -Math.abs(vx) * rest + (Math.random() - 0.5) * kick; }
+                if (py < R.minY) { py = R.minY; vy = Math.abs(vy) * rest + (Math.random() - 0.5) * kick; }
+                else if (py > R.maxY) { py = R.maxY; vy = -Math.abs(vy) * rest + (Math.random() - 0.5) * kick; }
+                if (pz < R.minZ) { pz = R.minZ; vz = Math.abs(vz) * rest + (Math.random() - 0.5) * kick; }
+                else if (pz > R.maxZ) { pz = R.maxZ; vz = -Math.abs(vz) * rest + (Math.random() - 0.5) * kick; }
+                // bounce off the furniture (desk, monitor, chair). Skipped while nearly
+                // home so reforming specks can settle without snagging on a box.
+                if (D > 0.12) {
+                    for (let c = 0; c < colliders.length; c++) {
+                        const b = colliders[c];
+                        if (px > b.minX && px < b.maxX && py > b.minY && py < b.maxY && pz > b.minZ && pz < b.maxZ) {
+                            // eject along the axis of least penetration
+                            const pxn = px - b.minX, pxp = b.maxX - px;
+                            const pyn = py - b.minY, pyp = b.maxY - py;
+                            const pzn = pz - b.minZ, pzp = b.maxZ - pz;
+                            let m = pxn, ax = 0, sg = -1;
+                            if (pxp < m) { m = pxp; ax = 0; sg = 1; }
+                            if (pyn < m) { m = pyn; ax = 1; sg = -1; }
+                            if (pyp < m) { m = pyp; ax = 1; sg = 1; }
+                            if (pzn < m) { m = pzn; ax = 2; sg = -1; }
+                            if (pzp < m) { m = pzp; ax = 2; sg = 1; }
+                            if (ax === 0) { px = sg < 0 ? b.minX : b.maxX; vx = sg * Math.abs(vx) * rest + (Math.random() - 0.5) * kick; }
+                            else if (ax === 1) { py = sg < 0 ? b.minY : b.maxY; vy = sg * Math.abs(vy) * rest + (Math.random() - 0.5) * kick; }
+                            else { pz = sg < 0 ? b.minZ : b.maxZ; vz = sg * Math.abs(vz) * rest + (Math.random() - 0.5) * kick; }
+                        }
+                    }
+                }
+                P[x] = px; P[y] = py; P[z] = pz;
+                V[x] = vx; V[y] = vy; V[z] = vz;
+            }
+            posAttr.needsUpdate = true;
         }
 
         // Two hands added to the clock (the model's own are baked into one mesh
@@ -528,10 +740,29 @@
             const t = clock.elapsedTime;
 
             // time pours forward: the minute hand sweeps a full turn every ~10s,
-            // the hour hand 12x slower. The moment in the photo never moves.
-            const rate = params.clockSpeed;
-            if (minuteHand) minuteHand.rotation.z = -t * rate * (2 * Math.PI / 360);
-            if (hourHand)   hourHand.rotation.z   = -t * rate * (2 * Math.PI / 360) / 12;
+            // the hour hand 12x slower. The same angle drives the photo's wind.
+            const clockAngle = t * params.clockSpeed * (2 * Math.PI / 360);
+            if (minuteHand) minuteHand.rotation.z = -clockAngle;
+            if (hourHand)   hourHand.rotation.z   = -clockAngle / 12;
+
+            // the photograph breathes apart and back. A flat hold at each end so
+            // the image is whole for a while before it dissolves again.
+            const phase = (t % params.dissolveCycle) / params.dissolveCycle;   // 0..1
+            const swing = 0.5 - 0.5 * Math.cos(phase * 2 * Math.PI);            // 0..1..0
+            const hold = params.dissolveHold;
+            let dissolve = THREE.MathUtils.smoothstep(swing, hold * 0.5, 1 - hold * 0.5);
+            if (Q.has('dissolve')) dissolve = parseFloat(Q.get('dissolve'));   // freeze for tuning
+            if (photoMesh) photoMesh.material.opacity = 1 - THREE.MathUtils.smoothstep(dissolve, 0.0, 0.45);
+            if (dustSim) {
+                dust.material.uniforms.uSize.value = params.dustSize;
+                // tuning hook: ?warm=N fast-forwards N sim steps in the first frame
+                if (!_warmed && Q.has('warm')) {
+                    const n = parseInt(Q.get('warm'), 10) || 0;
+                    for (let sStep = 0; sStep < n; sStep++) simulateDust(dissolve, clockAngle + sStep * 0.03, 1 / 60);
+                    _warmed = true;
+                }
+                simulateDust(dissolve, clockAngle, dt);
+            }
 
             finalPass.uniforms.uTime.value = t;
             updateCamera(dt);
@@ -548,6 +779,18 @@
         function setupGUI() {
             const gui = new GUI({ title: 'waiting' });
             gui.add(params, 'clockSpeed', 1, 120, 1).name('Clock speed');
+            const photo = gui.addFolder('Photograph');
+            photo.add(params, 'dissolveCycle', 6, 90, 1).name('Breath (s)');
+            photo.add(params, 'dissolveHold', 0, 0.7, 0.02).name('Hold whole');
+            photo.add(params, 'windBase', 0.2, 5, 0.05).name('Wind');
+            photo.add(params, 'buoyancy', 0, 3, 0.05).name('Buoyancy');
+            photo.add(params, 'drift', 0, 60, 1).name('Launch');
+            photo.add(params, 'swirl', 0, 8, 0.1).name('Swirl');
+            photo.add(params, 'turbulence', 0, 8, 0.1).name('Turbulence');
+            photo.add(params, 'springK', 4, 60, 1).name('Reform pull');
+            photo.add(params, 'damping', 0.85, 0.995, 0.005).name('Damping');
+            photo.add(params, 'restitution', 0, 0.95, 0.05).name('Bounce');
+            photo.add(params, 'dustSize', 0.5, 8, 0.1).name('Speck size');
             const look = gui.addFolder('Look');
             look.add(params, 'exposure', 0.4, 2.0, 0.02).onChange((v) => renderer.toneMappingExposure = v);
             look.add(params, 'bloomStrength', 0, 1.5, 0.02).onChange((v) => bloomPass.strength = v);
