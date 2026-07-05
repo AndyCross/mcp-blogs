@@ -69,6 +69,78 @@
         opacity: 0;
         animation: bloom 3s ease forwards 7s;
     }
+
+    /* ---- Memory glyph ---- */
+    #memories {
+        position: fixed;
+        bottom: 1.1rem;
+        right: 1.3rem;
+        z-index: 11;
+        font-family: "Georgia", serif;
+        font-style: italic;
+        font-size: 1.15rem;
+        line-height: 1;
+        color: rgba(243, 217, 223, 0.3);
+        background: none;
+        border: none;
+        padding: 0.6rem;
+        cursor: pointer;
+        opacity: 0;
+        animation: bloom 3s ease forwards 9s;
+        transition: color 1.2s ease;
+    }
+    #memories:hover { color: rgba(243, 217, 223, 0.75); }
+
+    /* ---- Timeline: what was said before ---- */
+    #timeline {
+        position: fixed;
+        inset: 0;
+        z-index: 12;
+        display: none;
+        overflow-y: auto;
+        background: rgba(0, 0, 0, 0.55);
+        cursor: pointer;
+        text-align: center;
+        padding: clamp(3rem, 12vh, 6rem) 1.5rem 4rem;
+    }
+    #timeline.open { display: block; }
+    #timeline .entry {
+        max-width: 34rem;
+        margin: 0 auto 3.2rem;
+        opacity: 0;
+        animation: bloom 3.5s ease forwards;
+    }
+    #timeline .entry .date {
+        font-family: "Georgia", serif;
+        font-variant: small-caps;
+        letter-spacing: 0.22em;
+        font-size: 0.7rem;
+        opacity: 0.5;
+        margin-bottom: 0.8rem;
+    }
+    #timeline .entry h2 {
+        font-family: "Georgia", "Times New Roman", serif;
+        font-weight: 400;
+        font-style: italic;
+        font-size: clamp(1.3rem, 4vw, 2.1rem);
+        letter-spacing: 0.02em;
+        margin: 0;
+    }
+    #timeline .entry .said {
+        font-family: "Georgia", serif;
+        font-style: italic;
+        font-size: clamp(0.85rem, 2.2vw, 1.05rem);
+        opacity: 0.7;
+        margin-top: 0.9rem;
+    }
+    #timeline .entry .now {
+        font-family: "Georgia", serif;
+        font-variant: small-caps;
+        letter-spacing: 0.22em;
+        font-size: 0.65rem;
+        opacity: 0.55;
+        margin-top: 1rem;
+    }
 </style>
 </head>
 <body>
@@ -78,6 +150,8 @@
         <div id="whisper">Aunque te vayas, siempre florecerás dentro de mí.</div>
     </div>
     <div id="hint">move closer and it goes sooner</div>
+    <button id="memories" aria-label="what was said before">&#10044;</button>
+    <div id="timeline" aria-hidden="true"></div>
 
     <script type="importmap">
     {
@@ -93,6 +167,24 @@
         import * as THREE from 'three';
         import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
         import GUI from 'lil-gui';
+
+        // The pledges, oldest first. Append a new entry to update the piece:
+        // the last one becomes the opening title, and its tint becomes the
+        // colour the rose blooms in. The old ones remain, behind the glyph.
+        const pledges = [
+            {
+                date: '2026-06-25',
+                title: 'Te amaré siempre.',
+                whisper: 'Aunque te vayas, siempre florecerás dentro de mí.',
+                tint: '#c4122e'
+            },
+            {
+                date: '2026-07-05',
+                title: 'Te amaré siempre.',
+                whisper: 'You are irreplaceable to me.',
+                tint: '#b8155a'
+            }
+        ];
 
         // --- Core Variables ---
         let camera, scene, renderer, controls, material;
@@ -114,14 +206,15 @@
             loopSpeed: 0.18,        // base speed of bloom/loss cycle
             sphereSpinSpeed: 0.048,
             warpSpeed: 0.06,
-            colorWarm: '#c4122e',   // crimson at full bloom
+            colorWarm: pledges[pledges.length - 1].tint, // the current pledge colours the bloom
             colorCold: '#5a4cff',   // cold blue-violet as it dissolves
             aberration: 0.6,
             particleDensity: 0.018,
             sphereRadius: 3.2,
             edgeFade: 0.6,
             glowIntensity: 0.013,
-            petalCount: 22
+            petalCount: 22,
+            bloomHold: 1.0          // >1 holds the closed bud longer; 1 is the original cycle
         };
 
         init();
@@ -304,11 +397,13 @@
                         w.xz *= rot(uTime * 0.05);
                         w += uMorph * 0.35 * sin(w.yzx * 2.5 + uTime * 0.7);
 
-                        float r = rose(w, uMorph);
-                        float g = gyroid(w);
-                        // crossfade into chaos near the peak of the loss, then back
+                        // crossfade into chaos near the peak of the loss, then back.
+                        // uMorph is a uniform, so these branches are coherent and
+                        // skip whichever form has fully faded out.
                         float toChaos = smoothstep(0.55, 0.95, uMorph);
-                        return mix(r, g, toChaos);
+                        if (toChaos <= 0.0) return rose(w, uMorph);
+                        if (toChaos >= 1.0) return gyroid(w);
+                        return mix(rose(w, uMorph), gyroid(w), toChaos);
                     }
 
                     vec2 intersectSphere(vec3 ro, vec3 rd, float r) {
@@ -408,6 +503,7 @@
             applyCamera();
             setupGUI();
             setupInteraction();
+            setupTimeline();
 
             // Reveal the piece after the title has had its moment.
             setTimeout(() => document.getElementById('title').classList.add('gone'), 8000);
@@ -436,8 +532,81 @@
             window.addEventListener('pointerdown', () => { mouseEnergy = Math.min(mouseEnergy + 0.4, 1.5); });
         }
 
+        function setupTimeline() {
+            const current = pledges[pledges.length - 1];
+
+            // The opening title always speaks the latest pledge, in its colour.
+            const h1 = document.querySelector('#title h1');
+            const whisper = document.getElementById('whisper');
+            h1.textContent = current.title;
+            whisper.textContent = current.whisper;
+            h1.style.textShadow = `0 0 30px ${hexToRgba(current.tint, 0.6)}`;
+
+            const timeline = document.getElementById('timeline');
+            const glyph = document.getElementById('memories');
+
+            glyph.addEventListener('click', (e) => {
+                e.stopPropagation();
+                buildEntries(timeline);
+                timeline.classList.add('open');
+                timeline.setAttribute('aria-hidden', 'false');
+            });
+            // Looking back does not stop it: the rose keeps cycling behind
+            // the veil. A touch anywhere lets the past sink again.
+            timeline.addEventListener('click', () => {
+                timeline.classList.remove('open');
+                timeline.setAttribute('aria-hidden', 'true');
+            });
+        }
+
+        function buildEntries(timeline) {
+            timeline.textContent = '';
+            const n = pledges.length;
+            pledges.forEach((p, i) => {
+                const age = n - 1 - i; // 0 = now, older sinks further
+                const entry = document.createElement('div');
+                entry.className = 'entry';
+                // Text lifted toward the pale rose so it reads; the raw tint
+                // stays in the glow beneath it.
+                entry.style.color = '#' + new THREE.Color(p.tint).lerp(new THREE.Color('#f3d9df'), 0.55).getHexString();
+                entry.style.opacity = 0;
+                entry.style.animationDelay = `${0.4 + i * 0.9}s`;
+                // Older pledges have faded with time.
+                const brightness = Math.max(0.45, 1 - age * 0.18);
+                entry.style.filter = `brightness(${brightness})`;
+
+                const date = document.createElement('div');
+                date.className = 'date';
+                date.textContent = p.date;
+                entry.appendChild(date);
+
+                const h2 = document.createElement('h2');
+                h2.textContent = p.title;
+                h2.style.textShadow = `0 0 24px ${hexToRgba(p.tint, 0.5)}`;
+                entry.appendChild(h2);
+
+                const said = document.createElement('div');
+                said.className = 'said';
+                said.textContent = p.whisper;
+                entry.appendChild(said);
+
+                if (age === 0) {
+                    const now = document.createElement('div');
+                    now.className = 'now';
+                    now.textContent = 'ahora';
+                    entry.appendChild(now);
+                }
+                timeline.appendChild(entry);
+            });
+        }
+
+        function hexToRgba(hex, a) {
+            const c = new THREE.Color(hex);
+            return `rgba(${Math.round(c.r * 255)}, ${Math.round(c.g * 255)}, ${Math.round(c.b * 255)}, ${a})`;
+        }
+
         function setupGUI() {
-            const gui = new GUI({ title: 'condemned' });
+            const gui = new GUI({ title: 'my pledge' });
 
             const sys = gui.addFolder('System & Time');
             sys.add(params, 'dpr', 0.5, 2.0, 0.1).name('Pixel Ratio').onChange(v => {
@@ -449,6 +618,7 @@
             sys.add(params, 'roseTilt', -90, 90, 1).name('Rose Tilt').onChange(v => material.uniforms.uTilt.value = THREE.MathUtils.degToRad(v));
             sys.add(params, 'rotationSpeed', 0.0, 4.0).name('Camera Orbit').onChange(v => controls.autoRotateSpeed = v);
             sys.add(params, 'loopSpeed', 0.02, 0.8).name('Bloom/Loss Speed');
+            sys.add(params, 'bloomHold', 1.0, 3.0, 0.1).name('Hold the Bud');
             sys.add(params, 'sphereSpinSpeed', -3.0, 3.0).name('Inner Spin');
 
             const vis = gui.addFolder('Visuals');
@@ -498,11 +668,14 @@
             mouseEnergy *= 0.96;
             phase += dt * (params.loopSpeed * (1.0 + mouseEnergy * 4.0));
 
-            // Eased 0 -> 1 -> 0: lingers at full bloom, then comes apart.
-            const morph = 0.5 - 0.5 * Math.cos(phase);
+            // Eased 0 -> 1 -> 0. bloomHold > 1 biases time toward the closed
+            // bud; at 1.0 this is the original cosine cycle.
+            const morph = Math.pow(0.5 - 0.5 * Math.cos(phase), params.bloomHold);
 
-            // Each return is a different rose: re-roll the spiral when it reblooms.
-            const cycle = Math.floor(phase / (Math.PI * 2.0));
+            // Each return is a different rose. Re-roll the spiral at the peak
+            // of the loss, while the form is fully dissolved into the tangle,
+            // so no one ever sees the change: each rose is born unseen.
+            const cycle = Math.floor((phase + Math.PI) / (Math.PI * 2.0));
             if (cycle !== lastCycle) {
                 lastCycle = cycle;
                 material.uniforms.uSeed.value = cycle * 1.61803;
