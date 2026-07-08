@@ -1,0 +1,1158 @@
+<!DOCTYPE html>
+<!--
+  "El Cable Inglés" — the ore-loading pier at Almería, at dusk.
+
+  Built in 1904 to pour iron ore from Alquife into ships' holds, out of
+  work since 1970. Here it gets one more cargo: a ghost of glowing ore
+  runs the length of the deck and falls through the chutes into the sea,
+  over and over, while the palms sway and the promenade lamps come on.
+
+  Everything is procedural — the trusswork is ~1,500 instanced iron
+  members, the palms are bent strips, the sky and sea are shaders.
+  No external assets.
+
+  Tuning: press G for the control panel, or use query params, e.g.
+  ?exposure=1.3&emberSpeed=1.5&az=0.8&radius=70
+-->
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>El Cable Inglés</title>
+<script src="https://cdn.counter.dev/script.js" data-id="72d92ac8-56cf-4fdd-9899-b73adbab2e4d" data-utcoffset="0"></script>
+<style>
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; background: #10121c; }
+    #container { position: fixed; inset: 0; }
+    canvas { display: block; width: 100vw; height: 100vh; cursor: grab; }
+    canvas:active { cursor: grabbing; }
+
+    #title {
+        position: fixed; inset: 0;
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        pointer-events: none; z-index: 10; text-align: center; padding: 1.5rem;
+        transition: opacity 4s ease 1s;
+    }
+    #title.gone { opacity: 0; }
+    #title h1 {
+        font-family: "Georgia", "Times New Roman", serif;
+        font-weight: 400; font-style: italic;
+        font-size: clamp(2rem, 6.5vw, 4.2rem);
+        letter-spacing: 0.04em;
+        color: #f6ede2;
+        margin: 0;
+        text-shadow: 0 0 30px rgba(255, 170, 90, 0.45), 0 0 90px rgba(120, 60, 30, 0.5);
+        opacity: 0;
+        animation: bloom 5s ease forwards 0.6s;
+    }
+    #whisper {
+        font-family: "Georgia", serif; font-style: italic;
+        font-size: clamp(0.9rem, 2.3vw, 1.1rem);
+        color: rgba(246, 237, 226, 0.6);
+        margin-top: 1.4rem; opacity: 0;
+        animation: bloom 5s ease forwards 2.4s;
+    }
+    @keyframes bloom {
+        from { opacity: 0; filter: blur(10px); transform: translateY(10px); }
+        to   { opacity: 1; filter: blur(0);    transform: translateY(0); }
+    }
+
+    #hint {
+        position: fixed; bottom: 1.4rem; left: 0; right: 0; text-align: center;
+        font-family: "Courier New", monospace; font-size: 0.7rem;
+        letter-spacing: 0.32em; text-transform: uppercase;
+        color: rgba(246, 237, 226, 0.32); pointer-events: none; z-index: 9;
+        opacity: 0; animation: bloom 3s ease forwards 6.5s;
+    }
+    .lil-gui { z-index: 20; --background-color: rgba(10, 8, 6, 0.92); }
+</style>
+</head>
+<body>
+    <div id="container"></div>
+    <div id="title">
+        <h1>El Cable Inglés</h1>
+        <div id="whisper">You left with the ships. I still lean toward the sea.</div>
+    </div>
+    <div id="hint">drag to look &nbsp;·&nbsp; the cargo passes, then the dark</div>
+
+    <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/",
+        "lil-gui": "https://cdn.jsdelivr.net/npm/lil-gui@0.19.1/dist/lil-gui.esm.min.js"
+      }
+    }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+        import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+        import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+        import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
+        import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+        import GUI from 'lil-gui';
+
+        const params = {
+            dpr: Math.min(window.devicePixelRatio, 1.6),
+            exposure: 1.1,
+            bloomStrength: 0.6,
+            bloomRadius: 0.6,
+            bloomThreshold: 0.5,
+            grain: 0.04,
+            vignette: 0.95,
+            aberration: 0.001,
+            desat: 0.3,            // how far the world is drained toward grey
+            // the ghost cargo
+            emberCount: 900,
+            emberSpeed: 1.0,       // multiplier on each ember's own pace
+            emberSize: 3.2,
+            emberGlow: 1.9,        // brightness multiplier (bloom feeds on it)
+            waveCycle: 46,         // seconds between one memory and the next
+            // the world
+            sway: 1.0,             // palm sway amount
+            lampWarmth: 0.75,      // lamp light intensity multiplier
+            autoOrbit: 0.006,
+            pushIn: true,
+            pushTo: 92,            // radius the opening drift settles at
+        };
+
+        // URL-query overrides, e.g. ?exposure=1.3&grain=0.02&emberSpeed=2 — for tuning.
+        const Q = new URLSearchParams(location.search);
+        ['exposure','grain','vignette','aberration','bloomStrength','bloomThreshold','bloomRadius',
+         'emberSpeed','emberSize','emberGlow','sway','lampWarmth','autoOrbit','desat','waveCycle'].forEach((k) => {
+            if (Q.has(k)) params[k] = parseFloat(Q.get(k));
+        });
+
+        let camera, scene, renderer, composer, bloomPass, finalPass;
+        let skyMat, seaMat, embers, emberSim;
+        const palmCrowns = [];
+        const clock = new THREE.Clock();
+
+        // ============================================================
+        //  WORLD LAYOUT (metres)
+        //  The pier runs along X at z = 0: an open trestle viaduct from
+        //  x = -100 to -6, then the massive hopper block from -6 to +112.
+        //  The palm line and promenade sit in front (+z), the sea behind.
+        // ============================================================
+        const DECK_Y = 14.6;                     // rail deck height
+        const DECK_X0 = -104;                    // landward end of the rail deck
+        const ARCADE = { x0: -102, x1: -70.6 };  // the masonry arches of the approach
+        const TRESTLE = { x0: -66, x1: -6 };
+        const HOPPER = { x0: -6, x1: 112 };      // the loading pier: 108 m long, 16 m wide
+        const SHORE_X = 7;                       // east of this, the pier is over the sea
+        const ROAD = { x0: -98, x1: -74 };       // the avenue passing under the arches
+        const LAMPS = [
+            { x: -150, z: 13 }, { x: -120, z: 15 }, { x: -62, z: 13 }, { x: -40, z: 15 }, { x: -20, z: 13 },
+        ];
+        const PALMS = [
+            { x: -158, z: 17, h: 12.5 }, { x: -142, z: 20, h: 9.5 }, { x: -126, z: 16, h: 13 },
+            { x: -110, z: 19, h: 11 },   { x: -68, z: 16, h: 12 },   { x: -54, z: 20, h: 10 },
+            { x: -40, z: 17, h: 12.5 },  { x: -28, z: 19, h: 11.5 }, { x: -16, z: 20, h: 10.5 },
+        ];
+
+        // deterministic hash-random so the scene is the same on every visit
+        let _seed = 7;
+        function rand() { _seed = (_seed * 16807) % 2147483647; return (_seed - 1) / 2147483646; }
+
+        // ============================================================
+        //  THE PIER — instanced riveted-iron members
+        //  member(a, b, t) stretches a unit box between two points; every
+        //  strut, leg, chord and chute is one instance of the same box.
+        // ============================================================
+        const memberMats = [];
+        const memberCols = [];
+        const _v0 = new THREE.Vector3(), _v1 = new THREE.Vector3(), _up = new THREE.Vector3(0, 1, 0);
+        const rustA = new THREE.Color(0x6b3322), rustB = new THREE.Color(0x4a2015), _c = new THREE.Color();
+        function member(ax, ay, az, bx, by, bz, t) {
+            _v0.set(ax, ay, az); _v1.set(bx, by, bz);
+            const d = _v1.clone().sub(_v0);
+            const len = d.length();
+            const mid = _v0.clone().add(_v1).multiplyScalar(0.5);
+            const q = new THREE.Quaternion().setFromUnitVectors(_up, d.normalize());
+            memberMats.push(new THREE.Matrix4().compose(mid, q, new THREE.Vector3(t, len, t)));
+            memberCols.push(_c.copy(rustA).lerp(rustB, rand()).clone());
+        }
+
+        function buildTrestle() {
+            const w = 2.3;                       // half-width of the deck support
+            const bents = [];
+            for (let x = TRESTLE.x0; x <= TRESTLE.x1 + 0.1; x += 11.75) bents.push(x);
+            for (const x of bents) {
+                for (const s of [-1, 1]) {       // front and back legs, splayed at the base
+                    member(x - 2.4, 0, s * (w + 2.2), x - 0.7, DECK_Y, s * w, 0.42);
+                    member(x + 2.4, 0, s * (w + 2.2), x + 0.7, DECK_Y, s * w, 0.42);
+                    // horizontal ties within the bent face at two tiers
+                    for (const ty of [4.5, 9.5]) {
+                        const spread = 2.4 - (ty / DECK_Y) * 1.7;
+                        member(x - spread, ty, s * (w + 2.2 - (ty / DECK_Y) * 2.2),
+                               x + spread, ty, s * (w + 2.2 - (ty / DECK_Y) * 2.2), 0.24);
+                    }
+                }
+                // transverse ties and X-brace across the bent
+                member(x, 4.5, -(w + 1.1), x, 4.5, w + 1.1, 0.26);
+                member(x, DECK_Y - 0.4, -w, x, DECK_Y - 0.4, w, 0.3);
+                member(x, 4.5, -(w + 1.1), x, DECK_Y - 0.4, w, 0.2);
+                member(x, 4.5, w + 1.1, x, DECK_Y - 0.4, -w, 0.2);
+            }
+            // the big X-braces between adjacent bents, front and back faces
+            for (let i = 0; i < bents.length - 1; i++) {
+                const xa = bents[i], xb = bents[i + 1];
+                for (const s of [-1, 1]) {
+                    for (const [y0, y1] of [[1.2, 8.0], [8.0, DECK_Y - 0.6]]) {
+                        const za = s * (w + 2.2 - (y0 / DECK_Y) * 2.2);
+                        const zb = s * (w + 2.2 - (y1 / DECK_Y) * 2.2);
+                        member(xa, y0, za, xb, y1, zb, 0.24);
+                        member(xb, y0, za, xa, y1, zb, 0.24);
+                    }
+                    member(xa, 8.0, s * (w + 1.1), xb, 8.0, s * (w + 1.1), 0.22);
+                }
+            }
+        }
+
+        function buildHopper() {
+            const w = 8.1;                       // the real pier is 16.2 m wide
+            const TOP = DECK_Y + 2.6;            // gallery rises above the rail deck
+            const bays = [];
+            for (let x = HOPPER.x0; x <= HOPPER.x1 + 0.1; x += 2.95) bays.push(x);
+            for (const x of bays) {
+                for (const s of [-1, 1]) member(x, 0, s * w, x, TOP, s * w, 0.3);
+                member(x, TOP, -w, x, TOP, w, 0.24);       // top cross ties
+                member(x, 3.6, -w, x, 3.6, w, 0.2);        // low cross ties
+            }
+            // inner pile rows: the wide block stands on a forest of legs
+            for (let i = 0; i < bays.length; i += 2) {
+                for (const zi of [-4, 0, 4]) member(bays[i], 0, zi, bays[i], 3.6, zi, 0.26);
+            }
+            // long horizontal chords at several levels, both faces
+            for (const s of [-1, 1]) {
+                for (const y of [3.6, 7.2, 10.8, DECK_Y, TOP]) {
+                    for (let i = 0; i < bays.length - 1; i++) {
+                        member(bays[i], y, s * w, bays[i + 1], y, s * w, 0.22);
+                    }
+                }
+            }
+            // the ore chutes: heavy diagonals raking down the faces
+            for (let i = 0; i < bays.length - 1; i++) {
+                const xa = bays[i], xb = bays[i + 1];
+                for (const s of [-1, 1]) {
+                    member(xa, DECK_Y, s * w, xb, 3.6, s * w, 0.34);
+                }
+            }
+            // the retractable hopper housings: massive riveted plate columns
+            // standing proud of the timber cladding, every other bay
+            for (let i = 1; i < bays.length - 1; i += 2) {
+                for (const s of [-1, 1]) {
+                    member(bays[i], 4.2, s * (w + 0.55), bays[i], DECK_Y + 0.6, s * (w + 0.55), 1.15);
+                }
+            }
+            // parapet rail on the gallery
+            for (const s of [-1, 1]) {
+                for (let i = 0; i < bays.length - 1; i++) {
+                    member(bays[i], TOP + 1.1, s * w, bays[i + 1], TOP + 1.1, s * w, 0.12);
+                }
+                for (const x of bays) member(x, TOP, s * w, x, TOP + 1.1, s * w, 0.1);
+            }
+        }
+
+        function buildDeck() {
+            // longitudinal girders and rails the whole length, cross beams beneath
+            for (const s of [-1, 1]) {
+                for (let x = DECK_X0; x < HOPPER.x1; x += 10) {
+                    member(x, DECK_Y, s * 2.3, Math.min(x + 10, HOPPER.x1), DECK_Y, s * 2.3, 0.5);
+                    member(x, DECK_Y + 0.55, s * 0.75, Math.min(x + 10, HOPPER.x1), DECK_Y + 0.55, s * 0.75, 0.14);
+                }
+            }
+            for (let x = DECK_X0; x < HOPPER.x1; x += 2.4) {
+                member(x, DECK_Y + 0.25, -2.3, x, DECK_Y + 0.25, 2.3, 0.16);
+            }
+            // approach handrail
+            for (const s of [-1, 1]) {
+                for (let x = DECK_X0; x < HOPPER.x0; x += 10) {
+                    member(x, DECK_Y + 1.4, s * 2.3, Math.min(x + 10, HOPPER.x0), DECK_Y + 1.4, s * 2.3, 0.08);
+                }
+                for (let x = DECK_X0; x < HOPPER.x0; x += 5) {
+                    member(x, DECK_Y + 0.5, s * 2.3, x, DECK_Y + 1.4, s * 2.3, 0.07);
+                }
+            }
+        }
+
+        // the masonry arcade of the approach viaduct: stone piers and
+        // round arches with a cornice, carrying the deck over the avenue
+        function buildArcade() {
+            const depth = 5.4, h = DECK_Y - 0.6;
+            const W = ARCADE.x1 - ARCADE.x0;
+            const shape = new THREE.Shape();
+            shape.moveTo(0, 0); shape.lineTo(W, 0); shape.lineTo(W, h); shape.lineTo(0, h); shape.closePath();
+            const nA = 3, pierW = 2.8;
+            const span = (W - (nA + 1) * pierW) / nA;
+            for (let i = 0; i < nA; i++) {
+                const x0 = pierW + i * (span + pierW);
+                const r = span / 2, spring = h - 3.4 - r;
+                const p = new THREE.Path();
+                p.moveTo(x0, 0); p.lineTo(x0, spring);
+                p.absarc(x0 + r, spring, r, Math.PI, 0, true);
+                p.lineTo(x0 + span, 0); p.closePath();
+                shape.holes.push(p);
+            }
+            const mat = new THREE.MeshStandardMaterial({ color: 0x77644b, roughness: 1.0 });
+            const mesh = new THREE.Mesh(new THREE.ExtrudeGeometry(shape, { depth, bevelEnabled: false }), mat);
+            mesh.position.set(ARCADE.x0, 0, -depth / 2);
+            scene.add(mesh);
+            const cap = new THREE.Mesh(new THREE.BoxGeometry(W + 1, 0.7, depth + 0.8), mat);
+            cap.position.set(ARCADE.x0 + W / 2, h + 0.35, 0);
+            scene.add(cap);
+        }
+
+        function buildPier() {
+            buildTrestle();
+            buildHopper();
+            buildDeck();
+            buildArcade();
+            const geo = new THREE.BoxGeometry(1, 1, 1);
+            const mat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.82, metalness: 0.3 });
+            const mesh = new THREE.InstancedMesh(geo, mat, memberMats.length);
+            for (let i = 0; i < memberMats.length; i++) {
+                mesh.setMatrixAt(i, memberMats[i]);
+                mesh.setColorAt(i, memberCols[i]);
+            }
+            mesh.instanceMatrix.needsUpdate = true;
+            if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
+            scene.add(mesh);
+
+            // the solid ore bunkers inside the hopper frame, near-black rust,
+            // so the block reads as a mass and not a cage
+            const hull = new THREE.Mesh(
+                new THREE.BoxGeometry(HOPPER.x1 - HOPPER.x0 - 1.5, DECK_Y - 4.4, 14.6),
+                new THREE.MeshStandardMaterial({ color: 0x2b130b, roughness: 0.95, metalness: 0.1 })
+            );
+            hull.position.set((HOPPER.x0 + HOPPER.x1) / 2, 4 + (DECK_Y - 4.4) / 2, 0);
+            scene.add(hull);
+        }
+
+        // ============================================================
+        //  PALMS — a bent-strip crown on a leaning trunk
+        // ============================================================
+        function frondGeometry(len, width) {
+            // length along +X, blade width horizontal along Z, and an
+            // up-and-over arc in Y so the frond rises off the stem then droops
+            const geo = new THREE.PlaneGeometry(len, width, 14, 1);
+            const pos = geo.attributes.position;
+            for (let i = 0; i < pos.count; i++) {
+                const u = (pos.getX(i) + len / 2) / len;          // 0 at the stem, 1 at the tip
+                const w = pos.getY(i);
+                pos.setX(i, u * len);
+                pos.setZ(i, w * (1 - 0.85 * u));                  // taper
+                pos.setY(i, (0.9 * u - 1.6 * u * u) * len * 0.45);
+            }
+            geo.computeVertexNormals();
+            return geo;
+        }
+
+        function buildPalms() {
+            const trunkMat = new THREE.MeshStandardMaterial({ color: 0x4a3527, roughness: 1.0 });
+            const frondMat = new THREE.MeshStandardMaterial({
+                color: 0x40503c, roughness: 0.9, side: THREE.DoubleSide,
+            });
+            const deadMat = new THREE.MeshStandardMaterial({
+                color: 0x6b5638, roughness: 1.0, side: THREE.DoubleSide,
+            });
+            const fGeo = frondGeometry(4.8, 1.25);
+
+            for (const p of PALMS) {
+                const lean = (rand() - 0.5) * 0.22;
+                const leanDir = rand() * Math.PI * 2;
+                // trunk along a gentle curve
+                const pts = [];
+                for (let i = 0; i <= 6; i++) {
+                    const u = i / 6;
+                    pts.push(new THREE.Vector3(
+                        p.x + Math.cos(leanDir) * lean * u * u * p.h,
+                        u * p.h,
+                        p.z + Math.sin(leanDir) * lean * u * u * p.h
+                    ));
+                }
+                const curve = new THREE.CatmullRomCurve3(pts);
+                const trunk = new THREE.Mesh(new THREE.TubeGeometry(curve, 12, 0.34, 7), trunkMat);
+                trunk.geometry.scale(1, 1, 1);
+                scene.add(trunk);
+
+                // crown: green fronds up top, a skirt of dead ones drooping below
+                const crown = new THREE.Group();
+                const top = pts[6];
+                crown.position.copy(top);
+                const nF = 28;
+                for (let i = 0; i < nF; i++) {
+                    const f = new THREE.Mesh(fGeo, frondMat);
+                    f.rotation.y = (i / nF) * Math.PI * 2 + rand() * 0.4;
+                    f.rotation.z = (rand() - 0.5) * 0.3;           // the arc is in the geometry
+                    const s = 0.8 + rand() * 0.45;
+                    f.scale.set(s, s, s);
+                    crown.add(f);
+                }
+                for (let i = 0; i < 10; i++) {
+                    const f = new THREE.Mesh(fGeo, deadMat);
+                    f.rotation.y = (i / 10) * Math.PI * 2 + rand();
+                    f.rotation.z = -0.8 - rand() * 0.5;            // hanging down
+                    const s = 0.55 + rand() * 0.25;
+                    f.scale.set(s, s, s);
+                    f.position.y = -0.3;
+                    crown.add(f);
+                }
+                crown.userData.phase = rand() * Math.PI * 2;
+                crown.userData.baseRot = crown.rotation.clone();
+                scene.add(crown);
+                palmCrowns.push(crown);
+            }
+        }
+
+        // ============================================================
+        //  PROMENADE — a canvas texture: warm paving, the curving cycle
+        //  lane from the photo, and baked orange pools under the lamps
+        // ============================================================
+        const GROUND = { w: 150, d: 68, cx: -89, cz: 26 };   // the plaza: x -164..-14, z -8..60
+        function buildGround() {
+            const W = 2048, H = 560;
+            const cv = document.createElement('canvas');
+            cv.width = W; cv.height = H;
+            const ctx = cv.getContext('2d');
+            const toU = (x) => ((x - (GROUND.cx - GROUND.w / 2)) / GROUND.w) * W;
+            const toV = (z) => ((z - (GROUND.cz - GROUND.d / 2)) / GROUND.d) * H;
+
+            // paving: warm terracotta, mottled
+            ctx.fillStyle = '#7d4f38';
+            ctx.fillRect(0, 0, W, H);
+            for (let i = 0; i < 2600; i++) {
+                const g = 0.85 + rand() * 0.3;
+                ctx.fillStyle = `rgb(${Math.round(128 * g)}, ${Math.round(80 * g)}, ${Math.round(57 * g)})`;
+                ctx.fillRect(rand() * W, rand() * H, 8 + rand() * 26, 5 + rand() * 14);
+            }
+            // paving joints
+            ctx.strokeStyle = 'rgba(30, 16, 10, 0.25)';
+            ctx.lineWidth = 1.5;
+            for (let x = 0; x < W; x += 34) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke(); }
+            for (let y = 0; y < H; y += 34) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
+            // a big lighter concrete apron mid-plaza, like the photo
+            ctx.fillStyle = 'rgba(190, 165, 145, 0.28)';
+            ctx.fillRect(toU(-140), toV(24), toU(-108) - toU(-140), toV(50) - toV(24));
+
+            // the avenue passing under the masonry arches
+            ctx.fillStyle = 'rgba(48, 48, 54, 0.9)';
+            ctx.fillRect(toU(ROAD.x0), 0, toU(ROAD.x1) - toU(ROAD.x0), H);
+            ctx.setLineDash([18, 22]);
+            ctx.strokeStyle = 'rgba(230, 225, 215, 0.35)';
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.moveTo(toU((ROAD.x0 + ROAD.x1) / 2), 0);
+            ctx.lineTo(toU((ROAD.x0 + ROAD.x1) / 2), H);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // the cycle lane: two dashed white curves sweeping through the foreground
+            ctx.setLineDash([26, 20]);
+            ctx.strokeStyle = 'rgba(240, 235, 228, 0.85)';
+            ctx.lineWidth = 7;
+            for (const off of [0, 46]) {
+                ctx.beginPath();
+                ctx.moveTo(toU(-16), toV(38) + off);
+                ctx.quadraticCurveTo(toU(-64), toV(32) + off, toU(-160), toV(54) + off * 0.6);
+                ctx.stroke();
+            }
+            ctx.setLineDash([]);
+
+            // baked orange lamp pools
+            for (const L of LAMPS) {
+                const gx = toU(L.x), gy = toV(L.z);
+                const grad = ctx.createRadialGradient(gx, gy, 4, gx, gy, 120);
+                grad.addColorStop(0, 'rgba(255, 180, 90, 0.75)');
+                grad.addColorStop(0.4, 'rgba(255, 150, 66, 0.35)');
+                grad.addColorStop(1, 'rgba(255, 120, 50, 0)');
+                ctx.fillStyle = grad;
+                ctx.fillRect(gx - 130, gy - 130, 260, 260);
+            }
+
+            const tex = new THREE.CanvasTexture(cv);
+            tex.colorSpace = THREE.SRGBColorSpace;
+            tex.anisotropy = 8;
+            const mat = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.95, metalness: 0.0 });
+            const ground = new THREE.Mesh(new THREE.PlaneGeometry(GROUND.w, GROUND.d), mat);
+            ground.rotation.x = -Math.PI / 2;
+            ground.position.set(GROUND.cx, 0, GROUND.cz);
+            scene.add(ground);
+
+            // the rest of the land: a plain apron west and landward of the plaza,
+            // so the paving never shows a hard edge. The sea owns everything east
+            // of the beach and the marina water behind the trestle.
+            const apronMat = new THREE.MeshStandardMaterial({ color: 0x6f4633, roughness: 0.97 });
+            const apronS = new THREE.Mesh(new THREE.PlaneGeometry(2010, 1400), apronMat);
+            apronS.rotation.x = -Math.PI / 2;
+            apronS.position.set(10 - 1005, -0.06, 60 + 700);           // landward of the plaza
+            scene.add(apronS);
+            const apronW = new THREE.Mesh(new THREE.PlaneGeometry(900, 68), apronMat);
+            apronW.rotation.x = -Math.PI / 2;
+            apronW.position.set(GROUND.cx - GROUND.w / 2 - 450, -0.06, GROUND.cz);
+            scene.add(apronW);
+
+            // Playa de las Almadrabillas: the sand the pier steps across on
+            // its way out. Dry gold at the paving, darker where the sea wets it.
+            const bW = 128, bH = 256;
+            const bc = document.createElement('canvas');
+            bc.width = bW; bc.height = bH;
+            const bctx = bc.getContext('2d');
+            const grad = bctx.createLinearGradient(0, 0, bW, 0);
+            grad.addColorStop(0, '#a08560');
+            grad.addColorStop(0.72, '#967b57');
+            grad.addColorStop(0.9, '#6e5d49');
+            grad.addColorStop(1, '#5a4d3f');
+            bctx.fillStyle = grad;
+            bctx.fillRect(0, 0, bW, bH);
+            for (let i = 0; i < 900; i++) {
+                const g = 0.8 + rand() * 0.4;
+                bctx.fillStyle = `rgba(${Math.round(150 * g)}, ${Math.round(122 * g)}, ${Math.round(88 * g)}, 0.5)`;
+                bctx.fillRect(rand() * bW, rand() * bH, 2, 2);
+            }
+            const beachTex = new THREE.CanvasTexture(bc);
+            beachTex.colorSpace = THREE.SRGBColorSpace;
+            const beach = new THREE.Mesh(
+                new THREE.PlaneGeometry(24, GROUND.d),
+                new THREE.MeshStandardMaterial({ map: beachTex, roughness: 1.0 })
+            );
+            beach.rotation.x = -Math.PI / 2;
+            beach.position.set(-2, -0.1, GROUND.cz);
+            scene.add(beach);
+
+            // the marina quay wall behind the trestle
+            const quayMat = new THREE.MeshStandardMaterial({ color: 0x8a8378, roughness: 0.9 });
+            const quayN = new THREE.Mesh(new THREE.BoxGeometry(GROUND.w + 900, 1.1, 1.4), quayMat);
+            quayN.position.set(GROUND.cx - 450, 0.25, GROUND.cz - GROUND.d / 2);
+            scene.add(quayN);
+
+            // the land the city stands on, west of the pier's landward end
+            const cityLand = new THREE.Mesh(
+                new THREE.PlaneGeometry(1920, 4000),
+                new THREE.MeshStandardMaterial({ color: 0x322b26, roughness: 1.0 })
+            );
+            cityLand.rotation.x = -Math.PI / 2;
+            cityLand.position.set(-180 - 960, -0.04, 0);
+            scene.add(cityLand);
+        }
+
+        // ============================================================
+        //  SEA & SKY — shader planes; the sky feeds the fog colour
+        // ============================================================
+        function buildSky() {
+            skyMat = new THREE.ShaderMaterial({
+                side: THREE.BackSide,
+                fog: false,
+                depthWrite: false,
+                uniforms: {
+                    uTop:     { value: new THREE.Color(0x131c33) },
+                    uMid:     { value: new THREE.Color(0x33415f) },
+                    uHorizon: { value: new THREE.Color(0x9c5a3a) },
+                    uSunDir:  { value: new THREE.Vector3(0.62, 0.05, -0.78).normalize() },
+                    uSunCol:  { value: new THREE.Color(0xff9a55) },
+                },
+                vertexShader: `
+                    varying vec3 vDir;
+                    void main(){
+                        vDir = position;
+                        vec4 mv = modelViewMatrix * vec4(position, 1.0);
+                        gl_Position = projectionMatrix * mv;
+                    }
+                `,
+                fragmentShader: `
+                    precision highp float;
+                    uniform vec3 uTop, uMid, uHorizon, uSunDir, uSunCol;
+                    varying vec3 vDir;
+                    float hash(vec2 p){
+                        p = fract(p * 0.3183099 + vec2(0.71, 0.113));
+                        p *= 17.0;
+                        return fract(p.x * p.y * (p.x + p.y));
+                    }
+                    void main(){
+                        vec3 d = normalize(vDir);
+                        float h = max(d.y, 0.0);
+                        vec3 col = mix(uHorizon, uMid, smoothstep(0.0, 0.22, h));
+                        col = mix(col, uTop, smoothstep(0.16, 0.62, h));
+                        // the sun has just gone; a soft warm bruise on the horizon
+                        float sun = pow(max(dot(d, uSunDir), 0.0), 7.0);
+                        col += uSunCol * sun * 0.3 * smoothstep(0.35, 0.0, h);
+                        // the stars are out now
+                        vec2 sp = d.xz / max(d.y, 0.08) * 160.0;
+                        float st = step(0.9988, hash(floor(sp)));
+                        col += vec3(0.85, 0.9, 1.0) * st * smoothstep(0.15, 0.45, h) * 0.7;
+                        gl_FragColor = vec4(col, 1.0);
+                    }
+                `,
+            });
+            const sky = new THREE.Mesh(new THREE.SphereGeometry(800, 32, 20), skyMat);
+            scene.add(sky);
+        }
+
+        function buildSea() {
+            seaMat = new THREE.ShaderMaterial({
+                fog: false,
+                uniforms: {
+                    uTime:    { value: 0 },
+                    uDeep:    { value: new THREE.Color(0x0d1626) },
+                    uShallow: { value: new THREE.Color(0x1e2a3f) },
+                    uGlint:   { value: new THREE.Color(0xd99a66) },
+                    uHorizon: { value: new THREE.Color(0x84492e) },
+                },
+                vertexShader: `
+                    varying vec3 vWorld;
+                    void main(){
+                        vec4 w = modelMatrix * vec4(position, 1.0);
+                        vWorld = w.xyz;
+                        gl_Position = projectionMatrix * viewMatrix * w;
+                    }
+                `,
+                fragmentShader: `
+                    precision highp float;
+                    uniform float uTime;
+                    uniform vec3 uDeep, uShallow, uGlint, uHorizon;
+                    varying vec3 vWorld;
+                    float hash(vec2 p){
+                        p = fract(p * 0.3183099 + vec2(0.71, 0.113));
+                        p *= 17.0;
+                        return fract(p.x * p.y * (p.x + p.y));
+                    }
+                    void main(){
+                        // metres offshore: past the quay east, or out from the marina edge
+                        float dist = max(max(vWorld.x - 7.0, -(vWorld.z + 8.0)), 0.0);
+                        vec3 col = mix(uShallow, uDeep, smoothstep(8.0, 110.0, dist));
+                        // low-sun glitter path, strongest toward the sunset
+                        float lane = exp(-pow((vWorld.z + (vWorld.x - 80.0) * 1.26) / (30.0 + dist * 0.3), 2.0));
+                        float ripA = sin(vWorld.x * 0.9 + uTime * 0.7 + sin(vWorld.z * 0.6 - uTime * 0.5));
+                        float ripB = sin(vWorld.z * 1.7 - uTime * 1.1 + hash(floor(vWorld.xz * 2.0)) * 6.28);
+                        float sparkle = smoothstep(0.95, 1.0, ripA * ripB);
+                        col += uGlint * sparkle * (0.025 + lane * 0.3);
+                        // haze the far water into the horizon colour
+                        float off = length(vWorld.xz);
+                        col = mix(col, uHorizon, smoothstep(250.0, 1400.0, off));
+                        gl_FragColor = vec4(col, 1.0);
+                    }
+                `,
+            });
+            const sea = new THREE.Mesh(new THREE.PlaneGeometry(4000, 4000), seaMat);
+            sea.rotation.x = -Math.PI / 2;
+            sea.position.set(0, -0.35, 0);           // everywhere the land isn't
+            scene.add(sea);
+        }
+
+        // the marina behind the trestle: rows of pleasure boats on their
+        // pontoons, pale hulls and a thicket of masts, a few lights left on
+        function buildMasts() {
+            const rows = [-58, -34, -10, 16];            // pontoon lines (x)
+            const boats = [];
+            for (const rx of rows) {
+                for (let z = -22; z > -62; z -= 6.5) {
+                    if (rand() < 0.25) continue;         // empty berths
+                    boats.push({
+                        x: rx + (rand() - 0.5) * 2.5,
+                        z: z + (rand() - 0.5) * 1.5,
+                        len: 5.5 + rand() * 4,
+                        rot: (rand() - 0.5) * 0.12,
+                        mast: rand() < 0.75,
+                    });
+                }
+            }
+            const hullGeo = new THREE.BoxGeometry(1, 1, 1);
+            const hullMat = new THREE.MeshStandardMaterial({ color: 0xcfccc2, roughness: 0.65 });
+            const hulls = new THREE.InstancedMesh(hullGeo, hullMat, boats.length);
+            const mastGeo = new THREE.BoxGeometry(0.12, 1, 0.12);
+            const mastMat = new THREE.MeshStandardMaterial({ color: 0xbfb8ad, roughness: 0.8 });
+            const masts = new THREE.InstancedMesh(mastGeo, mastMat, boats.length);
+            const m = new THREE.Matrix4();
+            const q = new THREE.Quaternion();
+            let nM = 0;
+            const anchorMat = new THREE.MeshBasicMaterial({ color: 0xfff2cf, toneMapped: false });
+            boats.forEach((b, i) => {
+                q.setFromAxisAngle(_up, b.rot);          // moored nose to the pontoon
+                m.compose(new THREE.Vector3(b.x, 0.35, b.z), q, new THREE.Vector3(b.len * 0.32, 0.9, b.len));
+                hulls.setMatrixAt(i, m);
+                if (b.mast) {
+                    const h = b.len * 1.5;
+                    m.compose(new THREE.Vector3(b.x, 0.7 + h / 2, b.z + b.len * 0.08), q, new THREE.Vector3(1, h, 1));
+                    masts.setMatrixAt(nM++, m);
+                    // the odd anchor light left burning at a masthead
+                    if (rand() < 0.18) {
+                        const dot = new THREE.Mesh(new THREE.SphereGeometry(0.14, 6, 5), anchorMat);
+                        dot.position.set(b.x, 0.7 + h, b.z + b.len * 0.08);
+                        scene.add(dot);
+                    }
+                }
+            });
+            masts.count = nM;
+            scene.add(hulls, masts);
+        }
+
+        // the city across the pier's axis: vague dark blocks rising behind
+        // its landward end, a scatter of windows still lit, facing the sea
+        function buildCity() {
+            const bands = [
+                { x0: -200, x1: -245, z0: -280, z1: 210, count: 70 },
+                { x0: -255, x1: -330, z0: -360, z1: 280, count: 40 },
+            ];
+            const total = bands.reduce((s, b) => s + b.count, 0);
+            const geo = new THREE.BoxGeometry(1, 1, 1);
+            const mat = new THREE.MeshStandardMaterial({ color: 0x262a33, roughness: 0.95 });
+            const mesh = new THREE.InstancedMesh(geo, mat, total);
+            const m = new THREE.Matrix4();
+            const q = new THREE.Quaternion();
+            const winPos = [];
+            let placed = 0;
+            for (const b of bands) {
+                for (let i = 0; i < b.count; i++) {
+                    const dx = 10 + rand() * 14, dz = 10 + rand() * 18, h = 9 + rand() * 24;
+                    const x = b.x0 + rand() * (b.x1 - b.x0);
+                    const z = b.z0 + rand() * (b.z1 - b.z0);
+                    m.compose(new THREE.Vector3(x, h / 2, z), q, new THREE.Vector3(dx, h, dz));
+                    mesh.setMatrixAt(placed++, m);
+                    const nw = 2 + Math.floor(rand() * 5);      // a few windows awake
+                    for (let k = 0; k < nw; k++) {
+                        winPos.push(x + dx / 2 + 0.3, 2 + rand() * (h - 3), z + (rand() - 0.5) * dz * 0.8);
+                    }
+                }
+            }
+            scene.add(mesh);
+            const wgeo = new THREE.BufferGeometry();
+            wgeo.setAttribute('position', new THREE.Float32BufferAttribute(winPos, 3));
+            const win = new THREE.Points(wgeo, new THREE.PointsMaterial({
+                color: 0xffc98a, size: 0.9, transparent: true, opacity: 0.8,
+                blending: THREE.AdditiveBlending, depthWrite: false,
+            }));
+            win.frustumCulled = false;
+            scene.add(win);
+        }
+
+        // the sierra above the city: two ridge silhouettes standing across
+        // the pier's axis, seen face-on from out at sea
+        function buildRidges() {
+            const ridge = (xPos, height, color) => {
+                const n = 46;
+                const shape = new THREE.Shape();
+                shape.moveTo(-1600, 0);
+                let y = height * 0.4;
+                for (let i = 1; i < n; i++) {
+                    const x = -1600 + (3200 * i) / n;
+                    const envelope = 0.3 + 0.7 * Math.sin((i / n) * Math.PI);
+                    // wander up and down rather than spiking: a worn old range
+                    y = Math.max(height * 0.1, Math.min(height, y + (rand() - 0.48) * height * 0.55));
+                    shape.lineTo(x, y * envelope);
+                }
+                shape.lineTo(1600, 0);
+                shape.closePath();
+                const mesh = new THREE.Mesh(
+                    new THREE.ShapeGeometry(shape),
+                    new THREE.MeshBasicMaterial({ color, fog: false })
+                );
+                mesh.rotation.y = Math.PI / 2;
+                mesh.position.set(xPos, 0, -60);
+                scene.add(mesh);
+            };
+            ridge(-700, 95, 0x2f2836);    // the high sierra, against the last light
+            ridge(-520, 52, 0x1e1b26);    // a nearer, darker shoulder
+        }
+
+        // the rubble breakwater sheltering the marina, a low dark arm of stone
+        function buildBreakwater() {
+            const n = 42;
+            const geo = new THREE.BoxGeometry(1, 1, 1);
+            const mat = new THREE.MeshStandardMaterial({ color: 0x3c3833, roughness: 1.0 });
+            const mesh = new THREE.InstancedMesh(geo, mat, n);
+            const m = new THREE.Matrix4();
+            const q = new THREE.Quaternion();
+            for (let i = 0; i < n; i++) {
+                const t = i / (n - 1);
+                const x = 30 + t * 130;
+                const z = -72 - t * 30 + Math.sin(t * Math.PI) * 10;
+                q.setFromAxisAngle(_up, rand() * Math.PI);
+                m.compose(
+                    new THREE.Vector3(x + (rand() - 0.5) * 2, 0.6 + rand() * 0.5, z + (rand() - 0.5) * 3),
+                    q,
+                    new THREE.Vector3(4.5 + rand() * 2, 2.2 + rand(), 3.5 + rand() * 2)
+                );
+                mesh.setMatrixAt(i, m);
+            }
+            scene.add(mesh);
+        }
+
+        // ============================================================
+        //  LAMPS — dark poles, glowing heads, three real lights
+        // ============================================================
+        const lampLights = [];
+        function buildLamps() {
+            const poleMat = new THREE.MeshStandardMaterial({ color: 0x1c1d22, roughness: 0.7, metalness: 0.4 });
+            const headMat = new THREE.MeshBasicMaterial({ color: 0xffb45e, toneMapped: false });
+            LAMPS.forEach((L, i) => {
+                const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.14, 7.5, 8), poleMat);
+                pole.position.set(L.x, 3.75, L.z);
+                scene.add(pole);
+                const arm = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 1.6, 6), poleMat);
+                arm.rotation.z = Math.PI / 2;
+                arm.position.set(L.x - 0.7, 7.4, L.z);
+                scene.add(arm);
+                const head = new THREE.Mesh(new THREE.SphereGeometry(0.22, 10, 8), headMat);
+                head.position.set(L.x - 1.4, 7.32, L.z);
+                scene.add(head);
+                const pt = new THREE.PointLight(0xff9b45, 95, 55, 2);
+                pt.position.set(L.x - 1.4, 7.1, L.z);
+                scene.add(pt);
+                lampLights.push(pt);
+            });
+        }
+
+        // ============================================================
+        //  THE GHOST CARGO — ember particles running the deck and
+        //  falling through the hopper chutes into the sea
+        // ============================================================
+        const EMBER_VERT = `
+            precision highp float;
+            attribute float aSeed;
+            attribute float aAlpha;
+            uniform float uSize, uPixelRatio;
+            varying float vAlpha, vSeed;
+            void main(){
+                vSeed = aSeed;
+                vAlpha = aAlpha;
+                vec4 mv = modelViewMatrix * vec4(position, 1.0);
+                gl_PointSize = uSize * uPixelRatio * (34.0 + aSeed * 22.0) / max(0.5, -mv.z);
+                gl_Position = projectionMatrix * mv;
+            }
+        `;
+        const EMBER_FRAG = `
+            precision highp float;
+            uniform float uGlow;
+            varying float vAlpha, vSeed;
+            void main(){
+                if (vAlpha < 0.01) discard;
+                vec2 d = gl_PointCoord - 0.5;
+                float a = smoothstep(0.5, 0.05, length(d));
+                vec3 hot = mix(vec3(1.0, 0.42, 0.10), vec3(1.0, 0.75, 0.32), vSeed);
+                gl_FragColor = vec4(hot * uGlow * (0.8 + vSeed), a * vAlpha);
+            }
+        `;
+
+        function buildEmbers() {
+            const N = Q.has('emberCount') ? parseInt(Q.get('emberCount'), 10) : params.emberCount;
+            const pos = new Float32Array(N * 3);
+            const alpha = new Float32Array(N);
+            const seed = new Float32Array(N);
+            const sim = { N, p: new Float32Array(N), speed: new Float32Array(N),
+                          chuteX: new Float32Array(N), jz: new Float32Array(N), jy: new Float32Array(N),
+                          side: new Float32Array(N) };
+            const L1 = (x) => x - (TRESTLE.x0 - 4);   // deck run length up to the chute
+            for (let i = 0; i < N; i++) {
+                seed[i] = rand();
+                sim.speed[i] = 7 + rand() * 7;
+                sim.chuteX[i] = SHORE_X + 8 + rand() * (HOPPER.x1 - SHORE_X - 14);   // only over water
+                sim.jz[i] = (rand() - 0.5) * 2.4;
+                sim.jy[i] = rand() * 0.7;
+                sim.side[i] = rand() < 0.62 ? 1 : -1;   // most pour on the plaza side, where we watch
+
+                sim.p[i] = rand() * (L1(sim.chuteX[i]) + 22);   // scattered along the whole journey
+                alpha[i] = 0;
+            }
+            const geo = new THREE.BufferGeometry();
+            geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+            geo.setAttribute('aAlpha', new THREE.BufferAttribute(alpha, 1));
+            geo.setAttribute('aSeed', new THREE.BufferAttribute(seed, 1));
+            const mat = new THREE.ShaderMaterial({
+                transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+                uniforms: {
+                    uSize: { value: params.emberSize },
+                    uPixelRatio: { value: params.dpr },
+                    uGlow: { value: params.emberGlow },
+                },
+                vertexShader: EMBER_VERT, fragmentShader: EMBER_FRAG,
+            });
+            embers = new THREE.Points(geo, mat);
+            embers.frustumCulled = false;
+            scene.add(embers);
+            emberSim = sim;
+        }
+
+        function simulateEmbers(t, dt, env) {
+            const { N, p, speed, chuteX, jz, jy, side } = emberSim;
+            const pos = embers.geometry.attributes.position.array;
+            const alpha = embers.geometry.attributes.aAlpha.array;
+            const seed = embers.geometry.attributes.aSeed.array;
+            const CHUTE = 17;                     // length of the falling leg
+            const FADE = 5;                       // dying at the water
+            const x0 = TRESTLE.x0 - 4;
+            for (let i = 0; i < N; i++) {
+                const deckLen = chuteX[i] - x0;
+                // the fall is the point: embers slow to linger on the chutes
+                const pace = p[i] < deckLen ? 1 : 0.4;
+                p[i] += speed[i] * params.emberSpeed * pace * dt;
+                const total = deckLen + CHUTE + FADE;
+                if (p[i] >= total) {              // reborn at the landward end
+                    p[i] -= total;
+                    chuteX[i] = SHORE_X + 8 + Math.random() * (HOPPER.x1 - SHORE_X - 14);
+                }
+                let x, y, z, a;
+                const flicker = 0.7 + 0.3 * Math.sin(t * (8 + seed[i] * 9) + seed[i] * 40);
+                if (p[i] < deckLen) {             // running the rails
+                    x = x0 + p[i];
+                    y = DECK_Y + 0.7 + jy[i];
+                    z = jz[i] * 0.7;
+                    a = Math.min(1, p[i] / 6) * flicker;
+                } else if (p[i] < deckLen + CHUTE) {   // pouring down the seaward chute
+                    const q = (p[i] - deckLen) / CHUTE;
+                    const qq = Math.pow(q, 1.35);      // gathering speed as it falls
+                    x = chuteX[i] + q * 1.5 + jz[i] * 0.4;
+                    y = DECK_Y + 0.7 - qq * (DECK_Y + 0.4);
+                    z = side[i] * (q * 8.9 + Math.abs(jz[i]) * 0.3);
+                    a = flicker;
+                } else {                          // winking out where the ore would land
+                    const q = (p[i] - deckLen - CHUTE) / FADE;
+                    x = chuteX[i] + 1.5 + q + jz[i] * 0.6;
+                    y = 0.3 + jy[i] * 0.3 * (1 - q);
+                    z = side[i] * (9.2 + q * 1.2);
+                    a = (1 - q) * (1 - q) * flicker * 0.7;
+                }
+                pos[i * 3] = x; pos[i * 3 + 1] = y; pos[i * 3 + 2] = z;
+                alpha[i] = a * env;
+            }
+            embers.geometry.attributes.position.needsUpdate = true;
+            embers.geometry.attributes.aAlpha.needsUpdate = true;
+        }
+
+        // ============================================================
+        //  CAMERA — a slow drift across the plaza, drag to look
+        // ============================================================
+        const controls = {
+            target: new THREE.Vector3(0, 10, 0),
+            radius: 120, targetRadius: 92,
+            azimuth: 0.62, elevation: 0.09,
+            azVel: 0, elVel: 0, idle: 0,
+        };
+        function setupControls() {
+            const el = renderer.domElement;
+            let dragging = false, lx = 0, ly = 0;
+            el.addEventListener('pointerdown', (e) => { dragging = true; lx = e.clientX; ly = e.clientY; controls.idle = 0; });
+            window.addEventListener('pointermove', (e) => {
+                if (!dragging) return;
+                const dx = e.clientX - lx, dy = e.clientY - ly; lx = e.clientX; ly = e.clientY;
+                controls.azVel = -dx * 0.004; controls.elVel = -dy * 0.003;
+                controls.azimuth += controls.azVel; controls.elevation += controls.elVel;
+                controls.elevation = Math.max(0.0, Math.min(0.5, controls.elevation));
+                controls.idle = 0;
+            });
+            const up = () => { dragging = false; };
+            window.addEventListener('pointerup', up);
+            window.addEventListener('pointercancel', up);
+            el.addEventListener('wheel', (e) => {
+                controls.targetRadius = Math.max(22, Math.min(170, controls.targetRadius + e.deltaY * 0.05));
+                params.pushIn = false;
+            }, { passive: true });
+        }
+        function updateCamera(dt) {
+            controls.idle += dt;
+            if (params.pushIn) controls.targetRadius = params.pushTo;
+            controls.radius += (controls.targetRadius - controls.radius) * Math.min(1, dt * 0.6);
+            controls.azimuth += controls.azVel; controls.elevation += controls.elVel;
+            controls.azVel *= 0.9; controls.elVel *= 0.9;
+            if (controls.idle > 2.0) controls.azimuth += params.autoOrbit * dt;
+            controls.azimuth = Math.max(0.12, Math.min(1.35, controls.azimuth));   // keep the plaza side
+            controls.elevation = Math.max(0.0, Math.min(0.5, controls.elevation));
+            const r = controls.radius, a = controls.azimuth, e = controls.elevation;
+            camera.position.set(
+                controls.target.x + r * Math.cos(e) * Math.sin(a),
+                Math.max(1.7, controls.target.y + r * Math.sin(e)),
+                controls.target.z + r * Math.cos(e) * Math.cos(a)
+            );
+            camera.lookAt(controls.target);
+        }
+
+        // ============================================================
+        //  FINAL PASS — grain, vignette, a whisper of chromatic aberration
+        // ============================================================
+        const FinalShader = {
+            uniforms: {
+                tDiffuse: { value: null },
+                uTime: { value: 0 },
+                uGrain: { value: params.grain },
+                uVignette: { value: params.vignette },
+                uAberration: { value: params.aberration },
+                uDesat: { value: params.desat },
+            },
+            vertexShader: `varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
+            fragmentShader: `
+                precision highp float;
+                uniform sampler2D tDiffuse;
+                uniform float uTime, uGrain, uVignette, uAberration, uDesat;
+                varying vec2 vUv;
+                float hash(vec2 p){
+                    p = fract(p * 0.3183099 + vec2(0.71, 0.113));
+                    p *= 17.0;
+                    return fract(p.x * p.y * (p.x + p.y));
+                }
+                void main(){
+                    vec2 d = vUv - 0.5;
+                    float r2 = dot(d, d);
+                    vec2 off = d * uAberration * (0.4 + r2 * 3.0);
+                    vec3 col;
+                    col.r = texture2D(tDiffuse, vUv + off).r;
+                    col.g = texture2D(tDiffuse, vUv).g;
+                    col.b = texture2D(tDiffuse, vUv - off).b;
+                    // grief drains the colour; a faintly cold grey
+                    float l = dot(col, vec3(0.299, 0.587, 0.114));
+                    col = mix(col, vec3(l) * vec3(0.94, 0.97, 1.04), uDesat);
+                    float g = hash(gl_FragCoord.xy + fract(uTime) * 311.7) - 0.5;
+                    col += g * uGrain;
+                    float vig = smoothstep(0.85, 0.18, r2 * uVignette);
+                    col *= mix(0.55, 1.0, vig);
+                    gl_FragColor = vec4(col, 1.0);
+                }
+            `,
+        };
+
+        function buildComposer() {
+            composer = new EffectComposer(renderer);
+            composer.setPixelRatio(params.dpr);
+            composer.setSize(innerWidth, innerHeight);
+            composer.addPass(new RenderPass(scene, camera));
+            bloomPass = new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight),
+                params.bloomStrength, params.bloomRadius, params.bloomThreshold);
+            composer.addPass(bloomPass);
+            finalPass = new ShaderPass(FinalShader);
+            composer.addPass(finalPass);
+            composer.addPass(new OutputPass());
+        }
+
+        function buildLights() {
+            scene.add(new THREE.HemisphereLight(0x3d4a6b, 0x4a2f22, 0.72));
+            // what's left of the sun: a low warm graze from the west, going out
+            const dusk = new THREE.DirectionalLight(0xd97a45, 0.7);
+            dusk.position.set(140, 14, -160);
+            scene.add(dusk);
+            // cool bounce off the sky, from the plaza side
+            const fill = new THREE.DirectionalLight(0x3e4a6e, 0.45);
+            fill.position.set(-60, 50, 90);
+            scene.add(fill);
+        }
+
+        function init() {
+            const container = document.getElementById('container');
+            scene = new THREE.Scene();
+            scene.fog = new THREE.Fog(0x6b4634, 220, 1000);
+
+            camera = new THREE.PerspectiveCamera(50, innerWidth / innerHeight, 0.1, 1800);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+            renderer.setPixelRatio(params.dpr);
+            renderer.setSize(innerWidth, innerHeight);
+            renderer.toneMapping = THREE.ACESFilmicToneMapping;
+            renderer.toneMappingExposure = params.exposure;
+            renderer.outputColorSpace = THREE.SRGBColorSpace;
+            container.appendChild(renderer.domElement);
+
+            buildLights();
+            buildSky();
+            buildSea();
+            buildGround();
+            buildPier();
+            buildPalms();
+            buildLamps();
+            buildMasts();
+            buildBreakwater();
+            buildCity();
+            buildRidges();
+            buildEmbers();
+            buildComposer();
+            setupControls();
+            setupGUI();
+
+            // camera query overrides
+            if (Q.has('radius')) { controls.radius = controls.targetRadius = parseFloat(Q.get('radius')); params.pushIn = false; }
+            if (Q.has('az')) controls.azimuth = parseFloat(Q.get('az'));
+            if (Q.has('el')) controls.elevation = parseFloat(Q.get('el'));
+            if (Q.has('tx')) controls.target.x = parseFloat(Q.get('tx'));
+            if (Q.has('ty')) controls.target.y = parseFloat(Q.get('ty'));
+            if (Q.has('tz')) controls.target.z = parseFloat(Q.get('tz'));
+            if (Q.has('fov')) { camera.fov = parseFloat(Q.get('fov')); camera.updateProjectionMatrix(); }
+            if (Q.get('title') === '0') document.getElementById('title').style.display = 'none';
+
+            setTimeout(() => document.getElementById('title').classList.add('gone'), 8500);
+            window.addEventListener('resize', onResize);
+            animate();
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const dt = Math.min(clock.getDelta(), 0.05);
+            const t = clock.elapsedTime;
+
+            // the palms breathe in the evening wind
+            for (const crown of palmCrowns) {
+                const ph = crown.userData.phase;
+                crown.rotation.x = Math.sin(t * 0.7 + ph) * 0.028 * params.sway;
+                crown.rotation.z = Math.cos(t * 0.53 + ph * 1.7) * 0.034 * params.sway;
+            }
+
+            // the lamps hum, very slightly unsteady
+            lampLights.forEach((pt, i) => {
+                pt.intensity = 95 * params.lampWarmth * (0.94 + 0.06 * Math.sin(t * 7.3 + i * 2.1));
+            });
+
+            // the memory comes in waves: the cargo runs for a while, then the
+            // pier goes dark again and waits
+            const cyc = (t % params.waveCycle) / params.waveCycle;
+            const env = THREE.MathUtils.smoothstep(cyc, 0.04, 0.2) *
+                        (1 - THREE.MathUtils.smoothstep(cyc, 0.5, 0.72));
+            simulateEmbers(t, dt, env);
+            embers.material.uniforms.uSize.value = params.emberSize;
+            embers.material.uniforms.uGlow.value = params.emberGlow;
+            seaMat.uniforms.uTime.value = t;
+
+            finalPass.uniforms.uTime.value = t;
+            updateCamera(dt);
+            composer.render();
+        }
+
+        function onResize() {
+            camera.aspect = innerWidth / innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(innerWidth, innerHeight);
+            composer.setSize(innerWidth, innerHeight);
+        }
+
+        function setupGUI() {
+            const gui = new GUI({ title: 'el cable inglés' });
+            const cargo = gui.addFolder('Ghost cargo');
+            cargo.add(params, 'emberSpeed', 0.2, 4, 0.05).name('Pace');
+            cargo.add(params, 'waveCycle', 12, 120, 1).name('Return (s)');
+            cargo.add(params, 'emberSize', 0.5, 6, 0.1).name('Ember size');
+            cargo.add(params, 'emberGlow', 0.2, 3, 0.05).name('Glow');
+            const world = gui.addFolder('World');
+            world.add(params, 'sway', 0, 3, 0.05).name('Palm sway');
+            world.add(params, 'lampWarmth', 0, 3, 0.05).name('Lamps');
+            const look = gui.addFolder('Look');
+            look.add(params, 'exposure', 0.4, 2.0, 0.02).onChange((v) => renderer.toneMappingExposure = v);
+            look.add(params, 'bloomStrength', 0, 1.5, 0.02).onChange((v) => bloomPass.strength = v);
+            look.add(params, 'bloomThreshold', 0, 1, 0.02).onChange((v) => bloomPass.threshold = v);
+            look.add(params, 'grain', 0, 0.2, 0.005).onChange((v) => finalPass.uniforms.uGrain.value = v);
+            look.add(params, 'vignette', 0, 2, 0.05).onChange((v) => finalPass.uniforms.uVignette.value = v);
+            look.add(params, 'aberration', 0, 0.006, 0.0002).onChange((v) => finalPass.uniforms.uAberration.value = v);
+            look.add(params, 'desat', 0, 1, 0.02).onChange((v) => finalPass.uniforms.uDesat.value = v);
+            const cam = gui.addFolder('Camera');
+            cam.add(controls, 'targetRadius', 22, 140, 1).name('distance').onChange(() => params.pushIn = false);
+            cam.add(controls, 'elevation', 0, 0.5, 0.01);
+            cam.add(params, 'autoOrbit', 0, 0.06, 0.002).name('idle orbit');
+            gui.close();
+            gui.domElement.style.display = 'none';
+            window.addEventListener('keydown', (e) => {
+                if (e.key === 'g' || e.key === 'G') {
+                    const d = gui.domElement.style;
+                    d.display = d.display === 'none' ? '' : 'none';
+                }
+            });
+        }
+
+        init();
+    </script>
+</body>
+</html>
