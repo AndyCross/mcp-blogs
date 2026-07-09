@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<!--
+  "To the Moon and Back" — an owl makes the trip every night.
+
+  It leaves a small blue Earth, crosses the dark, rounds the moon once,
+  and comes home. Then it goes again. The whole journey is one closed
+  curve, so the promise never actually ends.
+
+  Everything is procedural: the Earth, moon and stars are shaders, the
+  owl is built from primitives with a two-segment wing flap, and the
+  stardust trail streams from its wingtips. No external assets.
+
+  Tuning: press G for the control panel, or use query params, e.g.
+  ?period=80&flap=3.2&exposure=1.2
+-->
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>To the Moon and Back</title>
+<script src="https://cdn.counter.dev/script.js" data-id="72d92ac8-56cf-4fdd-9899-b73adbab2e4d" data-utcoffset="0"></script>
+<style>
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; background: #04060f; }
+    #container { position: fixed; inset: 0; }
+    canvas { display: block; width: 100vw; height: 100vh; cursor: grab; }
+    canvas:active { cursor: grabbing; }
+
+    #title {
+        position: fixed; inset: 0;
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        pointer-events: none; z-index: 10; text-align: center; padding: 1.5rem;
+        transition: opacity 4s ease 1s;
+    }
+    #title.gone { opacity: 0; }
+    #title h1 {
+        font-family: "Georgia", "Times New Roman", serif;
+        font-weight: 400; font-style: italic;
+        font-size: clamp(2rem, 6vw, 4rem);
+        letter-spacing: 0.05em;
+        color: #eef2ff;
+        margin: 0;
+        text-shadow: 0 0 30px rgba(140, 180, 255, 0.5), 0 0 90px rgba(60, 90, 200, 0.45);
+        opacity: 0;
+        animation: bloom 5s ease forwards 0.6s;
+    }
+    #whisper {
+        font-family: "Georgia", serif; font-style: italic;
+        font-size: clamp(0.9rem, 2.3vw, 1.1rem);
+        color: rgba(238, 242, 255, 0.6);
+        margin-top: 1.4rem; opacity: 0;
+        animation: bloom 5s ease forwards 2.4s;
+    }
+    @keyframes bloom {
+        from { opacity: 0; filter: blur(10px); transform: translateY(10px); }
+        to   { opacity: 1; filter: blur(0);    transform: translateY(0); }
+    }
+
+    #hint {
+        position: fixed; bottom: 1.4rem; left: 0; right: 0; text-align: center;
+        font-family: "Courier New", monospace; font-size: 0.7rem;
+        letter-spacing: 0.32em; text-transform: uppercase;
+        color: rgba(238, 242, 255, 0.32); pointer-events: none; z-index: 9;
+        opacity: 0; animation: bloom 3s ease forwards 6.5s;
+    }
+    .lil-gui { z-index: 20; --background-color: rgba(6, 8, 14, 0.92); }
+</style>
+</head>
+<body>
+    <div id="container"></div>
+    <div id="title">
+        <h1>To the Moon and Back</h1>
+        <div id="whisper">this is how much</div>
+    </div>
+    <div id="hint">drag to look &nbsp;·&nbsp; the owl makes the trip every night</div>
+
+    <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/",
+        "lil-gui": "https://cdn.jsdelivr.net/npm/lil-gui@0.19.1/dist/lil-gui.esm.min.js"
+      }
+    }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+        import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+        import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+        import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
+        import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+        import GUI from 'lil-gui';
+
+        const params = {
+            dpr: Math.min(window.devicePixelRatio, 1.6),
+            exposure: 1.1,
+            bloomStrength: 0.5,
+            bloomRadius: 0.55,
+            bloomThreshold: 0.75,
+            grain: 0.045,
+            vignette: 0.9,
+            aberration: 0.0012,
+            period: 100,        // seconds for the full round trip
+            flap: 3.4,          // wingbeat frequency
+            camDist: 7.5,       // chase camera distance
+            camLag: 0.055,      // camera smoothing
+            trail: true,
+            trailGlow: 1.6,
+            starTwinkle: 1.0,
+            uFix: -1,           // freeze the journey at this 0..1 position (debug)
+            azStart: 0.55,      // initial camera azimuth
+            elStart: 0.12,      // initial camera elevation
+        };
+        // query param overrides
+        new URLSearchParams(location.search).forEach((v, k) => {
+            if (k in params) params[k] = typeof params[k] === 'boolean' ? v !== '0' : parseFloat(v);
+        });
+
+        const container = document.getElementById('container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x04060f);
+        const camera = new THREE.PerspectiveCamera(52, innerWidth / innerHeight, 0.1, 3000);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setPixelRatio(params.dpr);
+        renderer.setSize(innerWidth, innerHeight);
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = params.exposure;
+        container.appendChild(renderer.domElement);
+
+        // ---------------------------------------------------------------
+        // shared noise GLSL
+        // ---------------------------------------------------------------
+        const NOISE_GLSL = /* glsl */`
+            float hash(vec3 p) {
+                p = fract(p * 0.3183099 + 0.1);
+                p *= 17.0;
+                return fract(p.x * p.y * p.z * (p.x + p.y + p.z));
+            }
+            float vnoise(vec3 p) {
+                vec3 i = floor(p), f = fract(p);
+                f = f * f * (3.0 - 2.0 * f);
+                return mix(
+                    mix(mix(hash(i), hash(i + vec3(1,0,0)), f.x),
+                        mix(hash(i + vec3(0,1,0)), hash(i + vec3(1,1,0)), f.x), f.y),
+                    mix(mix(hash(i + vec3(0,0,1)), hash(i + vec3(1,0,1)), f.x),
+                        mix(hash(i + vec3(0,1,1)), hash(i + vec3(1,1,1)), f.x), f.y),
+                    f.z);
+            }
+            float fbm(vec3 p) {
+                float v = 0.0, a = 0.5;
+                for (int i = 0; i < 5; i++) { v += a * vnoise(p); p *= 2.03; a *= 0.5; }
+                return v;
+            }
+        `;
+
+        const SUN_DIR = new THREE.Vector3(0.8, 0.35, 0.5).normalize();
+
+        // ---------------------------------------------------------------
+        // stars
+        // ---------------------------------------------------------------
+        {
+            const N = 5000;
+            const pos = new Float32Array(N * 3);
+            const seed = new Float32Array(N);
+            const size = new Float32Array(N);
+            const col = new Float32Array(N * 3);
+            const tints = [[1,1,1],[0.75,0.85,1],[1,0.9,0.75],[0.85,0.95,1]];
+            for (let i = 0; i < N; i++) {
+                const v = new THREE.Vector3().randomDirection().multiplyScalar(1200 + Math.random() * 600);
+                pos.set([v.x, v.y, v.z], i * 3);
+                seed[i] = Math.random() * 100;
+                size[i] = 1.0 + Math.pow(Math.random(), 4.0) * 3.5;
+                const t = tints[(Math.random() * tints.length) | 0];
+                col.set(t, i * 3);
+            }
+            const g = new THREE.BufferGeometry();
+            g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+            g.setAttribute('seed', new THREE.BufferAttribute(seed, 1));
+            g.setAttribute('aSize', new THREE.BufferAttribute(size, 1));
+            g.setAttribute('color', new THREE.BufferAttribute(col, 3));
+            const m = new THREE.ShaderMaterial({
+                uniforms: { time: { value: 0 }, twinkle: { value: params.starTwinkle } },
+                vertexShader: /* glsl */`
+                    attribute float seed; attribute float aSize; varying vec3 vCol; varying float vTw;
+                    uniform float time, twinkle;
+                    void main() {
+                        vCol = color;
+                        vTw = 0.65 + 0.35 * sin(time * (0.4 + fract(seed) * 1.6) + seed) * twinkle;
+                        vec4 mv = modelViewMatrix * vec4(position, 1.0);
+                        gl_PointSize = aSize * (900.0 / -mv.z);
+                        gl_Position = projectionMatrix * mv;
+                    }`,
+                fragmentShader: /* glsl */`
+                    varying vec3 vCol; varying float vTw;
+                    void main() {
+                        float d = length(gl_PointCoord - 0.5);
+                        float a = smoothstep(0.5, 0.05, d);
+                        gl_FragColor = vec4(vCol * vTw, a * vTw);
+                    }`,
+                transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, vertexColors: true,
+            });
+            const stars = new THREE.Points(g, m);
+            scene.add(stars);
+            scene.userData.starMat = m;
+        }
+
+        // ---------------------------------------------------------------
+        // Earth
+        // ---------------------------------------------------------------
+        const EARTH_POS = new THREE.Vector3(0, -78, 30);
+        const EARTH_R = 60;
+        {
+            const mat = new THREE.ShaderMaterial({
+                uniforms: { time: { value: 0 }, sunDir: { value: SUN_DIR } },
+                vertexShader: /* glsl */`
+                    varying vec3 vN, vP, vW;
+                    void main() {
+                        vN = normalize(mat3(modelMatrix) * normal);
+                        vP = position;
+                        vec4 w = modelMatrix * vec4(position, 1.0);
+                        vW = w.xyz;
+                        gl_Position = projectionMatrix * viewMatrix * w;
+                    }`,
+                fragmentShader: NOISE_GLSL + /* glsl */`
+                    varying vec3 vN, vP, vW;
+                    uniform float time; uniform vec3 sunDir;
+                    void main() {
+                        vec3 n = normalize(vN);
+                        vec3 p = vP * 0.035;
+                        float cont = fbm(p * 1.6 + 3.7);
+                        float land = smoothstep(0.50, 0.55, cont);
+                        vec3 ocean = mix(vec3(0.015, 0.07, 0.20), vec3(0.03, 0.16, 0.38), fbm(p * 4.0));
+                        vec3 soil  = mix(vec3(0.06, 0.20, 0.07), vec3(0.32, 0.26, 0.14), fbm(p * 6.0 + 9.0));
+                        vec3 surf = mix(ocean, soil, land);
+                        float ice = smoothstep(0.82, 0.95, abs(normalize(vP).y));
+                        surf = mix(surf, vec3(0.85, 0.9, 0.95), ice);
+                        float cl = smoothstep(0.55, 0.78, fbm(p * 2.6 + vec3(time * 0.008, 0.0, time * 0.004)));
+                        surf = mix(surf, vec3(0.85), cl * 0.6);
+                        float day = clamp(dot(n, sunDir), 0.0, 1.0);
+                        float dusk = smoothstep(-0.15, 0.25, dot(n, sunDir));
+                        vec3 col = surf * (0.015 + day * 0.85);
+                        col = mix(col, col * vec3(1.25, 0.85, 0.6), (1.0 - abs(dot(n, sunDir))) * 0.25 * dusk);
+                        // city lights on the night side
+                        float night = clamp(-dot(n, sunDir), 0.0, 1.0);
+                        float city = step(0.74, fbm(p * 14.0 + 5.0)) * land * (1.0 - ice) * (1.0 - cl);
+                        col += vec3(1.0, 0.72, 0.38) * city * night * 1.4;
+                        // atmosphere rim
+                        vec3 view = normalize(cameraPosition - vW);
+                        float fres = pow(1.0 - clamp(dot(view, n), 0.0, 1.0), 3.0);
+                        col += vec3(0.25, 0.5, 1.0) * fres * (0.15 + day * 0.5);
+                        gl_FragColor = vec4(col, 1.0);
+                    }`,
+            });
+            const earth = new THREE.Mesh(new THREE.SphereGeometry(EARTH_R, 96, 96), mat);
+            earth.position.copy(EARTH_POS);
+            scene.add(earth);
+            scene.userData.earthMat = mat;
+            scene.userData.earth = earth;
+
+            // atmosphere shell
+            const atmo = new THREE.Mesh(
+                new THREE.SphereGeometry(EARTH_R * 1.045, 64, 64),
+                new THREE.ShaderMaterial({
+                    uniforms: { sunDir: { value: SUN_DIR } },
+                    vertexShader: /* glsl */`
+                        varying vec3 vN, vW;
+                        void main() {
+                            vN = normalize(mat3(modelMatrix) * normal);
+                            vec4 w = modelMatrix * vec4(position, 1.0);
+                            vW = w.xyz;
+                            gl_Position = projectionMatrix * viewMatrix * w;
+                        }`,
+                    fragmentShader: /* glsl */`
+                        varying vec3 vN, vW; uniform vec3 sunDir;
+                        void main() {
+                            vec3 view = normalize(cameraPosition - vW);
+                            float rim = pow(1.0 - clamp(dot(view, normalize(vN)), 0.0, 1.0), 3.5);
+                            float lit = 0.2 + 0.8 * clamp(dot(normalize(vN), sunDir) * 0.5 + 0.5, 0.0, 1.0);
+                            gl_FragColor = vec4(vec3(0.3, 0.55, 1.0) * rim * lit * 0.8, rim * lit * 0.8);
+                        }`,
+                    transparent: true, side: THREE.BackSide, depthWrite: false, blending: THREE.AdditiveBlending,
+                })
+            );
+            atmo.position.copy(EARTH_POS);
+            scene.add(atmo);
+        }
+
+        // ---------------------------------------------------------------
+        // Moon
+        // ---------------------------------------------------------------
+        const MOON_POS = new THREE.Vector3(70, 95, -560);
+        const MOON_R = 16;
+        {
+            const mat = new THREE.ShaderMaterial({
+                uniforms: { sunDir: { value: SUN_DIR } },
+                vertexShader: /* glsl */`
+                    varying vec3 vN, vP, vW;
+                    void main() {
+                        vN = normalize(mat3(modelMatrix) * normal);
+                        vP = position;
+                        vec4 w = modelMatrix * vec4(position, 1.0);
+                        vW = w.xyz;
+                        gl_Position = projectionMatrix * viewMatrix * w;
+                    }`,
+                fragmentShader: NOISE_GLSL + /* glsl */`
+                    varying vec3 vN, vP, vW; uniform vec3 sunDir;
+                    void main() {
+                        vec3 n = normalize(vN);
+                        vec3 p = vP * 0.14;
+                        float maria = smoothstep(0.42, 0.62, fbm(p * 0.9 + 11.0));
+                        float rough = fbm(p * 5.0);
+                        // crater dimples: cellular-ish rings from thresholded noise
+                        float cr = fbm(p * 3.2 + 4.0);
+                        float rim = smoothstep(0.55, 0.60, cr) - smoothstep(0.60, 0.68, cr);
+                        vec3 grey = mix(vec3(0.52, 0.51, 0.49), vec3(0.28, 0.28, 0.30), maria);
+                        grey *= 0.85 + rough * 0.3;
+                        grey += rim * 0.12;
+                        float day = clamp(dot(n, sunDir), 0.0, 1.0);
+                        vec3 col = grey * (0.01 + pow(day, 0.85) * 1.35);
+                        // faint blue earthshine on the dark limb
+                        float night = clamp(-dot(n, sunDir), 0.0, 1.0);
+                        col += vec3(0.1, 0.16, 0.3) * night * 0.12;
+                        vec3 view = normalize(cameraPosition - vW);
+                        float fres = pow(1.0 - clamp(dot(view, n), 0.0, 1.0), 4.0);
+                        col += vec3(0.7, 0.75, 0.9) * fres * 0.18 * (0.3 + day);
+                        gl_FragColor = vec4(col, 1.0);
+                    }`,
+            });
+            const moon = new THREE.Mesh(new THREE.SphereGeometry(MOON_R, 96, 96), mat);
+            moon.position.copy(MOON_POS);
+            scene.add(moon);
+
+            // soft halo
+            const cnv = document.createElement('canvas');
+            cnv.width = cnv.height = 256;
+            const ctx = cnv.getContext('2d');
+            const grad = ctx.createRadialGradient(128, 128, 30, 128, 128, 128);
+            grad.addColorStop(0, 'rgba(200,215,255,0.35)');
+            grad.addColorStop(0.4, 'rgba(160,180,240,0.12)');
+            grad.addColorStop(1, 'rgba(120,140,220,0)');
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, 256, 256);
+            const halo = new THREE.Sprite(new THREE.SpriteMaterial({
+                map: new THREE.CanvasTexture(cnv), transparent: true,
+                blending: THREE.AdditiveBlending, depthWrite: false,
+            }));
+            halo.scale.setScalar(MOON_R * 3.4);
+            halo.position.copy(MOON_POS);
+            scene.add(halo);
+        }
+
+        // ---------------------------------------------------------------
+        // lights (for the owl, the only lit-material object)
+        // ---------------------------------------------------------------
+        scene.add(new THREE.AmbientLight(0x334466, 1.4));
+        scene.add(new THREE.HemisphereLight(0x8899ff, 0x40312a, 1.25));
+        const sun = new THREE.DirectionalLight(0xfff2dd, 2.0);
+        sun.position.copy(SUN_DIR.clone().multiplyScalar(100));
+        scene.add(sun);
+        // silver light from the moon's direction, so the way out is moonlit
+        const moonlight = new THREE.DirectionalLight(0xaabbee, 1.5);
+        moonlight.position.set(70, 95, -560);
+        scene.add(moonlight);
+        const earthShine = new THREE.PointLight(0x4477ff, 0, 400, 1.6);
+        earthShine.position.copy(EARTH_POS);
+        scene.add(earthShine);
+
+        // ---------------------------------------------------------------
+        // the owl
+        // ---------------------------------------------------------------
+        // shaped after the owl emoji: squat egg body, big fused head with a
+        // dark crown, cream belly and eye rings, orange beak and feet
+        const owl = new THREE.Group();
+        const wingtips = [];       // markers for the stardust trail
+        {
+            const brown  = new THREE.MeshStandardMaterial({ color: 0x9c7a52, roughness: 0.95 });
+            const darkBr = new THREE.MeshStandardMaterial({ color: 0x66503a, roughness: 0.95 });
+            const cream  = new THREE.MeshStandardMaterial({ color: 0xded2bd, roughness: 0.9 });
+            const orange = new THREE.MeshStandardMaterial({ color: 0xe8923a, roughness: 0.6 });
+            const wingMat  = darkBr.clone(); wingMat.side = THREE.DoubleSide;
+            const wingLite = new THREE.MeshStandardMaterial({ color: 0x7a5f40, roughness: 0.95, side: THREE.DoubleSide });
+
+            // body: one plump egg
+            const body = new THREE.Mesh(new THREE.SphereGeometry(0.6, 24, 20), brown);
+            body.scale.set(0.95, 1.12, 0.9);
+            body.position.y = -0.1;
+            owl.add(body);
+            // cream belly patch, front and low like the emoji
+            const belly = new THREE.Mesh(new THREE.SphereGeometry(0.52, 20, 16), cream);
+            belly.scale.set(0.72, 0.92, 0.5);
+            belly.position.set(0, -0.22, 0.29);
+            owl.add(belly);
+
+            // head: nearly as wide as the body, sitting right on top (no neck)
+            const head = new THREE.Group();
+            head.position.set(0, 0.62, 0.12);
+            owl.add(head);
+            const skull = new THREE.Mesh(new THREE.SphereGeometry(0.46, 24, 20), brown);
+            skull.scale.set(1.05, 0.92, 0.95);
+            head.add(skull);
+            // dark crown over the top and back of the head
+            const crown = new THREE.Mesh(
+                new THREE.SphereGeometry(0.472, 24, 16, 0, Math.PI * 2, 0, Math.PI * 0.52), darkBr);
+            crown.scale.set(1.05, 0.92, 0.95);
+            crown.rotation.x = -0.38;
+            head.add(crown);
+            // ear tufts
+            for (const s of [-1, 1]) {
+                const tuft = new THREE.Mesh(new THREE.ConeGeometry(0.1, 0.3, 6), darkBr);
+                tuft.position.set(s * 0.28, 0.42, -0.02);
+                tuft.rotation.z = -s * 0.5;
+                head.add(tuft);
+            }
+            // eyes: big cream rings with glowing amber pupils (bloom feeds on them)
+            const pupilMat = new THREE.MeshStandardMaterial({
+                color: 0x140b04, emissive: 0xffb347, emissiveIntensity: 1.5, roughness: 0.3,
+            });
+            const glintMat = new THREE.MeshStandardMaterial({
+                color: 0xffffff, emissive: 0xffffff, emissiveIntensity: 1.2,
+            });
+            for (const s of [-1, 1]) {
+                const ring = new THREE.Mesh(new THREE.SphereGeometry(0.17, 18, 14), cream);
+                ring.scale.z = 0.42;
+                ring.position.set(s * 0.185, 0.03, 0.36);
+                ring.rotation.y = s * 0.28;
+                head.add(ring);
+                const pupil = new THREE.Mesh(new THREE.SphereGeometry(0.085, 14, 12), pupilMat);
+                pupil.position.set(s * 0.185, 0.03, 0.46);
+                head.add(pupil);
+                const glint = new THREE.Mesh(new THREE.SphereGeometry(0.022, 8, 8), glintMat);
+                glint.position.set(s * 0.155, 0.075, 0.53);
+                head.add(glint);
+            }
+            // small orange beak, tucked between the eyes
+            const beak = new THREE.Mesh(new THREE.ConeGeometry(0.065, 0.2, 8), orange);
+            beak.rotation.x = Math.PI / 2 - 0.5;
+            beak.position.set(0, -0.12, 0.44);
+            head.add(beak);
+            owl.userData.head = head;
+
+            // short rounded tail fan
+            const tail = new THREE.Group();
+            tail.position.set(0, -0.28, -0.5);
+            for (let i = -2; i <= 2; i++) {
+                const f = new THREE.Mesh(new THREE.CircleGeometry(0.3, 16), i % 2 ? wingLite : wingMat);
+                f.scale.set(0.45, 1.0, 1);
+                f.position.set(i * 0.1, -0.05, -0.18);
+                f.rotation.x = -Math.PI / 2 + 0.55;
+                f.rotation.z = i * 0.18;
+                tail.add(f);
+            }
+            owl.add(tail);
+            owl.userData.tail = tail;
+
+            // little orange feet tucked up under the belly
+            for (const s of [-1, 1]) {
+                const foot = new THREE.Mesh(new THREE.ConeGeometry(0.07, 0.2, 6), orange);
+                foot.position.set(s * 0.16, -0.72, 0.12);
+                foot.rotation.x = Math.PI - 0.5;
+                owl.add(foot);
+            }
+
+            // wings: dark, rounded, two-segment; overlapping ellipses read as feathers
+            function makeWing(side) {
+                const shoulder = new THREE.Group();
+                shoulder.position.set(side * 0.5, 0.22, 0.02);
+                // inner covert panel hugging the body
+                const covert = new THREE.Mesh(new THREE.CircleGeometry(0.5, 24), wingMat);
+                covert.scale.set(0.95, 0.5, 1);
+                covert.position.set(side * 0.22, -0.06, -0.02);
+                covert.rotation.x = -0.18;
+                shoulder.add(covert);
+                const elbow = new THREE.Group();
+                elbow.position.set(side * 0.58, 0, 0);
+                shoulder.add(elbow);
+                for (let i = 0; i < 5; i++) {
+                    const len = 0.6 + i * 0.1;
+                    const f = new THREE.Mesh(new THREE.CircleGeometry(0.5, 20), i % 2 ? wingLite : wingMat);
+                    f.scale.set(len, 0.15 - i * 0.008, 1);
+                    f.position.set(side * (len * 0.42), -0.02 - i * 0.03, -0.03 - i * 0.05);
+                    f.rotation.z = side * -0.07 * i;
+                    f.rotation.x = -0.12;
+                    elbow.add(f);
+                }
+                const tip = new THREE.Object3D();
+                tip.position.set(side * 0.95, -0.15, -0.42);
+                elbow.add(tip);
+                wingtips.push(tip);
+                shoulder.userData.elbow = elbow;
+                shoulder.userData.side = side;
+                return shoulder;
+            }
+            const wingL = makeWing(-1), wingR = makeWing(1);
+            owl.add(wingL, wingR);
+            owl.userData.wings = [wingL, wingR];
+
+            // a whisper of warm light so the owl reads even in deep space
+            const keep = new THREE.PointLight(0xffd9a0, 2.4, 10, 2);
+            keep.position.set(0, 1.3, 1.8);
+            owl.add(keep);
+        }
+        scene.add(owl);
+
+        // ---------------------------------------------------------------
+        // the journey: one closed curve, Earth -> moon -> Earth
+        // ---------------------------------------------------------------
+        const liftoff = EARTH_POS.clone().add(new THREE.Vector3(0, EARTH_R + 4, 8));
+        const path = new THREE.CatmullRomCurve3([
+            liftoff,
+            EARTH_POS.clone().add(new THREE.Vector3(18, EARTH_R + 22, 26)),
+            new THREE.Vector3(45, 30, -120),
+            new THREE.Vector3(20, 55, -320),
+            // round the moon, once, close enough to feel it
+            MOON_POS.clone().add(new THREE.Vector3(-MOON_R * 2.2, 6, MOON_R * 1.6)),
+            MOON_POS.clone().add(new THREE.Vector3(-MOON_R * 1.7, 2, -MOON_R * 2.0)),
+            MOON_POS.clone().add(new THREE.Vector3(MOON_R * 2.4, -4, -MOON_R * 1.4)),
+            MOON_POS.clone().add(new THREE.Vector3(MOON_R * 2.0, -7, MOON_R * 2.2)),
+            // the way home takes a different line through the dark
+            new THREE.Vector3(110, 20, -300),
+            new THREE.Vector3(80, -25, -110),
+            EARTH_POS.clone().add(new THREE.Vector3(30, EARTH_R + 18, 20)),
+        ], true, 'catmullrom', 0.35);
+
+        // ---------------------------------------------------------------
+        // stardust trail from the wingtips
+        // ---------------------------------------------------------------
+        const TRAIL_N = 1400;
+        const trailGeo = new THREE.BufferGeometry();
+        const tPos = new Float32Array(TRAIL_N * 3);
+        const tBirth = new Float32Array(TRAIL_N).fill(-1e3);
+        const tSeed = new Float32Array(TRAIL_N);
+        trailGeo.setAttribute('position', new THREE.BufferAttribute(tPos, 3));
+        trailGeo.setAttribute('birth', new THREE.BufferAttribute(tBirth, 1));
+        trailGeo.setAttribute('seed', new THREE.BufferAttribute(tSeed, 1));
+        const TRAIL_LIFE = 3.2;
+        const trailMat = new THREE.ShaderMaterial({
+            uniforms: { time: { value: 0 }, glow: { value: params.trailGlow } },
+            vertexShader: /* glsl */`
+                attribute float birth, seed; varying float vA; varying float vSeed;
+                uniform float time;
+                void main() {
+                    float age = time - birth;
+                    vA = 1.0 - clamp(age / ${TRAIL_LIFE.toFixed(1)}, 0.0, 1.0);
+                    vSeed = seed;
+                    vec3 p = position;
+                    p.x += sin(seed * 37.0 + age * 1.3) * age * 0.12;
+                    p.y += cos(seed * 51.0 + age * 1.1) * age * 0.12 - age * age * 0.02;
+                    p.z += sin(seed * 23.0 + age * 0.9) * age * 0.10;
+                    vec4 mv = modelViewMatrix * vec4(p, 1.0);
+                    float ps = (1.2 + vA * 2.2 + fract(seed * 7.0) * 1.4) * (110.0 / -mv.z);
+                    gl_PointSize = min(ps, 6.0);
+                    gl_Position = projectionMatrix * mv;
+                }`,
+            fragmentShader: /* glsl */`
+                varying float vA; varying float vSeed; uniform float glow;
+                void main() {
+                    if (vA <= 0.0) discard;
+                    float d = length(gl_PointCoord - 0.5);
+                    float a = smoothstep(0.5, 0.0, d) * vA * 0.65;
+                    vec3 gold = vec3(1.0, 0.82, 0.45);
+                    vec3 blue = vec3(0.45, 0.7, 1.0);
+                    vec3 col = mix(blue, gold, fract(vSeed * 3.7)) * glow;
+                    gl_FragColor = vec4(col * a, a);
+                }`,
+            transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+        });
+        const trail = new THREE.Points(trailGeo, trailMat);
+        trail.frustumCulled = false;
+        scene.add(trail);
+        let trailHead = 0;
+        const _tipWorld = new THREE.Vector3();
+        function spawnTrail(time, speed) {
+            const per = speed > 0.5 ? 4 : 2;
+            for (const tip of wingtips) {
+                tip.getWorldPosition(_tipWorld);
+                for (let i = 0; i < per; i++) {
+                    const idx = trailHead++ % TRAIL_N;
+                    tPos[idx * 3]     = _tipWorld.x + (Math.random() - 0.5) * 0.15;
+                    tPos[idx * 3 + 1] = _tipWorld.y + (Math.random() - 0.5) * 0.15;
+                    tPos[idx * 3 + 2] = _tipWorld.z + (Math.random() - 0.5) * 0.15;
+                    tBirth[idx] = time;
+                    tSeed[idx] = Math.random();
+                }
+            }
+            trailGeo.attributes.position.needsUpdate = true;
+            trailGeo.attributes.birth.needsUpdate = true;
+            trailGeo.attributes.seed.needsUpdate = true;
+        }
+
+        // ---------------------------------------------------------------
+        // camera control: chase cam, drag to orbit around the owl
+        // ---------------------------------------------------------------
+        let userAz = params.azStart, userEl = params.elStart;
+        let dragging = false, lastX = 0, lastY = 0, lastInteract = -10;
+        const el = renderer.domElement;
+        el.addEventListener('pointerdown', e => { dragging = true; lastX = e.clientX; lastY = e.clientY; });
+        addEventListener('pointerup', () => dragging = false);
+        addEventListener('pointermove', e => {
+            if (!dragging) return;
+            userAz -= (e.clientX - lastX) * 0.005;
+            userEl = THREE.MathUtils.clamp(userEl + (e.clientY - lastY) * 0.004, -1.1, 1.2);
+            lastX = e.clientX; lastY = e.clientY;
+            lastInteract = clock ? clock.elapsedTime : 0;
+            document.getElementById('title').classList.add('gone');
+        });
+        el.addEventListener('wheel', e => {
+            params.camDist = THREE.MathUtils.clamp(params.camDist + e.deltaY * 0.008, 3.5, 22);
+        }, { passive: true });
+
+        // ---------------------------------------------------------------
+        // post
+        // ---------------------------------------------------------------
+        const composer = new EffectComposer(renderer);
+        composer.addPass(new RenderPass(scene, camera));
+        const bloom = new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight),
+            params.bloomStrength, params.bloomRadius, params.bloomThreshold);
+        composer.addPass(bloom);
+        const finalPass = new ShaderPass({
+            uniforms: {
+                tDiffuse: { value: null }, time: { value: 0 },
+                grain: { value: params.grain }, vig: { value: params.vignette },
+                ab: { value: params.aberration },
+            },
+            vertexShader: /* glsl */`
+                varying vec2 vUv;
+                void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
+            fragmentShader: /* glsl */`
+                uniform sampler2D tDiffuse; uniform float time, grain, vig, ab;
+                varying vec2 vUv;
+                float rnd(vec2 p) { return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453); }
+                void main() {
+                    vec2 c = vUv - 0.5;
+                    vec2 off = c * ab * length(c) * 8.0;
+                    vec3 col;
+                    col.r = texture2D(tDiffuse, vUv + off).r;
+                    col.g = texture2D(tDiffuse, vUv).g;
+                    col.b = texture2D(tDiffuse, vUv - off).b;
+                    col *= 1.0 - smoothstep(vig * 0.45, 1.15, length(c));
+                    col += (rnd(vUv * 917.0 + time) - 0.5) * grain;
+                    gl_FragColor = vec4(col, 1.0);
+                }`,
+        });
+        composer.addPass(finalPass);
+        composer.addPass(new OutputPass());
+
+        // ---------------------------------------------------------------
+        // GUI (press G)
+        // ---------------------------------------------------------------
+        const gui = new GUI({ title: 'to the moon and back' });
+        gui.add(params, 'period', 40, 240, 1).name('trip length (s)');
+        gui.add(params, 'flap', 1, 7, 0.1).name('wingbeat');
+        gui.add(params, 'camDist', 3.5, 22, 0.1).name('camera distance').listen();
+        gui.add(params, 'exposure', 0.5, 2).onChange(v => renderer.toneMappingExposure = v);
+        gui.add(params, 'bloomStrength', 0, 2).onChange(v => bloom.strength = v);
+        gui.add(params, 'trailGlow', 0, 4).onChange(v => trailMat.uniforms.glow.value = v);
+        gui.add(params, 'trail').name('stardust');
+        gui.hide();
+        addEventListener('keydown', e => { if (e.key.toLowerCase() === 'g') gui._hidden ? gui.show() : gui.hide(); });
+
+        // ---------------------------------------------------------------
+        // animate
+        // ---------------------------------------------------------------
+        const clock = new THREE.Clock();
+        const _pos = new THREE.Vector3(), _ahead = new THREE.Vector3(), _tan = new THREE.Vector3();
+        const _tan2 = new THREE.Vector3(), _m = new THREE.Matrix4(), _q = new THREE.Quaternion();
+        const _qRoll = new THREE.Quaternion(), _up = new THREE.Vector3(0, 1, 0);
+        const _camGoal = new THREE.Vector3(), _look = new THREE.Vector3(), _offset = new THREE.Vector3();
+        let camInit = false;
+
+        setTimeout(() => document.getElementById('title').classList.add('gone'), 12000);
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const t = clock.getElapsedTime();
+            const dt = Math.min(clock.getDelta(), 0.05) || 0.016;
+
+            // --- position on the journey
+            const u = params.uFix >= 0 ? params.uFix : (t / params.period) % 1;
+            path.getPointAt(u, _pos);
+            path.getTangentAt(u, _tan);
+            path.getTangentAt((u + 0.012) % 1, _tan2);
+            owl.position.copy(_pos);
+
+            // orientation: face along the path, bank into turns
+            _ahead.copy(_pos).add(_tan);
+            _m.lookAt(_ahead, _pos, _up);
+            _q.setFromRotationMatrix(_m);
+            const bank = THREE.MathUtils.clamp(_tan2.clone().sub(_tan).dot(
+                new THREE.Vector3().crossVectors(_up, _tan).normalize()) * 40, -0.9, 0.9);
+            _qRoll.setFromAxisAngle(new THREE.Vector3(0, 0, 1), -bank);
+            _q.multiply(_qRoll);
+            owl.quaternion.slerp(_q, 0.12);
+
+            // --- wingbeat: hard work near the two bodies, long glides between
+            const dEarth = _pos.distanceTo(EARTH_POS) - EARTH_R;
+            const dMoon = _pos.distanceTo(MOON_POS) - MOON_R;
+            const nearBody = Math.min(dEarth / 90, dMoon / 60);
+            const effort = 1.0 - THREE.MathUtils.smoothstep(nearBody, 0.4, 1.0);
+            const glidePulse = 0.5 + 0.5 * Math.sin(t * 0.21 + Math.sin(t * 0.07) * 2.0);
+            const amp = 0.18 + 0.75 * Math.max(effort, glidePulse * 0.45);
+            const beat = Math.sin(t * params.flap * (0.7 + effort * 0.5));
+            for (const wing of owl.userData.wings) {
+                const s = wing.userData.side;
+                wing.rotation.z = s * (-beat * amp * 0.85 - 0.1);
+                wing.userData.elbow.rotation.z = s * (-Math.sin(t * params.flap * (0.7 + effort * 0.5) - 0.7) * amp * 0.7 + 0.08);
+            }
+            owl.userData.tail.rotation.x = 0.1 + beat * amp * 0.08;
+            owl.userData.head.rotation.y = Math.sin(t * 0.4) * 0.25;
+            owl.userData.head.rotation.z = Math.sin(t * 0.27 + 1.0) * 0.08;
+
+            // earthshine on the owl fades with distance from home
+            earthShine.intensity = 3.0 * THREE.MathUtils.clamp(1.0 - dEarth / 220, 0, 1);
+
+            // --- stardust
+            if (params.trail) spawnTrail(t, amp);
+            trailMat.uniforms.time.value = t;
+
+            // --- camera: chase with user orbit
+            const idle = t - lastInteract > 8 ? Math.sin(t * 0.05) * 0.3 : 0;
+            _offset.set(
+                Math.sin(userAz + idle) * Math.cos(userEl),
+                Math.sin(userEl) + 0.18,
+                Math.cos(userAz + idle) * Math.cos(userEl)
+            ).multiplyScalar(params.camDist);
+            // keep the offset roughly in the owl's frame so "behind" stays behind
+            _offset.applyQuaternion(owl.quaternion);
+            _camGoal.copy(_pos).add(_offset);
+            if (!camInit) { camera.position.copy(_camGoal); camInit = true; }
+            camera.position.lerp(_camGoal, params.camLag);
+            _look.copy(_pos).addScaledVector(_tan, 1.4);
+            camera.lookAt(_look);
+
+            // --- shader clocks
+            scene.userData.starMat.uniforms.time.value = t;
+            scene.userData.earthMat.uniforms.time.value = t;
+            scene.userData.earth.rotation.y = t * 0.008;
+            finalPass.uniforms.time.value = t;
+
+            composer.render(dt);
+        }
+        animate();
+
+        addEventListener('resize', () => {
+            camera.aspect = innerWidth / innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(innerWidth, innerHeight);
+            composer.setSize(innerWidth, innerHeight);
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,900 @@
+<!DOCTYPE html>
+<!--
+  "Çini" — generative Islamic star patterns via Hankin's
+  polygons-in-contact method (E.H. Hankin, early 1900s; formalised in
+  Craig Kaplan's thesis "Computer Generated Islamic Star Patterns").
+
+  Nothing here is hand-drawn. An underlying tessellation (never shown)
+  gets a contact point on the midpoint of every edge; two rays shoot
+  inward from each contact point at a fixed angle θ, and the pattern is
+  simply where the rays collide. One angle decides the whole mood:
+  ~30-40° gives sharp acute stars, ~55-70° gives blunt obtuse ones.
+
+  The mosaic look comes from colouring the enclosed regions, not the
+  lines: the line web is turned into a planar subdivision, each face is
+  classified by its geometry, and congruent faces share a colour from
+  an İznik palette. The interlace mode traces strands through the
+  crossings and weaves them over/under alternately.
+
+  Controls: pick a tiling, drag θ, switch render modes, or let θ
+  breathe on its own.
+-->
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Çini</title>
+<script src="https://cdn.counter.dev/script.js" data-id="72d92ac8-56cf-4fdd-9899-b73adbab2e4d" data-utcoffset="0"></script>
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; background: #0b0e14; }
+  canvas { display: block; width: 100vw; height: 100vh; cursor: grab; }
+  canvas:active { cursor: grabbing; }
+
+  #title {
+    position: fixed; inset: 0;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    pointer-events: none; z-index: 10; text-align: center; padding: 1.5rem;
+    transition: opacity 3s ease;
+  }
+  #title.gone { opacity: 0; }
+  #title h1 {
+    font-family: "Georgia", "Times New Roman", serif;
+    font-weight: 400; font-style: italic;
+    font-size: clamp(2.4rem, 7vw, 4.5rem);
+    letter-spacing: 0.06em;
+    color: #f2ead6;
+    margin: 0;
+    text-shadow: 0 0 30px rgba(20, 40, 90, 0.9), 0 0 90px rgba(10, 20, 50, 0.9);
+    opacity: 0;
+    animation: bloom 4s ease forwards 0.5s;
+  }
+  #whisper {
+    font-family: "Georgia", serif; font-style: italic;
+    font-size: clamp(0.9rem, 2.3vw, 1.1rem);
+    color: rgba(242, 234, 214, 0.75);
+    text-shadow: 0 0 20px rgba(10, 20, 50, 0.9);
+    margin-top: 1.3rem; opacity: 0;
+    animation: bloom 4s ease forwards 2s;
+  }
+  @keyframes bloom {
+    from { opacity: 0; filter: blur(10px); transform: translateY(10px); }
+    to   { opacity: 1; filter: blur(0);    transform: translateY(0); }
+  }
+
+  #hint {
+    position: fixed; bottom: 1.2rem; left: 0; right: 0; text-align: center;
+    font-family: "Courier New", monospace; font-size: 0.68rem;
+    letter-spacing: 0.3em; text-transform: uppercase;
+    color: rgba(242, 234, 214, 0.4); pointer-events: none; z-index: 9;
+    text-shadow: 0 1px 4px rgba(0,0,0,0.8);
+    opacity: 0; animation: bloom 3s ease forwards 5.5s;
+  }
+
+  #panel {
+    position: fixed; top: 1rem; right: 1rem; z-index: 20;
+    width: 240px;
+    font-family: "Courier New", monospace; font-size: 0.72rem;
+    color: rgba(242, 234, 214, 0.85);
+    background: rgba(8, 11, 18, 0.82);
+    border: 1px solid rgba(242, 234, 214, 0.15);
+    border-radius: 10px;
+    backdrop-filter: blur(8px);
+    user-select: none;
+  }
+  #panelHead {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 0.55rem 0.8rem; cursor: pointer;
+    letter-spacing: 0.18em; text-transform: uppercase; font-size: 0.66rem;
+  }
+  #panelBody { padding: 0 0.8rem 0.8rem; }
+  #panel.closed #panelBody { display: none; }
+  .row { margin-top: 0.7rem; }
+  .row label { display: block; margin-bottom: 0.3rem; letter-spacing: 0.12em; opacity: 0.75; }
+  .row .val { float: right; opacity: 1; color: #e8c96a; }
+  select {
+    width: 100%; padding: 0.3rem;
+    background: #10151f; color: inherit;
+    border: 1px solid rgba(242, 234, 214, 0.2); border-radius: 5px;
+    font-family: inherit; font-size: inherit;
+  }
+  input[type="range"] { width: 100%; accent-color: #e8c96a; }
+  .modes { display: flex; gap: 4px; }
+  .modes button {
+    flex: 1; padding: 0.35rem 0;
+    background: #10151f; color: rgba(242, 234, 214, 0.7);
+    border: 1px solid rgba(242, 234, 214, 0.2); border-radius: 5px;
+    font-family: inherit; font-size: 0.66rem; cursor: pointer;
+  }
+  .modes button.on { background: #2a3550; color: #f2ead6; border-color: rgba(232, 201, 106, 0.6); }
+  .checks { display: flex; gap: 1rem; margin-top: 0.7rem; }
+  .checks label { display: flex; align-items: center; gap: 0.35rem; cursor: pointer; opacity: 0.85; }
+  input[type="checkbox"] { accent-color: #e8c96a; }
+  #mood { font-size: 0.62rem; opacity: 0.5; margin-top: 0.25rem; letter-spacing: 0.15em; }
+</style>
+</head>
+<body>
+  <canvas id="c"></canvas>
+
+  <div id="title">
+    <h1>Çini</h1>
+    <div id="whisper">every star here falls out of a single angle</div>
+  </div>
+  <div id="hint">drag to wander &nbsp;·&nbsp; θ decides the mood</div>
+
+  <div id="panel">
+    <div id="panelHead"><span>polygons in contact</span><span id="panelToggle">−</span></div>
+    <div id="panelBody">
+      <div class="row">
+        <label>tiling</label>
+        <select id="tiling">
+          <option value="488" selected>octagons · 4.8.8</option>
+          <option value="31212">dodecagons · 3.12.12</option>
+          <option value="3464">rhombitrihexagonal · 3.4.6.4</option>
+          <option value="hex">hexagonal · 6³</option>
+          <option value="square">square · 4⁴</option>
+          <option value="tri">triangular · 3⁶</option>
+        </select>
+      </div>
+      <div class="row">
+        <label>contact angle θ <span class="val" id="thetaVal">36°</span></label>
+        <input type="range" id="theta" min="15" max="85" step="0.5" value="36">
+        <div id="mood">acute</div>
+      </div>
+      <div class="row">
+        <label>render</label>
+        <div class="modes">
+          <button data-mode="mosaic" class="on">mosaic</button>
+          <button data-mode="weave">weave</button>
+          <button data-mode="lines">lines</button>
+        </div>
+      </div>
+      <div class="row">
+        <label>zoom <span class="val" id="zoomVal"></span></label>
+        <input type="range" id="zoom" min="34" max="150" step="1" value="72">
+      </div>
+      <div class="checks">
+        <label><input type="checkbox" id="animate"> breathe θ</label>
+        <label><input type="checkbox" id="scaffold"> scaffold</label>
+      </div>
+    </div>
+  </div>
+
+<script>
+'use strict';
+
+// ---------------------------------------------------------------- state ---
+
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const DPR = Math.min(window.devicePixelRatio || 1, 2);
+let W = 0, H = 0;
+
+const state = {
+  tiling: '488',
+  theta: 36,          // contact angle, degrees
+  mode: 'mosaic',     // mosaic | weave | lines
+  scale: 72,          // pixels per tiling-edge unit
+  panX: 0, panY: 0,   // pixels
+  animate: false,
+  scaffold: false,
+};
+
+const SQ2 = Math.SQRT2, SQ3 = Math.sqrt(3);
+
+// ----------------------------------------------------------- small maths ---
+
+function centroid(poly) {
+  let x = 0, y = 0;
+  for (const p of poly) { x += p[0]; y += p[1]; }
+  return [x / poly.length, y / poly.length];
+}
+
+function signedArea(poly) {
+  let a = 0;
+  for (let i = 0; i < poly.length; i++) {
+    const p = poly[i], q = poly[(i + 1) % poly.length];
+    a += p[0] * q[1] - q[0] * p[1];
+  }
+  return a / 2;
+}
+
+function ensureCCW(poly) {
+  return signedArea(poly) < 0 ? poly.slice().reverse() : poly;
+}
+
+function regularPoly(cx, cy, n, r, a0) {
+  const p = [];
+  for (let k = 0; k < n; k++) {
+    const a = a0 + k * 2 * Math.PI / n;
+    p.push([cx + r * Math.cos(a), cy + r * Math.sin(a)]);
+  }
+  return p;
+}
+
+function near(c, uc, R) {
+  const dx = c[0] - uc[0], dy = c[1] - uc[1];
+  return dx * dx + dy * dy < R * R;
+}
+
+// -------------------------------------------------------------- tilings ---
+// Each generator returns the template tiling: polygons with edge length 1
+// covering a disc of radius R around uc. The tiling is scaffolding for the
+// contact points; it is never drawn (unless you tick "scaffold").
+
+const GEN = {
+  square(uc, R) {
+    const t = [], m = Math.ceil(R) + 2;
+    const i0 = Math.round(uc[0]), j0 = Math.round(uc[1]);
+    for (let i = i0 - m; i <= i0 + m; i++)
+      for (let j = j0 - m; j <= j0 + m; j++)
+        if (near([i + 0.5, j + 0.5], uc, R))
+          t.push([[i, j], [i + 1, j], [i + 1, j + 1], [i, j + 1]]);
+    return t;
+  },
+
+  tri(uc, R) {
+    const t = [], h = SQ3 / 2;
+    const j0 = Math.round(uc[1] / h), mj = Math.ceil(R / h) + 2;
+    for (let j = j0 - mj; j <= j0 + mj; j++) {
+      const i0 = Math.round(uc[0] - 0.5 * j), mi = Math.ceil(R) + 2;
+      for (let i = i0 - mi; i <= i0 + mi; i++) {
+        const ax = i + 0.5 * j, ay = j * h;
+        const up = [[ax, ay], [ax + 1, ay], [ax + 0.5, ay + h]];
+        const dn = [[ax + 1, ay], [ax + 1.5, ay + h], [ax + 0.5, ay + h]];
+        if (near(centroid(up), uc, R)) t.push(up);
+        if (near(centroid(dn), uc, R)) t.push(dn);
+      }
+    }
+    return t;
+  },
+
+  hex(uc, R) {
+    const t = [];
+    const j0 = Math.round(uc[1] / 1.5), mj = Math.ceil(R / 1.5) + 2;
+    for (let j = j0 - mj; j <= j0 + mj; j++) {
+      const i0 = Math.round((uc[0] - SQ3 / 2 * j) / SQ3), mi = Math.ceil(R / SQ3) + 2;
+      for (let i = i0 - mi; i <= i0 + mi; i++) {
+        const cx = SQ3 * i + SQ3 / 2 * j, cy = 1.5 * j;
+        if (near([cx, cy], uc, R)) t.push(regularPoly(cx, cy, 6, 1, Math.PI / 6));
+      }
+    }
+    return t;
+  },
+
+  // squares + octagons: the classic Ottoman 8-fold layout
+  '488'(uc, R) {
+    const t = [], p = 1 + SQ2, R8 = 1 / (2 * Math.sin(Math.PI / 8));
+    const m = Math.ceil(R / p) + 2;
+    const i0 = Math.round(uc[0] / p), j0 = Math.round(uc[1] / p);
+    for (let i = i0 - m; i <= i0 + m; i++)
+      for (let j = j0 - m; j <= j0 + m; j++) {
+        if (near([i * p, j * p], uc, R))
+          t.push(regularPoly(i * p, j * p, 8, R8, Math.PI / 8));
+        const sx = (i + 0.5) * p, sy = (j + 0.5) * p;
+        if (near([sx, sy], uc, R))
+          t.push(regularPoly(sx, sy, 4, Math.SQRT1_2, 0));
+      }
+    return t;
+  },
+
+  // dodecagons + triangles: 12-pointed stars
+  '31212'(uc, R) {
+    const t = [], a = 2 + SQ3, R12 = 1 / (2 * Math.sin(Math.PI / 12)), ap = a / 2;
+    const uy = a * SQ3 / 2;
+    const j0 = Math.round(uc[1] / uy), mj = Math.ceil(R / uy) + 2;
+    for (let j = j0 - mj; j <= j0 + mj; j++) {
+      const i0 = Math.round((uc[0] - a / 2 * j) / a), mi = Math.ceil(R / a) + 2;
+      for (let i = i0 - mi; i <= i0 + mi; i++) {
+        const cx = a * i + a / 2 * j, cy = uy * j;
+        if (!near([cx, cy], uc, R + 2)) continue;
+        if (near([cx, cy], uc, R))
+          t.push(regularPoly(cx, cy, 12, R12, Math.PI / 12));
+        // triangles sit on the six edges not shared with a neighbouring dodecagon
+        for (let k = 0; k < 6; k++) {
+          const phi = Math.PI / 6 + k * Math.PI / 3;
+          const v1a = phi - Math.PI / 12, v2a = phi + Math.PI / 12;
+          const v1 = [cx + R12 * Math.cos(v1a), cy + R12 * Math.sin(v1a)];
+          const v2 = [cx + R12 * Math.cos(v2a), cy + R12 * Math.sin(v2a)];
+          const apex = [cx + (ap + SQ3 / 2) * Math.cos(phi), cy + (ap + SQ3 / 2) * Math.sin(phi)];
+          const tri = [v1, v2, apex];
+          if (near(centroid(tri), uc, R)) t.push(tri);
+        }
+      }
+    }
+    return t;
+  },
+
+  // hexagons + squares + triangles
+  '3464'(uc, R) {
+    const t = [], L = 1 + SQ3, ux = L * SQ3 / 2;
+    const i0 = Math.round(uc[0] / ux), mi = Math.ceil(R / ux) + 2;
+    for (let i = i0 - mi; i <= i0 + mi; i++) {
+      const j0 = Math.round(uc[1] / L - i / 2), mj = Math.ceil(R / L) + 2;
+      for (let j = j0 - mj; j <= j0 + mj; j++) {
+        const cx = ux * i, cy = L * (i / 2 + j);
+        if (!near([cx, cy], uc, R + 2)) continue;
+        if (near([cx, cy], uc, R)) t.push(regularPoly(cx, cy, 6, 1, 0));
+        for (let k = 0; k < 6; k++) {
+          const a1 = k * Math.PI / 3, a2 = (k + 1) * Math.PI / 3;
+          const phi = a1 + Math.PI / 6;                        // edge normal
+          const w1 = [cx + Math.cos(a1), cy + Math.sin(a1)];
+          const w2 = [cx + Math.cos(a2), cy + Math.sin(a2)];
+          const n = [Math.cos(phi), Math.sin(phi)];
+          const sq = [w1, w2, [w2[0] + n[0], w2[1] + n[1]], [w1[0] + n[0], w1[1] + n[1]]];
+          if (near(centroid(sq), uc, R)) t.push(sq);
+          // triangle pinned at vertex w1, between this square and the previous one
+          const phi0 = a1 - Math.PI / 6;
+          const n0 = [Math.cos(phi0), Math.sin(phi0)];
+          const tr = [w1, [w1[0] + n0[0], w1[1] + n0[1]], [w1[0] + n[0], w1[1] + n[1]]];
+          if (near(centroid(tr), uc, R)) t.push(tr);
+        }
+      }
+    }
+    return t;
+  },
+};
+
+function genTiles() {
+  const uc = [-state.panX / state.scale, -state.panY / state.scale];
+  const R = Math.hypot(W, H) / 2 / state.scale + 2.5;
+  const raw = GEN[state.tiling](uc, R);
+  // shapes generated from several neighbours (triangles, squares in the
+  // semi-regular tilings) are deduped by centroid
+  const seen = new Set(), tiles = [];
+  for (const poly of raw) {
+    const c = centroid(poly);
+    const k = Math.round(c[0] * 1024) + ',' + Math.round(c[1] * 1024);
+    if (seen.has(k)) continue;
+    seen.add(k);
+    tiles.push(ensureCCW(poly));
+  }
+  return tiles;
+}
+
+// --------------------------------------------------- Hankin: rays collide ---
+// For each edge, two rays leave the midpoint at θ to the edge, heading
+// inward. Each ray is cut at its first collision with another ray of the
+// same tile. The collisions are the pattern.
+
+function hankin(poly, thetaDeg) {
+  const th = thetaDeg * Math.PI / 180;
+  const c = Math.cos(th), s = Math.sin(th);
+  const n = poly.length, rays = [];
+  for (let i = 0; i < n; i++) {
+    const a = poly[i], b = poly[(i + 1) % n];
+    const m = [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2];
+    const len = Math.hypot(b[0] - a[0], b[1] - a[1]);
+    const t = [(b[0] - a[0]) / len, (b[1] - a[1]) / len];
+    const nn = [-t[1], t[0]];                 // inward normal (poly is CCW)
+    rays.push({ o: m, d: [t[0] * c + nn[0] * s, t[1] * c + nn[1] * s] });
+    rays.push({ o: m, d: [-t[0] * c + nn[0] * s, -t[1] * c + nn[1] * s] });
+  }
+  // how far each ray can go before leaving the tile (guards degenerate cases)
+  function exitDist(r) {
+    let best = Infinity;
+    for (let i = 0; i < n; i++) {
+      const a = poly[i], b = poly[(i + 1) % n];
+      const ex = a[0] - r.o[0], ey = a[1] - r.o[1];
+      const sx = b[0] - a[0], sy = b[1] - a[1];
+      const cross = r.d[0] * sy - r.d[1] * sx;
+      if (Math.abs(cross) < 1e-9) continue;
+      const u = (ex * sy - ey * sx) / cross;
+      const v = (ex * r.d[1] - ey * r.d[0]) / cross;
+      if (u > 1e-6 && v > -1e-6 && v < 1 + 1e-6 && u < best) best = u;
+    }
+    return best;
+  }
+  // Kaplan's heuristic: every crossing of two forward rays inside the tile
+  // is a candidate; greedily match each ray with one partner, shortest
+  // combined length first, so both strands end at a shared vertex.
+  const exit = rays.map(exitDist);
+  const cands = [];
+  for (let i = 0; i < rays.length; i++) {
+    const r = rays[i];
+    for (let j = i + 1; j < rays.length; j++) {
+      const q = rays[j];
+      const cross = r.d[0] * q.d[1] - r.d[1] * q.d[0];
+      if (Math.abs(cross) < 1e-9) continue;
+      const ex = q.o[0] - r.o[0], ey = q.o[1] - r.o[1];
+      const u = (ex * q.d[1] - ey * q.d[0]) / cross;
+      const v = (ex * r.d[1] - ey * r.d[0]) / cross;
+      if (u > 1e-6 && v > 1e-6 && u <= exit[i] + 1e-6 && v <= exit[j] + 1e-6)
+        cands.push({ i, j, u, s: u + v });
+    }
+  }
+  cands.sort((a, b) => a.s - b.s);
+  const used = new Array(rays.length).fill(false);
+  const segs = [];
+  for (const cd of cands) {
+    if (used[cd.i] || used[cd.j]) continue;
+    used[cd.i] = used[cd.j] = true;
+    const r = rays[cd.i], q = rays[cd.j];
+    const P = [r.o[0] + cd.u * r.d[0], r.o[1] + cd.u * r.d[1]];
+    segs.push([[r.o[0], r.o[1]], P], [[q.o[0], q.o[1]], P]);
+  }
+  return segs;
+}
+
+// All tiles of a given shape are pure translations of each other, so the
+// local pattern is computed once per (shape, θ) and translated into place.
+let protoCache = new Map();
+
+function tileSegments(poly) {
+  const c = centroid(poly);
+  const rel = poly.map(p => [p[0] - c[0], p[1] - c[1]]);
+  const key = state.theta.toFixed(2) + '|' +
+    rel.map(p => p[0].toFixed(3) + ',' + p[1].toFixed(3)).join(';');
+  let segs = protoCache.get(key);
+  if (!segs) {
+    if (protoCache.size > 96) protoCache = new Map();
+    segs = hankin(rel, state.theta);
+    protoCache.set(key, segs);
+  }
+  return segs.map(sg => [
+    [sg[0][0] + c[0], sg[0][1] + c[1]],
+    [sg[1][0] + c[0], sg[1][1] + c[1]],
+  ]);
+}
+
+// ------------------------------------------------------- planar skeleton ---
+// Split segments at mutual crossings and T-junctions (within each tile),
+// weld coincident endpoints across tiles, and build the vertex/edge graph
+// that both the mosaic faces and the weave strands come from.
+
+function buildGraph(perTileSegs) {
+  const pieces = [];
+  for (const segs of perTileSegs) {
+    const cuts = segs.map(() => []);
+    for (let i = 0; i < segs.length; i++) {
+      const A = segs[i];
+      const rx = A[1][0] - A[0][0], ry = A[1][1] - A[0][1];
+      for (let j = i + 1; j < segs.length; j++) {
+        const B = segs[j];
+        const sx = B[1][0] - B[0][0], sy = B[1][1] - B[0][1];
+        const cross = rx * sy - ry * sx;
+        if (Math.abs(cross) < 1e-12) continue;
+        const ex = B[0][0] - A[0][0], ey = B[0][1] - A[0][1];
+        const u = (ex * sy - ey * sx) / cross;
+        const v = (ex * ry - ey * rx) / cross;
+        const e = 1e-6;
+        if (u > -e && u < 1 + e && v > -e && v < 1 + e) {
+          if (u > e && u < 1 - e) cuts[i].push(u);
+          if (v > e && v < 1 - e) cuts[j].push(v);
+        }
+      }
+    }
+    for (let i = 0; i < segs.length; i++) {
+      const A = segs[i];
+      const ts = [0, ...cuts[i].sort((a, b) => a - b), 1];
+      for (let k = 0; k < ts.length - 1; k++) {
+        if (ts[k + 1] - ts[k] < 1e-6) continue;
+        const t0 = ts[k], t1 = ts[k + 1];
+        pieces.push([
+          [A[0][0] + t0 * (A[1][0] - A[0][0]), A[0][1] + t0 * (A[1][1] - A[0][1])],
+          [A[0][0] + t1 * (A[1][0] - A[0][0]), A[0][1] + t1 * (A[1][1] - A[0][1])],
+        ]);
+      }
+    }
+  }
+
+  const vmap = new Map(), verts = [];
+  function vid(p) {
+    const k = Math.round(p[0] * 2048) + ',' + Math.round(p[1] * 2048);
+    let id = vmap.get(k);
+    if (id === undefined) { id = verts.length; verts.push(p); vmap.set(k, id); }
+    return id;
+  }
+  const eset = new Set(), edges = [];
+  for (const sg of pieces) {
+    const u = vid(sg[0]), v = vid(sg[1]);
+    if (u === v) continue;
+    const k = u < v ? u + ',' + v : v + ',' + u;
+    if (eset.has(k)) continue;
+    eset.add(k);
+    edges.push([u, v]);
+  }
+
+  const adj = verts.map(() => []);
+  for (const [u, v] of edges) { adj[u].push(v); adj[v].push(u); }
+  for (let v = 0; v < verts.length; v++)
+    adj[v].sort((a, b) =>
+      Math.atan2(verts[a][1] - verts[v][1], verts[a][0] - verts[v][0]) -
+      Math.atan2(verts[b][1] - verts[v][1], verts[b][0] - verts[v][0]));
+
+  return { verts, edges, adj };
+}
+
+// ------------------------------------------------- faces, for the mosaic ---
+
+function extractFaces(g) {
+  const { verts, adj } = g;
+  const idxOf = adj.map(list => { const m = new Map(); list.forEach((w, i) => m.set(w, i)); return m; });
+  const visited = new Set(), faces = [];
+  for (let u = 0; u < adj.length; u++) {
+    for (const v of adj[u]) {
+      if (visited.has(u + '>' + v)) continue;
+      const ids = [];
+      let a = u, b = v, guard = 0;
+      do {
+        visited.add(a + '>' + b);
+        ids.push(b);
+        const list = adj[b];
+        const i = idxOf[b].get(a);
+        const w = list[(i + 1) % list.length];
+        a = b; b = w;
+      } while ((a !== u || b !== v) && ++guard < 4096);
+      if (ids.length < 3) continue;
+      const poly = ids.map(i => verts[i]);
+      const area = Math.abs(signedArea(poly));
+      if (area < 1e-6 || area > 20) continue;   // drops the outer face
+      faces.push({ ids, poly, area, n: ids.length });
+    }
+  }
+  return faces;
+}
+
+// İznik: white ground, cobalt stars, then turquoise / coral / sage / gold.
+const PAL = {
+  ground: '#ece2cb',
+  star: '#1a3f7e',
+  cycle: ['#b23a2a', '#1a7f80', '#5d8b58', '#c9a13b', '#41649c', '#8a4a35'],
+  outline: '#1d1a14',
+};
+
+function colourFaces(faces) {
+  // congruent faces share a class: same edge count, same area (quantised)
+  const groups = new Map();
+  for (const f of faces) {
+    const k = f.n + '|' + f.area.toFixed(2);
+    let gr = groups.get(k);
+    if (!gr) { gr = { key: k, n: f.n, area: f.area, faces: [] }; groups.set(k, gr); }
+    gr.faces.push(f);
+  }
+  const classes = [...groups.values()];
+  // most-sided faces are the stars
+  classes.sort((a, b) => b.n - a.n || b.area - a.area || (a.key < b.key ? -1 : 1));
+  const colour = new Map();
+  if (classes.length) colour.set(classes[0].key, PAL.star);
+  const rest = classes.slice(1);
+  // the most numerous remaining class is the ground
+  rest.sort((a, b) => b.faces.length - a.faces.length || (a.key < b.key ? -1 : 1));
+  if (rest.length) colour.set(rest[0].key, PAL.ground);
+  const others = rest.slice(1);
+  others.sort((a, b) => b.area - a.area || b.n - a.n || (a.key < b.key ? -1 : 1));
+  others.forEach((cl, i) => colour.set(cl.key, PAL.cycle[i % PAL.cycle.length]));
+  for (const f of faces) f.fill = colour.get(f.n + '|' + f.area.toFixed(2));
+}
+
+// -------------------------------------------- strands + weave, for straps ---
+// A strand continues straight through each vertex. Crossings (degree-4
+// vertices) alternate over/under along every strand.
+
+function buildStrands(g) {
+  const { verts, adj, edges } = g;
+  const cont = new Map();          // 'a,b' -> vertex the strand continues to
+  for (let v = 0; v < adj.length; v++) {
+    for (const u of adj[v]) {
+      const dx = verts[v][0] - verts[u][0], dy = verts[v][1] - verts[u][1];
+      const dl = Math.hypot(dx, dy);
+      let bestW = -1, bestDot = 0.55;      // must be reasonably straight
+      for (const w of adj[v]) {
+        if (w === u) continue;
+        const ex = verts[w][0] - verts[v][0], ey = verts[w][1] - verts[v][1];
+        const el = Math.hypot(ex, ey);
+        const dot = (dx * ex + dy * ey) / (dl * el);
+        if (dot > bestDot) { bestDot = dot; bestW = w; }
+      }
+      if (bestW >= 0) cont.set(u + ',' + v, bestW);
+    }
+  }
+
+  const ek = (a, b) => a < b ? a + ',' + b : b + ',' + a;
+  const used = new Set(), strands = [], edgeStrand = new Map();
+
+  function trace(a, b) {
+    const path = [a, b];
+    while (true) {
+      const w = cont.get(path[path.length - 2] + ',' + path[path.length - 1]);
+      if (w === undefined) break;
+      const k = ek(path[path.length - 1], w);
+      if (used.has(k)) break;
+      used.add(k);
+      path.push(w);
+    }
+    return path;
+  }
+
+  for (const [u, v] of edges) {
+    if (used.has(ek(u, v))) continue;
+    used.add(ek(u, v));
+    const fwd = trace(u, v);
+    const bwd = trace(v, u);
+    const path = bwd.slice(2).reverse().concat(fwd);
+    const si = strands.length;
+    strands.push(path);
+    for (let i = 0; i < path.length - 1; i++)
+      edgeStrand.set(ek(path[i], path[i + 1]), si);
+  }
+
+  // over/under: walk each strand and alternate at its crossings
+  const overAt = new Map();        // crossing vertex -> strand index on top
+  for (let si = 0; si < strands.length; si++) {
+    const path = strands[si];
+    let want;                      // should the next crossing put us on top?
+    for (let i = 1; i < path.length - 1; i++) {
+      const v = path[i];
+      if (adj[v].length !== 4) continue;
+      if (overAt.has(v)) { want = overAt.get(v) !== si; continue; }
+      const over = want === undefined ? true : want;
+      if (over) overAt.set(v, si);
+      else {
+        let other = si;
+        for (const w of adj[v]) {
+          const s2 = edgeStrand.get(ek(v, w));
+          if (s2 !== undefined && s2 !== si) { other = s2; break; }
+        }
+        overAt.set(v, other);
+      }
+      want = !over;
+    }
+  }
+  return { strands, overAt, edgeStrand };
+}
+
+// -------------------------------------------------------------- painting ---
+
+function strokePath(pts, verts, colour, width) {
+  ctx.strokeStyle = colour;
+  ctx.lineWidth = width;
+  ctx.lineJoin = 'round';
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.moveTo(verts[pts[0]][0], verts[pts[0]][1]);
+  for (let i = 1; i < pts.length; i++) ctx.lineTo(verts[pts[i]][0], verts[pts[i]][1]);
+  ctx.stroke();
+}
+
+function render() {
+  const tiles = genTiles();
+  const perTile = tiles.map(tileSegments);
+
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.fillStyle = state.mode === 'mosaic' ? '#141210' : '#0b0e14';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.setTransform(DPR * state.scale, 0, 0, DPR * state.scale,
+    DPR * (W / 2 + state.panX), DPR * (H / 2 + state.panY));
+  const px = 1 / state.scale;      // one screen pixel, in tiling units
+
+  if (state.mode === 'lines') {
+    ctx.strokeStyle = '#e6d9b8';
+    ctx.lineWidth = 1.3 * px;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    for (const segs of perTile)
+      for (const sg of segs) {
+        ctx.moveTo(sg[0][0], sg[0][1]);
+        ctx.lineTo(sg[1][0], sg[1][1]);
+      }
+    ctx.stroke();
+  } else {
+    const g = buildGraph(perTile);
+
+    if (state.mode === 'mosaic') {
+      const faces = extractFaces(g);
+      colourFaces(faces);
+      if (location.hash.includes('debug')) {
+        const byClass = {};
+        for (const f of faces) {
+          const k = f.n + '|' + f.area.toFixed(2);
+          byClass[k] = (byClass[k] || 0) + 1;
+        }
+        console.log('DEBUG verts=' + g.verts.length + ' edges=' + g.edges.length +
+          ' faces=' + faces.length + ' classes=' + JSON.stringify(byClass));
+      }
+      for (const f of faces) {
+        ctx.fillStyle = f.fill || PAL.ground;
+        ctx.beginPath();
+        ctx.moveTo(f.poly[0][0], f.poly[0][1]);
+        for (let i = 1; i < f.poly.length; i++) ctx.lineTo(f.poly[i][0], f.poly[i][1]);
+        ctx.closePath();
+        ctx.fill();
+      }
+      ctx.strokeStyle = PAL.outline;
+      ctx.lineWidth = 1.4 * px;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      for (const [u, v] of g.edges) {
+        ctx.moveTo(g.verts[u][0], g.verts[u][1]);
+        ctx.lineTo(g.verts[v][0], g.verts[v][1]);
+      }
+      ctx.stroke();
+    } else {
+      // weave: flat straps first, then redraw the "over" strand locally at
+      // each crossing so its casing cuts across the strand underneath
+      const { strands, overAt, edgeStrand } = buildStrands(g);
+      const bg = '#0b0e14';
+      const strap = '#e6d9b8';
+      const strapW = Math.max(4.5, Math.min(12, state.scale * 0.15)) * px;
+      const casing = strapW + 3.5 * px;
+      for (const s of strands) strokePath(s, g.verts, bg, casing);
+      for (const s of strands) strokePath(s, g.verts, strap, strapW);
+
+      // at every crossing, cut a short gap into the under strand, then lay
+      // the over strand's fill back across it
+      const ek = (a, b) => a < b ? a + ',' + b : b + ',' + a;
+      const gapL = strapW / 2 + 3.0 * px;   // half-length of the cut
+      const overL = strapW * 1.9;
+      ctx.lineJoin = 'round';
+      ctx.lineCap = 'butt';
+      for (const [v, si] of overAt) {
+        const P = g.verts[v];
+        if (g.adj[v].length !== 4) continue;
+        const under = [], over = [];
+        for (const w of g.adj[v])
+          (edgeStrand.get(ek(v, w)) === si ? over : under).push(w);
+        if (under.length !== 2 || over.length !== 2) continue;
+        const toward = (w, L) => {
+          const Q = g.verts[w];
+          const dx = Q[0] - P[0], dy = Q[1] - P[1], dl = Math.hypot(dx, dy);
+          const t = Math.min(1, L / dl);
+          return [P[0] + dx * t, P[1] + dy * t];
+        };
+        const drawPiece = (a, b, colour, width) => {
+          ctx.strokeStyle = colour; ctx.lineWidth = width;
+          ctx.beginPath();
+          ctx.moveTo(a[0], a[1]);
+          ctx.lineTo(P[0], P[1]);
+          ctx.lineTo(b[0], b[1]);
+          ctx.stroke();
+        };
+        drawPiece(toward(under[0], gapL), toward(under[1], gapL), bg, casing);
+        drawPiece(toward(over[0], overL), toward(over[1], overL), strap, strapW);
+      }
+    }
+  }
+
+  if (state.scaffold) {
+    ctx.strokeStyle = 'rgba(242, 234, 214, 0.22)';
+    ctx.lineWidth = 1 * px;
+    ctx.setLineDash([6 * px, 5 * px]);
+    ctx.beginPath();
+    for (const poly of tiles) {
+      ctx.moveTo(poly[0][0], poly[0][1]);
+      for (let i = 1; i < poly.length; i++) ctx.lineTo(poly[i][0], poly[i][1]);
+      ctx.closePath();
+    }
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+}
+
+// ------------------------------------------------------------------- UI ---
+
+let dirty = true;
+function scheduleRebuild() { dirty = true; }
+
+function frame(ts) {
+  if (state.animate) {
+    state.theta = 50 + 29 * Math.sin(ts / 9000 * 2 * Math.PI);
+    thetaSlider.value = state.theta;
+    updateThetaLabel();
+    dirty = true;
+  }
+  if (dirty) { dirty = false; render(); }
+  requestAnimationFrame(frame);
+}
+
+function resize() {
+  W = window.innerWidth; H = window.innerHeight;
+  canvas.width = Math.round(W * DPR);
+  canvas.height = Math.round(H * DPR);
+  canvas.style.width = W + 'px';
+  canvas.style.height = H + 'px';
+  scheduleRebuild();
+}
+window.addEventListener('resize', resize);
+
+const thetaSlider = document.getElementById('theta');
+const thetaVal = document.getElementById('thetaVal');
+const mood = document.getElementById('mood');
+function updateThetaLabel() {
+  thetaVal.textContent = Number(state.theta).toFixed(0) + '°';
+  mood.textContent = state.theta < 42 ? 'acute · sharp stars'
+    : state.theta < 58 ? 'median' : 'obtuse · blunt stars';
+}
+thetaSlider.addEventListener('input', () => {
+  state.theta = parseFloat(thetaSlider.value);
+  updateThetaLabel();
+  scheduleRebuild();
+});
+
+document.getElementById('tiling').addEventListener('change', e => {
+  state.tiling = e.target.value;
+  scheduleRebuild();
+});
+
+const zoomSlider = document.getElementById('zoom');
+const zoomVal = document.getElementById('zoomVal');
+function updateZoomLabel() { zoomVal.textContent = state.scale + 'px'; }
+zoomSlider.addEventListener('input', () => {
+  state.scale = parseInt(zoomSlider.value, 10);
+  updateZoomLabel();
+  scheduleRebuild();
+});
+
+for (const b of document.querySelectorAll('.modes button')) {
+  b.addEventListener('click', () => {
+    state.mode = b.dataset.mode;
+    document.querySelectorAll('.modes button').forEach(x => x.classList.toggle('on', x === b));
+    scheduleRebuild();
+  });
+}
+
+document.getElementById('animate').addEventListener('change', e => { state.animate = e.target.checked; });
+document.getElementById('scaffold').addEventListener('change', e => { state.scaffold = e.target.checked; scheduleRebuild(); });
+
+const panel = document.getElementById('panel');
+document.getElementById('panelHead').addEventListener('click', () => {
+  panel.classList.toggle('closed');
+  document.getElementById('panelToggle').textContent = panel.classList.contains('closed') ? '+' : '−';
+});
+
+// drag to pan
+let dragging = false, lastX = 0, lastY = 0;
+canvas.addEventListener('pointerdown', e => {
+  dragging = true; lastX = e.clientX; lastY = e.clientY;
+  canvas.setPointerCapture(e.pointerId);
+  dismissTitle();
+});
+canvas.addEventListener('pointermove', e => {
+  if (!dragging) return;
+  state.panX += e.clientX - lastX;
+  state.panY += e.clientY - lastY;
+  lastX = e.clientX; lastY = e.clientY;
+  scheduleRebuild();
+});
+canvas.addEventListener('pointerup', () => { dragging = false; });
+canvas.addEventListener('wheel', e => {
+  e.preventDefault();
+  const next = Math.max(34, Math.min(150, state.scale * (e.deltaY < 0 ? 1.08 : 1 / 1.08)));
+  state.scale = Math.round(next);
+  zoomSlider.value = state.scale;
+  updateZoomLabel();
+  scheduleRebuild();
+}, { passive: false });
+
+const titleEl = document.getElementById('title');
+let titleGone = false;
+function dismissTitle() {
+  if (titleGone) return;
+  titleGone = true;
+  titleEl.classList.add('gone');
+}
+setTimeout(dismissTitle, 7000);
+
+// shareable settings, e.g. ?tiling=31212&theta=54&mode=weave&zoom=80
+{
+  const q = new URLSearchParams(location.search);
+  if (q.has('tiling') && GEN[q.get('tiling')]) {
+    state.tiling = q.get('tiling');
+    document.getElementById('tiling').value = state.tiling;
+  }
+  const th = parseFloat(q.get('theta'));
+  if (th >= 15 && th <= 85) { state.theta = th; thetaSlider.value = th; }
+  const z = parseInt(q.get('zoom'), 10);
+  if (z >= 34 && z <= 150) { state.scale = z; zoomSlider.value = z; }
+  const mo = q.get('mode');
+  if (['mosaic', 'weave', 'lines'].includes(mo)) {
+    state.mode = mo;
+    document.querySelectorAll('.modes button').forEach(x => x.classList.toggle('on', x.dataset.mode === mo));
+  }
+}
+
+updateThetaLabel();
+updateZoomLabel();
+resize();
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
