@@ -36,18 +36,20 @@
         letter-spacing: 0.02em;
         color: #f3d9df;
         margin: 0;
-        text-shadow: 0 0 30px rgba(179, 18, 46, 0.6);
+        text-shadow: 0 2px 18px rgba(0, 0, 0, 0.85), 0 0 30px rgba(179, 18, 46, 0.6);
         opacity: 0;
         animation: bloom 5s ease forwards 0.8s;
     }
     #whisper {
         font-family: "Georgia", serif;
         font-style: italic;
-        font-size: clamp(0.85rem, 2.2vw, 1.05rem);
-        color: rgba(243, 217, 223, 0.55);
-        margin-top: 1.4rem;
+        font-size: clamp(1rem, 2.6vw, 1.25rem);
+        letter-spacing: 0.14em;
+        color: #f7e7ec;
+        margin-top: 1.5rem;
+        text-shadow: 0 1px 12px rgba(0, 0, 0, 0.75), 0 0 26px rgba(209, 16, 46, 0.5);
         opacity: 0;
-        animation: bloom 5s ease forwards 2.6s;
+        animation: bloom 2.4s ease forwards 1.2s;
     }
     @keyframes bloom {
         from { opacity: 0; filter: blur(8px); transform: translateY(8px); }
@@ -195,6 +197,7 @@
         // --- Core Variables ---
         let camera, scene, renderer, controls, material;
         let clock = new THREE.Clock();
+        let titleTimer = null; // the timer that fades the title away after a reveal
 
         // The loop that condemns it: phase walks forward forever.
         // morph = 0 -> the rose is whole.  morph = 1 -> it has come apart.
@@ -512,7 +515,7 @@
             setupTimeline();
 
             // Reveal the piece after the title has had its moment.
-            setTimeout(() => document.getElementById('title').classList.add('gone'), 8000);
+            titleTimer = setTimeout(() => document.getElementById('title').classList.add('gone'), 8000);
 
             window.addEventListener('resize', onWindowResize);
         }
@@ -539,14 +542,8 @@
         }
 
         function setupTimeline() {
-            const current = pledges[pledges.length - 1];
-
             // The opening title always speaks the latest pledge, in its colour.
-            const h1 = document.querySelector('#title h1');
-            const whisper = document.getElementById('whisper');
-            h1.textContent = current.title;
-            whisper.textContent = current.whisper;
-            h1.style.textShadow = `0 0 30px ${hexToRgba(current.tint, 0.6)}`;
+            applyPledge(pledges[pledges.length - 1]);
 
             const timeline = document.getElementById('timeline');
             const glyph = document.getElementById('memories');
@@ -559,10 +556,45 @@
             });
             // Looking back does not stop it: the rose keeps cycling behind
             // the veil. A touch anywhere lets the past sink again.
-            timeline.addEventListener('click', () => {
-                timeline.classList.remove('open');
-                timeline.setAttribute('aria-hidden', 'true');
+            timeline.addEventListener('click', () => closeTimeline(timeline));
+        }
+
+        function closeTimeline(timeline) {
+            timeline.classList.remove('open');
+            timeline.setAttribute('aria-hidden', 'true');
+        }
+
+        // Speak a pledge: its title and subtitle, its colour on the bloom and
+        // in the glow. This is what "loading" a pledge means, so revisiting an
+        // old one from the timeline lands exactly as the first time it was said.
+        function applyPledge(p) {
+            const h1 = document.querySelector('#title h1');
+            const whisper = document.getElementById('whisper');
+            h1.textContent = p.title;
+            whisper.textContent = p.whisper;
+            h1.style.textShadow = `0 2px 18px rgba(0, 0, 0, 0.85), 0 0 30px ${hexToRgba(p.tint, 0.6)}`;
+            whisper.style.textShadow = `0 1px 12px rgba(0, 0, 0, 0.75), 0 0 26px ${hexToRgba(p.tint, 0.5)}`;
+
+            // Recolour the bloom to this pledge's tint.
+            params.colorWarm = p.tint;
+            material.uniforms.uColorWarm.value.set(p.tint);
+        }
+
+        // Bring the title back and replay its bloom, then let it fade again,
+        // just as it does on first load.
+        function revealTitle() {
+            const title = document.getElementById('title');
+            const h1 = title.querySelector('h1');
+            const whisper = document.getElementById('whisper');
+            title.classList.remove('gone');
+            // Restart the entrance animation from the top.
+            [h1, whisper].forEach(el => {
+                el.style.animation = 'none';
+                void el.offsetWidth; // force reflow so the animation re-runs
+                el.style.animation = '';
             });
+            clearTimeout(titleTimer);
+            titleTimer = setTimeout(() => title.classList.add('gone'), 8000);
         }
 
         function buildEntries(timeline) {
@@ -602,6 +634,15 @@
                     now.textContent = 'ahora';
                     entry.appendChild(now);
                 }
+
+                // Clicking a pledge loads it: the title, subtitle and colour
+                // all return to how they were the day it was said.
+                entry.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    applyPledge(p);
+                    closeTimeline(timeline);
+                    revealTitle();
+                });
                 timeline.appendChild(entry);
             });
         }

@@ -41,7 +41,7 @@
         letter-spacing: 0.04em;
         color: #eef0f3;
         margin: 0;
-        text-shadow: 0 0 30px rgba(120, 140, 170, 0.45), 0 0 90px rgba(40, 50, 70, 0.5);
+        text-shadow: 0 2px 18px rgba(0, 0, 0, 0.85), 0 0 30px rgba(120, 140, 170, 0.45), 0 0 90px rgba(40, 50, 70, 0.5);
         opacity: 0;
         animation: bloom 5s ease forwards 0.6s;
     }
@@ -49,6 +49,7 @@
         font-family: "Georgia", serif; font-style: italic;
         font-size: clamp(0.9rem, 2.3vw, 1.1rem);
         color: rgba(238, 240, 243, 0.55);
+        text-shadow: 0 1px 12px rgba(0, 0, 0, 0.75);
         margin-top: 1.4rem; opacity: 0;
         animation: bloom 5s ease forwards 2.4s;
     }
@@ -65,13 +66,51 @@
         opacity: 0; animation: bloom 3s ease forwards 6.5s;
     }
     #credits {
-        position: fixed; bottom: 0.7rem; right: 0.9rem; z-index: 9;
+        position: fixed; bottom: 0.7rem; left: 0.9rem; z-index: 9;
         font-family: "Courier New", monospace; font-size: 0.62rem;
         color: rgba(238, 240, 243, 0.28);
     }
     #credits a { color: rgba(238, 240, 243, 0.4); text-decoration: none; }
-    #credits .body { display: none; max-width: 320px; text-align: right; line-height: 1.5; margin-top: 0.4rem; }
+    #credits .body { display: none; max-width: 320px; text-align: left; line-height: 1.5; margin-top: 0.4rem; }
     #credits.open .body { display: block; }
+
+    /* ---- Memory glyph: what was said before ---- */
+    #memories {
+        position: fixed; bottom: 1.1rem; right: 1.3rem; z-index: 11;
+        font-family: "Georgia", serif; font-style: italic;
+        font-size: 1.1rem; line-height: 1;
+        color: rgba(238, 240, 243, 0.28);
+        background: none; border: none; padding: 0.6rem; cursor: pointer;
+        opacity: 0; animation: bloom 3s ease forwards 7.5s;
+        transition: color 1.2s ease;
+    }
+    #memories:hover { color: rgba(238, 240, 243, 0.7); }
+
+    /* ---- Timeline: the subtitles said while waiting ---- */
+    #timeline {
+        position: fixed; inset: 0; z-index: 12; display: none; overflow-y: auto;
+        background: rgba(8, 9, 12, 0.72); cursor: pointer; text-align: center;
+        padding: clamp(3rem, 12vh, 6rem) 1.5rem 4rem;
+    }
+    #timeline.open { display: block; }
+    #timeline .entry {
+        max-width: 32rem; margin: 0 auto 3rem; color: rgba(238, 240, 243, 0.85);
+        opacity: 0; animation: bloom 3.5s ease forwards;
+    }
+    #timeline .entry .date {
+        font-family: "Courier New", monospace; letter-spacing: 0.28em;
+        text-transform: uppercase; font-size: 0.62rem; opacity: 0.5; margin-bottom: 0.7rem;
+    }
+    #timeline .entry .said {
+        font-family: "Georgia", serif; font-style: italic;
+        font-size: clamp(1rem, 2.6vw, 1.35rem); letter-spacing: 0.02em;
+        text-shadow: 0 1px 12px rgba(0, 0, 0, 0.75);
+    }
+    #timeline .entry .now {
+        font-family: "Courier New", monospace; letter-spacing: 0.28em;
+        text-transform: uppercase; font-size: 0.58rem; opacity: 0.5; margin-top: 0.9rem;
+    }
+
     .lil-gui { z-index: 20; --background-color: rgba(8, 9, 12, 0.92); }
 </style>
 </head>
@@ -79,9 +118,11 @@
     <div id="container"></div>
     <div id="title">
         <h1>Waiting</h1>
-        <div id="whisper">The hours run on. The moment does not.</div>
+        <div id="whisper">Dreams do sometimes come true.</div>
     </div>
     <div id="hint">drag to look &nbsp;·&nbsp; the only thing left in colour</div>
+    <button id="memories" aria-label="what was said before">&#10044;</button>
+    <div id="timeline" aria-hidden="true"></div>
     <div id="credits">
         <a href="#" id="creditsToggle">models ⓘ</a>
         <div class="body">
@@ -137,6 +178,15 @@
             dustSize: 2.6,         // point size
             dustStride: 6,         // sample every Nth pixel of the photo
         };
+
+        // The subtitles said while waiting, oldest first. The last one is what
+        // the piece says now; the others remain behind the glyph. Append a line
+        // to update the piece; leave date empty to keep it out of the timeline.
+        const whispers = [
+            { date: '',           said: 'The hours run on. The moment does not.' },
+            { date: '2026-07-16', said: 'Dreams do sometimes come true.' },
+        ];
+        let titleTimer = null; // the timer that fades the title away after a reveal
 
         // ---- assets to load: name -> [file, target size in metres, fit-axis] ----
         const ASSETS = {
@@ -717,6 +767,7 @@
             buildComposer();
             setupControls();
             setupGUI();
+            setupTimeline();
 
             // camera query overrides (after controls/place so target is set)
             if (Q.has('radius')) { controls.radius = controls.targetRadius = parseFloat(Q.get('radius')); params.pushIn = false; }
@@ -729,9 +780,92 @@
             if (Q.has('crot')) models.clock.rotation.y = parseFloat(Q.get('crot'));
             if (Q.get('title') === '0') document.getElementById('title').style.display = 'none';
 
-            setTimeout(() => document.getElementById('title').classList.add('gone'), 8500);
+            titleTimer = setTimeout(() => document.getElementById('title').classList.add('gone'), 8500);
             window.addEventListener('resize', onResize);
             animate();
+        }
+
+        // The opening subtitle is always the latest whisper. The glyph opens a
+        // quiet history of the others; touching one speaks it again, and the
+        // title returns as it did the first time.
+        function setupTimeline() {
+            applyWhisper(whispers[whispers.length - 1]);
+
+            const timeline = document.getElementById('timeline');
+            const glyph = document.getElementById('memories');
+            glyph.addEventListener('click', (e) => {
+                e.stopPropagation();
+                buildEntries(timeline);
+                timeline.classList.add('open');
+                timeline.setAttribute('aria-hidden', 'false');
+            });
+            timeline.addEventListener('click', () => closeTimeline(timeline));
+        }
+
+        function closeTimeline(timeline) {
+            timeline.classList.remove('open');
+            timeline.setAttribute('aria-hidden', 'true');
+        }
+
+        function applyWhisper(w) {
+            document.getElementById('whisper').textContent = w.said;
+        }
+
+        // Bring the title back and replay its entrance, then let it fade again.
+        function revealTitle() {
+            const title = document.getElementById('title');
+            const h1 = title.querySelector('h1');
+            const whisper = document.getElementById('whisper');
+            title.classList.remove('gone');
+            [h1, whisper].forEach(el => {
+                el.style.animation = 'none';
+                void el.offsetWidth; // force reflow so the animation re-runs
+                el.style.animation = '';
+            });
+            clearTimeout(titleTimer);
+            titleTimer = setTimeout(() => title.classList.add('gone'), 8500);
+        }
+
+        function buildEntries(timeline) {
+            timeline.textContent = '';
+            const n = whispers.length;
+            whispers.forEach((w, i) => {
+                const age = n - 1 - i; // 0 = now, older sinks further
+                const entry = document.createElement('div');
+                entry.className = 'entry';
+                entry.style.opacity = 0;
+                entry.style.animationDelay = `${0.4 + i * 0.9}s`;
+                // Older lines have faded with the hours.
+                entry.style.filter = `brightness(${Math.max(0.5, 1 - age * 0.16)})`;
+
+                if (w.date) {
+                    const date = document.createElement('div');
+                    date.className = 'date';
+                    date.textContent = w.date;
+                    entry.appendChild(date);
+                }
+
+                const said = document.createElement('div');
+                said.className = 'said';
+                said.textContent = w.said;
+                entry.appendChild(said);
+
+                if (age === 0) {
+                    const now = document.createElement('div');
+                    now.className = 'now';
+                    now.textContent = 'now';
+                    entry.appendChild(now);
+                }
+
+                // Touching a line speaks it again and brings the title back.
+                entry.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    applyWhisper(w);
+                    closeTimeline(timeline);
+                    revealTitle();
+                });
+                timeline.appendChild(entry);
+            });
         }
 
         function animate() {
