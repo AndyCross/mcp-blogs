@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<!--
+  "After the First Dream Fades"
+
+  A cream suit on a mannequin, alone at the centre of a void. At first it is the
+  real thing: the textured suit, lit, with words printed into the fabric. There
+  was a time I wore it. Then it was hung up, and the memory of what happened
+  comes apart: the cloth erodes patch by patch and each patch that goes lifts off
+  as drifting dust, carrying the words with it, until the whole thing is a slowly
+  dispersing cloud. It re-forms in the dark, only to end again. That repetition
+  is the point.
+
+  Nothing here is about trying again. It is about entropy, and about everyone
+  leaving, and the true ending of a happiness.
+
+  Model: "Cream Suit on a Mannequin" generated with Meshy AI, then decimated,
+  retextured and meshopt-compressed with glTF-Transform. Loaded from
+  ./dream-assets/suit.glb. The whole suit is the genuine textured mesh, dissolved
+  by a noise field; the same noise field decides, per point, when that point lifts
+  off the surface, so the solid and the dust are two halves of one motion. The
+  words are rasterised to a canvas and projected onto the front of the body as a
+  decal, then scatter as their own points.
+-->
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>After the First Dream Fades</title>
+<script src="https://cdn.counter.dev/script.js" data-id="72d92ac8-56cf-4fdd-9899-b73adbab2e4d" data-utcoffset="0"></script>
+<style>
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; background: #05050a; }
+    #container { position: fixed; inset: 0; }
+    canvas { display: block; width: 100vw; height: 100vh; cursor: grab; }
+    canvas:active { cursor: grabbing; }
+
+    #title {
+        position: fixed; inset: 0;
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        pointer-events: none; z-index: 10; text-align: center; padding: 1.5rem;
+        transition: opacity 5s ease;
+    }
+    #title.gone { opacity: 0; }
+    #title h1 {
+        font-family: "Georgia", "Times New Roman", serif;
+        font-weight: 400; font-style: italic;
+        font-size: clamp(1.9rem, 6vw, 4rem);
+        letter-spacing: 0.03em; line-height: 1.15;
+        color: #efe7dd;
+        margin: 0; max-width: 20ch;
+        text-shadow: 0 2px 22px rgba(0, 0, 0, 0.9), 0 0 60px rgba(120, 70, 70, 0.35);
+        opacity: 0; animation: bloom 6s ease forwards 0.8s;
+    }
+    #whisper {
+        font-family: "Georgia", serif; font-style: italic;
+        font-size: clamp(0.85rem, 2.2vw, 1.05rem);
+        color: rgba(224, 200, 196, 0.5);
+        text-shadow: 0 1px 14px rgba(0, 0, 0, 0.8);
+        margin-top: 1.6rem; max-width: 30ch; opacity: 0;
+        animation: bloom 6s ease forwards 3s;
+    }
+    @keyframes bloom {
+        from { opacity: 0; filter: blur(12px); transform: translateY(12px); }
+        to   { opacity: 1; filter: blur(0);    transform: translateY(0); }
+    }
+
+    #loading {
+        position: fixed; inset: 0; display: flex; align-items: center; justify-content: center;
+        z-index: 30; background: #05050a; color: rgba(224, 200, 196, 0.4);
+        font-family: "Courier New", monospace; font-size: 0.72rem; letter-spacing: 0.35em;
+        text-transform: uppercase; transition: opacity 1.4s ease; text-align: center;
+    }
+    #loading.gone { opacity: 0; pointer-events: none; }
+
+    #hint {
+        position: fixed; bottom: 1.5rem; left: 0; right: 0; text-align: center;
+        font-family: "Courier New", monospace; font-size: 0.68rem;
+        letter-spacing: 0.32em; text-transform: uppercase;
+        color: rgba(224, 200, 196, 0.26); pointer-events: none; z-index: 9;
+        opacity: 0; animation: bloom 3s ease forwards 7s;
+    }
+    #credits {
+        position: fixed; bottom: 0.7rem; left: 0.9rem; z-index: 9;
+        font-family: "Courier New", monospace; font-size: 0.6rem;
+        color: rgba(224, 200, 196, 0.24); max-width: 60vw;
+    }
+    #credits a { color: rgba(224, 200, 196, 0.4); text-decoration: none; cursor: pointer; }
+    #credits .body { display: none; max-width: 340px; text-align: left; line-height: 1.6; margin-top: 0.4rem; }
+    #credits.open .body { display: block; }
+</style>
+</head>
+<body>
+    <div id="container"></div>
+    <div id="loading">gathering what is left</div>
+    <div id="title">
+        <h1>After the First Dream Fades</h1>
+        <div id="whisper">I wore it once. Then I hung it up, and everything it held came apart.</div>
+    </div>
+    <div id="hint">drag to look · it will not stay</div>
+    <div id="credits">
+        <a id="credits-toggle">about</a>
+        <div class="body">
+            "After the First Dream Fades" — the suit begins as itself, then erodes
+            patch by patch into drifting dust, the words printed on it scattering as
+            it goes. It re-forms in the dark only to end again. Model generated with
+            Meshy AI, decimated and compressed with glTF-Transform. Built with three.js.
+        </div>
+    </div>
+
+    <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+      }
+    }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+        import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+        import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+        import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+        import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+        import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+
+        const isMobile = matchMedia('(max-width: 820px)').matches;
+        const SUIT_POINTS = isMobile ? 90000 : 190000;
+        const TARGET_H = 3.4;                 // world height the suit is scaled to
+        const DISSOLVE_FREQ = 1.15;           // scale of the erosion noise field
+
+        // ---- The words printed into the suit. Laid out down the body. ----
+        // Each entry: text, vertical position (0 top .. 1 bottom), font scale, ink weight.
+        // y is 0 (top/collar) .. 1 (bottom/tripod base). The cream jacket only
+        // occupies roughly the top half, so all words stay above y≈0.5 — below that
+        // is the dark tie/stand where dark-red ink has nothing to read against.
+        const WORDS = [
+            { t: 'love',            y: 0.055, s: 0.80, a: 1.00 },
+            { t: 'loss',            y: 0.115, s: 0.76, a: 0.96 },
+            { t: 'despair',         y: 0.175, s: 0.70, a: 0.92 },
+            { t: 'entropy',         y: 0.235, s: 0.68, a: 0.90 },
+            { t: 'everything ends', y: 0.290, s: 0.50, a: 0.88 },
+            { t: 'everyone leaves', y: 0.340, s: 0.50, a: 0.86 },
+            { t: 'pointless',       y: 0.400, s: 0.62, a: 0.84 },
+            { t: 'the first dream', y: 0.455, s: 0.46, a: 0.80 },
+            { t: 'faded',           y: 0.495, s: 0.46, a: 0.76 },
+        ];
+
+        const INK = new THREE.Color(0.44, 0.06, 0.09);   // decal ink: dark oxblood, reads on cream
+
+        const container = document.getElementById('container');
+        const loadingEl = document.getElementById('loading');
+        const titleEl = document.getElementById('title');
+
+        let scene, camera, renderer, composer, controls, bloomPass;
+        let points, suit, hemi, keyLight, fillLight, rimLight;
+        let ptU, meshU;                        // point + mesh shared uniforms
+        const clock = new THREE.Clock();
+
+        // ---------------------------------------------------------------
+        //  Shared GLSL: simplex noise + a 0..1 helper + curl
+        // ---------------------------------------------------------------
+        const SNOISE = /* glsl */`
+            vec4 permute(vec4 x){ return mod(((x*34.0)+1.0)*x, 289.0); }
+            vec4 taylorInvSqrt(vec4 r){ return 1.79284291400159 - 0.85373472095314 * r; }
+            float snoise(vec3 v){
+                const vec2 C = vec2(1.0/6.0, 1.0/3.0);
+                const vec4 D = vec4(0.0, 0.5, 1.0, 2.0);
+                vec3 i  = floor(v + dot(v, C.yyy));
+                vec3 x0 = v - i + dot(i, C.xxx);
+                vec3 g = step(x0.yzx, x0.xyz);
+                vec3 l = 1.0 - g;
+                vec3 i1 = min(g.xyz, l.zxy);
+                vec3 i2 = max(g.xyz, l.zxy);
+                vec3 x1 = x0 - i1 + C.xxx;
+                vec3 x2 = x0 - i2 + 2.0 * C.xxx;
+                vec3 x3 = x0 - 1.0 + 3.0 * C.xxx;
+                i = mod(i, 289.0);
+                vec4 p = permute(permute(permute(
+                        i.z + vec4(0.0, i1.z, i2.z, 1.0))
+                      + i.y + vec4(0.0, i1.y, i2.y, 1.0))
+                      + i.x + vec4(0.0, i1.x, i2.x, 1.0));
+                float n_ = 1.0/7.0;
+                vec3 ns = n_ * D.wyz - D.xzx;
+                vec4 j = p - 49.0 * floor(p * ns.z * ns.z);
+                vec4 x_ = floor(j * ns.z);
+                vec4 y_ = floor(j - 7.0 * x_);
+                vec4 x = x_ * ns.x + ns.yyyy;
+                vec4 y = y_ * ns.x + ns.yyyy;
+                vec4 h = 1.0 - abs(x) - abs(y);
+                vec4 b0 = vec4(x.xy, y.xy);
+                vec4 b1 = vec4(x.zw, y.zw);
+                vec4 s0 = floor(b0)*2.0 + 1.0;
+                vec4 s1 = floor(b1)*2.0 + 1.0;
+                vec4 sh = -step(h, vec4(0.0));
+                vec4 a0 = b0.xzyw + s0.xzyw*sh.xxyy;
+                vec4 a1 = b1.xzyw + s1.xzyw*sh.zzww;
+                vec3 p0 = vec3(a0.xy, h.x);
+                vec3 p1 = vec3(a0.zw, h.y);
+                vec3 p2 = vec3(a1.xy, h.z);
+                vec3 p3 = vec3(a1.zw, h.w);
+                vec4 norm = taylorInvSqrt(vec4(dot(p0,p0), dot(p1,p1), dot(p2,p2), dot(p3,p3)));
+                p0 *= norm.x; p1 *= norm.y; p2 *= norm.z; p3 *= norm.w;
+                vec4 m = max(0.6 - vec4(dot(x0,x0), dot(x1,x1), dot(x2,x2), dot(x3,x3)), 0.0);
+                m = m * m;
+                return 42.0 * dot(m*m, vec4(dot(p0,x0), dot(p1,x1), dot(p2,x2), dot(p3,x3)));
+            }
+            float noise01(vec3 p){ return clamp(snoise(p) * 0.5 + 0.5, 0.0, 1.0); }
+        `;
+
+        // When a location gives way, as a function of the global fade (0..1).
+        // Ink (words) is nudged to leave a little earlier than the cloth.
+        const DELAY_FN = /* glsl */`
+            float delayAt(vec3 p, float wordBias){
+                return clamp(noise01(p * ${DISSOLVE_FREQ.toFixed(3)}) - wordBias, 0.0, 1.0);
+            }
+        `;
+
+        const CURL = /* glsl */`
+            vec3 curl(vec3 p){
+                const float e = 0.35;
+                vec3 dx = vec3(e,0.0,0.0), dy = vec3(0.0,e,0.0), dz = vec3(0.0,0.0,e);
+                float x = snoise(p+vec3(0.0,31.4,0.0)+dy)-snoise(p+vec3(0.0,31.4,0.0)-dy)
+                        - snoise(p+vec3(0.0,0.0,71.7)+dz)+snoise(p+vec3(0.0,0.0,71.7)-dz);
+                float y = snoise(p+vec3(0.0,0.0,71.7)+dz)-snoise(p+vec3(0.0,0.0,71.7)-dz)
+                        - snoise(p+vec3(11.2,0.0,0.0)+dx)+snoise(p+vec3(11.2,0.0,0.0)-dx);
+                float z = snoise(p+vec3(11.2,0.0,0.0)+dx)-snoise(p+vec3(11.2,0.0,0.0)-dx)
+                        - snoise(p+vec3(0.0,31.4,0.0)+dy)+snoise(p+vec3(0.0,31.4,0.0)-dy);
+                return normalize(vec3(x,y,z) + 1e-5);
+            }
+        `;
+
+        // ---------------------------------------------------------------
+        //  Point cloud shaders (the dust)
+        // ---------------------------------------------------------------
+        const pointVert = /* glsl */`
+            precision highp float;
+            attribute vec3 aColor;
+            attribute vec3 aNormal;
+            attribute float aRand;
+            attribute float aWord;
+
+            uniform float uTime, uFade, uSize, uPixelRatio;
+
+            varying vec3 vColor;
+            varying float vAlpha;
+
+            ${SNOISE}
+            ${DELAY_FN}
+            ${CURL}
+
+            void main(){
+                vColor = aColor;
+
+                float band = 0.30;
+                float delay = delayAt(position, aWord * 0.16);
+                float local = smoothstep(delay, delay + band, uFade);
+                float ease = local * local * (3.0 - 2.0 * local);
+
+                vec3 pos = position;
+                vec3 flow = curl(position * 1.1 + vec3(0.0, uTime * 0.05, aRand * 10.0));
+                float reach = mix(2.4, 3.8, aWord);
+                pos += (flow * reach + aNormal * 0.6 + vec3(0.0, 0.5, 0.0)) * ease * (0.6 + 0.8 * aRand);
+                pos += curl(position * 0.6 + uTime * 0.02) * 0.01;
+
+                // Invisible while it is still cloth; fades in as it lifts, thins to dust.
+                float appear = smoothstep(0.0, 0.12, local);
+                float vanish = 1.0 - 0.78 * smoothstep(0.45, 1.0, local);
+                vAlpha = appear * vanish * mix(1.0, 0.85, aWord);
+
+                vec4 mv = modelViewMatrix * vec4(pos, 1.0);
+                gl_Position = projectionMatrix * mv;
+                gl_PointSize = clamp(uSize * mix(1.0, 1.8, ease) * uPixelRatio * (1.0 / -mv.z), 1.0, 40.0);
+            }
+        `;
+
+        const pointFrag = /* glsl */`
+            precision highp float;
+            uniform float uWarmth, uPresence;
+            varying vec3 vColor;
+            varying float vAlpha;
+            void main(){
+                vec2 c = gl_PointCoord - 0.5;
+                float g = exp(-dot(c, c) * 13.0);
+                float alpha = g * vAlpha;
+                if (alpha < 0.04) discard;
+                vec3 ash = vec3(0.30, 0.32, 0.40);
+                vec3 col = mix(mix(ash, vColor, 0.35), vColor, uWarmth) * uPresence;
+                gl_FragColor = vec4(col, alpha);
+            }
+        `;
+
+        // ---------------------------------------------------------------
+        //  Word canvas (used for both the decal texture and the ink points)
+        // ---------------------------------------------------------------
+        function makeWordCanvas() {
+            const W = 700, H = 1400;
+            const cv = document.createElement('canvas');
+            cv.width = W; cv.height = H;
+            const ctx = cv.getContext('2d', { willReadFrequently: true });
+            ctx.clearRect(0, 0, W, H);
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillStyle = '#fff';
+            for (const word of WORDS) {
+                const fs = Math.round(word.s * 96);
+                ctx.font = `800 ${fs}px Georgia, "Times New Roman", serif`;
+                ctx.globalAlpha = word.a;
+                ctx.fillText(word.t, W * 0.5, word.y * H);
+            }
+            ctx.globalAlpha = 1;
+            return cv;
+        }
+
+        // Bright pixels of the word canvas → normalised (x right, y up) coords.
+        function wordPixels(cv) {
+            const W = cv.width, H = cv.height;
+            const data = cv.getContext('2d').getImageData(0, 0, W, H).data;
+            const pts = [];
+            const step = isMobile ? 3 : 2;
+            for (let y = 0; y < H; y += step)
+                for (let x = 0; x < W; x += step) {
+                    const o = (y * W + x) * 4;
+                    if (data[o + 3] > 70) pts.push([x / W, 1 - y / H, data[o + 3] / 255]);
+                }
+            return pts;
+        }
+
+        // The rectangle on the front of the body the decal is projected into.
+        function decalRect(box) {
+            const size = new THREE.Vector3(); box.getSize(size);
+            return {
+                x0: box.min.x + size.x * 0.06, x1: box.max.x - size.x * 0.06,
+                y0: box.min.y + size.y * 0.03, y1: box.max.y - size.y * 0.03,
+                front: box.max.z, bulge: size.z * 0.42, sizeX: size.x, minX: box.min.x,
+            };
+        }
+
+        // ---------------------------------------------------------------
+        //  Sample the mesh surface into points (area-weighted)
+        // ---------------------------------------------------------------
+        function sampleFromMesh(mesh, texImage, wordCanvas, rect) {
+            const geo = mesh.geometry;
+            const posA = geo.attributes.position, norA = geo.attributes.normal, uvA = geo.attributes.uv;
+            const index = geo.index;
+            // The geometry is meshopt-quantized: never bake into it. Read local
+            // (normalised) verts and transform to final world space with the matrices.
+            const mW = mesh.matrixWorld;
+            const nM = new THREE.Matrix3().getNormalMatrix(mW);
+
+            let texData = null, texW = 0, texH = 0;
+            if (texImage) {
+                const tc = document.createElement('canvas');
+                texW = tc.width = Math.min(texImage.width || 512, 512);
+                texH = tc.height = Math.min(texImage.height || 512, 512);
+                const tctx = tc.getContext('2d', { willReadFrequently: true });
+                tctx.drawImage(texImage, 0, 0, texW, texH);
+                texData = tctx.getImageData(0, 0, texW, texH).data;
+            }
+
+            const triCount = index ? index.count / 3 : posA.count / 3;
+            const cum = new Float32Array(triCount);
+            const vA = new THREE.Vector3(), vB = new THREE.Vector3(), vC = new THREE.Vector3();
+            const ab = new THREE.Vector3(), ac = new THREE.Vector3(), cr = new THREE.Vector3();
+            const idx = (i) => index ? index.getX(i) : i;
+            let running = 0;
+            for (let t = 0; t < triCount; t++) {
+                vA.fromBufferAttribute(posA, idx(t*3));
+                vB.fromBufferAttribute(posA, idx(t*3+1));
+                vC.fromBufferAttribute(posA, idx(t*3+2));
+                ab.subVectors(vB, vA); ac.subVectors(vC, vA);
+                running += 0.5 * cr.crossVectors(ab, ac).length();
+                cum[t] = running;
+            }
+            const total = running;
+            const pickTri = (r) => {
+                let lo = 0, hi = triCount - 1; const tg = r * total;
+                while (lo < hi) { const m = (lo + hi) >> 1; if (cum[m] < tg) lo = m + 1; else hi = m; }
+                return lo;
+            };
+
+            const wordPts = wordPixels(wordCanvas);
+            const wordN = Math.min(wordPts.length, wordPts.length);
+            const N = SUIT_POINTS + wordN;
+            const pos = new Float32Array(N*3), nor = new Float32Array(N*3), col = new Float32Array(N*3);
+            const rnd = new Float32Array(N), wrd = new Float32Array(N);
+
+            const nA = new THREE.Vector3(), nB = new THREE.Vector3(), nC = new THREE.Vector3();
+            const P = new THREE.Vector3(), Nn = new THREE.Vector3();
+
+            for (let i = 0; i < SUIT_POINTS; i++) {
+                const t = pickTri(Math.random());
+                const a = idx(t*3), b = idx(t*3+1), c = idx(t*3+2);
+                let u = Math.random(), v = Math.random();
+                if (u + v > 1) { u = 1 - u; v = 1 - v; }
+                const w = 1 - u - v;
+                vA.fromBufferAttribute(posA, a); vB.fromBufferAttribute(posA, b); vC.fromBufferAttribute(posA, c);
+                P.set(vA.x*w+vB.x*u+vC.x*v, vA.y*w+vB.y*u+vC.y*v, vA.z*w+vB.z*u+vC.z*v).applyMatrix4(mW);
+                nA.fromBufferAttribute(norA, a); nB.fromBufferAttribute(norA, b); nC.fromBufferAttribute(norA, c);
+                Nn.set(nA.x*w+nB.x*u+nC.x*v, nA.y*w+nB.y*u+nC.y*v, nA.z*w+nB.z*u+nC.z*v).applyMatrix3(nM).normalize();
+
+                let r = 0.55, g = 0.52, bl = 0.46;
+                if (texData && uvA) {
+                    const uu = uvA.getX(a)*w+uvA.getX(b)*u+uvA.getX(c)*v;
+                    const vv = uvA.getY(a)*w+uvA.getY(b)*u+uvA.getY(c)*v;
+                    let px = Math.floor((uu - Math.floor(uu)) * (texW - 1));
+                    let py = Math.floor((1 - (vv - Math.floor(vv))) * (texH - 1));
+                    px = Math.max(0, Math.min(texW-1, px)); py = Math.max(0, Math.min(texH-1, py));
+                    const o = (py*texW + px) * 4;
+                    r = texData[o]/255*0.7; g = texData[o+1]/255*0.7; bl = texData[o+2]/255*0.7;
+                }
+                const o3 = i*3;
+                pos[o3]=P.x; pos[o3+1]=P.y; pos[o3+2]=P.z;
+                nor[o3]=Nn.x; nor[o3+1]=Nn.y; nor[o3+2]=Nn.z;
+                col[o3]=r; col[o3+1]=g; col[o3+2]=bl;
+                rnd[i]=Math.random(); wrd[i]=0;
+            }
+
+            // Ink points: on a shallow curved shell hugging the front of the body.
+            const ox = [0.66, 0.16, 0.18];
+            for (let k = 0; k < wordN; k++) {
+                const [nx, ny, strg] = wordPts[k];
+                const i = SUIT_POINTS + k, o3 = i*3;
+                const wx = rect.x0 + nx * (rect.x1 - rect.x0);
+                const wy = rect.y0 + ny * (rect.y1 - rect.y0);
+                const xr = ((wx - rect.minX) / rect.sizeX) * 2 - 1;
+                const wz = rect.front - rect.bulge * (1 - xr*xr) + 0.012;
+                pos[o3]=wx; pos[o3+1]=wy; pos[o3+2]=wz;
+                const nl = Math.hypot(xr, 0.25, 1);
+                nor[o3]=xr/nl; nor[o3+1]=0.25/nl; nor[o3+2]=1/nl;
+                col[o3]=ox[0]*(0.7+0.5*strg); col[o3+1]=ox[1]*(0.7+0.5*strg); col[o3+2]=ox[2]*(0.7+0.5*strg);
+                rnd[i]=Math.random(); wrd[i]=1;
+            }
+
+            return { pos, nor, col, rnd, wrd, count: N };
+        }
+
+        // ---------------------------------------------------------------
+        //  Init
+        // ---------------------------------------------------------------
+        function init(root, mesh, texImage, texture) {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x05050a);
+
+            camera = new THREE.PerspectiveCamera(46, innerWidth/innerHeight, 0.1, 100);
+            camera.position.set(0.2, 0.5, 6.3);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+            renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+            renderer.setSize(innerWidth, innerHeight);
+            renderer.toneMapping = THREE.ACESFilmicToneMapping;
+            renderer.toneMappingExposure = 0.95;
+            renderer.outputColorSpace = THREE.SRGBColorSpace;
+            container.appendChild(renderer.domElement);
+
+            controls = new OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true; controls.dampingFactor = 0.06;
+            controls.enablePan = false; controls.minDistance = 3.4; controls.maxDistance = 9.0;
+            controls.target.set(0, 0.15, 0);
+            controls.autoRotate = true; controls.autoRotateSpeed = 0.32;
+            controls.addEventListener('start', () => controls.autoRotate = false);
+
+            hemi = new THREE.HemisphereLight(0xc2c6da, 0x24242e, 0.7); scene.add(hemi);
+            keyLight = new THREE.DirectionalLight(0xfff0e0, 2.3); keyLight.position.set(2.6, 4.0, 4.5); scene.add(keyLight);
+            fillLight = new THREE.DirectionalLight(0x9fb0d8, 0.9); fillLight.position.set(-3.5, 1.0, 3.0); scene.add(fillLight);
+            rimLight = new THREE.DirectionalLight(0xbcc0e8, 1.1); rimLight.position.set(-2.5, 2.5, -3.5); scene.add(rimLight);
+
+            // Centre + scale via an object transform (a "rig"), NOT by baking into
+            // the meshopt-quantised geometry — baking overflows the int16 buffer and
+            // wraps the model. The rig holds the whole loaded hierarchy so every node
+            // transform (including the quantisation dequant scale) is preserved.
+            root.updateMatrixWorld(true);
+            const box0 = new THREE.Box3().setFromObject(root);
+            const center = new THREE.Vector3(); box0.getCenter(center);
+            const size = new THREE.Vector3(); box0.getSize(size);
+            const s = TARGET_H / size.y;
+            const rig = new THREE.Group();
+            rig.scale.setScalar(s);
+            rig.position.set(-center.x * s, -center.y * s, -center.z * s);
+            rig.add(root);
+            scene.add(rig);
+            rig.updateMatrixWorld(true);
+
+            const box = new THREE.Box3().setFromObject(mesh);   // final world-space bounds
+            const rect = decalRect(box);
+
+            // ---- The suit: real textured mesh, dissolving by the noise field ----
+            meshU = {
+                uFade: { value: 0 }, uWarmth: { value: 0.5 },
+                uWordTex: { value: texture }, uInk: { value: INK },
+                uRect: { value: new THREE.Vector4(rect.x0, rect.y0, rect.x1, rect.y1) },
+            };
+            const suitMat = new THREE.MeshStandardMaterial({ roughness: 0.92, metalness: 0.0, side: THREE.DoubleSide });
+            // Reuse the mesh's own, correctly-configured texture (UV/flip/colorspace).
+            if (mesh.material && mesh.material.map) suitMat.map = mesh.material.map;
+            suitMat.onBeforeCompile = (sh) => {
+                Object.assign(sh.uniforms, meshU);
+                sh.vertexShader = sh.vertexShader
+                    .replace('#include <common>', '#include <common>\nvarying vec3 vDW; varying vec3 vDWN;')
+                    .replace('#include <beginnormal_vertex>', '#include <beginnormal_vertex>\n vDWN = normalize(mat3(modelMatrix) * objectNormal);')
+                    .replace('#include <begin_vertex>', '#include <begin_vertex>\n vDW = (modelMatrix * vec4(transformed, 1.0)).xyz;');
+                sh.fragmentShader = sh.fragmentShader
+                    .replace('#include <common>', '#include <common>\nvarying vec3 vDW; varying vec3 vDWN;\nuniform float uFade, uWarmth; uniform sampler2D uWordTex; uniform vec3 uInk; uniform vec4 uRect;\n' + SNOISE)
+                    .replace('#include <clipping_planes_fragment>', '#include <clipping_planes_fragment>\n float _dn = noise01(vDW * ' + DISSOLVE_FREQ.toFixed(3) + ');\n if (_dn < uFade * 1.06) discard;')
+                    .replace('#include <map_fragment>', `#include <map_fragment>
+                        {
+                            float du = (vDW.x - uRect.x) / (uRect.z - uRect.x);
+                            float dv = (vDW.y - uRect.y) / (uRect.w - uRect.y);
+                            float ff = smoothstep(0.12, 0.55, vDWN.z);
+                            if (du > 0.0 && du < 1.0 && dv > 0.0 && dv < 1.0 && ff > 0.0) {
+                                float ink = texture2D(uWordTex, vec2(du, dv)).a * ff;
+                                diffuseColor.rgb = mix(diffuseColor.rgb, uInk, ink);
+                            }
+                            vec3 ash = vec3(0.24, 0.26, 0.33);
+                            diffuseColor.rgb = mix(mix(ash, diffuseColor.rgb, 0.55), diffuseColor.rgb, uWarmth);
+                            if (!gl_FrontFacing) diffuseColor.rgb *= 0.18;   // hollow interior stays dark
+                        }`)
+                    .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
+                        {
+                            float edge = smoothstep(uFade * 1.06, uFade * 1.06 - 0.05, _dn) * step(_dn, uFade * 1.06 + 0.02);
+                            totalEmissiveRadiance += vec3(0.7, 0.32, 0.18) * edge * 1.4;
+                        }`);
+            };
+            mesh.material = suitMat;
+            suit = mesh;
+
+            // ---- The dust ----
+            const built = sampleFromMesh(mesh, texImage, makeWordCanvas(), rect);
+            const g = new THREE.BufferGeometry();
+            g.setAttribute('position', new THREE.BufferAttribute(built.pos, 3));
+            g.setAttribute('aNormal', new THREE.BufferAttribute(built.nor, 3));
+            g.setAttribute('aColor', new THREE.BufferAttribute(built.col, 3));
+            g.setAttribute('aRand', new THREE.BufferAttribute(built.rnd, 1));
+            g.setAttribute('aWord', new THREE.BufferAttribute(built.wrd, 1));
+
+            ptU = {
+                uTime: { value: 0 }, uFade: { value: 0 }, uWarmth: { value: 0.5 }, uPresence: { value: 0.6 },
+                uSize: { value: isMobile ? 1.35 : 1.6 }, uPixelRatio: { value: Math.min(devicePixelRatio, 2) },
+            };
+            points = new THREE.Points(g, new THREE.ShaderMaterial({
+                uniforms: ptU, vertexShader: pointVert, fragmentShader: pointFrag,
+                transparent: true, depthTest: true, depthWrite: false, blending: THREE.NormalBlending,
+            }));
+            scene.add(points);
+
+            composer = new EffectComposer(renderer);
+            composer.setPixelRatio(Math.min(devicePixelRatio, 2));
+            composer.addPass(new RenderPass(scene, camera));
+            bloomPass = new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), 0.3, 0.5, 0.7);
+            composer.addPass(bloomPass);
+            composer.addPass(new OutputPass());
+
+            addEventListener('resize', onResize);
+            document.getElementById('credits-toggle').addEventListener('click', () =>
+                document.getElementById('credits').classList.toggle('open'));
+
+            loadingEl.classList.add('gone');
+            setTimeout(() => loadingEl.remove(), 1500);
+            animate();
+        }
+
+        function onResize() {
+            camera.aspect = innerWidth/innerHeight; camera.updateProjectionMatrix();
+            renderer.setSize(innerWidth, innerHeight);
+            composer.setSize(innerWidth, innerHeight);
+            bloomPass.resolution.set(innerWidth, innerHeight);
+        }
+
+        // ---------------------------------------------------------------
+        //  The cycle: whole → fade to dust → drift → re-form in the dark → repeat
+        // ---------------------------------------------------------------
+        const CYCLE = { reform: 8, hold: 7, fade: 14, drift: 10 };
+        const CYCLE_LEN = CYCLE.reform + CYCLE.hold + CYCLE.fade + CYCLE.drift;
+
+        function stage(t) {
+            let x = t;
+            if (x < CYCLE.reform) { const k = x/CYCLE.reform, e = k*k*(3-2*k);
+                return { fade: 1-e, warmth: 0.2+0.8*e, presence: 0.25+0.75*e }; }
+            x -= CYCLE.reform;
+            if (x < CYCLE.hold) { const k = x/CYCLE.hold, b = Math.sin(k*Math.PI);
+                return { fade: 0, warmth: 1.0, presence: 0.94+0.06*b }; }
+            x -= CYCLE.hold;
+            if (x < CYCLE.fade) { const k = x/CYCLE.fade, e = k*k*(3-2*k);
+                return { fade: e, warmth: 1.0-e, presence: 1.0-0.68*e }; }
+            x -= CYCLE.fade;
+            const k = x/CYCLE.drift;
+            return { fade: 1, warmth: 0.0, presence: 0.22-0.16*k };
+        }
+
+        // Arrive on the whole, lit suit (start of "hold"), then watch it go.
+        const FREEZE = new URLSearchParams(location.search).get('freeze');
+        let elapsed = FREEZE !== null ? parseFloat(FREEZE) : CYCLE.reform;
+        let sinceLoad = 0;
+        function animate() {
+            requestAnimationFrame(animate);
+            const dt = Math.min(clock.getDelta(), 0.05);
+            if (FREEZE === null) elapsed += dt;
+            sinceLoad += dt;
+
+            const s = stage(elapsed % CYCLE_LEN);
+            ptU.uTime.value += dt;
+            ptU.uFade.value = s.fade; ptU.uWarmth.value = s.warmth; ptU.uPresence.value = s.presence;
+            meshU.uFade.value = s.fade; meshU.uWarmth.value = s.warmth;
+
+            keyLight.intensity = 0.3 + 2.4 * s.presence;
+            fillLight.intensity = 0.15 + 0.85 * s.presence;
+            hemi.intensity = 0.2 + 0.7 * s.presence;
+            rimLight.intensity = 0.25 + 1.0 * s.presence;
+            bloomPass.strength = 0.18 + 0.14 * s.presence;
+
+            if (sinceLoad > 11 && !titleEl.classList.contains('gone')) titleEl.classList.add('gone');
+
+            controls.update();
+            composer.render();
+        }
+
+        // ---------------------------------------------------------------
+        //  Load
+        // ---------------------------------------------------------------
+        const loader = new GLTFLoader();
+        loader.setMeshoptDecoder(MeshoptDecoder);
+        loader.load('dream-assets/suit.glb', (gltf) => {
+            let mesh = null, texImage = null;
+            gltf.scene.updateMatrixWorld(true);
+            gltf.scene.traverse((o) => {
+                if (o.isMesh && !mesh) {
+                    mesh = o;
+                    if (o.material && o.material.map && o.material.map.image) texImage = o.material.map.image;
+                }
+            });
+            if (!mesh) { loadingEl.textContent = 'nothing left to gather'; return; }
+            if (!mesh.geometry.attributes.normal) mesh.geometry.computeVertexNormals();
+
+            // Word decal texture from the same canvas the ink points come from.
+            const wordTex = new THREE.CanvasTexture(makeWordCanvas());
+            wordTex.colorSpace = THREE.SRGBColorSpace;
+            wordTex.minFilter = THREE.LinearFilter; wordTex.magFilter = THREE.LinearFilter;
+            wordTex.flipY = true;
+
+            init(gltf.scene, mesh, texImage, wordTex);
+        }, undefined, (err) => {
+            console.error(err);
+            loadingEl.textContent = 'the dream would not load';
+        });
+    </script>
+</body>
+</html>
