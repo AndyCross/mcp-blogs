@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Flores para mi chica</title>
+<script src="https://cdn.counter.dev/script.js" data-id="72d92ac8-56cf-4fdd-9899-b73adbab2e4d" data-utcoffset="0"></script>
+<!--
+  Flores para mi chica — a garden that will grow.
+
+  The first flower is a hollyhock: a real photogrammetry mesh (Meshy),
+  taken from 90 MB down to ~14.5 MB with glTF-Transform — textures at
+  1024 webp, tangents dropped (three regenerates them from the normal
+  map), geometry quantised and meshopt-compressed. No decimation: the
+  full 1.4M-vertex bloom is kept intact.
+
+  The camera drifts through the beds on its own. Drag to nudge where you
+  look. As you near a flower, the words meant for it bloom on screen.
+
+  To plant another flower, add an entry to the `flowers` array below.
+  When more models arrive, give each its own `model` and drop the file
+  into garden-assets/.
+-->
+<style>
+    :root { --crimson: #b3122e; --rose: #f3d9df; }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; background: #05040c; }
+    #container { position: fixed; inset: 0; }
+    canvas { display: block; width: 100vw; height: 100vh; cursor: grab; }
+    canvas:active { cursor: grabbing; }
+
+    /* ---- Opening title ---- */
+    #title {
+        position: fixed; inset: 0;
+        display: flex; flex-direction: column;
+        align-items: center; justify-content: center;
+        pointer-events: none; z-index: 10; text-align: center;
+        padding: 1.5rem;
+        transition: opacity 4s ease 1s;
+    }
+    #title.gone { opacity: 0; }
+    #title h1 {
+        font-family: "Georgia", "Times New Roman", serif;
+        font-weight: 400; font-style: italic;
+        font-size: clamp(2rem, 6.5vw, 4.2rem);
+        letter-spacing: 0.02em; color: var(--rose); margin: 0;
+        text-shadow: 0 2px 20px rgba(0,0,0,0.85), 0 0 34px rgba(179,18,46,0.55);
+        opacity: 0; animation: bloom 5s ease forwards 0.6s;
+    }
+    #title .sub {
+        font-family: "Georgia", serif; font-style: italic;
+        font-size: clamp(0.95rem, 2.6vw, 1.2rem);
+        letter-spacing: 0.16em; color: var(--rose);
+        margin-top: 1.4rem; opacity: 0;
+        text-shadow: 0 1px 12px rgba(0,0,0,0.8);
+        animation: bloom 3s ease forwards 1.4s;
+    }
+    @keyframes bloom {
+        from { opacity: 0; filter: blur(8px); transform: translateY(8px); }
+        to   { opacity: 1; filter: blur(0);   transform: translateY(0); }
+    }
+
+    /* ---- Words for the flower you are nearest ---- */
+    #words {
+        position: fixed; left: 0; right: 0; bottom: clamp(2.2rem, 8vh, 5rem);
+        text-align: center; padding: 0 1.5rem; z-index: 9;
+        pointer-events: none; opacity: 0;
+        transition: opacity 1.1s ease, transform 1.1s ease;
+        transform: translateY(10px);
+    }
+    #words.show { opacity: 1; transform: translateY(0); }
+    #words .date {
+        font-family: "Georgia", serif; font-variant: small-caps;
+        letter-spacing: 0.24em; font-size: 0.68rem;
+        color: var(--rose); opacity: 0.55; margin-bottom: 0.7rem;
+    }
+    #words .ftitle {
+        font-family: "Georgia", "Times New Roman", serif; font-style: italic;
+        font-weight: 400; font-size: clamp(1.4rem, 4.5vw, 2.3rem);
+        color: var(--rose); margin: 0;
+        text-shadow: 0 2px 18px rgba(0,0,0,0.9), 0 0 30px rgba(179,18,46,0.5);
+    }
+    #words .fwords {
+        font-family: "Georgia", serif; font-style: italic;
+        font-size: clamp(0.95rem, 2.6vw, 1.2rem);
+        color: var(--rose); opacity: 0.82; margin-top: 0.7rem;
+        text-shadow: 0 1px 12px rgba(0,0,0,0.85);
+    }
+
+    /* ---- Hint ---- */
+    #hint {
+        position: fixed; bottom: 1.3rem; left: 0; right: 0; text-align: center;
+        font-family: "Georgia", serif; font-style: italic; font-size: 0.8rem;
+        color: rgba(243,217,223,0.32); pointer-events: none; z-index: 8;
+        opacity: 0; animation: bloom 3s ease forwards 8s;
+    }
+
+    /* ---- Loading ---- */
+    #loading {
+        position: fixed; inset: 0; display: flex; align-items: center; justify-content: center;
+        z-index: 20; background: #05040c; color: var(--rose);
+        font-family: "Georgia", serif; font-style: italic; font-size: 1.05rem;
+        letter-spacing: 0.06em; transition: opacity 1.4s ease;
+    }
+    #loading.gone { opacity: 0; pointer-events: none; }
+</style>
+</head>
+<body>
+    <div id="container"></div>
+
+    <div id="title">
+        <h1>Flores para mi chica</h1>
+        <div class="sub">un jardín que sigue creciendo</div>
+    </div>
+
+    <div id="words">
+        <div class="date"></div>
+        <div class="ftitle"></div>
+        <div class="fwords"></div>
+    </div>
+
+    <div id="hint">arrastra para mirar alrededor</div>
+    <div id="loading">plantando el jardín…</div>
+
+    <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+      }
+    }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+        import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
+        import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+        import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+        import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+        import { BokehPass } from 'three/addons/postprocessing/BokehPass.js';
+        import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
+        import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+
+        // ---------------------------------------------------------------
+        //  The garden. Each flower is a gift. Add an entry to plant one.
+        //  position is [x, z] on the ground; the base is seated at y = 0.
+        //  height is the flower's height in world units (a hollyhock is
+        //  tall). model names a file in garden-assets/ (without .glb).
+        // ---------------------------------------------------------------
+        const flowers = [
+            {
+                model: 'hollyhock',
+                title: 'Para mi chica',
+                words: 'Debí haberte regalado más flores, estas tendrán que bastar.',
+                date: '2026-07-21',
+                position: [0, 0],
+                height: 3.4,
+                rotationY: 0.2
+            },
+            {
+                model: 'hollyhock',
+                title: 'Te amaré siempre',
+                words: 'Debí haberte regalado más flores, estas tendrán que bastar.',
+                date: '2026-07-21',
+                position: [-3.4, -1.8],
+                height: 2.9,
+                rotationY: 1.3
+            },
+            {
+                model: 'hollyhock',
+                title: 'Todavía te amo.',
+                words: 'Debí haberte regalado más flores, estas tendrán que bastar.',
+                date: '2026-07-21',
+                position: [3.2, -1.0],
+                height: 3.1,
+                rotationY: -0.8
+            },
+            {
+                // A stemless peach rose, laid low on the mirror floor as an
+                // offering. Short height seats the bud on the ground.
+                model: 'rose',
+                title: 'Una rosa más.',
+                words: 'Debí haberte regalado más flores, estas tendrán que bastar.',
+                date: '2026-07-21',
+                position: [1.6, 3.2],
+                height: 0.6,
+                rotationY: 0.4,
+                heart: false,   // no internal light: an open bloom, not dense foliage
+                glow: 0.15,     // only a faint ember hint
+                lamp: 0.5       // lit by the overhead lamp, like the hollyhocks
+            }
+        ];
+
+        // ---------------------------------------------------------------
+        //  Tuning
+        // ---------------------------------------------------------------
+        const DRIFT_SECONDS = 105;   // time for one loop of the garden
+        const REVEAL_RADIUS  = 5.4;  // how near a flower must be to speak
+        const DPR = Math.min(window.devicePixelRatio, 1.5);
+
+        let scene, camera, renderer, composer, bloomPass, bokehPass, lookPass, fireflies, _glowTex;
+        const windShaders = []; // per-material shaders whose wind clock we advance
+        const clock = new THREE.Clock();
+        const container = document.getElementById('container');
+        const loadingEl = document.getElementById('loading');
+
+        // Drag-nudge gaze: the drift owns the camera; a drag adds a gaze
+        // offset that eases back to centre so the wander stays coherent.
+        const gaze = { yaw: 0, pitch: 0, tYaw: 0, tPitch: 0 };
+        let dragging = false, lastX = 0, lastY = 0;
+
+        // The camera's wandering loop through the beds. Kept low so the tall
+        // spikes rise above the eye and the raking key light reads.
+        const path = new THREE.CatmullRomCurve3([
+            new THREE.Vector3( 0.0, 1.20,  6.6),
+            new THREE.Vector3( 5.0, 1.35,  3.0),
+            new THREE.Vector3( 5.6, 1.15, -2.4),
+            new THREE.Vector3( 0.0, 1.45, -4.8),
+            new THREE.Vector3(-5.6, 1.15, -2.4),
+            new THREE.Vector3(-5.0, 1.35,  3.0)
+        ], true, 'catmullrom', 0.5);
+
+        const plantings = []; // hero flowers that carry words
+        const swayers = [];   // every plant group, for the breeze
+        const embers = [];    // glow sprites that flicker
+        let currentFlower = -1;
+        const bedCentre = new THREE.Vector3(); // mean of the blooms, gaze leans here
+        const lookTarget = new THREE.Vector3(); // eased point the camera looks at
+
+        init();
+
+        function init() {
+            scene = new THREE.Scene();
+            // A void. Everything past the pool of light dissolves into black,
+            // so there is no horizon and no floor edge, only dark.
+            scene.fog = new THREE.FogExp2(0x04030a, 0.085);
+
+            camera = new THREE.PerspectiveCamera(44, innerWidth / innerHeight, 0.1, 400);
+            camera.position.copy(path.getPointAt(0));
+
+            renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+            renderer.setPixelRatio(DPR);
+            renderer.setSize(innerWidth, innerHeight);
+            renderer.toneMapping = THREE.ACESFilmicToneMapping;
+            renderer.toneMappingExposure = 1.1;
+            renderer.outputColorSpace = THREE.SRGBColorSpace;
+            container.appendChild(renderer.domElement);
+
+            const skyMat = buildSky();
+            buildEnvironment(skyMat); // faint image-based light from the dark sky
+            buildGround();
+            buildLights();
+            buildFireflies();
+
+            // Post is half the picture: bloom so the blooms glow, depth of
+            // field so the far plants melt, then a graded grain + vignette
+            // that turns "render" into "photograph".
+            composer = new EffectComposer(renderer);
+            composer.addPass(new RenderPass(scene, camera));
+
+            bloomPass = new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), 0.6, 0.7, 0.55);
+            composer.addPass(bloomPass);
+
+            bokehPass = new BokehPass(scene, camera, { focus: 8.0, aperture: 0.00075, maxblur: 0.011 });
+            composer.addPass(bokehPass);
+
+            lookPass = new ShaderPass(makeLookShader());
+            lookPass.uniforms.uResolution.value.set(innerWidth, innerHeight);
+            composer.addPass(lookPass);
+
+            composer.addPass(new OutputPass());
+
+            setupInteraction();
+            window.addEventListener('resize', onResize);
+
+            loadGarden();
+        }
+
+        // --- A near-black void with the faintest wine glow low down, so the
+        //     world reads as midnight rather than a backdrop.
+        function buildSky() {
+            const geo = new THREE.SphereGeometry(200, 32, 16);
+            const mat = new THREE.ShaderMaterial({
+                side: THREE.BackSide, depthWrite: false, fog: false,
+                uniforms: {
+                    top:     { value: new THREE.Color(0x02020a) },
+                    horizon: { value: new THREE.Color(0x0a0206) },
+                    glow:    { value: new THREE.Color(0x3a0812) }
+                },
+                vertexShader: `
+                    varying vec3 vP;
+                    void main() { vP = position; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }
+                `,
+                fragmentShader: `
+                    uniform vec3 top; uniform vec3 horizon; uniform vec3 glow;
+                    varying vec3 vP;
+                    void main() {
+                        float h = normalize(vP).y;             // -1 down .. 1 up
+                        float t = smoothstep(-0.1, 0.7, h);
+                        vec3 c = mix(horizon, top, t);
+                        c += glow * smoothstep(0.22, -0.15, h) * 0.5; // low wine haze
+                        gl_FragColor = vec4(c, 1.0);
+                    }
+                `
+            });
+            scene.add(new THREE.Mesh(geo, mat));
+            return mat;
+        }
+
+        // Faint image-based light from the dark sky: just enough to keep the
+        // unlit sides of leaves from crushing to pure black.
+        function buildEnvironment(skyMat) {
+            const pmrem = new THREE.PMREMGenerator(renderer);
+            const envScene = new THREE.Scene();
+            envScene.add(new THREE.Mesh(new THREE.SphereGeometry(10, 32, 16), skyMat));
+            scene.environment = pmrem.fromScene(envScene).texture;
+            pmrem.dispose();
+        }
+
+        // Final look: push shadows toward wine, crush the blacks a touch,
+        // vignette the frame and lay film grain over it.
+        function makeLookShader() {
+            return {
+                uniforms: {
+                    tDiffuse:    { value: null },
+                    uTime:       { value: 0 },
+                    uResolution: { value: new THREE.Vector2(1, 1) }
+                },
+                vertexShader: `
+                    varying vec2 vUv;
+                    void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }
+                `,
+                fragmentShader: `
+                    uniform sampler2D tDiffuse; uniform float uTime; uniform vec2 uResolution;
+                    varying vec2 vUv;
+                    float hash(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+                    void main() {
+                        vec3 c = texture2D(tDiffuse, vUv).rgb;
+                        float luma = dot(c, vec3(0.299, 0.587, 0.114));
+                        // shadows drift toward wine-red
+                        c += vec3(0.30, 0.03, 0.10) * (1.0 - smoothstep(0.0, 0.4, luma)) * 0.1;
+                        c = max(vec3(0.0), c - 0.006);          // crush the blacks
+                        vec2 q = vUv - 0.5; q.x *= uResolution.x / uResolution.y;
+                        float vig = smoothstep(1.15, 0.35, length(q));
+                        c *= mix(0.55, 1.0, vig);               // vignette
+                        float g = hash(vUv * uResolution + fract(uTime)) - 0.5;
+                        c += g * 0.04;                          // film grain
+                        gl_FragColor = vec4(c, 1.0);
+                    }
+                `
+            };
+        }
+
+        // --- Ground: a wide dark floor that receives shadow and loses its
+        //     far edge to the fog, plus a warm pool of light under the bed.
+        // --- Floor: a black, wet-looking mirror. It reflects the inner glows
+        //     as smeared pools and dissolves into the fog, so the plants seem
+        //     to float over their own light. No hard edge anywhere.
+        function buildGround() {
+            const ground = new THREE.Mesh(
+                new THREE.PlaneGeometry(260, 260),
+                new THREE.MeshStandardMaterial({ color: 0x050308, roughness: 0.34, metalness: 0.5, envMapIntensity: 0.6 })
+            );
+            ground.rotation.x = -Math.PI / 2;
+            scene.add(ground);
+        }
+
+        // A soft dark disc under a plant, faking the contact occlusion where
+        // stems and leaves meet the earth. This is what stops them floating.
+        let _aoTex;
+        function contactShadow(footprint, x, z) {
+            if (!_aoTex) {
+                const c = document.createElement('canvas'); c.width = c.height = 256;
+                const g = c.getContext('2d');
+                const rg = g.createRadialGradient(128, 128, 4, 128, 128, 128);
+                rg.addColorStop(0,    'rgba(0, 0, 0, 0.6)');
+                rg.addColorStop(0.55, 'rgba(0, 0, 0, 0.3)');
+                rg.addColorStop(1,    'rgba(0, 0, 0, 0)');
+                g.fillStyle = rg; g.fillRect(0, 0, 256, 256);
+                _aoTex = new THREE.CanvasTexture(c);
+            }
+            const m = new THREE.Mesh(new THREE.PlaneGeometry(footprint, footprint),
+                new THREE.MeshBasicMaterial({ map: _aoTex, transparent: true, depthWrite: false }));
+            m.rotation.x = -Math.PI / 2;
+            m.position.set(x, 0.015, z);
+            m.renderOrder = 2;
+            return m;
+        }
+
+        function buildLights() {
+            // The only ambient is a whisper of cool moonlight, so the plants
+            // read almost as silhouettes until their own hearts light them.
+            scene.add(new THREE.HemisphereLight(0x35406a, 0x05040a, 0.6));
+        }
+
+        // A plant lit from within: a warm point light at its heart, and a
+        // steep pink spot from above like a lamp over a table, so the form
+        // still reads. Positioned in world space at the plant's location.
+        function innerGlow(x, z, height, opts = {}) {
+            const g = opts.g ?? 1;
+            const heartY = height * 0.4;
+            // Warm heart inside the plant, lighting dense foliage from within.
+            // Skipped for open blooms (e.g. the rose) where an internal light
+            // just blows the petals out; those get the lamp only.
+            if (opts.heart !== false) {
+                const heart = new THREE.PointLight(0xff5030, 3.4 * g, height * 1.8, 2.2);
+                heart.position.set(x, heartY, z);
+                scene.add(heart);
+            }
+
+            // A warm lamp from steep above, pooling light on the plant like a
+            // stage, falling off to black around it. Its range is forced to
+            // actually reach the bloom, so short plants (the rose) get lit too.
+            const spot = new THREE.SpotLight(0xffd6c2, 20 * (opts.lamp ?? g), 1, 0.55, 0.6, 1.2);
+            spot.position.set(x + 0.6, height + 3.2, z + 0.4);
+            spot.target.position.set(x, heartY, z);
+            spot.distance = Math.max(height * 4.5, spot.position.distanceTo(spot.target.position) + height + 1);
+            scene.add(spot); scene.add(spot.target);
+        }
+
+        // A soft additive glow billboard: the ember seen through the leaves,
+        // and what the far plants are reduced to in the dark.
+        function glowTexture() {
+            if (!_glowTex) {
+                const c = document.createElement('canvas'); c.width = c.height = 128;
+                const g = c.getContext('2d');
+                const rg = g.createRadialGradient(64, 64, 0, 64, 64, 64);
+                rg.addColorStop(0,   'rgba(255,255,255,1)');
+                rg.addColorStop(0.3, 'rgba(255,255,255,0.55)');
+                rg.addColorStop(1,   'rgba(255,255,255,0)');
+                g.fillStyle = rg; g.fillRect(0, 0, 128, 128);
+                _glowTex = new THREE.CanvasTexture(c);
+            }
+            return _glowTex;
+        }
+        function emberSprite(x, y, z, colorHex, size) {
+            const s = new THREE.Sprite(new THREE.SpriteMaterial({
+                map: glowTexture(), color: colorHex, transparent: true,
+                blending: THREE.AdditiveBlending, depthWrite: false, fog: true
+            }));
+            s.position.set(x, y, z);
+            s.scale.setScalar(size);
+            scene.add(s);
+            // Register it to flicker slowly, like a coal breathing.
+            embers.push({ s, base: size, phase: (x * 12.9 + z * 78.2) % 6.283, rate: 0.6 + (Math.abs(x + z) % 1) * 0.8 });
+            return s;
+        }
+
+        // The ember's light pooling on the wet floor beneath a plant, so the
+        // darkness under the beds has structure instead of dead black.
+        function floorGlow(x, z, size, colorHex, opacity) {
+            const m = new THREE.Mesh(new THREE.PlaneGeometry(size, size),
+                new THREE.MeshBasicMaterial({ map: glowTexture(), color: colorHex, transparent: true,
+                    opacity, blending: THREE.AdditiveBlending, depthWrite: false, fog: true }));
+            m.rotation.x = -Math.PI / 2;
+            m.position.set(x, 0.03, z);
+            m.renderOrder = 1;
+            scene.add(m);
+        }
+
+        // Break the auto-arranged sameness: a full random spin, non-uniform
+        // scale and a slight lean, so no two plants read as flips of each other.
+        function vary(group, seed) {
+            const r = (s) => { const v = Math.sin(seed * 127.1 + s * 311.7) * 43758.5453; return v - Math.floor(v); };
+            group.rotation.y = r(1) * Math.PI * 2;
+            group.scale.x *= 0.85 + r(2) * 0.3;
+            group.scale.z *= 0.85 + r(3) * 0.3;
+            group.rotation.z += (r(4) - 0.5) * 0.14;
+            group.rotation.x += (r(5) - 0.5) * 0.12;
+        }
+
+        // --- Fireflies: soft drifting motes, additive, twinkling.
+        function buildFireflies() {
+            const N = 140;
+            const pos = new Float32Array(N * 3);
+            const seed = new Float32Array(N);
+            for (let i = 0; i < N; i++) {
+                pos[i*3+0] = (Math.sin(i * 12.9898) * 43758.5453 % 1) * 26 - 13;
+                pos[i*3+1] = 0.4 + ((Math.sin(i * 4.1414) * 1234.5 % 1) + 1) * 1.8;
+                pos[i*3+2] = (Math.sin(i * 78.233) * 43758.5453 % 1) * 26 - 13;
+                seed[i] = i * 1.7;
+            }
+            const geo = new THREE.BufferGeometry();
+            geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+            geo.setAttribute('seed', new THREE.BufferAttribute(seed, 1));
+            const mat = new THREE.ShaderMaterial({
+                transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, fog: true,
+                uniforms: { uTime: { value: 0 }, uColor: { value: new THREE.Color(0xff9a5a) },
+                            fogColor: { value: scene.fog.color }, fogDensity: { value: scene.fog.density } },
+                vertexShader: `
+                    attribute float seed; uniform float uTime; varying float vTw;
+                    void main() {
+                        vec3 p = position;
+                        p.x += sin(uTime * 0.35 + seed) * 0.6;
+                        p.y += sin(uTime * 0.5 + seed * 1.7) * 0.35;
+                        p.z += cos(uTime * 0.3 + seed * 0.9) * 0.6;
+                        vec4 mv = modelViewMatrix * vec4(p, 1.0);
+                        vTw = 0.5 + 0.5 * sin(uTime * 1.6 + seed * 3.1);
+                        gl_PointSize = (26.0 + 14.0 * vTw) / -mv.z;
+                        gl_Position = projectionMatrix * mv;
+                    }
+                `,
+                fragmentShader: `
+                    uniform vec3 uColor; varying float vTw;
+                    void main() {
+                        float d = length(gl_PointCoord - 0.5);
+                        float a = smoothstep(0.5, 0.0, d);
+                        gl_FragColor = vec4(uColor, a * a * (0.35 + 0.65 * vTw));
+                    }
+                `
+            });
+            fireflies = new THREE.Points(geo, mat);
+            fireflies.frustumCulled = false;
+            scene.add(fireflies);
+        }
+
+        // Vertex-shader wind: displace each vertex in world space, weighted by
+        // its height, phase driven by the plant's world position so every
+        // stem sways slightly out of step with its neighbours. Applied to the
+        // shared flower material once; drives all clones.
+        function addWind(material) {
+            material.onBeforeCompile = (shader) => {
+                shader.uniforms.uWindTime = { value: 0 };
+                windShaders.push(shader);
+                shader.vertexShader = 'uniform float uWindTime;\n' + shader.vertexShader;
+                shader.vertexShader = shader.vertexShader.replace('#include <project_vertex>', `
+                    vec4 wPos = modelMatrix * vec4(transformed, 1.0);
+                    float hw = clamp(wPos.y / 3.0, 0.0, 1.3);
+                    float ph = uWindTime + wPos.x * 0.7 + wPos.z * 0.5;
+                    wPos.x += sin(ph) * 0.05 * hw;
+                    wPos.z += cos(ph * 0.85 + 1.3) * 0.035 * hw;
+                    vec4 mvPosition = viewMatrix * wPos;
+                    gl_Position = projectionMatrix * mvPosition;
+                `);
+            };
+            material.customProgramCacheKey = () => 'windflower';
+        }
+
+        // ---------------------------------------------------------------
+        //  Load the models and plant the flowers.
+        // ---------------------------------------------------------------
+        function loadGarden() {
+            const loader = new GLTFLoader();
+            loader.setMeshoptDecoder(MeshoptDecoder);
+
+            const needed = [...new Set(flowers.map(f => f.model))];
+            const templates = {};
+            let remaining = needed.length;
+
+            needed.forEach(name => {
+                loader.load(`garden-assets/${name}.glb`, (gltf) => {
+                    // Normalise once: recentre on X/Z, seat the base at y = 0,
+                    // remember the raw height so each planting can be scaled.
+                    const root = gltf.scene;
+                    root.updateMatrixWorld(true);
+                    root.traverse(o => {
+                        if (o.isMesh && o.material) {
+                            o.material.side = THREE.FrontSide; // Meshy exports double; front reads cleaner
+                            o.material.envMapIntensity = 0.6;
+                            addWind(o.material);               // stems breathe in the wind
+                        }
+                    });
+                    const box = new THREE.Box3().setFromObject(root);
+                    const size = box.getSize(new THREE.Vector3());
+                    const centre = box.getCenter(new THREE.Vector3());
+                    templates[name] = { root, size, centre, minY: box.min.y };
+                    if (--remaining === 0) plantAll(templates);
+                }, undefined, (err) => {
+                    console.error(err);
+                    loadingEl.textContent = 'el jardín no quiso abrir';
+                });
+            });
+        }
+
+        // Fill the garden out beyond the named flowers: a scatter of the same
+        // bloom, further off and sinking into the fog, so the beds have depth
+        // and the three that carry words aren't alone on an empty plane.
+        function scatterBackground(tpl) {
+            if (!tpl) return;
+            const small = Math.min(innerWidth, innerHeight) < 700;
+            const N = small ? 4 : 10; // each is the full-detail mesh; keep mobile light
+            const rnd = (i, s) => { const x = Math.sin(i * 127.1 + s * 311.7) * 43758.5453; return x - Math.floor(x); };
+            for (let i = 0; i < N; i++) {
+                const ang = (i / N) * Math.PI * 2 + (rnd(i, 1) - 0.5) * 0.8;
+                const rad = 8 + rnd(i, 2) * 11;                   // 8..19 out from the bed
+                const x = Math.cos(ang) * rad, z = Math.sin(ang) * rad;
+                const h = 2.4 + rnd(i, 3) * 1.9;
+                const inner = tpl.root.clone(true);
+                inner.position.set(-tpl.centre.x, -tpl.minY, -tpl.centre.z);
+                const grp = new THREE.Group();
+                grp.add(inner);
+                grp.scale.setScalar(h / tpl.size.y);
+                grp.position.set(x, 0, z);
+                vary(grp, i + 40);
+                grp.userData.swayPhase = 5 + i * 2.3;
+                scene.add(grp);
+                swayers.push(grp);
+                scene.add(contactShadow(h * 0.42, x, z));
+                // A burning heart at a varied height, dimmer the further off,
+                // its light pooling faintly on the floor.
+                const eh = h * (0.28 + rnd(i, 5) * 0.4);          // ember rides at a different height each time
+                const dim = 1 - Math.min(1, (rad - 8) / 14);       // fades with distance
+                emberSprite(x, eh, z, 0x7a1c14, (0.28 + rnd(i, 6) * 0.3) * (0.5 + dim));
+                floorGlow(x, z, h * 1.1, 0x3a0c04, 0.35 * dim);
+            }
+
+            // A few embers deep in the dark with no visible plant, so the
+            // garden reads as continuing beyond the front row.
+            for (let i = 0; i < 7; i++) {
+                const ang = rnd(i, 7) * Math.PI * 2;
+                const rad = 18 + rnd(i, 8) * 12;                  // 18..30, well into the fog
+                emberSprite(Math.cos(ang) * rad, 0.6 + rnd(i, 9) * 2.4, Math.sin(ang) * rad,
+                            0x5a1108, 0.18 + rnd(i, 10) * 0.22);
+            }
+        }
+
+        function plantAll(templates) {
+            flowers.forEach((f, i) => {
+                const tpl = templates[f.model];
+                if (!tpl) return;
+                const s = f.height / tpl.size.y;
+
+                // A wrapper so we can seat/scale/sway without baking into the
+                // meshopt-quantised geometry (transforms live on the nodes).
+                const inner = tpl.root.clone(true);
+                inner.position.set(-tpl.centre.x, -tpl.minY, -tpl.centre.z); // origin at base centre
+                inner.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+                const group = new THREE.Group();
+                group.add(inner);
+                group.scale.setScalar(s);
+                group.position.set(f.position[0], 0, f.position[1]);
+                group.rotation.y = f.rotationY || 0;
+                vary(group, i + 3); // no two plants alike
+                group.userData.swayPhase = i * 1.9;
+                scene.add(group);
+                swayers.push(group);
+                scene.add(contactShadow(f.height * 0.42, f.position[0], f.position[1]));
+                // Lit from within, with a small ember at the heart for bloom,
+                // and its light pooling on the floor below. glow scales the
+                // whole effect down for small blooms (e.g. the low rose).
+                const g = f.glow ?? 1;          // inner ember/heart intensity
+                const lamp = f.lamp ?? g;       // overhead lamp (what lights the bloom)
+                const heartOn = f.heart !== false;
+                innerGlow(f.position[0], f.position[1], f.height, { g, lamp, heart: heartOn });
+                if (g > 0.02) emberSprite(f.position[0], f.height * (0.34 + 0.12 * (i % 2)), f.position[1], 0xbb2a20, 0.35 * g);
+                floorGlow(f.position[0], f.position[1], f.height * 1.4, 0x5a1206, 0.6 * lamp);
+
+                plantings.push({
+                    flower: f,
+                    group,
+                    base: new THREE.Vector3(f.position[0], 0, f.position[1]),
+                    heart: new THREE.Vector3(f.position[0], f.height * 0.55, f.position[1])
+                });
+            });
+
+            scatterBackground(templates[flowers[0].model]);
+
+            // The gaze leans toward the middle of the planting.
+            bedCentre.set(0, 0, 0);
+            for (const p of plantings) bedCentre.add(p.heart);
+            if (plantings.length) bedCentre.multiplyScalar(1 / plantings.length);
+            lookTarget.copy(bedCentre);
+
+            loadingEl.classList.add('gone');
+            setTimeout(() => document.getElementById('title').classList.add('gone'), 7000);
+            clock.start();
+            animate();
+        }
+
+        // ---------------------------------------------------------------
+        //  Interaction: drag nudges the gaze, then it eases home.
+        // ---------------------------------------------------------------
+        function setupInteraction() {
+            const el = renderer.domElement;
+            const down = (x, y) => { dragging = true; lastX = x; lastY = y; };
+            const move = (x, y) => {
+                if (!dragging) return;
+                gaze.tYaw   += (x - lastX) * 0.0016;
+                gaze.tPitch += (y - lastY) * 0.0016;
+                gaze.tYaw   = THREE.MathUtils.clamp(gaze.tYaw, -0.9, 0.9);
+                gaze.tPitch = THREE.MathUtils.clamp(gaze.tPitch, -0.5, 0.5);
+                lastX = x; lastY = y;
+            };
+            const up = () => { dragging = false; };
+            el.addEventListener('pointerdown', e => down(e.clientX, e.clientY));
+            window.addEventListener('pointermove', e => move(e.clientX, e.clientY));
+            window.addEventListener('pointerup', up);
+            window.addEventListener('pointercancel', up);
+        }
+
+        // ---------------------------------------------------------------
+        //  Reveal the words of whichever flower is nearest.
+        // ---------------------------------------------------------------
+        const wordsEl = document.getElementById('words');
+        function updateWords() {
+            let best = -1, bestD = REVEAL_RADIUS;
+            for (let i = 0; i < plantings.length; i++) {
+                const d = camera.position.distanceTo(plantings[i].heart);
+                if (d < bestD) { bestD = d; best = i; }
+            }
+            if (best !== currentFlower) {
+                currentFlower = best;
+                if (best === -1) {
+                    wordsEl.classList.remove('show');
+                } else {
+                    const f = plantings[best].flower;
+                    wordsEl.querySelector('.date').textContent = f.date || '';
+                    wordsEl.querySelector('.ftitle').textContent = f.title || '';
+                    wordsEl.querySelector('.fwords').textContent = f.words || '';
+                    wordsEl.classList.add('show');
+                }
+            }
+        }
+
+        function onResize() {
+            camera.aspect = innerWidth / innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(innerWidth, innerHeight);
+            composer.setSize(innerWidth, innerHeight);
+            bloomPass.resolution.set(innerWidth, innerHeight);
+            lookPass.uniforms.uResolution.value.set(innerWidth, innerHeight);
+        }
+
+        const _look = new THREE.Vector3();
+        const _ahead = new THREE.Vector3();
+        const _euler = new THREE.Euler(0, 0, 0, 'YXZ');
+        function animate() {
+            requestAnimationFrame(animate);
+            const dt = Math.min(clock.getDelta(), 0.05);
+            const t = clock.getElapsedTime();
+
+            // Drift along the loop.
+            const u = (t / DRIFT_SECONDS) % 1;
+            camera.position.copy(path.getPointAt(u));
+
+            // Which bloom are we nearest? (drives both the words and the gaze)
+            updateWords();
+
+            // Look toward the bed, leaning into whichever flower is nearest so
+            // it passes through the centre of frame as you read its words.
+            path.getPointAt((u + 0.04) % 1, _ahead);
+            _look.copy(_ahead).lerp(bedCentre, 0.6);
+            if (currentFlower >= 0) _look.lerp(plantings[currentFlower].heart, 0.7);
+            lookTarget.lerp(_look, Math.min(1, dt * 1.5)); // ease so turns are gentle
+            camera.up.set(0, 1, 0);
+            camera.lookAt(lookTarget);
+
+            // ...then add the eased gaze nudge as a local yaw/pitch offset.
+            gaze.tYaw   *= (1 - dt * 0.6);   // ease the target home
+            gaze.tPitch *= (1 - dt * 0.6);
+            gaze.yaw   += (gaze.tYaw   - gaze.yaw)   * Math.min(1, dt * 4);
+            gaze.pitch += (gaze.tPitch - gaze.pitch) * Math.min(1, dt * 4);
+            _euler.set(-gaze.pitch, -gaze.yaw, 0, 'YXZ');
+            camera.quaternion.multiply(new THREE.Quaternion().setFromEuler(_euler));
+
+            // A low, whole-plant drift under the per-stem vertex wind.
+            for (const g of swayers) {
+                g.rotation.z = Math.sin(t * 0.3 + g.userData.swayPhase) * 0.01;
+                g.rotation.x = Math.cos(t * 0.25 + g.userData.swayPhase) * 0.007;
+            }
+
+            // Advance the wind, the embers, the grain; focus the lens on
+            // whichever plant we are nearest so the rest melts into bokeh.
+            for (const s of windShaders) s.uniforms.uWindTime.value = t;
+            for (const e of embers) {
+                const f = 0.82 + 0.18 * Math.sin(t * e.rate + e.phase) + 0.06 * Math.sin(t * e.rate * 3.3 + e.phase);
+                e.s.scale.setScalar(e.base * f);
+                e.s.material.opacity = Math.min(1, f);
+            }
+            if (fireflies) fireflies.material.uniforms.uTime.value = t;
+
+            lookPass.uniforms.uTime.value = t;
+            const focusPt = currentFlower >= 0 ? plantings[currentFlower].heart : bedCentre;
+            bokehPass.uniforms['focus'].value = camera.position.distanceTo(focusPt);
+
+            composer.render();
+        }
+    </script>
+</body>
+</html>
