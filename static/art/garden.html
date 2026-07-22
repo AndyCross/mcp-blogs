@@ -160,8 +160,8 @@
             },
             {
                 model: 'hollyhock',
-                title: 'Te amaré siempre',
-                words: 'Debí haberte regalado más flores, estas tendrán que bastar.',
+                title: 'Algún día cultivaremos un jardín juntos.',
+                words: 'Aunque solo sea en mis sueños.',
                 date: '2026-07-21',
                 position: [-3.4, -1.8],
                 height: 2.9,
@@ -170,7 +170,7 @@
             {
                 model: 'hollyhock',
                 title: 'Todavía te amo.',
-                words: 'Debí haberte regalado más flores, estas tendrán que bastar.',
+                words: 'Eres dueña de mi corazón.',
                 date: '2026-07-21',
                 position: [3.2, -1.0],
                 height: 3.1,
@@ -180,7 +180,7 @@
                 // A stemless peach rose, laid low on the mirror floor as an
                 // offering. Short height seats the bud on the ground.
                 model: 'rose',
-                title: 'Una rosa más.',
+                title: 'Mi persona, que para mí es una rosa.',
                 words: 'Debí haberte regalado más flores, estas tendrán que bastar.',
                 date: '2026-07-21',
                 position: [1.6, 3.2],
@@ -199,8 +199,10 @@
         const REVEAL_RADIUS  = 5.4;  // how near a flower must be to speak
         const DPR = Math.min(window.devicePixelRatio, 1.5);
 
-        let scene, camera, renderer, composer, bloomPass, bokehPass, lookPass, fireflies, _glowTex;
+        let scene, camera, renderer, composer, bloomPass, bokehPass, lookPass, fireflies, pollen, _glowTex, _petalTex;
         const windShaders = []; // per-material shaders whose wind clock we advance
+        const petals = [];      // petals crossing the lens at different depths
+        const breathingLights = [];
         const clock = new THREE.Clock();
         const container = document.getElementById('container');
         const loadingEl = document.getElementById('loading');
@@ -227,6 +229,7 @@
         let currentFlower = -1;
         const bedCentre = new THREE.Vector3(); // mean of the blooms, gaze leans here
         const lookTarget = new THREE.Vector3(); // eased point the camera looks at
+        let focusDistance = 8;
 
         init();
 
@@ -252,6 +255,8 @@
             buildGround();
             buildLights();
             buildFireflies();
+            buildPollen();
+            buildPetals();
 
             // Post is half the picture: bloom so the blooms glow, depth of
             // field so the far plants melt, then a graded grain + vignette
@@ -259,7 +264,7 @@
             composer = new EffectComposer(renderer);
             composer.addPass(new RenderPass(scene, camera));
 
-            bloomPass = new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), 0.6, 0.7, 0.55);
+            bloomPass = new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), 0.52, 0.82, 0.62);
             composer.addPass(bloomPass);
 
             bokehPass = new BokehPass(scene, camera, { focus: 8.0, aperture: 0.00075, maxblur: 0.011 });
@@ -299,7 +304,7 @@
                         float h = normalize(vP).y;             // -1 down .. 1 up
                         float t = smoothstep(-0.1, 0.7, h);
                         vec3 c = mix(horizon, top, t);
-                        c += glow * smoothstep(0.22, -0.15, h) * 0.5; // low wine haze
+                        c += glow * (1.0 - smoothstep(-0.15, 0.22, h)) * 0.5; // low wine haze
                         gl_FragColor = vec4(c, 1.0);
                     }
                 `
@@ -318,8 +323,10 @@
             pmrem.dispose();
         }
 
-        // Final look: push shadows toward wine, crush the blacks a touch,
-        // vignette the frame and lay film grain over it.
+        // Final look: a vintage portrait lens rather than a clean digital
+        // render. Highlights bloom into warm halation, the frame edges diffuse
+        // and split very slightly, and a restrained moving grain ties the
+        // photogrammetry, particles and light together.
         function makeLookShader() {
             return {
                 uniforms: {
@@ -336,16 +343,56 @@
                     varying vec2 vUv;
                     float hash(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
                     void main() {
-                        vec3 c = texture2D(tDiffuse, vUv).rgb;
+                        vec2 px = 1.0 / uResolution;
+                        vec2 fromCentre = vUv - 0.5;
+                        float edge = smoothstep(0.08, 0.72, length(fromCentre * vec2(uResolution.x / uResolution.y, 1.0)));
+
+                        // Imperceptible edge-only colour separation: enough to
+                        // make bright petals feel optical, never glitchy.
+                        vec2 ca = fromCentre * edge * 0.0032;
+                        vec3 c;
+                        c.r = texture2D(tDiffuse, vUv + ca).r;
+                        c.g = texture2D(tDiffuse, vUv).g;
+                        c.b = texture2D(tDiffuse, vUv - ca).b;
+
+                        // A wide, warm halo sourced only from highlights. The
+                        // asymmetric taps keep it cloudy instead of looking
+                        // like another conventional bloom pass.
+                        vec3 halo = vec3(0.0);
+                        halo += texture2D(tDiffuse, vUv + px * vec2( 8.0,  2.0)).rgb;
+                        halo += texture2D(tDiffuse, vUv + px * vec2(-7.0, -3.0)).rgb;
+                        halo += texture2D(tDiffuse, vUv + px * vec2( 3.0, -8.0)).rgb;
+                        halo += texture2D(tDiffuse, vUv + px * vec2(-2.0,  7.0)).rgb;
+                        halo += texture2D(tDiffuse, vUv + px * vec2(12.0, -5.0)).rgb;
+                        halo += texture2D(tDiffuse, vUv + px * vec2(-11.0, 5.0)).rgb;
+                        halo /= 6.0;
+                        float hl = smoothstep(0.34, 1.15, dot(halo, vec3(0.299, 0.587, 0.114)));
+                        c += halo * vec3(0.20, 0.055, 0.035) * hl;
+
+                        // Softness gathers toward the glass edge, leaving the
+                        // flower being read crisp enough to hold attention.
+                        vec3 soft = texture2D(tDiffuse, vUv + px * vec2( 2.0,  1.0)).rgb;
+                        soft += texture2D(tDiffuse, vUv + px * vec2(-2.0, -1.0)).rgb;
+                        soft += texture2D(tDiffuse, vUv + px * vec2(-1.0,  2.0)).rgb;
+                        soft += texture2D(tDiffuse, vUv + px * vec2( 1.0, -2.0)).rgb;
+                        soft *= 0.25;
+                        c = mix(c, soft, edge * 0.16);
+
                         float luma = dot(c, vec3(0.299, 0.587, 0.114));
                         // shadows drift toward wine-red
-                        c += vec3(0.30, 0.03, 0.10) * (1.0 - smoothstep(0.0, 0.4, luma)) * 0.1;
-                        c = max(vec3(0.0), c - 0.006);          // crush the blacks
-                        vec2 q = vUv - 0.5; q.x *= uResolution.x / uResolution.y;
-                        float vig = smoothstep(1.15, 0.35, length(q));
-                        c *= mix(0.55, 1.0, vig);               // vignette
-                        float g = hash(vUv * uResolution + fract(uTime)) - 0.5;
-                        c += g * 0.04;                          // film grain
+                        c += vec3(0.30, 0.025, 0.075) * (1.0 - smoothstep(0.0, 0.4, luma)) * 0.085;
+                        c = max(vec3(0.0), c - 0.004);          // gently seat the blacks
+                        vec2 q = fromCentre; q.x *= uResolution.x / uResolution.y;
+                        float vig = 1.0 - smoothstep(0.35, 1.15, length(q));
+                        c *= mix(0.58, 1.0, vig);               // vignette
+
+                        // Film changes only a few times per second; this reads
+                        // as dancing silver rather than harsh pixel noise.
+                        float frame = floor(uTime * 18.0);
+                        float fine = hash(floor(vUv * uResolution * 0.72) + frame * 17.0) - 0.5;
+                        float cloud = hash(floor(vUv * uResolution / 3.0) + frame * 3.0) - 0.5;
+                        c += (fine * 0.018 + cloud * 0.009) * (0.65 + 0.35 * (1.0 - luma));
+                        c *= 0.992 + 0.008 * sin(uTime * 0.47); // the projector breathes
                         gl_FragColor = vec4(c, 1.0);
                     }
                 `
@@ -407,6 +454,7 @@
                 const heart = new THREE.PointLight(0xff5030, 3.4 * g, height * 1.8, 2.2);
                 heart.position.set(x, heartY, z);
                 scene.add(heart);
+                breathingLights.push({ light: heart, base: heart.intensity, phase: x * 1.7 + z * 2.3, rate: 0.34 });
             }
 
             // A warm lamp from steep above, pooling light on the plant like a
@@ -505,7 +553,7 @@
                     uniform vec3 uColor; varying float vTw;
                     void main() {
                         float d = length(gl_PointCoord - 0.5);
-                        float a = smoothstep(0.5, 0.0, d);
+                        float a = 1.0 - smoothstep(0.0, 0.5, d);
                         gl_FragColor = vec4(uColor, a * a * (0.35 + 0.65 * vTw));
                     }
                 `
@@ -513,6 +561,96 @@
             fireflies = new THREE.Points(geo, mat);
             fireflies.frustumCulled = false;
             scene.add(fireflies);
+        }
+
+        // Pollen is finer and cooler than the fireflies. Most motes are barely
+        // visible until they cross a lamp, which gives the empty black air a
+        // tactile depth without turning it into a star field.
+        function buildPollen() {
+            const small = Math.min(innerWidth, innerHeight) < 700;
+            const N = small ? 85 : 190;
+            const pos = new Float32Array(N * 3);
+            const seed = new Float32Array(N);
+            for (let i = 0; i < N; i++) {
+                const a = Math.sin(i * 93.17) * 43758.5453;
+                const b = Math.sin(i * 41.73 + 2.1) * 23421.631;
+                const c = Math.sin(i * 17.19 + 5.4) * 19732.483;
+                pos[i*3]   = (a - Math.floor(a) - 0.5) * 24;
+                pos[i*3+1] = 0.15 + (b - Math.floor(b)) * 5.2;
+                pos[i*3+2] = (c - Math.floor(c) - 0.5) * 24;
+                seed[i] = i * 0.731;
+            }
+            const geo = new THREE.BufferGeometry();
+            geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+            geo.setAttribute('seed', new THREE.BufferAttribute(seed, 1));
+            const mat = new THREE.ShaderMaterial({
+                transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, fog: true,
+                uniforms: { uTime: { value: 0 }, uColor: { value: new THREE.Color(0xffc7a0) },
+                            fogColor: { value: scene.fog.color }, fogDensity: { value: scene.fog.density } },
+                vertexShader: `
+                    attribute float seed; uniform float uTime; varying float vAlpha;
+                    void main() {
+                        vec3 p = position;
+                        p.x += sin(uTime * 0.12 + seed * 5.0) * 0.42;
+                        p.y += sin(uTime * 0.17 + seed * 2.7) * 0.18;
+                        p.z += cos(uTime * 0.1 + seed * 3.8) * 0.35;
+                        vec4 mv = modelViewMatrix * vec4(p, 1.0);
+                        vAlpha = 0.12 + 0.18 * (0.5 + 0.5 * sin(uTime * 0.7 + seed * 11.0));
+                        gl_PointSize = clamp((5.0 + mod(seed, 3.0)) / -mv.z, 0.45, 2.4);
+                        gl_Position = projectionMatrix * mv;
+                    }
+                `,
+                fragmentShader: `
+                    uniform vec3 uColor; varying float vAlpha;
+                    void main() {
+                        float d = length(gl_PointCoord - 0.5);
+                        float a = (1.0 - smoothstep(0.12, 0.5, d)) * vAlpha;
+                        gl_FragColor = vec4(uColor, a);
+                    }
+                `
+            });
+            pollen = new THREE.Points(geo, mat);
+            pollen.frustumCulled = false;
+            scene.add(pollen);
+        }
+
+        function petalTexture() {
+            if (_petalTex) return _petalTex;
+            const c = document.createElement('canvas'); c.width = c.height = 128;
+            const g = c.getContext('2d');
+            const rg = g.createRadialGradient(58, 52, 3, 64, 64, 58);
+            rg.addColorStop(0, 'rgba(255,224,218,0.92)');
+            rg.addColorStop(0.55, 'rgba(172,46,65,0.72)');
+            rg.addColorStop(1, 'rgba(72,5,24,0)');
+            g.fillStyle = rg;
+            g.beginPath();
+            g.moveTo(64, 11); g.bezierCurveTo(108, 22, 116, 64, 66, 116);
+            g.bezierCurveTo(17, 75, 21, 31, 64, 11); g.fill();
+            _petalTex = new THREE.CanvasTexture(c);
+            _petalTex.colorSpace = THREE.SRGBColorSpace;
+            return _petalTex;
+        }
+
+        // A sparse curtain of falling petals. A few pass very near the lens
+        // and dissolve into bokeh; most remain small, slow punctuation in the
+        // middle distance.
+        function buildPetals() {
+            const small = Math.min(innerWidth, innerHeight) < 700;
+            const N = small ? 8 : 17;
+            for (let i = 0; i < N; i++) {
+                const r = (s) => { const v = Math.sin(i * 127.1 + s * 311.7) * 43758.5453; return v - Math.floor(v); };
+                const mat = new THREE.SpriteMaterial({
+                    map: petalTexture(), color: new THREE.Color().setHSL(0.96 + r(7) * 0.035, 0.52, 0.43 + r(8) * 0.2),
+                    transparent: true, opacity: 0.24 + r(9) * 0.34, depthWrite: false, fog: true
+                });
+                const sprite = new THREE.Sprite(mat);
+                const scale = 0.045 + r(2) * 0.13;
+                sprite.scale.set(scale, scale * (1.05 + r(3) * 0.6), 1);
+                sprite.position.set((r(4) - 0.5) * 18, r(5) * 6.5, (r(6) - 0.5) * 18);
+                scene.add(sprite);
+                petals.push({ sprite, x: sprite.position.x, z: sprite.position.z, phase: r(10) * Math.PI * 2,
+                              fall: 0.035 + r(11) * 0.055, spin: (r(12) - 0.5) * 0.7, top: 5.5 + r(13) * 3 });
+            }
         }
 
         // Vertex-shader wind: displace each vertex in world space, weighted by
@@ -733,6 +871,7 @@
             // Drift along the loop.
             const u = (t / DRIFT_SECONDS) % 1;
             camera.position.copy(path.getPointAt(u));
+            camera.position.y += Math.sin(t * 0.29) * 0.018; // a quiet handheld breath
 
             // Which bloom are we nearest? (drives both the words and the gaze)
             updateWords();
@@ -751,7 +890,7 @@
             gaze.tPitch *= (1 - dt * 0.6);
             gaze.yaw   += (gaze.tYaw   - gaze.yaw)   * Math.min(1, dt * 4);
             gaze.pitch += (gaze.tPitch - gaze.pitch) * Math.min(1, dt * 4);
-            _euler.set(-gaze.pitch, -gaze.yaw, 0, 'YXZ');
+            _euler.set(-gaze.pitch, -gaze.yaw, Math.sin(t * 0.17) * 0.0025, 'YXZ');
             camera.quaternion.multiply(new THREE.Quaternion().setFromEuler(_euler));
 
             // A low, whole-plant drift under the per-stem vertex wind.
@@ -769,10 +908,34 @@
                 e.s.material.opacity = Math.min(1, f);
             }
             if (fireflies) fireflies.material.uniforms.uTime.value = t;
+            if (pollen) pollen.material.uniforms.uTime.value = t;
+
+            // Each petal follows a loose helix as it falls. Wrapping below the
+            // floor makes the motion continuous without births or pops.
+            for (const p of petals) {
+                let y = p.top - ((t * p.fall + p.phase / 6.283) % 1) * (p.top + 0.7);
+                p.sprite.position.set(
+                    p.x + Math.sin(t * 0.23 + p.phase) * 0.75,
+                    y,
+                    p.z + Math.cos(t * 0.19 + p.phase * 1.3) * 0.55
+                );
+                p.sprite.material.rotation = t * p.spin + Math.sin(t * 0.41 + p.phase) * 0.6;
+                p.sprite.material.opacity = (0.25 + 0.14 * Math.sin(t * 0.63 + p.phase)) *
+                                            THREE.MathUtils.smoothstep(y, -0.35, 0.35);
+            }
+
+            // The inner lights breathe on separate, very slow rhythms. The
+            // movement is felt in the leaf shadows before it is consciously
+            // seen in the lamp itself.
+            for (const b of breathingLights) {
+                b.light.intensity = b.base * (0.94 + 0.06 * Math.sin(t * b.rate + b.phase));
+            }
 
             lookPass.uniforms.uTime.value = t;
             const focusPt = currentFlower >= 0 ? plantings[currentFlower].heart : bedCentre;
-            bokehPass.uniforms['focus'].value = camera.position.distanceTo(focusPt);
+            const desiredFocus = camera.position.distanceTo(focusPt);
+            focusDistance += (desiredFocus - focusDistance) * (1 - Math.exp(-dt * 0.8));
+            bokehPass.uniforms['focus'].value = focusDistance;
 
             composer.render();
         }
