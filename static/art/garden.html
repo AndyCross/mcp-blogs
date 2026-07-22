@@ -198,6 +198,8 @@
         const DRIFT_SECONDS = 105;   // time for one loop of the garden
         const REVEAL_RADIUS  = 5.4;  // how near a flower must be to speak
         const DPR = Math.min(window.devicePixelRatio, 1.5);
+        const isPortrait = () => innerHeight > innerWidth * 1.15;
+        const gardenFov = () => isPortrait() ? 52 : 44;
 
         let scene, camera, renderer, composer, bloomPass, bokehPass, lookPass, fireflies, pollen, _glowTex, _petalTex;
         const windShaders = []; // per-material shaders whose wind clock we advance
@@ -239,7 +241,9 @@
             // so there is no horizon and no floor edge, only dark.
             scene.fog = new THREE.FogExp2(0x04030a, 0.085);
 
-            camera = new THREE.PerspectiveCamera(44, innerWidth / innerHeight, 0.1, 400);
+            // Portrait screens need a little more horizontal room. At 52° the
+            // iPhone frame remains intimate without clipping wide blossoms.
+            camera = new THREE.PerspectiveCamera(gardenFov(), innerWidth / innerHeight, 0.1, 400);
             camera.position.copy(path.getPointAt(0));
 
             renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
@@ -816,8 +820,10 @@
                 if (!dragging) return;
                 gaze.tYaw   += (x - lastX) * 0.0016;
                 gaze.tPitch += (y - lastY) * 0.0016;
-                gaze.tYaw   = THREE.MathUtils.clamp(gaze.tYaw, -0.9, 0.9);
-                gaze.tPitch = THREE.MathUtils.clamp(gaze.tPitch, -0.5, 0.5);
+                const yawLimit = isPortrait() ? 0.48 : 0.9;
+                const pitchLimit = isPortrait() ? 0.38 : 0.5;
+                gaze.tYaw   = THREE.MathUtils.clamp(gaze.tYaw, -yawLimit, yawLimit);
+                gaze.tPitch = THREE.MathUtils.clamp(gaze.tPitch, -pitchLimit, pitchLimit);
                 lastX = x; lastY = y;
             };
             const up = () => { dragging = false; };
@@ -853,6 +859,7 @@
 
         function onResize() {
             camera.aspect = innerWidth / innerHeight;
+            camera.fov = gardenFov();
             camera.updateProjectionMatrix();
             renderer.setSize(innerWidth, innerHeight);
             composer.setSize(innerWidth, innerHeight);
@@ -880,14 +887,22 @@
             // it passes through the centre of frame as you read its words.
             path.getPointAt((u + 0.04) % 1, _ahead);
             _look.copy(_ahead).lerp(bedCentre, 0.6);
-            if (currentFlower >= 0) _look.lerp(plantings[currentFlower].heart, 0.7);
-            lookTarget.lerp(_look, Math.min(1, dt * 1.5)); // ease so turns are gentle
+            if (currentFlower >= 0) {
+                const heart = plantings[currentFlower].heart;
+                // A narrow portrait frame cannot afford the cinematic side
+                // bias used on desktop: place the speaking bloom dead centre.
+                if (isPortrait()) _look.copy(heart);
+                else _look.lerp(heart, 0.7);
+            }
+            const framingSpeed = isPortrait() ? 3.2 : 1.5;
+            lookTarget.lerp(_look, 1 - Math.exp(-dt * framingSpeed));
             camera.up.set(0, 1, 0);
             camera.lookAt(lookTarget);
 
             // ...then add the eased gaze nudge as a local yaw/pitch offset.
-            gaze.tYaw   *= (1 - dt * 0.6);   // ease the target home
-            gaze.tPitch *= (1 - dt * 0.6);
+            const gazeReturn = isPortrait() ? 1.1 : 0.6;
+            gaze.tYaw   *= (1 - dt * gazeReturn);   // ease the target home
+            gaze.tPitch *= (1 - dt * gazeReturn);
             gaze.yaw   += (gaze.tYaw   - gaze.yaw)   * Math.min(1, dt * 4);
             gaze.pitch += (gaze.tPitch - gaze.pitch) * Math.min(1, dt * 4);
             _euler.set(-gaze.pitch, -gaze.yaw, Math.sin(t * 0.17) * 0.0025, 'YXZ');
