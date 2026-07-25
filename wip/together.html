@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<!--
+  "Together we make things real" — the harbour painting, brought to life.
+
+  A single plane holds the finished painting untouched. Everything that moves
+  is a feathered, region-masked warp of the sampled image, so the picture can
+  never tear, hole or halo:
+    · the sky gradient holds still while the clouds drift on the breeze
+      (a horizontal shift barely touches a vertical gradient, so only the
+       cloud shapes travel)
+    · the water shimmers and its reflections ripple
+    · the moored boat bobs and rocks with its mast
+    · the island's trees sway from the canopy down, trunks held at the root
+    · steam rises from the coffee cup
+    · every band parallaxes by a different amount, so moving your gaze (or
+      tilting the phone) gives the flat painting a sense of depth
+
+  The layer breakdown that guided which regions move came from a set of
+  painted fragments; here they are put back together into one living scene.
+-->
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Together we make things real</title>
+<script src="https://cdn.counter.dev/script.js" data-id="72d92ac8-56cf-4fdd-9899-b73adbab2e4d" data-utcoffset="0"></script>
+<style>
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; background: #10100f; overscroll-behavior: none; }
+    #container { position: fixed; inset: 0; touch-action: none; }
+    canvas { display: block; width: 100vw; height: 100vh; cursor: grab; touch-action: none; }
+    canvas:active { cursor: grabbing; }
+
+    #title {
+        position: fixed; inset: 0;
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        pointer-events: none; z-index: 10; text-align: center; padding: 1.5rem;
+        transition: opacity 4s ease 1s;
+    }
+    #title.gone { opacity: 0; }
+    #title h1 {
+        font-family: "Georgia", "Times New Roman", serif;
+        font-weight: 400; font-style: italic;
+        font-size: clamp(1.9rem, 6vw, 4rem);
+        letter-spacing: 0.03em;
+        color: #fbf3ea;
+        margin: 0; max-width: 18em;
+        text-shadow: 0 2px 20px rgba(0, 0, 0, 0.9), 0 0 34px rgba(255, 180, 120, 0.35), 0 0 90px rgba(120, 60, 30, 0.5);
+        opacity: 0;
+        animation: bloom 5s ease forwards 0.6s;
+    }
+    #whisper {
+        font-family: "Georgia", serif; font-style: italic;
+        font-size: clamp(0.9rem, 2.3vw, 1.15rem);
+        color: rgba(251, 243, 234, 0.62);
+        text-shadow: 0 1px 14px rgba(0, 0, 0, 0.85);
+        margin-top: 1.4rem; opacity: 0;
+        animation: bloom 5s ease forwards 2.4s;
+    }
+    @keyframes bloom {
+        from { opacity: 0; filter: blur(10px); transform: translateY(10px); }
+        to   { opacity: 1; filter: blur(0);    transform: translateY(0); }
+    }
+    #hint {
+        position: fixed; bottom: 1.4rem; left: 0; right: 0; text-align: center;
+        font-family: "Courier New", monospace; font-size: 0.7rem;
+        letter-spacing: 0.32em; text-transform: uppercase;
+        color: rgba(251, 243, 234, 0.32); pointer-events: none; z-index: 9;
+        opacity: 0; animation: bloom 3s ease forwards 6.5s;
+    }
+    #credits {
+        position: fixed; bottom: 0.7rem; left: 0.9rem; z-index: 9;
+        font-family: "Courier New", monospace; font-size: 0.62rem;
+        color: rgba(251, 243, 234, 0.3);
+    }
+    .lil-gui { z-index: 20; --background-color: rgba(12, 11, 10, 0.92); }
+</style>
+</head>
+<body>
+    <div id="container"></div>
+    <div id="title">
+        <h1>Together we make things real</h1>
+        <div id="whisper">Our souls are one.</div>
+    </div>
+    <div id="hint">move your gaze &nbsp;·&nbsp; tilt the phone &nbsp;·&nbsp; the painting is breathing</div>
+    <div id="credits">a living painting</div>
+
+    <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/",
+        "lil-gui": "https://cdn.jsdelivr.net/npm/lil-gui@0.19.1/dist/lil-gui.esm.min.js"
+      }
+    }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+        import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+        import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
+        import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+        import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+        import GUI from 'lil-gui';
+
+        // Regions are in painting space (0..1 over the whole painting, y up:
+        // 0 = bottom / promenade, 1 = top / sky), measured off the source image.
+        const params = {
+            dpr: Math.min(window.devicePixelRatio, 1.75),
+            // --- bands (uv.y boundaries) ---
+            horizon: 0.48,      // sky meets water
+            shore: 0.27,        // water meets promenade (the rail line)
+            // --- parallax ---
+            parSky: 0.016,      // how far the far sky shifts with the gaze
+            parFore: 0.075,     // how far the near foreground shifts
+            parEase: 0.06,      // pointer smoothing
+            idle: 1.0,          // strength of the idle drift when untouched
+            // --- clouds ---
+            cloudDrift: 0.030,  // amplitude of the slow horizontal cloud sway
+            cloudSpeed: 0.07,
+            // --- water ---
+            waveAmp: 0.0038,
+            shimmer: 0.018,
+            // --- boat (soft lozenge over hull + mast) ---
+            boatX: 0.285, boatY: 0.52, boatRx: 0.17, boatRy: 0.31,
+            bob: 0.011, rock: 0.024,
+            // --- island trees ---
+            treeX: 0.875, treeY: 0.56, treeRx: 0.10, treeRy: 0.15, treeSway: 0.0058,
+            // --- coffee cup steam ---
+            cupX: 0.692, cupY: 0.185, steam: 0.7, steamRise: 1.1,
+            // --- look ---
+            bloomStrength: 0.5, bloomRadius: 0.6, bloomThreshold: 0.72,
+            exposure: 1.1, grain: 0.035, vignette: 0.85,
+        };
+
+        // URL-query overrides for tuning, e.g. ?boatX=0.3&bob=0.006&title=0
+        const Q = new URLSearchParams(location.search);
+        Object.keys(params).forEach((k) => { if (Q.has(k)) params[k] = parseFloat(Q.get(k)); });
+
+        let camera, scene, renderer, composer, quad, bloomPass, finalPass;
+        const clock = new THREE.Clock();
+        const pointer = new THREE.Vector2(0, 0);       // target, from mouse / tilt (-0.5..0.5)
+        const smoothed = new THREE.Vector2(0, 0);
+        let lastInput = -10;
+
+        const VERT = `varying vec2 vUv; void main(){ vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }`;
+
+        // The whole piece is one fragment shader: cover-fit the painting, build a
+        // summed displacement field from feathered region masks, sample once, then
+        // add water shimmer and rising steam on top.
+        const FRAG = `
+            precision highp float;
+            uniform sampler2D uPhoto;
+            uniform vec2  uImgAspect;   // (imgW/imgH, screenW/screenH)
+            uniform float uTime;
+            uniform vec2  uGaze;        // smoothed pointer, -0.5..0.5
+            uniform float uHorizon, uShore;
+            uniform float uParSky, uParFore;
+            uniform float uCloudDrift, uCloudSpeed;
+            uniform float uWaveAmp, uShimmer;
+            uniform vec4  uBoat;        // x, y, rx, ry
+            uniform float uBob, uRock;
+            uniform vec4  uTree;        // x, y, rx, ry
+            uniform float uTreeSway;
+            uniform vec2  uCup;         // x, y
+            uniform float uSteam, uSteamRise;
+            varying vec2 vUv;
+
+            float hash(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+            float noise(vec2 p){
+                vec2 i = floor(p), f = fract(p);
+                vec2 u = f * f * (3.0 - 2.0 * f);
+                return mix(mix(hash(i),            hash(i + vec2(1,0)), u.x),
+                           mix(hash(i + vec2(0,1)), hash(i + vec2(1,1)), u.x), u.y);
+            }
+            float fbm(vec2 p){
+                float v = 0.0, a = 0.5;
+                for (int i = 0; i < 4; i++){ v += a * noise(p); p *= 2.0; a *= 0.5; }
+                return v;
+            }
+            float blob(vec2 uv, vec4 e){        // soft elliptical mask, 1 at centre
+                vec2 d = (uv - e.xy) / e.zw;
+                return exp(-dot(d, d));
+            }
+
+            void main(){
+                // --- cover-fit the portrait painting to the screen ---
+                float ia = uImgAspect.x, sa = uImgAspect.y;
+                vec2 uv = vUv;
+                if (sa > ia) { float s = ia / sa; uv.y = (uv.y - 0.5) * s + 0.5; }
+                else         { float s = sa / ia; uv.x = (uv.x - 0.5) * s + 0.5; }
+
+                // bands (feathered) in painting space
+                float sky   = smoothstep(uHorizon - 0.06, uHorizon + 0.06, uv.y);
+                float water = smoothstep(uShore - 0.04, uShore + 0.04, uv.y) * (1.0 - sky);
+
+                vec2 off = vec2(0.0);
+
+                // --- parallax: near bands shift more than far, smoothly by height ---
+                float par = mix(uParFore, uParSky, clamp(uv.y, 0.0, 1.0));
+                off += vec2(uGaze.x * par, -uGaze.y * par * 0.55);
+
+                // --- clouds: a slow horizontal sway; a vertical gradient barely
+                //     changes under a horizontal shift, so only the clouds travel ---
+                float cloud = uCloudDrift * (sin(uTime * uCloudSpeed) * 0.7
+                             + 0.3 * sin(uv.y * 7.0 + uTime * 0.13));
+                off.x += cloud * sky;
+
+                // --- water: layered waves, stronger nearer the shore ---
+                float wStr = water * (0.55 + 0.9 * (uHorizon - uv.y));
+                float wave = sin(uv.y * 92.0 + uTime * 1.1) * uWaveAmp
+                           + sin(uv.y * 44.0 - uTime * 0.7) * uWaveAmp * 0.7;
+                off.x += wave * wStr;
+
+                // --- boat: bob (vertical) + rock (rotation) over a soft lozenge ---
+                float bm = blob(uv, uBoat);
+                float bob = sin(uTime * 0.75) * uBob;
+                float rock = sin(uTime * 0.55) * uRock;
+                off.y += bob * bm;
+                off += rock * vec2(-(uv.y - uBoat.y), (uv.x - uBoat.x)) * bm;
+
+                // --- trees: sway growing toward the canopy, trunks held ---
+                float tm = blob(uv, uTree) * smoothstep(uTree.y - 0.02, uTree.y + uTree.w, uv.y);
+                off.x += sin(uTime * 0.9 + uv.y * 7.0) * uTreeSway * tm;
+
+                vec3 col = texture2D(uPhoto, clamp(uv + off, 0.001, 0.999)).rgb;
+
+                // --- water shimmer: warm glints riding the surface ---
+                float glint = sin(uv.x * 130.0 + uv.y * 80.0 + uTime * 2.0)
+                            + 0.6 * sin(uv.x * 61.0 - uv.y * 120.0 - uTime * 1.3);
+                col += glint * uShimmer * wStr * vec3(1.0, 0.86, 0.6);
+
+                // --- steam: a rising, widening plume of scrolling noise ---
+                float rise = uv.y - uCup.y;                 // >0 above the cup
+                if (rise > 0.0 && uSteam > 0.0) {
+                    float width = 0.016 + rise * 0.10;
+                    float dx = (uv.x - uCup.x) - sin(uv.y * 9.0 + uTime * 1.2) * rise * 0.05;
+                    float column = exp(-(dx * dx) / (width * width));
+                    float body = fbm(vec2(uv.x * 26.0, uv.y * 15.0 - uTime * uSteamRise));
+                    float fade = smoothstep(0.0, 0.03, rise) * exp(-rise / 0.20);
+                    col += column * body * fade * uSteam * vec3(1.0, 0.95, 0.9);
+                }
+
+                gl_FragColor = vec4(col, 1.0);
+            }
+        `;
+
+        const FinalShader = {
+            uniforms: {
+                tDiffuse: { value: null },
+                uTime: { value: 0 },
+                uGrain: { value: params.grain },
+                uVignette: { value: params.vignette },
+            },
+            vertexShader: `varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
+            fragmentShader: `
+                precision highp float;
+                uniform sampler2D tDiffuse;
+                uniform float uTime, uGrain, uVignette;
+                varying vec2 vUv;
+                float hash(vec2 p){ p = fract(p * 0.3183099 + vec2(0.71, 0.113)); p *= 17.0; return fract(p.x * p.y * (p.x + p.y)); }
+                void main(){
+                    vec3 col = texture2D(tDiffuse, vUv).rgb;
+                    col += (hash(gl_FragCoord.xy + fract(uTime) * 311.7) - 0.5) * uGrain;
+                    vec2 d = vUv - 0.5;
+                    float vig = smoothstep(0.85, 0.15, dot(d, d) * uVignette);
+                    col *= mix(0.52, 1.0, vig);
+                    gl_FragColor = vec4(col, 1.0);
+                }
+            `,
+        };
+
+        let mat;
+        function buildScene(tex) {
+            scene = new THREE.Scene();
+            camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+            mat = new THREE.ShaderMaterial({
+                depthTest: false, depthWrite: false,
+                uniforms: {
+                    uPhoto: { value: tex },
+                    uImgAspect: { value: new THREE.Vector2(tex.image.width / tex.image.height, innerWidth / innerHeight) },
+                    uTime: { value: 0 },
+                    uGaze: { value: smoothed },
+                    uHorizon: { value: params.horizon }, uShore: { value: params.shore },
+                    uParSky: { value: params.parSky }, uParFore: { value: params.parFore },
+                    uCloudDrift: { value: params.cloudDrift }, uCloudSpeed: { value: params.cloudSpeed },
+                    uWaveAmp: { value: params.waveAmp }, uShimmer: { value: params.shimmer },
+                    uBoat: { value: new THREE.Vector4(params.boatX, params.boatY, params.boatRx, params.boatRy) },
+                    uBob: { value: params.bob }, uRock: { value: params.rock },
+                    uTree: { value: new THREE.Vector4(params.treeX, params.treeY, params.treeRx, params.treeRy) },
+                    uTreeSway: { value: params.treeSway },
+                    uCup: { value: new THREE.Vector2(params.cupX, params.cupY) },
+                    uSteam: { value: params.steam }, uSteamRise: { value: params.steamRise },
+                },
+                vertexShader: VERT,
+                fragmentShader: FRAG,
+            });
+            quad = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), mat);
+            quad.frustumCulled = false;
+            scene.add(quad);
+        }
+
+        function buildComposer() {
+            composer = new EffectComposer(renderer);
+            composer.setPixelRatio(params.dpr);
+            composer.setSize(innerWidth, innerHeight);
+            composer.addPass(new RenderPass(scene, camera));
+            bloomPass = new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight),
+                params.bloomStrength, params.bloomRadius, params.bloomThreshold);
+            composer.addPass(bloomPass);
+            finalPass = new ShaderPass(FinalShader);
+            composer.addPass(finalPass);
+            composer.addPass(new OutputPass());
+        }
+
+        function setupControls() {
+            const mark = () => { lastInput = clock.elapsedTime; };
+            window.addEventListener('pointermove', (e) => {
+                pointer.x = e.clientX / innerWidth - 0.5;
+                pointer.y = e.clientY / innerHeight - 0.5;
+                mark();
+            });
+            // phone tilt -> gaze, once permission is granted (see below)
+            window.addEventListener('deviceorientation', (e) => {
+                if (e.gamma == null) return;
+                pointer.x = Math.max(-0.5, Math.min(0.5, e.gamma / 45));   // left/right tilt
+                pointer.y = Math.max(-0.5, Math.min(0.5, (e.beta - 45) / 45));
+                mark();
+            });
+            // iOS needs a gesture to grant motion access
+            const askMotion = () => {
+                const D = window.DeviceOrientationEvent;
+                if (D && typeof D.requestPermission === 'function') D.requestPermission().catch(() => {});
+                window.removeEventListener('pointerdown', askMotion);
+            };
+            window.addEventListener('pointerdown', askMotion);
+        }
+
+        function init() {
+            renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+            renderer.setPixelRatio(params.dpr);
+            renderer.setSize(innerWidth, innerHeight);
+            renderer.toneMapping = THREE.ACESFilmicToneMapping;
+            renderer.toneMappingExposure = params.exposure;
+            renderer.outputColorSpace = THREE.SRGBColorSpace;
+            document.getElementById('container').appendChild(renderer.domElement);
+
+            new THREE.TextureLoader().load('together-assets/harbour.png', (tex) => {
+                tex.colorSpace = THREE.SRGBColorSpace;
+                tex.anisotropy = 8;
+                tex.minFilter = THREE.LinearFilter; tex.magFilter = THREE.LinearFilter;
+                tex.generateMipmaps = false;
+                buildScene(tex);
+                buildComposer();
+                setupControls();
+                setupGUI();
+                if (Q.get('title') === '0') document.getElementById('title').style.display = 'none';
+                setTimeout(() => document.getElementById('title').classList.add('gone'), 9000);
+                window.addEventListener('resize', onResize);
+                animate();
+            });
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const dt = Math.min(clock.getDelta(), 0.05);
+            const t = clock.elapsedTime;
+
+            // when the gaze is idle, let it drift on a slow Lissajous so the
+            // painting keeps breathing on its own
+            if (t - lastInput > 2.5) {
+                pointer.x = (Math.sin(t * 0.13) * 0.4 + Math.sin(t * 0.31) * 0.12) * params.idle;
+                pointer.y = (Math.sin(t * 0.19 + 1.1) * 0.28 + Math.sin(t * 0.4) * 0.08) * params.idle;
+            }
+            smoothed.lerp(pointer, params.parEase);
+
+            mat.uniforms.uTime.value = t;
+            finalPass.uniforms.uTime.value = t;
+            composer.render();
+        }
+
+        function onResize() {
+            renderer.setSize(innerWidth, innerHeight);
+            composer.setSize(innerWidth, innerHeight);
+            if (mat) mat.uniforms.uImgAspect.value.y = innerWidth / innerHeight;
+        }
+
+        function setupGUI() {
+            const gui = new GUI({ title: 'together' });
+            const u = mat.uniforms;
+            const bands = gui.addFolder('Bands');
+            bands.add(params, 'horizon', 0.3, 0.7, 0.005).onChange((v) => u.uHorizon.value = v);
+            bands.add(params, 'shore', 0.1, 0.5, 0.005).onChange((v) => u.uShore.value = v);
+            const mv = gui.addFolder('Motion');
+            mv.add(params, 'cloudDrift', 0, 0.05, 0.001).name('cloud drift').onChange((v) => u.uCloudDrift.value = v);
+            mv.add(params, 'waveAmp', 0, 0.006, 0.0002).name('water wave').onChange((v) => u.uWaveAmp.value = v);
+            mv.add(params, 'shimmer', 0, 0.04, 0.001).onChange((v) => u.uShimmer.value = v);
+            mv.add(params, 'bob', 0, 0.02, 0.0005).onChange((v) => u.uBob.value = v);
+            mv.add(params, 'rock', 0, 0.04, 0.001).onChange((v) => u.uRock.value = v);
+            mv.add(params, 'treeSway', 0, 0.008, 0.0002).name('tree sway').onChange((v) => u.uTreeSway.value = v);
+            mv.add(params, 'steam', 0, 1.5, 0.02).onChange((v) => u.uSteam.value = v);
+            const reg = gui.addFolder('Placement'); reg.close();
+            const boat = reg.addFolder('boat'); boat.close();
+            ['boatX','boatY','boatRx','boatRy'].forEach((k, i) =>
+                boat.add(params, k, 0, 1, 0.005).onChange(() => u.uBoat.value.set(params.boatX, params.boatY, params.boatRx, params.boatRy)));
+            const tree = reg.addFolder('trees'); tree.close();
+            ['treeX','treeY','treeRx','treeRy'].forEach((k) =>
+                tree.add(params, k, 0, 1, 0.005).onChange(() => u.uTree.value.set(params.treeX, params.treeY, params.treeRx, params.treeRy)));
+            const cup = reg.addFolder('cup'); cup.close();
+            cup.add(params, 'cupX', 0, 1, 0.005).onChange((v) => u.uCup.value.x = v);
+            cup.add(params, 'cupY', 0, 1, 0.005).onChange((v) => u.uCup.value.y = v);
+            const par = gui.addFolder('Parallax');
+            par.add(params, 'parFore', 0, 0.18, 0.002).name('near').onChange((v) => u.uParFore.value = v);
+            par.add(params, 'parSky', 0, 0.08, 0.001).name('far').onChange((v) => u.uParSky.value = v);
+            par.add(params, 'idle', 0, 1.5, 0.05);
+            const look = gui.addFolder('Look');
+            look.add(params, 'exposure', 0.4, 2, 0.02).onChange((v) => renderer.toneMappingExposure = v);
+            look.add(params, 'bloomStrength', 0, 1.5, 0.02).onChange((v) => bloomPass.strength = v);
+            look.add(params, 'grain', 0, 0.15, 0.005).onChange((v) => finalPass.uniforms.uGrain.value = v);
+            look.add(params, 'vignette', 0, 2, 0.05).onChange((v) => finalPass.uniforms.uVignette.value = v);
+            gui.close();
+            gui.domElement.style.display = 'none';
+            window.addEventListener('keydown', (e) => {
+                if (e.key === 'g' || e.key === 'G') {
+                    const d = gui.domElement.style;
+                    d.display = d.display === 'none' ? '' : 'none';
+                }
+            });
+        }
+
+        init();
+    </script>
+</body>
+</html>
