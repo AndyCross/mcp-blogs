@@ -8,11 +8,12 @@
 <!--
   Flores para mi chica — a garden that will grow.
 
-  The first flower is a hollyhock: a real photogrammetry mesh (Meshy),
-  taken from 90 MB down to ~14.5 MB with glTF-Transform — textures at
-  1024 webp, tangents dropped (three regenerates them from the normal
-  map), geometry quantised and meshopt-compressed. No decimation: the
-  full 1.4M-vertex bloom is kept intact.
+  Every plant is a real photogrammetry mesh (Meshy), put through the
+  same recipe with glTF-Transform: textures at 1024 webp, tangents
+  dropped (three regenerates them from the normal map), geometry
+  quantised and meshopt-compressed. No decimation, so the full mesh
+  survives. The hollyhock went 90 MB to 14.5 MB, the castor oil plant
+  34 MB to 5.3 MB, the bougainvillea 64 MB to 11.5 MB.
 
   The camera drifts through the beds on its own. Drag to nudge where you
   look. As you near a flower, the words meant for it bloom on screen.
@@ -26,7 +27,9 @@
     * { box-sizing: border-box; }
     html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; background: #05040c; }
     #container { position: fixed; inset: 0; }
-    canvas { display: block; width: 100vw; height: 100vh; cursor: grab; }
+    /* touch-action: none so iOS hands us the whole horizontal gesture instead of
+       treating it as a scroll or a back-navigation. */
+    canvas { display: block; width: 100vw; height: 100vh; cursor: grab; touch-action: none; }
     canvas:active { cursor: grabbing; }
 
     /* ---- Opening title ---- */
@@ -63,12 +66,32 @@
     /* ---- Words for the flower you are nearest ---- */
     #words {
         position: fixed; left: 0; right: 0; bottom: clamp(2.2rem, 8vh, 5rem);
-        text-align: center; padding: 0 1.5rem; z-index: 9;
-        pointer-events: none; opacity: 0;
+        z-index: 9; pointer-events: none;
+        display: flex; align-items: center; justify-content: center;
+        gap: clamp(0.5rem, 3vw, 2.5rem); padding: 0 0.75rem;
+    }
+    /* The words fade with proximity; the chevrons beside them do not, so you
+       can always move on even from the dark between the beds. */
+    #words .said {
+        text-align: center; flex: 0 1 34rem; opacity: 0;
         transition: opacity 1.1s ease, transform 1.1s ease;
         transform: translateY(10px);
     }
-    #words.show { opacity: 1; transform: translateY(0); }
+    #words.show .said { opacity: 1; transform: translateY(0); }
+
+    /* ---- Forward and back through the flowers ---- */
+    #words .nav {
+        flex: 0 0 auto; pointer-events: auto; cursor: pointer;
+        background: none; border: none; padding: 0.5rem 0.7rem;
+        font-family: "Georgia", serif; font-size: clamp(1.6rem, 5vw, 2.4rem);
+        line-height: 1; color: rgba(243,217,223,0.28);
+        text-shadow: 0 1px 12px rgba(0,0,0,0.8);
+        opacity: 0; animation: bloom 3s ease forwards 8s;
+        transition: color 0.7s ease;
+        -webkit-tap-highlight-color: transparent;
+    }
+    #words .nav:hover, #words .nav:focus-visible { color: rgba(243,217,223,0.8); outline: none; }
+    #words .nav:active { color: var(--rose); }
     #words .date {
         font-family: "Georgia", serif; font-variant: small-caps;
         letter-spacing: 0.24em; font-size: 0.68rem;
@@ -114,9 +137,13 @@
     </div>
 
     <div id="words">
-        <div class="date"></div>
-        <div class="ftitle"></div>
-        <div class="fwords"></div>
+        <button class="nav" id="prev" aria-label="flor anterior">&lsaquo;</button>
+        <div class="said">
+            <div class="date"></div>
+            <div class="ftitle"></div>
+            <div class="fwords"></div>
+        </div>
+        <button class="nav" id="next" aria-label="flor siguiente">&rsaquo;</button>
     </div>
 
     <div id="hint">arrastra para mirar alrededor</div>
@@ -146,7 +173,15 @@
         //  The garden. Each flower is a gift. Add an entry to plant one.
         //  position is [x, z] on the ground; the base is seated at y = 0.
         //  height is the flower's height in world units (a hollyhock is
-        //  tall). model names a file in garden-assets/ (without .glb).
+        //  tall). For a plant that sprawls wider than it stands, give `width`
+        //  instead and the height follows from the mesh's own proportions.
+        //  model names a file in garden-assets/ (without .glb). Mark one flower
+        //  `opens: true` and the tour begins there; the chevrons then run from
+        //  it round the loop, so it is first and its neighbour behind is last.
+        //
+        //  Keep a new flower clear of the camera's drift path below: if the
+        //  path runs inside the foliage you get a screenful of blown-out petal,
+        //  and the overexposure can overflow the bloom pass into a black block.
         // ---------------------------------------------------------------
         const flowers = [
             {
@@ -178,17 +213,45 @@
             },
             {
                 // A stemless peach rose, laid low on the mirror floor as an
-                // offering. Short height seats the bud on the ground.
+                // offering. Short height seats the bud on the ground. Placed
+                // dead ahead of where the camera begins, so it is the first
+                // flower the tour meets. Set back far enough that the opening
+                // frame looks into the bloom rather than down onto it.
                 model: 'rose',
+                opens: true,    // the tour begins here, and the chevrons order from it
                 title: 'Mi persona, que para mí es una rosa.',
                 words: 'Debí haberte regalado más flores, estas tendrán que bastar.',
                 date: '2026-07-21',
-                position: [1.6, 3.2],
+                position: [0, 4.3],
                 height: 0.6,
                 rotationY: 0.4,
                 heart: false,   // no internal light: an open bloom, not dense foliage
                 glow: 0.15,     // only a faint ember hint
                 lamp: 0.5       // lit by the overhead lamp, like the hollyhocks
+            },
+            {
+                // Castor oil plant: broad palmate leaves and a spiked crimson
+                // seed head. Dense enough to keep its inner heart light.
+                model: 'castor',
+                title: 'Te amaré siempre.',
+                words: 'Uno de estos días podremos estar juntos, sin tristeza en nuestros corazones.',
+                date: '2026-07-26',
+                position: [-2.4, 2.8],
+                height: 2.8,
+                rotationY: -0.5
+            },
+            {
+                // Bougainvillea: wider than it is tall, so it is sized by width
+                // and its height follows. A low sprawling mound on the right of
+                // the bed, which is where the loop reaches it second, just after
+                // the rose. Well clear of the rose and of the camera's path.
+                model: 'bougainvillea',
+                title: 'Te amaré siempre.',
+                words: 'Tu sonrisa es la alegría y la felicidad de mi corazón. No importa de dónde surja. I abide.',
+                date: '2026-07-26',
+                position: [3.0, 2.0],
+                width: 1.9,
+                rotationY: 1.9
             }
         ];
 
@@ -224,6 +287,14 @@
             new THREE.Vector3(-5.6, 1.15, -2.4),
             new THREE.Vector3(-5.0, 1.35,  3.0)
         ], true, 'catmullrom', 0.5);
+
+        // Where we are on the loop. Integrated per frame rather than derived
+        // from the clock, so the chevrons can move it and the drift carries on
+        // from wherever it lands instead of snapping back.
+        let driftU = 0;
+        let driftDir = 1;     // which way the drift travels; follows the last ‹ or ›
+        let jump = null;      // a glide to another flower, while one is running
+        let stops = [];       // the u of each flower's closest approach, in order
 
         const plantings = []; // hero flowers that carry words
         const swayers = [];   // every plant group, for the breeze
@@ -679,6 +750,33 @@
             material.customProgramCacheKey = () => 'windflower';
         }
 
+        // A Meshy export can carry the odd vertex whose normal is (0, 0, 0).
+        // normalize() of that is NaN, the NaN reaches the bloom pass, and the
+        // mip chain smears it into a black square several hundred pixels wide
+        // that follows the plant around. One bad vertex in 800,000 is enough,
+        // so every model gets checked as it lands rather than trusted.
+        function fixDegenerateNormals(geometry, label) {
+            const normal = geometry.getAttribute('normal');
+            if (!normal) return;
+            const n = normal.array;
+            // Quantised normals arrive as normalised Int8/Int16, where "1.0" is
+            // the type's maximum, not the number 1. Writing a literal 1 into an
+            // Int8Array would mean 1/127.
+            const one = normal.normalized && n.BYTES_PER_ELEMENT
+                ? (n instanceof Int8Array ? 127 : n instanceof Int16Array ? 32767 : 1)
+                : 1;
+            let bad = 0;
+            for (let i = 0; i < n.length; i += 3) {
+                if (n[i] * n[i] + n[i+1] * n[i+1] + n[i+2] * n[i+2] > 1e-12) continue;
+                n[i] = 0; n[i+1] = one; n[i+2] = 0;  // point it up; a lone vertex, unseen
+                bad++;
+            }
+            if (bad) {
+                normal.needsUpdate = true;
+                console.warn(`${label}: repaired ${bad} zero-length normal(s)`);
+            }
+        }
+
         // ---------------------------------------------------------------
         //  Load the models and plant the flowers.
         // ---------------------------------------------------------------
@@ -702,6 +800,7 @@
                             o.material.envMapIntensity = 0.6;
                             addWind(o.material);               // stems breathe in the wind
                         }
+                        if (o.isMesh && o.geometry) fixDegenerateNormals(o.geometry, name);
                     });
                     const box = new THREE.Box3().setFromObject(root);
                     const size = box.getSize(new THREE.Vector3());
@@ -761,7 +860,14 @@
             flowers.forEach((f, i) => {
                 const tpl = templates[f.model];
                 if (!tpl) return;
-                const s = f.height / tpl.size.y;
+                // Most models are taller than they are wide, so `height` sizes
+                // them. A sprawler like the bougainvillea is the other way
+                // round: scaling it to a hollyhock's height gives it a six-unit
+                // reach that swallows the bed and puts the camera path inside
+                // its foliage. Those give `width` instead and let height follow.
+                const s = f.width ? f.width / Math.max(tpl.size.x, tpl.size.z)
+                                  : f.height / tpl.size.y;
+                const height = tpl.size.y * s;  // as planted, however it was scaled
 
                 // A wrapper so we can seat/scale/sway without baking into the
                 // meshopt-quantised geometry (transforms live on the nodes).
@@ -777,26 +883,31 @@
                 group.userData.swayPhase = i * 1.9;
                 scene.add(group);
                 swayers.push(group);
-                scene.add(contactShadow(f.height * 0.42, f.position[0], f.position[1]));
+                scene.add(contactShadow(height * 0.42, f.position[0], f.position[1]));
                 // Lit from within, with a small ember at the heart for bloom,
                 // and its light pooling on the floor below. glow scales the
                 // whole effect down for small blooms (e.g. the low rose).
                 const g = f.glow ?? 1;          // inner ember/heart intensity
                 const lamp = f.lamp ?? g;       // overhead lamp (what lights the bloom)
                 const heartOn = f.heart !== false;
-                innerGlow(f.position[0], f.position[1], f.height, { g, lamp, heart: heartOn });
-                if (g > 0.02) emberSprite(f.position[0], f.height * (0.34 + 0.12 * (i % 2)), f.position[1], 0xbb2a20, 0.35 * g);
-                floorGlow(f.position[0], f.position[1], f.height * 1.4, 0x5a1206, 0.6 * lamp);
+                innerGlow(f.position[0], f.position[1], height, { g, lamp, heart: heartOn });
+                if (g > 0.02) emberSprite(f.position[0], height * (0.34 + 0.12 * (i % 2)), f.position[1], 0xbb2a20, 0.35 * g);
+                floorGlow(f.position[0], f.position[1], height * 1.4, 0x5a1206, 0.6 * lamp);
 
                 plantings.push({
                     flower: f,
                     group,
                     base: new THREE.Vector3(f.position[0], 0, f.position[1]),
-                    heart: new THREE.Vector3(f.position[0], f.height * 0.55, f.position[1])
+                    heart: new THREE.Vector3(f.position[0], height * 0.55, f.position[1])
                 });
             });
 
-            scatterBackground(templates[flowers[0].model]);
+            // The far beds are hollyhocks: tall spikes read best as silhouettes
+            // receding into the fog. Named explicitly so reordering the flowers
+            // above cannot quietly change what fills the background.
+            scatterBackground(templates['hollyhock'] || templates[flowers[0].model]);
+
+            findStops();
 
             // The gaze leans toward the middle of the planting.
             bedCentre.set(0, 0, 0);
@@ -804,10 +915,86 @@
             if (plantings.length) bedCentre.multiplyScalar(1 / plantings.length);
             lookTarget.copy(bedCentre);
 
+            // Open already framed and in focus. Left to ease in from its
+            // defaults, the first seconds look past the opening flower with the
+            // lens still racked out to the far side of the garden.
+            camera.position.copy(path.getPointAt(driftU));
+            updateWords();
+            lookTarget.copy(framingTarget(driftU, _look));
+            camera.lookAt(lookTarget);
+            focusDistance = camera.position.distanceTo(
+                currentFlower >= 0 ? plantings[currentFlower].heart : bedCentre);
+
             loadingEl.classList.add('gone');
             setTimeout(() => document.getElementById('title').classList.add('gone'), 7000);
             clock.start();
             animate();
+        }
+
+        // Work out where on the loop each flower gets its moment: the point
+        // where it is nearest AND is the one the words belong to. Using the
+        // same nearest-wins rule as updateWords means a jump always lands with
+        // that flower's words up, rather than on a spot where a neighbour is
+        // closer and does the talking. A flower ringed by nearer neighbours
+        // never speaks at all, so it gets no stop and says so in the console.
+        function findStops() {
+            const N = 720;
+            const probe = new THREE.Vector3();
+            const bestFor = plantings.map(() => ({ u: -1, d: Infinity }));
+            for (let i = 0; i < N; i++) {
+                const u = i / N;
+                path.getPointAt(u, probe);
+                let winner = -1, wd = REVEAL_RADIUS;
+                for (let k = 0; k < plantings.length; k++) {
+                    const d = probe.distanceTo(plantings[k].heart);
+                    if (d < wd) { wd = d; winner = k; }
+                }
+                if (winner >= 0 && wd < bestFor[winner].d) bestFor[winner] = { u, d: wd };
+            }
+            plantings.forEach((p, k) => {
+                p.stopU = bestFor[k].u >= 0 ? bestFor[k].u : null;
+                if (p.stopU === null) {
+                    console.warn(`"${p.flower.title}" is never the nearest flower, so its words `
+                               + `never appear and the chevrons skip it. Move it, or move whatever `
+                               + `is crowding it.`);
+                }
+            });
+            stops = plantings.filter(p => p.stopU !== null).map(p => p.stopU).sort((a, b) => a - b);
+
+            // The loop is a cycle, so first and last only mean anything relative
+            // to where it opens. Begin on the flower marked `opens`, at its own
+            // stop, so it is properly framed from the first frame and the
+            // chevrons run forward from it round to the one before it.
+            const opener = plantings.find(p => p.flower.opens && p.stopU !== null);
+            driftU = opener ? opener.stopU : (stops.length ? stops[0] : 0);
+        }
+
+        // Glide to the next flower along the loop (dir 1) or the one behind
+        // (dir -1). Not a cut: the camera travels the path it would have drifted,
+        // just far quicker, so you keep your bearings. Duration grows with the
+        // distance covered, which keeps a short hop brisk and a long one from
+        // reading as a teleport.
+        function jumpToFlower(dir) {
+            if (!stops.length || jump) return;
+            // Carry on the way we were sent. Otherwise going back lands you on a
+            // flower with the drift already pulling you forward off it again,
+            // and you spend the whole time fighting the camera.
+            driftDir = dir;
+            const from = driftU;
+            const margin = 0.01;          // so a click while sitting on a stop moves on
+            let best = null, bestD = Infinity;
+            for (const s of stops) {
+                const d = dir > 0 ? ((s - from + 1) % 1) : ((from - s + 1) % 1);
+                if (d > margin && d < bestD) { bestD = d; best = s; }
+            }
+            if (best === null) return;
+            jump = {
+                from,
+                to: best,
+                delta: dir > 0 ? bestD : -bestD,
+                elapsed: 0,
+                dur: THREE.MathUtils.clamp(0.9 + bestD * 4.2, 0.9, 2.6)
+            };
         }
 
         // ---------------------------------------------------------------
@@ -826,11 +1013,39 @@
                 gaze.tPitch = THREE.MathUtils.clamp(gaze.tPitch, -pitchLimit, pitchLimit);
                 lastX = x; lastY = y;
             };
-            const up = () => { dragging = false; };
-            el.addEventListener('pointerdown', e => down(e.clientX, e.clientY));
+            // On a phone a decisive horizontal flick moves between flowers, the
+            // same as the chevrons. Only a flick: a slower drag still nudges the
+            // gaze, so touch keeps both. Mouse drags are left alone entirely.
+            const SWIPE_PX = 45;      // far enough to be meant
+            const SWIPE_MS = 600;     // quick enough to be a flick, not a look
+            let flick = null;
+            const up = (e) => {
+                dragging = false;
+                if (!flick) return;
+                const dx = e.clientX - flick.x, dy = e.clientY - flick.y;
+                const quick = performance.now() - flick.t <= SWIPE_MS;
+                flick = null;
+                if (!quick || Math.abs(dx) < SWIPE_PX || Math.abs(dx) < Math.abs(dy) * 1.5) return;
+                // Let go of the gaze so the glide is not fighting a pan.
+                gaze.tYaw = 0; gaze.tPitch = 0;
+                jumpToFlower(dx < 0 ? 1 : -1);   // swipe left to go on, right to go back
+            };
+            el.addEventListener('pointerdown', e => {
+                down(e.clientX, e.clientY);
+                flick = e.pointerType === 'touch'
+                    ? { x: e.clientX, y: e.clientY, t: performance.now() } : null;
+            });
             window.addEventListener('pointermove', e => move(e.clientX, e.clientY));
             window.addEventListener('pointerup', up);
-            window.addEventListener('pointercancel', up);
+            window.addEventListener('pointercancel', () => { dragging = false; flick = null; });
+
+            document.getElementById('prev').addEventListener('click', () => jumpToFlower(-1));
+            document.getElementById('next').addEventListener('click', () => jumpToFlower(1));
+            // The arrow keys do the same, for anyone on a keyboard.
+            window.addEventListener('keydown', e => {
+                if (e.key === 'ArrowRight') jumpToFlower(1);
+                else if (e.key === 'ArrowLeft') jumpToFlower(-1);
+            });
         }
 
         // ---------------------------------------------------------------
@@ -870,31 +1085,59 @@
         const _look = new THREE.Vector3();
         const _ahead = new THREE.Vector3();
         const _euler = new THREE.Euler(0, 0, 0, 'YXZ');
+
+        // Where the camera should be looking from this point on the loop: along
+        // the path ahead, leaned toward the bed, then leaned into whichever
+        // bloom is speaking. Kept separate from the easing so the opening frame
+        // can be seated at its settled value rather than swinging into place.
+        function framingTarget(u, out) {
+            // Look where we are going, whichever way that now is.
+            path.getPointAt((u + 0.04 * driftDir + 1) % 1, _ahead);
+            out.copy(_ahead).lerp(bedCentre, 0.6);
+            if (currentFlower < 0) return out;
+            const heart = plantings[currentFlower].heart;
+            // A narrow portrait frame cannot afford the cinematic side bias used
+            // on desktop: place the speaking bloom dead centre.
+            if (isPortrait()) return out.copy(heart);
+            out.lerp(heart, 0.7);
+            // Keep the side bias, but pitch the gaze at the bloom itself. Simply
+            // copying its height is not enough: the target sits further off than
+            // the flower, so a shallow ray still passes over the top of it and a
+            // ground-level bloom ends up under its own words. Match the angle
+            // instead, and the bloom sits on the centre line whatever its height.
+            const camY = camera.position.y;
+            const reach = Math.hypot(out.x - camera.position.x, out.z - camera.position.z);
+            const heartReach = Math.hypot(heart.x - camera.position.x, heart.z - camera.position.z);
+            out.y = camY + (heart.y - camY) / Math.max(heartReach, 0.001) * reach;
+            return out;
+        }
         function animate() {
             requestAnimationFrame(animate);
             const dt = Math.min(clock.getDelta(), 0.05);
             const t = clock.getElapsedTime();
 
-            // Drift along the loop.
-            const u = (t / DRIFT_SECONDS) % 1;
+            // Drift along the loop, or glide through it if a chevron was pressed.
+            if (jump) {
+                jump.elapsed = Math.min(jump.dur, jump.elapsed + dt);
+                const e = jump.elapsed / jump.dur;
+                // Ease in and out, so it leaves and arrives gently at speed.
+                const k = e < 0.5 ? 4 * e * e * e : 1 - Math.pow(-2 * e + 2, 3) / 2;
+                driftU = (jump.from + jump.delta * k + 1) % 1;
+                if (jump.elapsed >= jump.dur) { driftU = jump.to; jump = null; }
+            } else {
+                driftU = (driftU + driftDir * dt / DRIFT_SECONDS + 1) % 1;
+            }
+            const u = driftU;
             camera.position.copy(path.getPointAt(u));
             camera.position.y += Math.sin(t * 0.29) * 0.018; // a quiet handheld breath
 
             // Which bloom are we nearest? (drives both the words and the gaze)
             updateWords();
 
-            // Look toward the bed, leaning into whichever flower is nearest so
-            // it passes through the centre of frame as you read its words.
-            path.getPointAt((u + 0.04) % 1, _ahead);
-            _look.copy(_ahead).lerp(bedCentre, 0.6);
-            if (currentFlower >= 0) {
-                const heart = plantings[currentFlower].heart;
-                // A narrow portrait frame cannot afford the cinematic side
-                // bias used on desktop: place the speaking bloom dead centre.
-                if (isPortrait()) _look.copy(heart);
-                else _look.lerp(heart, 0.7);
-            }
-            const framingSpeed = isPortrait() ? 3.2 : 1.5;
+            framingTarget(u, _look);
+            // Mid-glide the gaze has to keep up with the ground it is covering,
+            // or the camera arrives still looking at the flower it left.
+            const framingSpeed = (isPortrait() ? 3.2 : 1.5) * (jump ? 2.4 : 1);
             lookTarget.lerp(_look, 1 - Math.exp(-dt * framingSpeed));
             camera.up.set(0, 1, 0);
             camera.lookAt(lookTarget);
@@ -949,7 +1192,9 @@
             lookPass.uniforms.uTime.value = t;
             const focusPt = currentFlower >= 0 ? plantings[currentFlower].heart : bedCentre;
             const desiredFocus = camera.position.distanceTo(focusPt);
-            focusDistance += (desiredFocus - focusDistance) * (1 - Math.exp(-dt * 0.8));
+            // The lens racks slowly by choice, but not so slowly that a glide
+            // lands with the whole garden still dissolved in bokeh.
+            focusDistance += (desiredFocus - focusDistance) * (1 - Math.exp(-dt * (jump ? 4.5 : 0.8)));
             bokehPass.uniforms['focus'].value = focusDistance;
 
             composer.render();
