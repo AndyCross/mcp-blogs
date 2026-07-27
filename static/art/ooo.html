@@ -100,6 +100,11 @@
         z-index: 12;
         display: none;
         overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior: contain;
+        touch-action: pan-y;
+        user-select: none;
+        -webkit-user-select: none;
         background: rgba(0, 0, 0, 0.55);
         cursor: pointer;
         text-align: center;
@@ -216,6 +221,8 @@
         let camera, scene, renderer, controls, material;
         let clock = new THREE.Clock();
         let titleTimer = null; // the timer that fades the title away after a reveal
+        // Tracks whether a pointer was scrolling the past rather than choosing from it.
+        const dragState = { x: 0, y: 0, moved: false };
 
         // The loop that condemns it: phase walks forward forever.
         // morph = 0 -> the rose is whole.  morph = 1 -> it has come apart.
@@ -569,12 +576,38 @@
             glyph.addEventListener('click', (e) => {
                 e.stopPropagation();
                 buildEntries(timeline);
+                dragState.moved = false;
                 timeline.classList.add('open');
+                timeline.scrollTop = 0;
                 timeline.setAttribute('aria-hidden', 'false');
             });
+            // The past is scrolled through, not swept aside: a drag or a wheel
+            // moves the list, and only a still tap counts as letting go.
+            timeline.addEventListener('pointerdown', (e) => {
+                dragState.moved = false;
+                dragState.x = e.clientX;
+                dragState.y = e.clientY;
+            });
+            timeline.addEventListener('pointermove', (e) => {
+                if (Math.abs(e.clientX - dragState.x) > 8 || Math.abs(e.clientY - dragState.y) > 8) {
+                    dragState.moved = true;
+                }
+            });
+            // A mouse drag scrolls it too, for anyone without a wheel.
+            timeline.addEventListener('pointermove', (e) => {
+                if (e.pointerType === 'mouse' && e.buttons === 1) {
+                    timeline.scrollTop -= e.movementY;
+                }
+            });
+            // The wheel belongs to the list while it is open, not to the orbit.
+            timeline.addEventListener('wheel', (e) => e.stopPropagation(), { passive: true });
+
             // Looking back does not stop it: the rose keeps cycling behind
-            // the veil. A touch anywhere lets the past sink again.
-            timeline.addEventListener('click', () => closeTimeline(timeline));
+            // the veil. A still touch anywhere lets the past sink again.
+            timeline.addEventListener('click', () => {
+                if (dragState.moved) return;
+                closeTimeline(timeline);
+            });
         }
 
         function closeTimeline(timeline) {
@@ -657,6 +690,7 @@
                 // all return to how they were the day it was said.
                 entry.addEventListener('click', (e) => {
                     e.stopPropagation();
+                    if (dragState.moved) return; // they were scrolling past it
                     applyPledge(p);
                     closeTimeline(timeline);
                     revealTitle();
