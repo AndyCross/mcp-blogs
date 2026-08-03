@@ -120,12 +120,46 @@
 
     /* ---- Loading ---- */
     #loading {
-        position: fixed; inset: 0; display: flex; align-items: center; justify-content: center;
+        position: fixed; inset: 0; display: flex; flex-direction: column;
+        align-items: center; justify-content: center; gap: 1.2rem; padding: 1.5rem;
         z-index: 20; background: #05040c; color: var(--rose);
         font-family: "Georgia", serif; font-style: italic; font-size: 1.05rem;
         letter-spacing: 0.06em; transition: opacity 1.4s ease;
     }
     #loading.gone { opacity: 0; pointer-events: none; }
+    #loading .msg { text-shadow: 0 1px 14px rgba(0,0,0,0.8), 0 0 26px rgba(179,18,46,0.35); }
+    /* A hairline of light that fills as the meshes land. Thirty-six megabytes
+       of photogrammetry takes a while; better to show the wait than hide it. */
+    #bar {
+        position: relative; width: min(20rem, 62vw); height: 2px; overflow: hidden;
+        background: rgba(243,217,223,0.11); border-radius: 2px;
+    }
+    #bar .fill {
+        position: absolute; top: 0; left: 0; bottom: 0; width: 0;
+        background: linear-gradient(90deg, rgba(179,18,46,0.85), var(--rose));
+        box-shadow: 0 0 16px rgba(179,18,46,0.85);
+        transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    /* A slow gleam travelling the filled part, so a stalled byte stream still
+       looks alive rather than frozen. */
+    #bar .fill::after {
+        content: ""; position: absolute; inset: 0;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.55), transparent);
+        animation: gleam 2.4s ease-in-out infinite;
+    }
+    @keyframes gleam {
+        from { transform: translateX(-100%); }
+        to   { transform: translateX(100%); }
+    }
+    #loading .pct {
+        font-style: normal; font-variant: small-caps;
+        letter-spacing: 0.24em; font-size: 0.68rem; opacity: 0.5;
+    }
+    /* If a model will not load there is no progress left to report. */
+    #loading.failed #bar, #loading.failed .pct { display: none; }
+    @media (prefers-reduced-motion: reduce) {
+        #bar .fill::after { animation: none; }
+    }
 </style>
 </head>
 <body>
@@ -147,7 +181,11 @@
     </div>
 
     <div id="hint">arrastra para mirar alrededor</div>
-    <div id="loading">plantando el jardín…</div>
+    <div id="loading">
+        <div class="msg">plantando el jardín…</div>
+        <div id="bar"><div class="fill"></div></div>
+        <div class="pct">0%</div>
+    </div>
 
     <script type="importmap">
     {
@@ -271,6 +309,20 @@
         const clock = new THREE.Clock();
         const container = document.getElementById('container');
         const loadingEl = document.getElementById('loading');
+        const loadingMsg = loadingEl.querySelector('.msg');
+        const loadingFill = loadingEl.querySelector('#bar .fill');
+        const loadingPct = loadingEl.querySelector('.pct');
+
+        // The bar only ever goes forward. Servers that gzip a .glb report a
+        // content-length for the compressed stream, so the odd file can pass
+        // 100% of its own weight; without the ratchet the total would jitter.
+        let shownProgress = 0;
+        function setProgress(p) {
+            p = Math.max(shownProgress, Math.min(1, p));
+            shownProgress = p;
+            loadingFill.style.width = (p * 100).toFixed(1) + '%';
+            loadingPct.textContent = Math.round(p * 100) + '%';
+        }
 
         // Drag-nudge gaze: the drift owns the camera; a drag adds a gaze
         // offset that eases back to centre so the wander stays coherent.
@@ -781,6 +833,18 @@
         //  Load the models and plant the flowers.
         // ---------------------------------------------------------------
         function loadGarden() {
+            // Roughly what each model weighs on disk, so a file still waiting on
+            // its first byte counts for its real share of the bar. A stale
+            // number only skews the pacing slightly; onProgress corrects each
+            // file to its true size the moment the headers arrive.
+            const MODEL_BYTES = {
+                hollyhock: 14_500_000,
+                bougainvillea: 11_500_000,
+                castor: 5_300_000,
+                rose: 5_300_000
+            };
+            const BYTES_UNKNOWN = 8_000_000;
+
             const loader = new GLTFLoader();
             loader.setMeshoptDecoder(MeshoptDecoder);
 
@@ -788,8 +852,27 @@
             const templates = {};
             let remaining = needed.length;
 
+            // Downloading is most of the wait but not all of it: meshopt still
+            // has to decode, and planting clones every mesh. So the bytes fill
+            // the bar to 92% and the last slice is the garden being built.
+            const DOWNLOAD_SHARE = 0.92;
+            const progress = {};
+            needed.forEach(n => progress[n] = { loaded: 0, total: MODEL_BYTES[n] ?? BYTES_UNKNOWN, done: false });
+            function reportProgress() {
+                let loaded = 0, total = 0;
+                for (const n of needed) {
+                    const p = progress[n];
+                    total += p.total;
+                    loaded += p.done ? p.total : Math.min(p.loaded, p.total);
+                }
+                setProgress(total ? (loaded / total) * DOWNLOAD_SHARE : 0);
+            }
+            reportProgress();
+
             needed.forEach(name => {
                 loader.load(`garden-assets/${name}.glb`, (gltf) => {
+                    progress[name].done = true;
+                    reportProgress();
                     // Normalise once: recentre on X/Z, seat the base at y = 0,
                     // remember the raw height so each planting can be scaled.
                     const root = gltf.scene;
@@ -806,10 +889,21 @@
                     const size = box.getSize(new THREE.Vector3());
                     const centre = box.getCenter(new THREE.Vector3());
                     templates[name] = { root, size, centre, minY: box.min.y };
-                    if (--remaining === 0) plantAll(templates);
-                }, undefined, (err) => {
+                    if (--remaining === 0) {
+                        loadingMsg.textContent = 'abriendo las flores…';
+                        // Yield a frame so the message and the last of the bar
+                        // paint before plantAll blocks the thread cloning meshes.
+                        requestAnimationFrame(() => requestAnimationFrame(() => plantAll(templates)));
+                    }
+                }, (e) => {
+                    const p = progress[name];
+                    p.loaded = e.loaded;
+                    if (e.lengthComputable && e.total) p.total = e.total;
+                    reportProgress();
+                }, (err) => {
                     console.error(err);
-                    loadingEl.textContent = 'el jardín no quiso abrir';
+                    loadingEl.classList.add('failed');
+                    loadingMsg.textContent = 'el jardín no quiso abrir';
                 });
             });
         }
@@ -925,6 +1019,7 @@
             focusDistance = camera.position.distanceTo(
                 currentFlower >= 0 ? plantings[currentFlower].heart : bedCentre);
 
+            setProgress(1);
             loadingEl.classList.add('gone');
             setTimeout(() => document.getElementById('title').classList.add('gone'), 7000);
             clock.start();
