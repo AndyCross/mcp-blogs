@@ -96,14 +96,17 @@
         <h1>After the First Dream Fades</h1>
         <div id="whisper">I wore it once. Then I hung it up, and everything it held came apart.</div>
     </div>
-    <div id="hint">drag to look · it will not stay</div>
+    <div id="hint">drag the veil · turn to look · it will not stay</div>
     <div id="credits">
         <a id="credits-toggle">about</a>
         <div class="body">
             "After the First Dream Fades" — the suit begins as itself, then erodes
             patch by patch into drifting dust, the words printed on it scattering as
-            it goes. It re-forms in the dark only to end again. Model generated with
-            Meshy AI, decimated and compressed with glTF-Transform. Built with three.js.
+            it goes. It re-forms in the dark only to end again. A holographic shroud
+            is dropped over it and left to fall, draping where the suit catches it:
+            push it with a finger and it falls again, because nothing here stays.
+            Model generated with Meshy AI, decimated and compressed with
+            glTF-Transform. Cloth ported from dmitrykurash/holocloth. Built with three.js.
         </div>
     </div>
 
@@ -121,6 +124,7 @@
         import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
         import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
         import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+        import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
         import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
         import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
         import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
@@ -130,6 +134,22 @@
         const SUIT_POINTS = isMobile ? 90000 : 190000;
         const TARGET_H = 3.4;                 // world height the suit is scaled to
         const DISSOLVE_FREQ = 1.15;           // scale of the erosion noise field
+
+        // ---- The holographic shroud, physically draped over the suit ----
+        // A flat sheet is dropped from above at load and left to fall under
+        // gravity, colliding with the suit until it settles into a real drape.
+        // The physics stays live, so pushing it makes it fall and re-settle.
+        const CLOTH_LONG = isMobile ? 44 : 68; // grid resolution along the wider axis
+        const DROP_MARGIN = 0.55;             // how far the sheet overhangs the suit (drape length)
+        const DROP_HEIGHT = 0.3;              // how far above the suit it starts
+        const COLLIDE_OFFSET = 0.025;         // gap the cloth keeps off the surface
+        const COLLIDE_CELL = 0.08;            // collider hash cell / reach
+        const PREROLL = isMobile ? 260 : 440; // settle substeps before first paint
+        const GRAB_RADIUS = 0.5;              // how much cloth a touch takes hold of
+        const CLOTH_PHYS = {
+            viscosity: 0.06, stiffness: 0.9, iterations: 6, smoothing: 0.0,
+            gravity: 9.8, friction: 0.25, offset: COLLIDE_OFFSET,
+        };
 
         // ---- The words printed into the suit. Laid out down the body. ----
         // Each entry: text, vertical position (0 top .. 1 bottom), font scale, ink weight.
@@ -155,6 +175,7 @@
         let scene, camera, renderer, composer, controls, bloomPass;
         let points, suit, hemi, keyLight, fillLight, rimLight;
         let ptU, meshU;                        // point + mesh shared uniforms
+        let clothSim, clothMesh, clothGeo, holoU;   // the draped veil
         const clock = new THREE.Clock();
 
         // ---------------------------------------------------------------
@@ -476,6 +497,364 @@
             return { pos, nor, col, rnd, wrd, count: N };
         }
 
+        // ===============================================================
+        //  Holocloth (ported from dmitrykurash/holocloth)
+        //  Verlet cloth in zero gravity + an iridescent foil material.
+        // ===============================================================
+
+        // ---- fabric textures ----
+        function mulberry32(seed) {
+            return () => {
+                seed |= 0; seed = (seed + 0x6d2b79f5) | 0;
+                let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+                t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+                return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+            };
+        }
+        function heightToNormalTexture(h, size, strength, repeat) {
+            const canvas = document.createElement('canvas');
+            canvas.width = size; canvas.height = size;
+            const ctx = canvas.getContext('2d');
+            const img = ctx.createImageData(size, size);
+            const data = img.data;
+            const at = (x, y) => h[((y + size) % size) * size + ((x + size) % size)];
+            for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) {
+                const dx = (at(x + 1, y) - at(x - 1, y)) * strength;
+                const dy = (at(x, y + 1) - at(x, y - 1)) * strength;
+                const inv = 1 / Math.sqrt(dx * dx + dy * dy + 1);
+                const i = (y * size + x) * 4;
+                data[i]   = Math.round((-dx * inv * 0.5 + 0.5) * 255);
+                data[i+1] = Math.round(( dy * inv * 0.5 + 0.5) * 255);
+                data[i+2] = Math.round(( inv * 0.5 + 0.5) * 255);
+                data[i+3] = 255;
+            }
+            ctx.putImageData(img, 0, 0);
+            const tex = new THREE.CanvasTexture(canvas);
+            tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+            tex.repeat.set(repeat, repeat);
+            tex.colorSpace = THREE.NoColorSpace;
+            return tex;
+        }
+        // fine plain-weave normal map: interleaved warp/weft threads
+        function makeWeaveNormalMap(size = 512, threads = 64, seed = 1337) {
+            const rand = mulberry32(seed);
+            const warpVar = new Float32Array(threads + 1), weftVar = new Float32Array(threads + 1);
+            for (let i = 0; i <= threads; i++) { warpVar[i] = 0.85 + rand() * 0.3; weftVar[i] = 0.85 + rand() * 0.3; }
+            const grain = new Float32Array(size * size);
+            for (let i = 0; i < grain.length; i++) grain[i] = rand();
+            const h = new Float32Array(size * size);
+            for (let y = 0; y < size; y++) {
+                const v = (y / size) * threads, vi = Math.floor(v), vf = v - vi;
+                for (let x = 0; x < size; x++) {
+                    const u = (x / size) * threads, ui = Math.floor(u), uf = u - ui;
+                    const warp = Math.sin(uf * Math.PI) * warpVar[ui % (threads + 1)];
+                    const weft = Math.sin(vf * Math.PI) * weftVar[vi % (threads + 1)];
+                    const over = (ui + vi) % 2 === 0;
+                    const height = over ? warp * 0.62 + weft * 0.38 : weft * 0.62 + warp * 0.38;
+                    h[y * size + x] = height * 0.85 + grain[y * size + x] * 0.15;
+                }
+            }
+            return heightToNormalTexture(h, size, 1.6, 2);
+        }
+        // mild roughness grain so the matte finish stays alive
+        function makeGrainRoughnessMap(size = 256, seed = 4242) {
+            const rand = mulberry32(seed);
+            const canvas = document.createElement('canvas');
+            canvas.width = size; canvas.height = size;
+            const ctx = canvas.getContext('2d');
+            const img = ctx.createImageData(size, size);
+            const data = img.data;
+            for (let i = 0; i < size * size; i++) {
+                const val = Math.round(215 + (rand() - 0.5) * 70);
+                data[i*4] = val; data[i*4+1] = val; data[i*4+2] = val; data[i*4+3] = 255;
+            }
+            ctx.putImageData(img, 0, 0);
+            const tex = new THREE.CanvasTexture(canvas);
+            tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+            tex.repeat.set(4, 4);
+            tex.colorSpace = THREE.NoColorSpace;
+            return tex;
+        }
+
+        // ---- Verlet cloth under gravity, colliding with the suit. It starts as
+        //      a flat sheet, falls, and settles into a drape. Rest lengths come
+        //      from that flat sheet, so it behaves like inextensible fabric:
+        //      folds and sag come from gravity meeting the suit, not from a
+        //      baked shape. The collider is a spatial hash of the suit's verts. ----
+        const CLOTH_SUBSTEP = 1 / 120, CLOTH_MAX_SUBSTEPS = 4;
+        class ClothSim {
+            constructor(cols, rows, initPos) {
+                this.cols = cols; this.rows = rows; this.count = cols * rows;
+                this.positions = initPos.slice();
+                this.prev = this.positions.slice();
+                this.grab = null; this.accumulator = 0;
+                this.collider = null; this.floorY = -Infinity;
+
+                const a = [], b = [], mul = [];
+                const idx = (x, y) => y * this.cols + x;
+                for (let y = 0; y < this.rows; y++) for (let x = 0; x < this.cols; x++) {
+                    if (x + 1 < this.cols) { a.push(idx(x, y)); b.push(idx(x + 1, y)); mul.push(1.0); }
+                    if (y + 1 < this.rows) { a.push(idx(x, y)); b.push(idx(x, y + 1)); mul.push(1.0); }
+                    if (x + 1 < this.cols && y + 1 < this.rows) {
+                        a.push(idx(x, y)); b.push(idx(x + 1, y + 1)); mul.push(0.85);
+                        a.push(idx(x + 1, y)); b.push(idx(x, y + 1)); mul.push(0.85);
+                    }
+                    if (x + 2 < this.cols) { a.push(idx(x, y)); b.push(idx(x + 2, y)); mul.push(0.35); }
+                    if (y + 2 < this.rows) { a.push(idx(x, y)); b.push(idx(x, y + 2)); mul.push(0.35); }
+                }
+                this.cA = new Int32Array(a); this.cB = new Int32Array(b); this.cMul = new Float32Array(mul);
+                // rest length of each constraint = its length in the flat sheet
+                this.cRest = new Float32Array(a.length);
+                const p = this.positions;
+                for (let c = 0; c < this.cA.length; c++) {
+                    const ia = this.cA[c] * 3, ib = this.cB[c] * 3;
+                    this.cRest[c] = Math.hypot(p[ib]-p[ia], p[ib+1]-p[ia+1], p[ib+2]-p[ia+2]);
+                }
+                this.neighbors = new Int32Array(this.count * 4).fill(-1);
+                for (let y = 0; y < this.rows; y++) for (let x = 0; x < this.cols; x++) {
+                    const i = idx(x, y) * 4;
+                    this.neighbors[i]   = x > 0 ? idx(x - 1, y) : -1;
+                    this.neighbors[i+1] = x + 1 < this.cols ? idx(x + 1, y) : -1;
+                    this.neighbors[i+2] = y > 0 ? idx(x, y - 1) : -1;
+                    this.neighbors[i+3] = y + 1 < this.rows ? idx(x, y + 1) : -1;
+                }
+            }
+
+            startGrab(point, radius) {
+                const p = this.positions;
+                const indices = [], weights = [], offsets = [];
+                let best = Infinity;
+                for (let i = 0; i < this.count; i++) {
+                    const dx = p[i*3] - point.x, dy = p[i*3+1] - point.y, dz = p[i*3+2] - point.z;
+                    const d = Math.sqrt(dx*dx + dy*dy + dz*dz);
+                    best = Math.min(best, d);
+                    if (d > radius) continue;
+                    const t = 1 - d / radius, w = t * t * (3 - 2 * t);
+                    indices.push(i); weights.push(w); offsets.push(dx, dy, dz);
+                }
+                if (indices.length === 0 || best > radius) return false;
+                this.grab = { indices, weights, offsets: new Float32Array(offsets),
+                    target: new THREE.Vector3().copy(point) };
+                return true;
+            }
+            moveGrab(target) { if (this.grab) this.grab.target.copy(target); }
+            endGrab() { this.grab = null; }
+
+            step(dt, params) {
+                this.accumulator += Math.min(dt, 0.05);
+                let steps = 0;
+                while (this.accumulator >= CLOTH_SUBSTEP && steps < CLOTH_MAX_SUBSTEPS) {
+                    this.substep(params); this.accumulator -= CLOTH_SUBSTEP; steps++;
+                }
+                if (steps === CLOTH_MAX_SUBSTEPS) this.accumulator = 0;
+            }
+
+            substep(params) {
+                const p = this.positions, prev = this.prev, n = this.count;
+                const damp = Math.pow(1 - Math.min(params.viscosity, 0.99), CLOTH_SUBSTEP * 60);
+                const gdt = (params.gravity || 0) * CLOTH_SUBSTEP * CLOTH_SUBSTEP;
+                for (let i = 0; i < n * 3; i++) {
+                    const cur = p[i];
+                    const vel = (cur - prev[i]) * damp;
+                    prev[i] = cur;
+                    p[i] = cur + vel;
+                }
+                for (let i = 0; i < n; i++) p[i*3+1] -= gdt;   // gravity pulls down
+                if (params.smoothing > 0) {
+                    const k = params.smoothing * 0.5, nb = this.neighbors;
+                    for (let i = 0; i < n; i++) {
+                        let ax = 0, ay = 0, az = 0, cnt = 0;
+                        for (let j = 0; j < 4; j++) {
+                            const ni = nb[i*4+j]; if (ni < 0) continue;
+                            ax += p[ni*3]; ay += p[ni*3+1]; az += p[ni*3+2]; cnt++;
+                        }
+                        if (cnt === 0) continue;
+                        const inv = 1 / cnt;
+                        p[i*3]   += (ax * inv - p[i*3])   * k;
+                        p[i*3+1] += (ay * inv - p[i*3+1]) * k;
+                        p[i*3+2] += (az * inv - p[i*3+2]) * k;
+                    }
+                }
+                const iters = Math.max(1, Math.round(params.iterations)), stiff = params.stiffness;
+                const cA = this.cA, cB = this.cB, cRest = this.cRest, cMul = this.cMul, nc = cA.length;
+                for (let it = 0; it < iters; it++) {
+                    for (let c = 0; c < nc; c++) {
+                        const ia = cA[c]*3, ib = cB[c]*3;
+                        const dx = p[ib]-p[ia], dy = p[ib+1]-p[ia+1], dz = p[ib+2]-p[ia+2];
+                        const d = Math.sqrt(dx*dx + dy*dy + dz*dz);
+                        if (d < 1e-9) continue;
+                        const diff = ((d - cRest[c]) / d) * 0.5 * stiff * cMul[c];
+                        const ox = dx*diff, oy = dy*diff, oz = dz*diff;
+                        p[ia]+=ox; p[ia+1]+=oy; p[ia+2]+=oz;
+                        p[ib]-=ox; p[ib+1]-=oy; p[ib+2]-=oz;
+                    }
+                    const g = this.grab;
+                    if (g) for (let k = 0; k < g.indices.length; k++) {
+                        const i = g.indices[k]*3, w = g.weights[k];
+                        p[i]   += (g.target.x + g.offsets[k*3]   - p[i])   * w;
+                        p[i+1] += (g.target.y + g.offsets[k*3+1] - p[i+1]) * w;
+                        p[i+2] += (g.target.z + g.offsets[k*3+2] - p[i+2]) * w;
+                    }
+                }
+                this.collide(params);
+            }
+
+            // Keep the cloth out of the suit and off the floor. For each vertex,
+            // find the nearest suit sample in the hash; if it sits closer than
+            // `offset` along that sample's normal, push it back out. Contact bleeds
+            // velocity toward zero (friction), which lets folds hold and grip.
+            collide(params) {
+                const p = this.positions, prev = this.prev, n = this.count;
+                const fr = params.friction || 0, off = params.offset || 0;
+                const col = this.collider, floorY = this.floorY;
+                if (col) {
+                    const { P, N, cell, minx, miny, minz, hash } = col;
+                    for (let i = 0; i < n; i++) {
+                        const px = p[i*3], py = p[i*3+1], pz = p[i*3+2];
+                        const gx = Math.floor((px - minx) / cell);
+                        const gy = Math.floor((py - miny) / cell);
+                        const gz = Math.floor((pz - minz) / cell);
+                        let best = Infinity, bi = -1;
+                        for (let dx = -1; dx <= 1; dx++) for (let dy = -1; dy <= 1; dy++) for (let dz = -1; dz <= 1; dz++) {
+                            const arr = hash.get((gx+dx) + ',' + (gy+dy) + ',' + (gz+dz));
+                            if (!arr) continue;
+                            for (let m = 0; m < arr.length; m++) {
+                                const j = arr[m];
+                                const ax = px - P[j*3], ay = py - P[j*3+1], az = pz - P[j*3+2];
+                                const d2 = ax*ax + ay*ay + az*az;
+                                if (d2 < best) { best = d2; bi = j; }
+                            }
+                        }
+                        if (bi >= 0) {
+                            const nx = N[bi*3], ny = N[bi*3+1], nz = N[bi*3+2];
+                            const sd = (px - P[bi*3])*nx + (py - P[bi*3+1])*ny + (pz - P[bi*3+2])*nz;
+                            if (sd < off) {
+                                const push = off - sd;
+                                p[i*3] += nx*push; p[i*3+1] += ny*push; p[i*3+2] += nz*push;
+                                prev[i*3]   += (p[i*3]   - prev[i*3])   * fr;
+                                prev[i*3+1] += (p[i*3+1] - prev[i*3+1]) * fr;
+                                prev[i*3+2] += (p[i*3+2] - prev[i*3+2]) * fr;
+                            }
+                        }
+                    }
+                }
+                if (floorY > -Infinity) for (let i = 0; i < n; i++) {
+                    if (p[i*3+1] < floorY) {
+                        p[i*3+1] = floorY;
+                        prev[i*3]   += (p[i*3]   - prev[i*3])   * fr;
+                        prev[i*3+1] += (p[i*3+1] - prev[i*3+1]) * fr;
+                        prev[i*3+2] += (p[i*3+2] - prev[i*3+2]) * fr;
+                    }
+                }
+            }
+        }
+
+        // Iridescent holo foil: a physical material (thin-film iridescence,
+        // sheen, clearcoat, woven normal) plus an injected diffraction layer
+        // whose hue sweeps with the view angle, with angle-gated glints.
+        function createHoloMaterial() {
+            const material = new THREE.MeshPhysicalMaterial({
+                color: new THREE.Color('#9aa1ad'),
+                metalness: 0.95, roughness: 0.12, roughnessMap: makeGrainRoughnessMap(),
+                normalMap: makeWeaveNormalMap(), normalScale: new THREE.Vector2(0.35, 0.35),
+                clearcoat: 1.0, clearcoatRoughness: 0.08,
+                sheen: 0.35, sheenRoughness: 0.55, sheenColor: new THREE.Color('#cfd6ff'),
+                iridescence: 1.0, iridescenceIOR: 1.35, iridescenceThicknessRange: [120, 480],
+                side: THREE.DoubleSide,
+            });
+            const uniforms = {
+                uHoloIntensity: { value: 0.95 }, uHoloScale: { value: 110 },
+                uBandFreq: { value: 3.0 }, uRadialFreq: { value: 1.6 },
+                uSaturation: { value: 0.85 }, uHueShift: { value: 0.0 },
+                uSparkle: { value: 0.7 }, uSpecTint: { value: 0.85 },
+            };
+            material.onBeforeCompile = (shader) => {
+                Object.assign(shader.uniforms, uniforms);
+                shader.vertexShader = 'varying vec2 vHoloUv;\n' +
+                    shader.vertexShader.replace('#include <uv_vertex>', '#include <uv_vertex>\n\tvHoloUv = uv;');
+                shader.fragmentShader = /* glsl */`
+                    varying vec2 vHoloUv;
+                    uniform float uHoloIntensity, uHoloScale, uBandFreq, uRadialFreq, uSaturation, uHueShift, uSparkle, uSpecTint;
+                    float holoHash(vec2 p){ vec3 p3 = fract(vec3(p.xyx) * 0.1031); p3 += dot(p3, p3.yzx + 33.33); return fract((p3.x + p3.y) * p3.z); }
+                    vec3 holoHsv2rgb(vec3 c){ vec3 rgb = clamp(abs(mod(c.x*6.0+vec3(0.0,4.0,2.0),6.0)-3.0)-1.0,0.0,1.0); rgb = rgb*rgb*(3.0-2.0*rgb); return c.z*mix(vec3(1.0),rgb,c.y); }
+                ` + shader.fragmentShader.replace('#include <emissivemap_fragment>', /* glsl */`#include <emissivemap_fragment>
+                    {
+                        vec3 hView = normalize(vViewPosition);
+                        float facing = clamp(abs(dot(normal, hView)), 0.0, 1.0);
+                        float fres = pow(1.0 - facing, 1.5);
+                        vec2 cellId = floor(vHoloUv * uHoloScale);
+                        float rnd = holoHash(cellId);
+                        float rnd2 = holoHash(cellId + 71.7);
+                        float radial = length(vHoloUv - 0.5) * uRadialFreq;
+                        float hue = fract(uHueShift + facing * uBandFreq + radial + rnd * 0.06);
+                        vec3 rainbow = holoHsv2rgb(vec3(hue, uSaturation, 1.0));
+                        float flake = 0.82 + 0.18 * rnd2;
+                        float gate = fract(rnd2 * 13.7 + facing * 6.0);
+                        float glint = smoothstep(1.0 - 0.012 * uSparkle, 1.0, gate) * 5.0;
+                        float energy = (0.22 + 0.78 * fres) * flake;
+                        totalEmissiveRadiance += rainbow * uHoloIntensity * (energy * 0.55 + glint * fres * 0.5);
+                        vec3 tinted = diffuseColor.rgb * (0.25 + rainbow * 1.9);
+                        diffuseColor.rgb = mix(diffuseColor.rgb, tinted, uSpecTint);
+                    }`);
+            };
+            return { material, uniforms };
+        }
+
+        // A flat sheet suspended above the suit, spanning its footprint (x by z)
+        // plus an overhang, ready to be dropped. Grid u -> x, v -> z, laid out in
+        // PlaneGeometry row-major order (row 0 first). It falls in y from here.
+        function buildDrapeSheet(cols, rows, box) {
+            const min = box.min, max = box.max;
+            const mx = (max.x - min.x) * DROP_MARGIN, mz = (max.z - min.z) * DROP_MARGIN;
+            const x0 = min.x - mx, x1 = max.x + mx;
+            const z0 = min.z - mz, z1 = max.z + mz;
+            const spanX = (x1 - x0) || 1, spanZ = (z1 - z0) || 1;
+            const y = max.y + DROP_HEIGHT;
+            const pos = new Float32Array(cols * rows * 3);
+            for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+                const i = r * cols + c;
+                const u = cols > 1 ? c / (cols - 1) : 0.5;
+                const v = rows > 1 ? r / (rows - 1) : 0.5;
+                pos[i*3]   = x0 + u * spanX;
+                pos[i*3+1] = y;
+                pos[i*3+2] = z0 + v * spanZ;
+            }
+            return pos;
+        }
+
+        // Spatial hash of the suit's vertices (world space) with per-vertex
+        // normals, for cloth collision. One pass over the mesh; O(1) lookups.
+        function buildCollider(mesh, cell) {
+            const posA = mesh.geometry.attributes.position;
+            const norA = mesh.geometry.attributes.normal;
+            const mW = mesh.matrixWorld;
+            const nMat = new THREE.Matrix3().getNormalMatrix(mW);
+            const nv = posA.count;
+            const P = new Float32Array(nv * 3), N = new Float32Array(nv * 3);
+            const v = new THREE.Vector3(), nn = new THREE.Vector3();
+            let minx = Infinity, miny = Infinity, minz = Infinity;
+            for (let i = 0; i < nv; i++) {
+                v.fromBufferAttribute(posA, i).applyMatrix4(mW);
+                nn.fromBufferAttribute(norA, i).applyMatrix3(nMat).normalize();
+                P[i*3] = v.x; P[i*3+1] = v.y; P[i*3+2] = v.z;
+                N[i*3] = nn.x; N[i*3+1] = nn.y; N[i*3+2] = nn.z;
+                if (v.x < minx) minx = v.x;
+                if (v.y < miny) miny = v.y;
+                if (v.z < minz) minz = v.z;
+            }
+            const hash = new Map();
+            for (let i = 0; i < nv; i++) {
+                const gx = Math.floor((P[i*3] - minx) / cell);
+                const gy = Math.floor((P[i*3+1] - miny) / cell);
+                const gz = Math.floor((P[i*3+2] - minz) / cell);
+                const k = gx + ',' + gy + ',' + gz;
+                let arr = hash.get(k);
+                if (!arr) { arr = []; hash.set(k, arr); }
+                arr.push(i);
+            }
+            return { P, N, count: nv, cell, minx, miny, minz, hash };
+        }
+
         // ---------------------------------------------------------------
         //  Init
         // ---------------------------------------------------------------
@@ -493,6 +872,13 @@
             renderer.toneMappingExposure = 0.95;
             renderer.outputColorSpace = THREE.SRGBColorSpace;
             container.appendChild(renderer.domElement);
+
+            // Image-based lighting from a neutral studio room — the holo veil
+            // needs something to reflect for its iridescence and clearcoat to read.
+            const pmrem = new THREE.PMREMGenerator(renderer);
+            scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+            pmrem.dispose();
+            scene.environmentIntensity = 0.8;
 
             controls = new OrbitControls(camera, renderer.domElement);
             controls.enableDamping = true; controls.dampingFactor = 0.06;
@@ -532,6 +918,7 @@
                 uRect: { value: new THREE.Vector4(rect.x0, rect.y0, rect.x1, rect.y1) },
             };
             const suitMat = new THREE.MeshStandardMaterial({ roughness: 0.92, metalness: 0.0, side: THREE.DoubleSide });
+            suitMat.envMapIntensity = 0.12;   // keep the suit subdued now the scene has an env map
             // Reuse the mesh's own, correctly-configured texture (UV/flip/colorspace).
             if (mesh.material && mesh.material.map) suitMat.map = mesh.material.map;
             suitMat.onBeforeCompile = (sh) => {
@@ -584,6 +971,35 @@
             }));
             scene.add(points);
 
+            // ---- The holographic shroud: a sheet dropped over the suit ----
+            // Grid resolution follows the footprint (x by z); the wider axis
+            // gets CLOTH_LONG cells.
+            const bx = box.max.x - box.min.x, bz = box.max.z - box.min.z;
+            let cols, rows;
+            if (bx >= bz) { cols = CLOTH_LONG; rows = Math.max(12, Math.round(CLOTH_LONG * bz / bx)); }
+            else          { rows = CLOTH_LONG; cols = Math.max(12, Math.round(CLOTH_LONG * bx / bz)); }
+            const sheet = buildDrapeSheet(cols, rows, box);
+            clothSim = new ClothSim(cols, rows, sheet);
+            clothSim.collider = buildCollider(mesh, COLLIDE_CELL);
+            clothSim.floorY = box.min.y + COLLIDE_OFFSET;
+            // settle the drape before the first frame so it arrives already fallen
+            for (let s = 0; s < PREROLL; s++) clothSim.substep(CLOTH_PHYS);
+
+            clothGeo = new THREE.PlaneGeometry(1, 1, cols - 1, rows - 1);   // for uv + index
+            const cposAttr = new THREE.BufferAttribute(clothSim.positions, 3);
+            cposAttr.setUsage(THREE.DynamicDrawUsage);
+            clothGeo.setAttribute('position', cposAttr);
+            clothGeo.computeVertexNormals();
+            const holo = createHoloMaterial();
+            holoU = holo.uniforms;
+            const aniso = renderer.capabilities.getMaxAnisotropy();
+            holo.material.roughnessMap.anisotropy = aniso;
+            holo.material.normalMap.anisotropy = aniso;
+            clothMesh = new THREE.Mesh(clothGeo, holo.material);
+            clothMesh.frustumCulled = false;
+            scene.add(clothMesh);
+            setupClothInteraction();
+
             composer = new EffectComposer(renderer);
             composer.setPixelRatio(Math.min(devicePixelRatio, 2));
             composer.addPass(new RenderPass(scene, camera));
@@ -605,6 +1021,63 @@
             renderer.setSize(innerWidth, innerHeight);
             composer.setSize(innerWidth, innerHeight);
             bloomPass.resolution.set(innerWidth, innerHeight);
+        }
+
+        // ---------------------------------------------------------------
+        //  Touch / pointer: grab the veil. Listeners run in the capture
+        //  phase so a hit on the cloth wins the gesture; miss it, and the
+        //  event falls through to OrbitControls and turns the view instead.
+        // ---------------------------------------------------------------
+        function setupClothInteraction() {
+            const canvas = renderer.domElement;
+            const raycaster = new THREE.Raycaster();
+            const ndc = new THREE.Vector2();
+            const plane = new THREE.Plane();
+            const hitPoint = new THREE.Vector3();
+            let grabbing = false, grabId = null;
+
+            const toNdc = (e) => {
+                const r = canvas.getBoundingClientRect();
+                ndc.set(((e.clientX - r.left) / r.width) * 2 - 1,
+                        -((e.clientY - r.top) / r.height) * 2 + 1);
+            };
+            const raycastCloth = () => {
+                raycaster.setFromCamera(ndc, camera);
+                clothGeo.computeBoundingSphere();
+                const hits = raycaster.intersectObject(clothMesh, false);
+                return hits.length ? hits[0] : null;
+            };
+
+            canvas.addEventListener('pointerdown', (e) => {
+                if (e.button !== 0 || grabbing) return;
+                toNdc(e);
+                const hit = raycastCloth();
+                if (!hit || !clothSim.startGrab(hit.point, GRAB_RADIUS)) return;
+                grabbing = true; grabId = e.pointerId;
+                controls.enabled = false; controls.autoRotate = false;
+                const n = new THREE.Vector3(); camera.getWorldDirection(n);
+                plane.setFromNormalAndCoplanarPoint(n, hit.point);
+                canvas.setPointerCapture(e.pointerId);
+                canvas.style.cursor = 'grabbing';
+            }, true);
+
+            canvas.addEventListener('pointermove', (e) => {
+                if (!grabbing || e.pointerId !== grabId) return;
+                toNdc(e);
+                raycaster.setFromCamera(ndc, camera);
+                if (raycaster.ray.intersectPlane(plane, hitPoint)) clothSim.moveGrab(hitPoint);
+            }, true);
+
+            const release = (e) => {
+                if (!grabbing || e.pointerId !== grabId) return;
+                grabbing = false; grabId = null;
+                clothSim.endGrab();
+                controls.enabled = true;
+                if (canvas.hasPointerCapture(e.pointerId)) canvas.releasePointerCapture(e.pointerId);
+                canvas.style.cursor = 'grab';
+            };
+            canvas.addEventListener('pointerup', release, true);
+            canvas.addEventListener('pointercancel', release, true);
         }
 
         // ---------------------------------------------------------------
@@ -650,6 +1123,12 @@
             bloomPass.strength = 0.18 + 0.14 * s.presence;
 
             if (sinceLoad > 11 && !titleEl.classList.contains('gone')) titleEl.classList.add('gone');
+
+            // The veil: settle the physics, refresh the surface, drift its hue.
+            clothSim.step(dt, CLOTH_PHYS);
+            clothGeo.attributes.position.needsUpdate = true;
+            clothGeo.computeVertexNormals();
+            holoU.uHueShift.value += dt * 0.03;
 
             controls.update();
             composer.render();
