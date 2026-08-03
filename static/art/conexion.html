@@ -1,0 +1,1217 @@
+<!DOCTYPE html>
+<!--
+  "La conexión" — two glowing people, a long way apart, and the flowers
+  that keep going between them.
+
+  The blue one stands where the blue one is. The pink one stands where the
+  pink one is. Their positions are real latitude and longitude, projected
+  onto the sea and scaled so both fit in one view: change the numbers in
+  `journeys` below and the world rebuilds around them, arc and all.
+
+  Everything is procedural: the coastlines are simplified real outlines
+  raised into terrain by their distance from the sea, the flowers are ~700
+  instanced petals riding a curve, the sea and sky are shaders.
+  No external assets.
+
+  Tuning: press G for the panel, or use query params, e.g.
+  ?flowSpeed=0.02&flowers=140&span=280&az=0.7
+-->
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>La conexión</title>
+<script src="https://cdn.counter.dev/script.js" data-id="72d92ac8-56cf-4fdd-9899-b73adbab2e4d" data-utcoffset="0"></script>
+<style>
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; background: #05070f; }
+    #container { position: fixed; inset: 0; }
+    canvas { display: block; width: 100vw; height: 100vh; cursor: grab; }
+    canvas:active { cursor: grabbing; }
+
+    #title {
+        position: fixed; inset: 0;
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        pointer-events: none; z-index: 10; text-align: center; padding: 1.5rem;
+        transition: opacity 4s ease 1s;
+    }
+    #title.gone { opacity: 0; }
+    #title h1 {
+        font-family: "Georgia", "Times New Roman", serif;
+        font-weight: 400; font-style: italic;
+        font-size: clamp(1.9rem, 6.2vw, 4rem);
+        letter-spacing: 0.03em;
+        color: #f2e6ee;
+        margin: 0;
+        text-shadow: 0 2px 18px rgba(0, 0, 0, 0.85), 0 0 34px rgba(126, 166, 255, 0.45), 0 0 90px rgba(255, 122, 176, 0.35);
+        opacity: 0;
+        animation: bloom 5s ease forwards 0.7s;
+    }
+    #whisper {
+        font-family: "Georgia", serif; font-style: italic;
+        font-size: clamp(0.92rem, 2.4vw, 1.15rem);
+        color: rgba(242, 230, 238, 0.72);
+        text-shadow: 0 1px 12px rgba(0, 0, 0, 0.8), 0 0 26px rgba(255, 122, 176, 0.3);
+        margin-top: 1.4rem; opacity: 0;
+        animation: bloom 5s ease forwards 2.3s;
+    }
+    @keyframes bloom {
+        from { opacity: 0; filter: blur(10px); transform: translateY(10px); }
+        to   { opacity: 1; filter: blur(0);    transform: translateY(0); }
+    }
+
+    #hint {
+        position: fixed; bottom: 1.4rem; left: 0; right: 0; text-align: center;
+        font-family: "Courier New", monospace; font-size: 0.7rem;
+        letter-spacing: 0.3em; text-transform: uppercase;
+        color: rgba(242, 230, 238, 0.3); pointer-events: none; z-index: 9;
+        opacity: 0; animation: bloom 3s ease forwards 6.5s;
+    }
+    .lil-gui { z-index: 20; --background-color: rgba(6, 8, 16, 0.92); }
+</style>
+</head>
+<body>
+    <div id="container"></div>
+    <div id="title">
+        <h1>Pienso en ti siempre.</h1>
+        <div id="whisper">Nunca estarás sola. Siempre hay flores en camino.</div>
+    </div>
+    <div id="hint">drag to look</div>
+
+    <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/",
+        "lil-gui": "https://cdn.jsdelivr.net/npm/lil-gui@0.19.1/dist/lil-gui.esm.min.js"
+      }
+    }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+        import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+        import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+        import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
+        import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+        import GUI from 'lil-gui';
+
+        // ============================================================
+        //  WHERE THEY ARE
+        //  Oldest first. The last entry is where they stand tonight;
+        //  append a new one when either of them moves and the whole world
+        //  (islands, arc, labels, the distance in the corner) follows.
+        //  The old entries stay for the record.
+        // ============================================================
+        const journeys = [
+            {
+                date: '2026-08-03',
+                blue: { place: 'Paxos',   lat: 39.6243, lon: 19.9217 },
+                pink: { place: 'Almería', lat: 36.8381, lon: -2.4597 },
+            },
+        ];
+        const HERE = journeys[journeys.length - 1];
+
+        const params = {
+            dpr: Math.min(window.devicePixelRatio, 1.6),
+            exposure: 1.05,
+            bloomStrength: 0.85,
+            bloomRadius: 0.75,
+            bloomThreshold: 0.35,
+            grain: 0.018,
+            vignette: 1.0,
+            aberration: 0.0012,
+            // the world
+            span: 250,          // world units between the two of them
+            hillH: 7.0,         // how high their ground stands out of the sea
+            landZoom: 7.0,      // coastlines blown up this much about each of them
+            // the string of flowers
+            flowers: 120,
+            petals: 6,
+            flowSpeed: 0.014,   // laps of the arc per second, blue -> pink
+            arcHeight: 0.30,    // apex height as a fraction of the span
+            garland: 4.2,       // how wide the flowers spiral around the line
+            flowerSize: 1.0,
+            flowerGlow: 1.05,
+            threadGlow: 0.55,   // the faint line the flowers travel along
+            // the two of them
+            figureGlow: 1.0,
+            breath: 1.0,
+            // camera
+            autoOrbit: 0.012,
+            pushIn: true,
+        };
+
+        // URL-query overrides, for tuning
+        const Q = new URLSearchParams(location.search);
+        ['exposure','bloomStrength','bloomThreshold','bloomRadius','grain','vignette','aberration',
+         'span','hillH','landZoom','flowSpeed','arcHeight','garland','flowerSize','flowerGlow','threadGlow',
+         'figureGlow','breath','autoOrbit'].forEach((k) => {
+            if (Q.has(k)) params[k] = parseFloat(Q.get(k));
+        });
+        ['flowers','petals'].forEach((k) => { if (Q.has(k)) params[k] = parseInt(Q.get(k), 10); });
+
+        const BLUE = new THREE.Color(0x6f9dff);
+        const PINK = new THREE.Color(0xff6fae);
+
+        let camera, scene, renderer, composer, bloomPass, finalPass;
+        let seaMat, skyMat, petalMesh, coreMesh, motes, moteSim, thread;
+        let blueFigure, pinkFigure;
+        let arc, flowers = [];
+        const clock = new THREE.Clock();
+        const _up = new THREE.Vector3(0, 1, 0);
+
+        // deterministic hash-random: the same world on every visit
+        let _seed = 20260803;
+        function rand() { _seed = (_seed * 16807) % 2147483647; return (_seed - 1) / 2147483646; }
+
+        // ============================================================
+        //  THE MAP — real coordinates onto the sea
+        //  Equirectangular about the latitude between them, then scaled
+        //  and centred so the pair always sits nicely in frame. The
+        //  bearing between them survives the projection, so the arc
+        //  really does run the way the flowers would have to travel.
+        // ============================================================
+        let PLACES, toWorld;
+        function layout() {
+            const refLat = (HERE.blue.lat + HERE.pink.lat) / 2;
+            const km = (lon, lat) => new THREE.Vector2(
+                lon * Math.cos(THREE.MathUtils.degToRad(refLat)) * 111.19,
+                -lat * 111.19
+            );
+            const a = km(HERE.blue.lon, HERE.blue.lat), b = km(HERE.pink.lon, HERE.pink.lat);
+            const mid = a.clone().add(b).multiplyScalar(0.5);
+            const scale = params.span / Math.max(1, a.distanceTo(b));
+            // anywhere on earth -> a point on this sea
+            toWorld = (lon, lat) => {
+                const q = km(lon, lat).sub(mid).multiplyScalar(scale);
+                return new THREE.Vector3(q.x, 0, q.y);
+            };
+            PLACES = {
+                blue: { ...HERE.blue, pos: toWorld(HERE.blue.lon, HERE.blue.lat) },
+                pink: { ...HERE.pink, pos: toWorld(HERE.pink.lon, HERE.pink.lat) },
+                km: haversine(HERE.blue, HERE.pink),
+            };
+        }
+        function haversine(p, q) {
+            const R = 6371, r = THREE.MathUtils.degToRad;
+            const dLat = r(q.lat - p.lat), dLon = r(q.lon - p.lon);
+            const h = Math.sin(dLat / 2) ** 2 +
+                      Math.cos(r(p.lat)) * Math.cos(r(q.lat)) * Math.sin(dLon / 2) ** 2;
+            return 2 * R * Math.asin(Math.sqrt(h));
+        }
+
+        // ============================================================
+        //  THE ARC — the way between them, over the water
+        // ============================================================
+        function buildArc() {
+            const a = PLACES.blue.stand.clone().setY(PLACES.blue.stand.y + 3.4);
+            const b = PLACES.pink.stand.clone().setY(PLACES.pink.stand.y + 3.4);
+            const apex = params.span * params.arcHeight;
+            const side = new THREE.Vector3().subVectors(b, a).normalize().cross(_up).multiplyScalar(params.span * 0.06);
+            const c1 = a.clone().lerp(b, 0.3).setY(apex).add(side);
+            const c2 = a.clone().lerp(b, 0.7).setY(apex).sub(side);
+            arc = new THREE.CubicBezierCurve3(a, c1, c2, b);
+            arc.arcLengthDivisions = 400;
+            sampleArc();
+        }
+
+        // The arc gets walked by ~800 flowers and motes every frame, so it is
+        // sampled once into a table and read back by interpolation.
+        const ARC_S = 512;
+        let ARC_P, ARC_T;
+        function sampleArc() {
+            ARC_P = new Float32Array((ARC_S + 1) * 3);
+            ARC_T = new Float32Array((ARC_S + 1) * 3);
+            const p = new THREE.Vector3(), tg = new THREE.Vector3();
+            for (let i = 0; i <= ARC_S; i++) {
+                const u = i / ARC_S;
+                arc.getPointAt(u, p);
+                arc.getTangentAt(u, tg);
+                ARC_P[i * 3] = p.x; ARC_P[i * 3 + 1] = p.y; ARC_P[i * 3 + 2] = p.z;
+                ARC_T[i * 3] = tg.x; ARC_T[i * 3 + 1] = tg.y; ARC_T[i * 3 + 2] = tg.z;
+            }
+        }
+        function arcAt(u, outP, outT) {
+            const f = u * ARC_S;
+            const i = Math.min(ARC_S - 1, Math.max(0, Math.floor(f)));
+            const w = f - i, j = i * 3, k = j + 3;
+            outP.set(
+                ARC_P[j] + (ARC_P[k] - ARC_P[j]) * w,
+                ARC_P[j + 1] + (ARC_P[k + 1] - ARC_P[j + 1]) * w,
+                ARC_P[j + 2] + (ARC_P[k + 2] - ARC_P[j + 2]) * w
+            );
+            outT.set(
+                ARC_T[j] + (ARC_T[k] - ARC_T[j]) * w,
+                ARC_T[j + 1] + (ARC_T[k + 1] - ARC_T[j + 1]) * w,
+                ARC_T[j + 2] + (ARC_T[k + 2] - ARC_T[j + 2]) * w
+            ).normalize();
+        }
+
+        // the faint thread the flowers ride: a thin tube, blue at one end
+        // and pink at the other, barely there
+        function buildThread() {
+            const geo = new THREE.TubeGeometry(arc, 240, params.span * 0.0007, 6, false);
+            const mat = new THREE.ShaderMaterial({
+                transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, fog: false,
+                uniforms: {
+                    uBlue: { value: BLUE.clone() },
+                    uPink: { value: PINK.clone() },
+                    uGlow: { value: params.threadGlow },
+                    uTime: { value: 0 },
+                },
+                vertexShader: `
+                    varying float vU;
+                    void main(){
+                        vU = uv.x;
+                        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+                    }
+                `,
+                fragmentShader: `
+                    precision highp float;
+                    uniform vec3 uBlue, uPink;
+                    uniform float uGlow, uTime;
+                    varying float vU;
+                    void main(){
+                        vec3 col = mix(uBlue, uPink, vU);
+                        // a slow pulse walking from the blue end to the pink one
+                        float pulse = 0.6 + 0.4 * sin(vU * 26.0 - uTime * 1.1);
+                        gl_FragColor = vec4(col * uGlow * pulse, 0.5);
+                    }
+                `,
+            });
+            thread = new THREE.Mesh(geo, mat);
+            thread.frustumCulled = false;
+            scene.add(thread);
+        }
+
+        // ============================================================
+        //  THE FLOWERS — abstract, six petals and a lit heart, spiralling
+        //  around the arc and drifting from the blue end to the pink one
+        // ============================================================
+        function petalGeometry() {
+            // unit petal: length 1 along +X, width 1 along Z, rising off the
+            // stem and drooping at the tip
+            const geo = new THREE.PlaneGeometry(1, 1, 10, 2);
+            const pos = geo.attributes.position;
+            for (let i = 0; i < pos.count; i++) {
+                const u = pos.getX(i) + 0.5;                 // 0 stem -> 1 tip
+                const w = pos.getY(i);
+                const profile = Math.pow(Math.sin(Math.min(1, u) * Math.PI), 0.5); // broad paddle
+                pos.setX(i, u);
+                pos.setZ(i, w * (0.35 + 0.85 * profile));
+                pos.setY(i, (0.62 * u - 0.85 * u * u) * 0.45 - Math.abs(w) * 0.18); // cupped
+            }
+            geo.computeVertexNormals();
+            return geo;
+        }
+
+        function buildFlowers() {
+            const N = params.flowers, P = params.petals;
+            flowers = [];
+            for (let i = 0; i < N; i++) {
+                flowers.push({
+                    u0: i / N + (rand() - 0.5) * 0.004,   // evenly strung, barely jittered
+                    pace: 0.85 + rand() * 0.3,            // some travel a little faster
+                    ang: rand() * Math.PI * 2,            // where it sits around the thread
+                    rad: 0.35 + rand() * 0.9,             // how far off the thread
+                    size: 0.7 + rand() * 0.7,
+                    spin: rand() * Math.PI * 2,
+                    spinSpeed: (rand() - 0.5) * 0.5,
+                    open: rand(),                         // its own phase of opening
+                    openSpeed: 0.25 + rand() * 0.5,
+                });
+            }
+
+            const pMat = new THREE.MeshBasicMaterial({
+                color: 0xffffff, side: THREE.DoubleSide, toneMapped: false, fog: false,
+                transparent: true, opacity: 0.95, depthWrite: true,
+            });
+            petalMesh = new THREE.InstancedMesh(petalGeometry(), pMat, N * P);
+            petalMesh.frustumCulled = false;
+            petalMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+            scene.add(petalMesh);
+
+            const cMat = new THREE.MeshBasicMaterial({ color: 0xffffff, toneMapped: false, fog: false });
+            coreMesh = new THREE.InstancedMesh(new THREE.SphereGeometry(1, 8, 6), cMat, N);
+            coreMesh.frustumCulled = false;
+            coreMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+            scene.add(coreMesh);
+        }
+
+        // scratch vectors, reused every frame
+        const _P = new THREE.Vector3(), _T = new THREE.Vector3(), _Nn = new THREE.Vector3(),
+              _B = new THREE.Vector3(), _A = new THREE.Vector3(), _S = new THREE.Vector3(),
+              _X = new THREE.Vector3(), _Y = new THREE.Vector3(), _Z = new THREE.Vector3(),
+              _rad = new THREE.Vector3(), _face = new THREE.Vector3(), _across = new THREE.Vector3(),
+              _len = new THREE.Vector3(), _c = new THREE.Color(), _m = new THREE.Matrix4();
+
+        function updateFlowers(t) {
+            const P = params.petals;
+            let k = 0;
+            flowers.forEach((f, i) => {
+                // where along the way it has got to
+                let u = (f.u0 + t * params.flowSpeed * f.pace) % 1;
+                if (u < 0) u += 1;
+                arcAt(u, _P, _T);
+                // a stable frame around the thread, so the garland spirals
+                _Nn.crossVectors(_up, _T).normalize();
+                _B.crossVectors(_T, _Nn).normalize();
+                const ang = f.ang + u * 22.0 + t * 0.15;
+                _A.copy(_Nn).multiplyScalar(Math.cos(ang)).addScaledVector(_B, Math.sin(ang)).normalize();
+                const centre = _P.addScaledVector(_A, params.garland * f.rad);
+
+                // blue where it set out, pink where it is going; brightest
+                // in the middle of the crossing, where it is furthest from both
+                _c.copy(BLUE).lerp(PINK, THREE.MathUtils.smoothstep(u, 0.06, 0.94));
+                const lift = 0.7 + 0.3 * Math.sin(u * Math.PI);
+                _c.multiplyScalar(params.flowerGlow * lift);
+
+                // the flower faces out from the thread; petals turn about that axis
+                _X.copy(_A);                                  // flower axis (out)
+                _Z.crossVectors(_X, _T).normalize();          // in-plane
+                _Y.crossVectors(_Z, _X).normalize();          // in-plane
+                const size = f.size * params.flowerSize * (params.span / 250);
+                // opening and closing, gently, each on its own breath
+                const open = 0.55 + 0.42 * Math.sin(t * f.openSpeed + f.open * 6.28);
+
+                for (let p = 0; p < P; p++) {
+                    const a = (p / P) * Math.PI * 2 + f.spin + t * f.spinSpeed;
+                    // petal direction: leaning out of the flower's plane by `open`
+                    _rad.copy(_Y).multiplyScalar(Math.cos(a)).addScaledVector(_Z, Math.sin(a));
+                    _S.copy(_rad).multiplyScalar(Math.sin(open * 1.35))
+                      .addScaledVector(_X, Math.cos(open * 1.35)).normalize();
+                    _face.crossVectors(_S, _rad).normalize();
+                    _across.crossVectors(_face, _S).normalize();
+                    _m.makeBasis(
+                        _len.copy(_S).multiplyScalar(size * 1.35),
+                        _face.multiplyScalar(size),
+                        _across.multiplyScalar(size * 0.62)
+                    );
+                    _m.setPosition(centre.x, centre.y, centre.z);
+                    petalMesh.setMatrixAt(k, _m);
+                    petalMesh.setColorAt(k, _c);
+                    k++;
+                }
+                // the heart of it, a touch brighter than the petals
+                _m.makeScale(size * 0.3, size * 0.3, size * 0.3);
+                _m.setPosition(centre.x, centre.y, centre.z);
+                coreMesh.setMatrixAt(i, _m);
+                coreMesh.setColorAt(i, _c.multiplyScalar(1.5));
+            });
+            petalMesh.instanceMatrix.needsUpdate = true;
+            coreMesh.instanceMatrix.needsUpdate = true;
+            if (petalMesh.instanceColor) petalMesh.instanceColor.needsUpdate = true;
+            if (coreMesh.instanceColor) coreMesh.instanceColor.needsUpdate = true;
+        }
+
+        // pollen: small motes running the same way, so the air between them
+        // is never quite empty
+        function buildMotes() {
+            const N = 700;
+            const pos = new Float32Array(N * 3);
+            const col = new Float32Array(N * 3);
+            const seed = new Float32Array(N);
+            const sim = { N, u: new Float32Array(N), pace: new Float32Array(N),
+                          ang: new Float32Array(N), rad: new Float32Array(N) };
+            for (let i = 0; i < N; i++) {
+                sim.u[i] = rand();
+                sim.pace[i] = 0.6 + rand() * 1.9;
+                sim.ang[i] = rand() * Math.PI * 2;
+                sim.rad[i] = 0.2 + rand() * 2.4;
+                seed[i] = rand();
+            }
+            const geo = new THREE.BufferGeometry();
+            geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+            geo.setAttribute('aColor', new THREE.BufferAttribute(col, 3));
+            geo.setAttribute('aSeed', new THREE.BufferAttribute(seed, 1));
+            const mat = new THREE.ShaderMaterial({
+                transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, fog: false,
+                uniforms: { uPixelRatio: { value: params.dpr }, uTime: { value: 0 } },
+                vertexShader: `
+                    precision highp float;
+                    attribute float aSeed;
+                    attribute vec3 aColor;
+                    uniform float uPixelRatio;
+                    varying vec3 vCol;
+                    varying float vSeed;
+                    void main(){
+                        vCol = aColor;
+                        vSeed = aSeed;
+                        vec4 mv = modelViewMatrix * vec4(position, 1.0);
+                        gl_PointSize = uPixelRatio * (16.0 + aSeed * 20.0) / max(0.5, -mv.z);
+                        gl_Position = projectionMatrix * mv;
+                    }
+                `,
+                fragmentShader: `
+                    precision highp float;
+                    uniform float uTime;
+                    varying vec3 vCol;
+                    varying float vSeed;
+                    void main(){
+                        float a = smoothstep(0.5, 0.04, length(gl_PointCoord - 0.5));
+                        float flicker = 0.55 + 0.45 * sin(uTime * (2.0 + vSeed * 5.0) + vSeed * 30.0);
+                        gl_FragColor = vec4(vCol * flicker, a * 0.7);
+                    }
+                `,
+            });
+            motes = new THREE.Points(geo, mat);
+            motes.frustumCulled = false;
+            scene.add(motes);
+            moteSim = sim;
+        }
+
+        function updateMotes(t) {
+            const { N, u, pace, ang, rad } = moteSim;
+            const pos = motes.geometry.attributes.position.array;
+            const col = motes.geometry.attributes.aColor.array;
+            for (let i = 0; i < N; i++) {
+                let uu = (u[i] + t * params.flowSpeed * pace[i]) % 1;
+                if (uu < 0) uu += 1;
+                arcAt(uu, _P, _T);
+                _Nn.crossVectors(_up, _T).normalize();
+                _B.crossVectors(_T, _Nn).normalize();
+                const a = ang[i] + uu * 30.0 + t * 0.4;
+                const r = params.garland * rad[i];
+                pos[i * 3]     = _P.x + (_Nn.x * Math.cos(a) + _B.x * Math.sin(a)) * r;
+                pos[i * 3 + 1] = _P.y + (_Nn.y * Math.cos(a) + _B.y * Math.sin(a)) * r;
+                pos[i * 3 + 2] = _P.z + (_Nn.z * Math.cos(a) + _B.z * Math.sin(a)) * r;
+                _c.copy(BLUE).lerp(PINK, THREE.MathUtils.smoothstep(uu, 0.05, 0.95));
+                col[i * 3] = _c.r; col[i * 3 + 1] = _c.g; col[i * 3 + 2] = _c.b;
+            }
+            motes.geometry.attributes.position.needsUpdate = true;
+            motes.geometry.attributes.aColor.needsUpdate = true;
+        }
+
+        // ============================================================
+        //  THEIR GROUND — real coastlines
+        //  Simplified outlines in [lon, lat], projected through the same
+        //  map as the two of them, so Corfu lies the way Corfu lies and the
+        //  bay of Almería opens the way it opens. At true scale an island
+        //  64 km long would be a speck across 1,900 km of sea, so each
+        //  group is blown up about the person standing in it by `landZoom`.
+        //  The height comes from the distance to the coast: beaches at the
+        //  water, ridges inland, a shelf falling away offshore.
+        // ============================================================
+        const COASTS = {
+            // Kerkyra: wide in the north, tapering to the tail at Asprokavos.
+            // `ring` is coastline; `inland` closes the polygon somewhere well
+            // off the patch we render, so no straight edge is ever in shot.
+            corfu: { kind: 'lush', ring: [
+                [19.64, 39.80], [19.75, 39.79], [19.87, 39.80], [19.94, 39.78],
+                [19.93, 39.70], [19.92, 39.63], [19.93, 39.56], [19.95, 39.49],
+                [20.02, 39.44], [20.08, 39.40], [20.10, 39.37], [19.97, 39.42],
+                [19.88, 39.47], [19.83, 39.55], [19.79, 39.60], [19.70, 39.67],
+                [19.66, 39.73], [19.62, 39.77],
+            ] },
+            // Paxoí, off the tail
+            paxoi: { kind: 'lush', ring: [
+                [20.16, 39.24], [20.20, 39.22], [20.21, 39.17], [20.18, 39.13],
+                [20.15, 39.16], [20.14, 39.21],
+            ] },
+            // the Epirus mainland across the strait, two kilometres of water away
+            epirus: { kind: 'bare', ring: [
+                [20.10, 39.92], [20.03, 39.83], [20.00, 39.78], [20.05, 39.70],
+                [20.12, 39.62], [20.27, 39.50], [20.30, 39.42],
+            ], inland: [[21.60, 39.20], [21.60, 40.20]] },
+            // the coast of Almería: the bay, then Cabo de Gata jutting south
+            almeria: { kind: 'arid', ring: [
+                [-2.83, 36.70], [-2.75, 36.68], [-2.65, 36.72], [-2.55, 36.80],
+                [-2.46, 36.83], [-2.35, 36.79], [-2.28, 36.75], [-2.19, 36.72],
+                [-2.10, 36.76], [-2.05, 36.80], [-1.95, 36.87], [-1.90, 36.96],
+            ], inland: [[-1.40, 38.60], [-3.40, 38.60]] },
+        };
+        const LANDS = {
+            blue: ['corfu', 'paxoi', 'epirus'],
+            pink: ['almeria'],
+        };
+
+        // value noise, for ridges that don't look like a formula
+        function nhash(i, j) {
+            const h = Math.sin(i * 127.1 + j * 311.7) * 43758.5453;
+            return h - Math.floor(h);
+        }
+        function vnoise(x, z) {
+            const i = Math.floor(x), j = Math.floor(z);
+            const fx = x - i, fz = z - j;
+            const ux = fx * fx * (3 - 2 * fx), uz = fz * fz * (3 - 2 * fz);
+            return (nhash(i, j) * (1 - ux) + nhash(i + 1, j) * ux) * (1 - uz)
+                 + (nhash(i, j + 1) * (1 - ux) + nhash(i + 1, j + 1) * ux) * uz;
+        }
+        function fbm(x, z) {
+            let a = 0.5, f = 1, sum = 0;
+            for (let o = 0; o < 4; o++) { sum += a * vnoise(x * f, z * f); f *= 2.07; a *= 0.5; }
+            return sum;
+        }
+
+        // A group's coast, in world space: rings of Vector2(x, z), each with
+        // the kind of country it encloses.
+        function coastRings(which) {
+            const anchor = PLACES[which].pos;
+            return LANDS[which].map((name) => {
+                const c = COASTS[name];
+                const put = ([lon, lat]) => {
+                    const w = toWorld(lon, lat);
+                    return new THREE.Vector2(
+                        anchor.x + (w.x - anchor.x) * params.landZoom,
+                        anchor.z + (w.z - anchor.z) * params.landZoom
+                    );
+                };
+                const coast = c.ring.map(put);
+                if (!c.inland) return { kind: c.kind, coast, pts: coast };
+                // An open coast: carry both ends of the run onward in their own
+                // direction, far past anything we draw, before closing inland.
+                // Whatever the frame shows is real coastline, never a joint.
+                const FAR = params.span * 0.9;
+                const carry = (a, b) => a.clone().add(a.clone().sub(b).normalize().multiplyScalar(FAR));
+                const head = carry(coast[0], coast[1]);
+                const tail = carry(coast[coast.length - 1], coast[coast.length - 2]);
+                return {
+                    kind: c.kind, coast,
+                    pts: [head].concat(coast, [tail], c.inland.map(put)),
+                };
+            });
+        }
+
+        // Distance to the nearest coast, negative on land, plus which
+        // country we are standing in.
+        function coastField(rings) {
+            return function field(x, z) {
+                let best = Infinity, inside = false, kind = null;
+                for (const r of rings) {
+                    const p = r.pts, n = p.length;
+                    let d = Infinity, within = false;
+                    for (let i = 0, j = n - 1; i < n; j = i++) {
+                        const ax = p[j].x, az = p[j].y, bx = p[i].x, bz = p[i].y;
+                        const ex = bx - ax, ez = bz - az;
+                        const t = Math.max(0, Math.min(1,
+                            ((x - ax) * ex + (z - az) * ez) / (ex * ex + ez * ez || 1)));
+                        d = Math.min(d, Math.hypot(x - (ax + ex * t), z - (az + ez * t)));
+                        if ((az > z) !== (bz > z) && x < ax + ((z - az) / (bz - az)) * ex) within = !within;
+                    }
+                    if (within) { inside = true; if (d < best || !kind) { kind = r.kind; } }
+                    if (d < best) { best = d; if (within) kind = r.kind; }
+                }
+                return { d: inside ? -best : best, inside, kind };
+            };
+        }
+
+        // The land at a point: sea level offshore, rising inland.
+        function groundAt(field, x, z) {
+            const f = field(x, z);
+            if (!f.inside) return { y: -1.2 - Math.min(7, f.d * 0.35), f };
+            const inland = -f.d;
+            const arid = f.kind === 'arid', bare = f.kind === 'bare';
+            const climb = params.hillH * (1 - Math.exp(-inland / (arid ? 7 : 5)));
+            const ridge = Math.pow(THREE.MathUtils.smoothstep(inland, 3, 34), 1.4)
+                        * params.hillH * (bare ? 3.0 : arid ? 2.4 : 1.4)
+                        * (0.45 + 0.9 * fbm(x * 0.055 + 11.3, z * 0.055 - 4.7));
+            const grain = (fbm(x * 0.34, z * 0.34) - 0.5) * 1.1 * Math.min(1, inland / 2);
+            return { y: climb + ridge + grain, f };
+        }
+
+        function buildLand(which, tint) {
+            const anchor = PLACES[which].pos;
+            const rings = coastRings(which);
+            const field = coastField(rings);
+
+            // a grid over everything this group covers, plus a margin of sea
+            const box = new THREE.Box2();
+            rings.forEach((r) => r.coast.forEach((p) => box.expandByPoint(p)));
+            const MARGIN = params.span * 0.1;
+            // whatever the polygons claim inland, the patch itself ends in
+            // water: it is a disc, and the outer ring of it is pulled under,
+            // so no cut edge of the grid can ever surface
+            const hub = box.getCenter(new THREE.Vector2());
+            const REACH = box.getSize(new THREE.Vector2()).length() * 0.5 + MARGIN;
+            const drown = (x, z) => {
+                const w = THREE.MathUtils.smoothstep(
+                    REACH - Math.hypot(x - hub.x, z - hub.y), 0, MARGIN * 1.15);
+                return w * w * w;
+            };
+            box.set(hub.clone().subScalar(REACH), hub.clone().addScalar(REACH));
+            const size = box.getSize(new THREE.Vector2());
+            const centre = box.getCenter(new THREE.Vector2());
+            const seg = 300;
+            const geo = new THREE.PlaneGeometry(size.x, size.y, seg, seg);
+            const pos = geo.attributes.position;
+            const col = new Float32Array(pos.count * 3);
+            const sand = new THREE.Color(0x7f7259), rock = new THREE.Color(0x534e63),
+                  high = new THREE.Color(0x565072), deep = new THREE.Color(0x1a1d29),
+                  surf = new THREE.Color(0xb6c2d8);
+            for (let i = 0; i < pos.count; i++) {
+                const x = centre.x + pos.getX(i), z = centre.y + pos.getY(i);
+                const g = groundAt(field, x, z);
+                const w = drown(x, z);
+                g.y = g.y * w - 3.2 * (1 - w);
+                pos.setZ(i, g.y);
+                // shore sand, then rock, then dark high ground; drowned edges
+                let c;
+                if (!g.f.inside) c = sand.clone().lerp(deep, THREE.MathUtils.smoothstep(g.f.d, 0, 6));
+                else c = sand.clone().lerp(rock, THREE.MathUtils.smoothstep(-g.f.d, 0.5, 7))
+                              .lerp(high, THREE.MathUtils.smoothstep(g.y, 8, 28));
+                // surf: a pale line right along the coast, so the shape of the
+                // country reads even from a long way off
+                const shore = 1 - THREE.MathUtils.smoothstep(Math.abs(g.f.d), 0.5, 2.6);
+                if (shore > 0) c.lerp(surf, shore * 0.7);
+                col[i * 3] = c.r; col[i * 3 + 1] = c.g; col[i * 3 + 2] = c.b;
+            }
+            geo.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
+            geo.computeVertexNormals();
+            const mesh = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({
+                vertexColors: true, roughness: 0.97, metalness: 0.0,
+            }));
+            mesh.rotation.x = -Math.PI / 2;
+            mesh.position.set(centre.x, 0, centre.y);
+            scene.add(mesh);
+
+            // what grows there: cypress and olive on Corfu, low scrub and a
+            // few palms on the dry Almerían coast, nothing on the far mainland
+            const treeMat = new THREE.MeshStandardMaterial({ color: 0x191a22, roughness: 1.0 });
+            const scrubMat = new THREE.MeshStandardMaterial({ color: 0x22222c, roughness: 1.0 });
+            const rockMat = new THREE.MeshStandardMaterial({ color: 0x4a4454, roughness: 1.0 });
+            const rocks = [];
+            const taken = [];
+            const SPACING = 4.5;      // nothing grows on top of anything else
+            let placed = 0, tries = 0;
+            while (placed < 150 && tries < 12000) {
+                tries++;
+                // a few more of them near the two of them, where the eye goes
+                const near = rand() < 0.25;
+                const r = near ? params.span * 0.14 * rand() : Math.max(size.x, size.y) * 0.5 * rand();
+                const a = rand() * Math.PI * 2;
+                const cx = (near ? anchor.x : centre.x) + Math.cos(a) * r;
+                const cz = (near ? anchor.z : centre.y) + Math.sin(a) * r;
+                const g = groundAt(field, cx, cz);
+                if (!g.f.inside || g.f.d > -1.2 || drown(cx, cz) < 0.99) continue;
+                // and a clearing where they stand
+                if (Math.hypot(cx - anchor.x, cz - anchor.z) < 12) continue;
+                let crowded = false;
+                for (const t of taken) {
+                    if (Math.hypot(cx - t[0], cz - t[1]) < SPACING) { crowded = true; break; }
+                }
+                if (crowded) continue;
+                taken.push([cx, cz]);
+                placed++;
+                if (g.f.kind === 'bare') {
+                    if (rand() < 0.75) continue;
+                    rocks.push([cx, g.y, cz, 1.4 + rand() * 3.2]);
+                } else if (g.f.kind === 'lush' && rand() < 0.55) {
+                    const h = 3.5 + rand() * 5.5;
+                    const t = new THREE.Mesh(new THREE.ConeGeometry(0.6 + rand() * 0.4, h, 7), treeMat);
+                    t.position.set(cx, g.y + h / 2, cz);
+                    t.rotation.z = (rand() - 0.5) * 0.09;
+                    scene.add(t);
+                } else if (g.f.kind === 'arid' && rand() < 0.62) {
+                    const sc = 0.6 + rand() * 0.9;
+                    const b = new THREE.Mesh(new THREE.SphereGeometry(sc, 7, 5), scrubMat);
+                    b.position.set(cx, g.y + sc * 0.35, cz);
+                    b.scale.y = 0.45;
+                    scene.add(b);
+                } else if (rand() < 0.45) {
+                    rocks.push([cx, g.y, cz, 0.6 + rand() * 1.2]);
+                }
+            }
+            if (rocks.length) {
+                const mesh2 = new THREE.InstancedMesh(
+                    new THREE.IcosahedronGeometry(0.5, 0), rockMat, rocks.length);
+                const q = new THREE.Quaternion();
+                rocks.forEach(([x, y, z, s], i) => {
+                    q.setFromEuler(new THREE.Euler(rand() * 6.28, rand() * 6.28, rand() * 6.28));
+                    _m.compose(new THREE.Vector3(x, y + s * 0.12, z), q,
+                        new THREE.Vector3(s, s * 0.62, s * 0.88));
+                    mesh2.setMatrixAt(i, _m);
+                });
+                scene.add(mesh2);
+            }
+
+            // where they can actually stand: their own coordinates if that is
+            // dry ground, otherwise the nearest ground that is
+            let stand = null;
+            const g0 = groundAt(field, anchor.x, anchor.z);
+            if (g0.f.inside && g0.y > 1.4) stand = new THREE.Vector3(anchor.x, g0.y, anchor.z);
+            for (let ring = 1; ring <= 14 && !stand; ring++) {
+                for (let k = 0; k < 24; k++) {
+                    const a = (k / 24) * Math.PI * 2 + ring;
+                    const x = anchor.x + Math.cos(a) * ring * 1.4;
+                    const z = anchor.z + Math.sin(a) * ring * 1.4;
+                    const g = groundAt(field, x, z);
+                    if (g.f.inside && g.f.kind !== 'bare' && g.y > 1.4) {
+                        stand = new THREE.Vector3(x, g.y, z);
+                        break;
+                    }
+                }
+            }
+            if (!stand) stand = new THREE.Vector3(anchor.x, 1.6, anchor.z);
+
+            // their light in the ground and the air around them
+            const halo = new THREE.PointLight(tint.getHex(), 90, params.span * 0.15, 2);
+            halo.position.copy(stand).setY(stand.y + 4);
+            scene.add(halo);
+
+            PLACES[which].stand = stand;
+        }
+
+        // ============================================================
+        //  THE TWO OF THEM — a lit body, a brighter head, a soft shell
+        // ============================================================
+        function buildFigure(which, tint) {
+            const centre = PLACES[which].stand;
+            const facing = PLACES[which === 'blue' ? 'pink' : 'blue'].stand;
+            const g = new THREE.Group();
+            const bright = tint.clone().multiplyScalar(1.15);
+
+            const lit = new THREE.MeshBasicMaterial({ color: tint.clone().multiplyScalar(0.7), toneMapped: false, fog: false });
+            const body = new THREE.Mesh(new THREE.CapsuleGeometry(0.26, 1.4, 8, 14), lit);
+            body.position.y = 1.05;
+            g.add(body);
+
+            // arms, hanging: enough for the shape to read as a person up close
+            for (const s of [-1, 1]) {
+                const arm = new THREE.Mesh(new THREE.CapsuleGeometry(0.1, 0.85, 6, 8), lit);
+                arm.position.set(s * 0.34, 1.25, 0);
+                arm.rotation.z = s * -0.22;
+                g.add(arm);
+            }
+
+            const head = new THREE.Mesh(
+                new THREE.SphereGeometry(0.28, 14, 12),
+                new THREE.MeshBasicMaterial({ color: bright, toneMapped: false, fog: false })
+            );
+            head.position.y = 2.4;
+            g.add(head);
+
+            // the shell of light they stand inside
+            const shell = new THREE.Mesh(
+                new THREE.SphereGeometry(1.35, 20, 16),
+                new THREE.MeshBasicMaterial({
+                    color: tint, toneMapped: false, fog: false, transparent: true, opacity: 0.1,
+                    blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.BackSide,
+                })
+            );
+            shell.position.y = 1.35;
+            g.add(shell);
+
+            const light = new THREE.PointLight(tint.getHex(), 55, 70, 2);
+            light.position.y = 1.8;
+            g.add(light);
+
+            // a ring of their own flowers at their feet, the near end of the string
+            const petals = new THREE.InstancedMesh(
+                petalGeometry(),
+                new THREE.MeshBasicMaterial({ color: tint.clone().multiplyScalar(0.62), side: THREE.DoubleSide, toneMapped: false, fog: false }),
+                18
+            );
+            for (let i = 0; i < 18; i++) {
+                const a = (i / 18) * Math.PI * 2 + rand();
+                const rr = 1.7 + rand() * 1.9;
+                const s = 0.34 + rand() * 0.3;
+                const dir = new THREE.Vector3(Math.cos(a), 0.55 + rand() * 0.5, Math.sin(a)).normalize();
+                const across = new THREE.Vector3().crossVectors(dir, _up).normalize();
+                const face = new THREE.Vector3().crossVectors(across, dir).normalize();
+                _m.makeBasis(
+                    dir.multiplyScalar(s * 1.5), face.multiplyScalar(s), across.multiplyScalar(s * 0.6)
+                );
+                _m.setPosition(Math.cos(a) * rr, 0.25 + rand() * 0.4, Math.sin(a) * rr);
+                petals.setMatrixAt(i, _m);
+            }
+            g.add(petals);
+
+            g.position.copy(centre);
+            g.lookAt(facing.x, g.position.y, facing.z);
+            g.userData = { body, head, shell, light, base: g.position.y, phase: rand() * 6.28 };
+            scene.add(g);
+            g.add(label(which, tint));
+            return g;
+        }
+
+        // the name of the place, painted small into the air above them
+        function label(which, tint) {
+            const place = PLACES[which].place;
+            const cv = document.createElement('canvas');
+            cv.width = 512; cv.height = 128;
+            const ctx = cv.getContext('2d');
+            ctx.font = 'italic 62px Georgia, serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillStyle = '#' + tint.clone().lerp(new THREE.Color(0xffffff), 0.55).getHexString();
+            ctx.shadowColor = 'rgba(0,0,0,0.9)';
+            ctx.shadowBlur = 18;
+            ctx.fillText(place, 256, 68);
+            const tex = new THREE.CanvasTexture(cv);
+            tex.colorSpace = THREE.SRGBColorSpace;
+            const sp = new THREE.Sprite(new THREE.SpriteMaterial({
+                map: tex, transparent: true, opacity: 0.55, depthWrite: false, toneMapped: false,
+            }));
+            sp.scale.set(14, 3.5, 1);
+            sp.position.y = 5.6;
+            return sp;
+        }
+
+        function updateFigures(t) {
+            for (const f of [blueFigure, pinkFigure]) {
+                const d = f.userData;
+                const breath = 1 + 0.05 * Math.sin(t * 0.9 + d.phase) * params.breath;
+                d.body.scale.set(breath, 1 / breath, breath);
+                d.shell.scale.setScalar(1 + 0.09 * Math.sin(t * 0.62 + d.phase) * params.breath);
+                d.head.position.y = 2.4 + 0.05 * Math.sin(t * 0.9 + d.phase);
+                d.light.intensity = 55 * params.figureGlow * (0.9 + 0.1 * Math.sin(t * 1.7 + d.phase));
+            }
+        }
+
+        // ============================================================
+        //  SEA & SKY
+        // ============================================================
+        function buildSky() {
+            skyMat = new THREE.ShaderMaterial({
+                side: THREE.BackSide, fog: false, depthWrite: false,
+                uniforms: {
+                    uTop: { value: new THREE.Color(0x03050c) },
+                    uMid: { value: new THREE.Color(0x070c1a) },
+                    uHorizon: { value: new THREE.Color(0x101026) },
+                    uBlue: { value: BLUE.clone() },
+                    uPink: { value: PINK.clone() },
+                    uBlueDir: { value: new THREE.Vector3(1, 0, 0) },
+                    uPinkDir: { value: new THREE.Vector3(-1, 0, 0) },
+                },
+                vertexShader: `
+                    varying vec3 vDir;
+                    void main(){
+                        vDir = position;
+                        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+                    }
+                `,
+                fragmentShader: `
+                    precision highp float;
+                    uniform vec3 uTop, uMid, uHorizon, uBlue, uPink, uBlueDir, uPinkDir;
+                    varying vec3 vDir;
+                    float hash(vec2 p){
+                        p = fract(p * 0.3183099 + vec2(0.71, 0.113));
+                        p *= 17.0;
+                        return fract(p.x * p.y * (p.x + p.y));
+                    }
+                    void main(){
+                        vec3 d = normalize(vDir);
+                        float h = max(d.y, 0.0);
+                        vec3 col = mix(uHorizon, uMid, smoothstep(0.0, 0.2, h));
+                        col = mix(col, uTop, smoothstep(0.14, 0.6, h));
+                        // each of them stains the sky above where they stand
+                        float gb = pow(max(dot(d, normalize(uBlueDir)), 0.0), 12.0);
+                        float gp = pow(max(dot(d, normalize(uPinkDir)), 0.0), 12.0);
+                        col += (uBlue * gb + uPink * gp) * 0.16 * smoothstep(0.45, 0.0, h);
+                        // stars, thicker along one band
+                        vec2 sp = d.xz / max(d.y, 0.06) * 190.0;
+                        float st = step(0.9986, hash(floor(sp)));
+                        col += vec3(0.85, 0.9, 1.0) * st * smoothstep(0.08, 0.4, h) * 0.8;
+                        float band = exp(-pow((d.y - 0.42 + d.x * 0.22) * 3.4, 2.0));
+                        col += vec3(0.10, 0.12, 0.20) * band * 0.28;
+                        gl_FragColor = vec4(col, 1.0);
+                    }
+                `,
+            });
+            scene.add(new THREE.Mesh(new THREE.SphereGeometry(1500, 32, 20), skyMat));
+        }
+
+        function buildSea() {
+            seaMat = new THREE.ShaderMaterial({
+                fog: false,
+                uniforms: {
+                    uTime: { value: 0 },
+                    uDeep: { value: new THREE.Color(0x05070f) },
+                    uShallow: { value: new THREE.Color(0x0d1524) },
+                    uHorizon: { value: new THREE.Color(0x0d0d1e) },
+                    uBluePos: { value: new THREE.Vector2() },
+                    uPinkPos: { value: new THREE.Vector2() },
+                    uBlue: { value: BLUE.clone() },
+                    uPink: { value: PINK.clone() },
+                },
+                vertexShader: `
+                    varying vec3 vWorld;
+                    void main(){
+                        vec4 w = modelMatrix * vec4(position, 1.0);
+                        vWorld = w.xyz;
+                        gl_Position = projectionMatrix * viewMatrix * w;
+                    }
+                `,
+                fragmentShader: `
+                    precision highp float;
+                    uniform float uTime;
+                    uniform vec3 uDeep, uShallow, uHorizon, uBlue, uPink;
+                    uniform vec2 uBluePos, uPinkPos;
+                    varying vec3 vWorld;
+                    float hash(vec2 p){
+                        p = fract(p * 0.3183099 + vec2(0.71, 0.113));
+                        p *= 17.0;
+                        return fract(p.x * p.y * (p.x + p.y));
+                    }
+                    // the light of one of them, broken up on the water
+                    float smear(vec2 p, vec2 at){
+                        float d = length(p - at);
+                        float ripple = 0.65 + 0.35 * sin(d * 0.42 - uTime * 1.2 + sin(p.x * 0.22 + p.y * 0.17) * 2.2);
+                        return (1.0 / (1.0 + d * d * 0.006)) * (0.35 + 0.65 * ripple);
+                    }
+                    void main(){
+                        vec2 p = vWorld.xz;
+                        float off = length(p);
+                        vec3 col = mix(uShallow, uDeep, smoothstep(30.0, 260.0, off));
+                        col += uBlue * smear(p, uBluePos) * 0.30;
+                        col += uPink * smear(p, uPinkPos) * 0.30;
+                        // small chop catching the starlight
+                        float ripA = sin(p.x * 0.8 + uTime * 0.6 + sin(p.y * 0.5 - uTime * 0.4));
+                        float ripB = sin(p.y * 1.5 - uTime * 0.9 + hash(floor(p * 1.5)) * 6.28);
+                        col += vec3(0.55, 0.62, 0.8) * smoothstep(0.94, 1.0, ripA * ripB) * 0.05;
+                        col = mix(col, uHorizon, smoothstep(400.0, 2200.0, off));
+                        gl_FragColor = vec4(col, 1.0);
+                    }
+                `,
+            });
+            const sea = new THREE.Mesh(new THREE.PlaneGeometry(6000, 6000), seaMat);
+            sea.rotation.x = -Math.PI / 2;
+            sea.position.y = -0.4;
+            scene.add(sea);
+        }
+
+        function buildLights() {
+            scene.add(new THREE.HemisphereLight(0x3d5488, 0x121520, 2.0));
+            const moon = new THREE.DirectionalLight(0x9fb2e0, 0.95);
+            moon.position.set(-120, 90, 160);
+            scene.add(moon);
+        }
+
+        // ============================================================
+        //  CAMERA — orbiting the middle of the crossing
+        // ============================================================
+        const controls = {
+            target: new THREE.Vector3(),
+            radius: 0, targetRadius: 0,
+            azimuth: 0.75, elevation: 0.26,
+            azVel: 0, elVel: 0, idle: 0,
+        };
+        function setupControls() {
+            const el = renderer.domElement;
+            let dragging = false, lx = 0, ly = 0;
+            el.addEventListener('pointerdown', (e) => { dragging = true; lx = e.clientX; ly = e.clientY; controls.idle = 0; });
+            window.addEventListener('pointermove', (e) => {
+                if (!dragging) return;
+                const dx = e.clientX - lx, dy = e.clientY - ly; lx = e.clientX; ly = e.clientY;
+                controls.azVel = -dx * 0.004; controls.elVel = -dy * 0.003;
+                controls.azimuth += controls.azVel; controls.elevation += controls.elVel;
+                controls.elevation = Math.max(0.015, Math.min(0.75, controls.elevation));
+                controls.idle = 0;
+            });
+            const up = () => { dragging = false; };
+            window.addEventListener('pointerup', up);
+            window.addEventListener('pointercancel', up);
+            el.addEventListener('wheel', (e) => {
+                controls.targetRadius = Math.max(params.span * 0.25,
+                    Math.min(params.span * 3.2, controls.targetRadius + e.deltaY * params.span * 0.0006));
+                params.pushIn = false;
+            }, { passive: true });
+        }
+        function updateCamera(dt) {
+            controls.idle += dt;
+            if (params.pushIn) controls.targetRadius = params.span * 0.95;
+            controls.radius += (controls.targetRadius - controls.radius) * Math.min(1, dt * 0.5);
+            controls.azimuth += controls.azVel; controls.elevation += controls.elVel;
+            controls.azVel *= 0.9; controls.elVel *= 0.9;
+            if (controls.idle > 2.5) controls.azimuth += params.autoOrbit * dt;
+            controls.elevation = Math.max(0.015, Math.min(0.75, controls.elevation));
+            const r = controls.radius, a = controls.azimuth, e = controls.elevation;
+            camera.position.set(
+                controls.target.x + r * Math.cos(e) * Math.sin(a),
+                Math.max(3.0, controls.target.y + r * Math.sin(e)),
+                controls.target.z + r * Math.cos(e) * Math.cos(a)
+            );
+            camera.lookAt(controls.target);
+        }
+
+        // ============================================================
+        //  FINAL PASS — grain, vignette, a whisper of aberration
+        // ============================================================
+        const FinalShader = {
+            uniforms: {
+                tDiffuse: { value: null },
+                uTime: { value: 0 },
+                uGrain: { value: params.grain },
+                uVignette: { value: params.vignette },
+                uAberration: { value: params.aberration },
+            },
+            vertexShader: `varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
+            fragmentShader: `
+                precision highp float;
+                uniform sampler2D tDiffuse;
+                uniform float uTime, uGrain, uVignette, uAberration;
+                varying vec2 vUv;
+                float hash(vec2 p){
+                    p = fract(p * 0.3183099 + vec2(0.71, 0.113));
+                    p *= 17.0;
+                    return fract(p.x * p.y * (p.x + p.y));
+                }
+                void main(){
+                    vec2 d = vUv - 0.5;
+                    float r2 = dot(d, d);
+                    vec2 off = d * uAberration * (0.4 + r2 * 3.0);
+                    vec3 col;
+                    col.r = texture2D(tDiffuse, vUv + off).r;
+                    col.g = texture2D(tDiffuse, vUv).g;
+                    col.b = texture2D(tDiffuse, vUv - off).b;
+                    col += (hash(gl_FragCoord.xy + fract(uTime) * 311.7) - 0.5) * uGrain;
+                    float vig = smoothstep(0.9, 0.16, r2 * uVignette);
+                    col *= mix(0.45, 1.0, vig);
+                    gl_FragColor = vec4(col, 1.0);
+                }
+            `,
+        };
+
+        function buildComposer() {
+            composer = new EffectComposer(renderer);
+            composer.setPixelRatio(params.dpr);
+            composer.setSize(innerWidth, innerHeight);
+            composer.addPass(new RenderPass(scene, camera));
+            bloomPass = new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight),
+                params.bloomStrength, params.bloomRadius, params.bloomThreshold);
+            composer.addPass(bloomPass);
+            finalPass = new ShaderPass(FinalShader);
+            composer.addPass(finalPass);
+            composer.addPass(new OutputPass());
+        }
+
+        function init() {
+            const container = document.getElementById('container');
+            scene = new THREE.Scene();
+
+            layout();
+            scene.fog = new THREE.Fog(0x0a0d18, params.span * 1.4, params.span * 7);
+
+            camera = new THREE.PerspectiveCamera(48, innerWidth / innerHeight, 0.2, 4000);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+            renderer.setPixelRatio(params.dpr);
+            renderer.setSize(innerWidth, innerHeight);
+            renderer.toneMapping = THREE.ACESFilmicToneMapping;
+            renderer.toneMappingExposure = params.exposure;
+            renderer.outputColorSpace = THREE.SRGBColorSpace;
+            container.appendChild(renderer.domElement);
+
+            buildLights();
+            buildSky();
+            buildSea();
+            buildLand('blue', BLUE);
+            buildLand('pink', PINK);
+            buildArc();
+            blueFigure = buildFigure('blue', BLUE);
+            pinkFigure = buildFigure('pink', PINK);
+            buildThread();
+            buildFlowers();
+            buildMotes();
+            buildComposer();
+            setupControls();
+            setupGUI();
+
+            // point the sea's reflections and the sky's stains at the two of them
+            seaMat.uniforms.uBluePos.value.set(PLACES.blue.stand.x, PLACES.blue.stand.z);
+            seaMat.uniforms.uPinkPos.value.set(PLACES.pink.stand.x, PLACES.pink.stand.z);
+            skyMat.uniforms.uBlueDir.value.copy(PLACES.blue.stand).setY(params.span * 0.22).normalize();
+            skyMat.uniforms.uPinkDir.value.copy(PLACES.pink.stand).setY(params.span * 0.22).normalize();
+
+            // the camera looks at the middle of the crossing, high enough to
+            // see the whole string of flowers
+            controls.target.copy(arc.getPointAt(0.5));
+            controls.target.y *= 0.55;
+            controls.radius = params.span * 2.0;
+            controls.targetRadius = params.span * 0.95;
+            // face the arc broadside: look along the perpendicular to the pair
+            const dir = new THREE.Vector3().subVectors(PLACES.pink.pos, PLACES.blue.pos).normalize();
+            controls.azimuth = Math.atan2(-dir.z, dir.x);
+
+            // how far apart they actually are, tonight
+            const km = Math.round(PLACES.km).toLocaleString('es-ES');
+            document.getElementById('hint').textContent =
+                `drag to look · ${PLACES.blue.place} → ${PLACES.pink.place} · ${km} km de flores`;
+
+            // ?look=blue or ?look=pink stands beside one of them instead
+            const look = Q.get('look');
+            if (look === 'blue' || look === 'pink') {
+                const who = PLACES[look], other = PLACES[look === 'blue' ? 'pink' : 'blue'];
+                controls.target.copy(who.stand).setY(who.stand.y + 1.4);
+                controls.radius = controls.targetRadius = params.span * 0.075;
+                controls.elevation = 0.12;
+                const d = new THREE.Vector3().subVectors(other.stand, who.stand).normalize();
+                controls.azimuth = Math.atan2(-d.z, d.x);
+                params.pushIn = false;
+            }
+
+            // camera query overrides
+            if (Q.has('radius')) { controls.radius = controls.targetRadius = parseFloat(Q.get('radius')); params.pushIn = false; }
+            if (Q.has('az')) controls.azimuth = parseFloat(Q.get('az'));
+            if (Q.has('el')) controls.elevation = parseFloat(Q.get('el'));
+            if (Q.has('fov')) { camera.fov = parseFloat(Q.get('fov')); camera.updateProjectionMatrix(); }
+            if (Q.get('title') === '0') document.getElementById('title').style.display = 'none';
+
+            setTimeout(() => document.getElementById('title').classList.add('gone'), 9000);
+            window.addEventListener('resize', onResize);
+            animate();
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const dt = Math.min(clock.getDelta(), 0.05);
+            const t = clock.elapsedTime;
+
+            updateFlowers(t);
+            updateMotes(t);
+            updateFigures(t);
+            thread.material.uniforms.uTime.value = t;
+            thread.material.uniforms.uGlow.value = params.threadGlow;
+            motes.material.uniforms.uTime.value = t;
+            seaMat.uniforms.uTime.value = t;
+            finalPass.uniforms.uTime.value = t;
+
+            updateCamera(dt);
+            composer.render();
+        }
+
+        function onResize() {
+            camera.aspect = innerWidth / innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(innerWidth, innerHeight);
+            composer.setSize(innerWidth, innerHeight);
+        }
+
+        function setupGUI() {
+            const gui = new GUI({ title: 'la conexión' });
+            const f = gui.addFolder('The flowers');
+            f.add(params, 'flowSpeed', 0.002, 0.08, 0.001).name('Flow');
+            f.add(params, 'garland', 0.5, 12, 0.1).name('Spiral width');
+            f.add(params, 'flowerSize', 0.3, 2.5, 0.05).name('Size');
+            f.add(params, 'flowerGlow', 0.3, 3, 0.05).name('Glow');
+            f.add(params, 'threadGlow', 0, 2, 0.05).name('Thread');
+            const w = gui.addFolder('The two of them');
+            w.add(params, 'figureGlow', 0.2, 3, 0.05).name('Glow');
+            w.add(params, 'breath', 0, 3, 0.05).name('Breath');
+            const look = gui.addFolder('Look');
+            look.add(params, 'exposure', 0.4, 2, 0.02).onChange((v) => renderer.toneMappingExposure = v);
+            look.add(params, 'bloomStrength', 0, 2, 0.02).onChange((v) => bloomPass.strength = v);
+            look.add(params, 'bloomThreshold', 0, 1, 0.02).onChange((v) => bloomPass.threshold = v);
+            look.add(params, 'grain', 0, 0.2, 0.005).onChange((v) => finalPass.uniforms.uGrain.value = v);
+            look.add(params, 'vignette', 0, 2, 0.05).onChange((v) => finalPass.uniforms.uVignette.value = v);
+            look.add(params, 'aberration', 0, 0.006, 0.0002).onChange((v) => finalPass.uniforms.uAberration.value = v);
+            const cam = gui.addFolder('Camera');
+            cam.add(controls, 'targetRadius', 40, 900, 1).name('distance').onChange(() => params.pushIn = false);
+            cam.add(controls, 'elevation', 0.015, 0.75, 0.005);
+            cam.add(params, 'autoOrbit', 0, 0.08, 0.002).name('idle orbit');
+            gui.close();
+            gui.domElement.style.display = 'none';
+            window.addEventListener('keydown', (e) => {
+                if (e.key === 'g' || e.key === 'G') {
+                    const d = gui.domElement.style;
+                    d.display = d.display === 'none' ? '' : 'none';
+                }
+            });
+        }
+
+        init();
+    </script>
+</body>
+</html>
