@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Al alcance</title>
+<script src="https://cdn.counter.dev/script.js" data-id="72d92ac8-56cf-4fdd-9899-b73adbab2e4d" data-utcoffset="0"></script>
+<style>
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; background: #000; }
+    #container { position: fixed; inset: 0; }
+    canvas { display: block; width: 100vw; height: 100vh; cursor: crosshair; }
+
+    /* ---- Title ---- */
+    #title {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        pointer-events: none;
+        z-index: 10;
+        text-align: center;
+        padding: 1.5rem;
+        transition: opacity 4s ease 1.5s;
+    }
+    #title.gone { opacity: 0; }
+    #title h1 {
+        font-family: "Georgia", "Times New Roman", serif;
+        font-weight: 400;
+        font-style: italic;
+        font-size: clamp(1.8rem, 6vw, 3.6rem);
+        letter-spacing: 0.02em;
+        color: #f0e2d8;
+        margin: 0;
+        text-shadow: 0 2px 18px rgba(0, 0, 0, 0.85), 0 0 30px rgba(224, 154, 84, 0.5);
+        opacity: 0;
+        animation: bloom 5s ease forwards 0.8s;
+    }
+    #whisper {
+        font-family: "Georgia", serif;
+        font-style: italic;
+        font-size: clamp(1rem, 2.6vw, 1.2rem);
+        letter-spacing: 0.14em;
+        color: #e8dff5;
+        margin-top: 1.5rem;
+        text-shadow: 0 1px 12px rgba(0, 0, 0, 0.75), 0 0 26px rgba(122, 92, 255, 0.5);
+        opacity: 0;
+        animation: bloom 2.4s ease forwards 1.6s;
+    }
+    @keyframes bloom {
+        from { opacity: 0; filter: blur(8px); transform: translateY(8px); }
+        to   { opacity: 1; filter: blur(0);   transform: translateY(0); }
+    }
+
+    /* ---- Hint ---- */
+    #hint {
+        position: fixed;
+        bottom: 1.4rem;
+        left: 0; right: 0;
+        text-align: center;
+        font-family: "Georgia", serif;
+        font-style: italic;
+        font-size: 0.8rem;
+        color: rgba(240, 226, 216, 0.35);
+        pointer-events: none;
+        z-index: 9;
+        opacity: 0;
+        animation: bloom 3s ease forwards 8s;
+    }
+
+    /* ---- The spoken line ---- */
+    #line {
+        position: fixed;
+        left: 0; right: 0;
+        bottom: clamp(4rem, 14vh, 7rem);
+        text-align: center;
+        pointer-events: none;
+        z-index: 10;
+        padding: 0 1.5rem;
+        opacity: 0;
+        transition: opacity 1.4s ease;
+    }
+    #line.showing { opacity: 1; transition: opacity 0.7s ease; }
+    #line .kind {
+        font-family: "Georgia", serif;
+        font-variant: small-caps;
+        letter-spacing: 0.28em;
+        font-size: 0.68rem;
+        margin-bottom: 0.7rem;
+        opacity: 0.6;
+    }
+    #line .words {
+        font-family: "Georgia", "Times New Roman", serif;
+        font-style: italic;
+        font-weight: 400;
+        font-size: clamp(1.15rem, 3.4vw, 1.9rem);
+        letter-spacing: 0.02em;
+        max-width: 36rem;
+        margin: 0 auto;
+    }
+    /* what we can: warm, steady, close */
+    #line.puedo .kind  { color: rgba(240, 210, 170, 0.75); }
+    #line.puedo .words {
+        color: #f4e3ce;
+        text-shadow: 0 2px 16px rgba(0, 0, 0, 0.85), 0 0 28px rgba(224, 154, 84, 0.55);
+    }
+    /* what I only want: cold, slightly blurred, just out of reach */
+    #line.quiero .kind  { color: rgba(190, 176, 240, 0.7); }
+    #line.quiero .words {
+        color: #ddd3f4;
+        filter: blur(0.4px);
+        text-shadow: 0 2px 16px rgba(0, 0, 0, 0.85), 0 0 30px rgba(122, 92, 255, 0.6);
+    }
+</style>
+</head>
+<body>
+    <div id="container"></div>
+    <div id="title">
+        <h1>Lo que puedo. Lo que quiero.</h1>
+        <div id="whisper">In order to have anything, we have to lose some things. I don&rsquo;t know if I&rsquo;m right.</div>
+    </div>
+    <div id="hint">touch the lights &middot; the violet ones slip away</div>
+    <div id="line" aria-live="polite">
+        <div class="kind"></div>
+        <div class="words"></div>
+    </div>
+
+    <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+      }
+    }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+        // ------------------------------------------------------------------
+        // The two lists. Edit these freely; each line becomes a light.
+        //
+        // PUEDO — what we can still do, you and I. These lights live inside
+        // the glass and let themselves be touched.
+        //
+        // QUIERO — what I can't do with you, but want to. These live beyond
+        // the membrane. Reach for one and it slips away; it only settles
+        // again once you stop reaching.
+        // ------------------------------------------------------------------
+        const puedo = [
+            'reírnos hasta que no podamos respirar',
+            'mandarte una canción y saber el segundo exacto en que sonreirás',
+            'hablar durante horas como si no hubiera pasado el tiempo',
+            'desearte buenas noches desde lejos',
+            'guardar todas las fotos',
+            'recordar las flores silvestres',
+            'hablar de todo y de nada',
+            'querer lo mejor para ti, siempre'
+        ];
+
+        const quiero = [
+            'cogerte la mano por la calle',
+            'dormirme a tu lado y despertar tarde',
+            'bailar como en Turquía',
+            'darte un beso de buenas noches en vez de escribirlo',
+            'planear un verano contigo dentro',
+            'llevarte el café antes de que despiertes',
+            'llamarte mi chica',
+            'envejecer contigo'
+        ];
+
+        // --- Palette ---
+        const WARM = new THREE.Color('#e09a54');   // candlelight amber for what we can
+        const WARM_HOT = new THREE.Color('#ffd9a8');
+        const COLD = new THREE.Color('#7a5cff');   // violet for what I only want
+        const COLD_HOT = new THREE.Color('#c9b8ff');
+
+        const INNER_RADIUS = 3.1;   // the reachable lights drift inside this
+        const MEMBRANE_RADIUS = 4.3;
+        const OUTER_RADIUS = 6.2;   // the unreachable ones hang out here
+
+        let camera, scene, renderer, controls, membrane;
+        const clock = new THREE.Clock();
+        const raycaster = new THREE.Raycaster();
+        const pointer = new THREE.Vector2(10, 10); // offscreen until first move
+        let pointerActive = false;
+
+        const lights = [];          // every firefly, both kinds
+        let focused = null;         // the light currently speaking
+        let lineTimer = null;
+
+        init();
+        animate();
+
+        // A soft radial glow, drawn once and shared by every sprite.
+        function makeGlowTexture() {
+            const c = document.createElement('canvas');
+            c.width = c.height = 128;
+            const g = c.getContext('2d');
+            const grad = g.createRadialGradient(64, 64, 0, 64, 64, 64);
+            grad.addColorStop(0.0, 'rgba(255,255,255,1)');
+            grad.addColorStop(0.18, 'rgba(255,255,255,0.85)');
+            grad.addColorStop(0.42, 'rgba(255,255,255,0.22)');
+            grad.addColorStop(1.0, 'rgba(255,255,255,0)');
+            g.fillStyle = grad;
+            g.fillRect(0, 0, 128, 128);
+            const tex = new THREE.CanvasTexture(c);
+            tex.colorSpace = THREE.SRGBColorSpace;
+            return tex;
+        }
+
+        // Scatter a point in a spherical shell between rMin and rMax.
+        function shellPoint(rMin, rMax) {
+            const v = new THREE.Vector3().randomDirection();
+            // flatten a little so the field reads as a slow constellation, not a ball
+            v.y *= 0.62;
+            v.normalize();
+            const r = rMin + Math.random() * (rMax - rMin);
+            return v.multiplyScalar(r);
+        }
+
+        function makeLight(text, kind, glowTex, index) {
+            const reachable = kind === 'puedo';
+            const material = new THREE.SpriteMaterial({
+                map: glowTex,
+                color: reachable ? WARM.clone() : COLD.clone(),
+                transparent: true,
+                opacity: reachable ? 0.9 : 0.75,
+                blending: THREE.AdditiveBlending,
+                depthWrite: false
+            });
+            const sprite = new THREE.Sprite(material);
+            const home = reachable
+                ? shellPoint(0.8, INNER_RADIUS)
+                : shellPoint(MEMBRANE_RADIUS + 0.5, OUTER_RADIUS);
+            sprite.position.copy(home);
+            const baseScale = reachable ? 0.42 : 0.36;
+            sprite.scale.setScalar(baseScale);
+
+            const light = {
+                sprite, text, kind, home,
+                baseScale,
+                offset: new THREE.Vector3(),   // where fleeing has pushed it
+                flee: new THREE.Vector3(),     // current repulsion velocity
+                pulse: Math.random() * Math.PI * 2,
+                pulseSpeed: 0.5 + Math.random() * 0.7,
+                drift: new THREE.Vector3(Math.random(), Math.random(), Math.random()).multiplyScalar(Math.PI * 2),
+                warmth: 0                      // 0 resting -> 1 fully spoken to
+            };
+            sprite.userData.light = light;
+            return light;
+        }
+
+        function init() {
+            const container = document.getElementById('container');
+
+            scene = new THREE.Scene();
+            scene.fog = new THREE.FogExp2(0x000000, 0.028);
+
+            camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 200);
+            camera.position.set(0, 1.6, 10.5);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            container.appendChild(renderer.domElement);
+
+            controls = new OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+            controls.autoRotate = true;
+            controls.autoRotateSpeed = 0.35;
+            controls.minDistance = 6;
+            controls.maxDistance = 16;
+            controls.enablePan = false;
+
+            const glowTex = makeGlowTexture();
+
+            puedo.forEach((t, i) => {
+                const l = makeLight(t, 'puedo', glowTex, i);
+                lights.push(l);
+                scene.add(l.sprite);
+            });
+            quiero.forEach((t, i) => {
+                const l = makeLight(t, 'quiero', glowTex, i);
+                lights.push(l);
+                scene.add(l.sprite);
+            });
+
+            // The membrane: the faint glass between what is allowed
+            // and what is only wanted. Fresnel rim, barely there.
+            membrane = new THREE.Mesh(
+                new THREE.SphereGeometry(MEMBRANE_RADIUS, 64, 48),
+                new THREE.ShaderMaterial({
+                    transparent: true,
+                    depthWrite: false,
+                    side: THREE.DoubleSide,
+                    blending: THREE.AdditiveBlending,
+                    uniforms: {
+                        uTime: { value: 0 },
+                        uColor: { value: new THREE.Color('#4a3a8a') }
+                    },
+                    vertexShader: `
+                        varying vec3 vNormal;
+                        varying vec3 vView;
+                        void main() {
+                            vNormal = normalize(normalMatrix * normal);
+                            vec4 mv = modelViewMatrix * vec4(position, 1.0);
+                            vView = normalize(-mv.xyz);
+                            gl_Position = projectionMatrix * mv;
+                        }
+                    `,
+                    fragmentShader: `
+                        uniform float uTime;
+                        uniform vec3 uColor;
+                        varying vec3 vNormal;
+                        varying vec3 vView;
+                        void main() {
+                            float fres = pow(1.0 - abs(dot(vNormal, vView)), 3.5);
+                            float breathe = 0.75 + 0.25 * sin(uTime * 0.4);
+                            gl_FragColor = vec4(uColor, fres * 0.28 * breathe);
+                        }
+                    `
+                })
+            );
+            scene.add(membrane);
+
+            // A sparse, far starfield so the dark has depth.
+            const starGeo = new THREE.BufferGeometry();
+            const starPos = new Float32Array(400 * 3);
+            for (let i = 0; i < 400; i++) {
+                const p = new THREE.Vector3().randomDirection().multiplyScalar(30 + Math.random() * 50);
+                starPos.set([p.x, p.y, p.z], i * 3);
+            }
+            starGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
+            scene.add(new THREE.Points(starGeo, new THREE.PointsMaterial({
+                color: 0x8877aa, size: 0.07, transparent: true, opacity: 0.5, depthWrite: false
+            })));
+
+            window.addEventListener('pointermove', onPointerMove);
+            window.addEventListener('pointerdown', onPointerMove);
+            window.addEventListener('resize', onWindowResize);
+
+            setTimeout(() => document.getElementById('title').classList.add('gone'), 8000);
+        }
+
+        function onPointerMove(e) {
+            pointer.x = (e.clientX / window.innerWidth) * 2 - 1;
+            pointer.y = -(e.clientY / window.innerHeight) * 2 + 1;
+            pointerActive = true;
+        }
+
+        function speak(light) {
+            const el = document.getElementById('line');
+            el.querySelector('.kind').textContent =
+                light.kind === 'puedo' ? 'esto sí puedo' : 'esto solo lo quiero';
+            el.querySelector('.words').textContent = light.text;
+            el.className = 'showing ' + light.kind;
+            clearTimeout(lineTimer);
+            lineTimer = setTimeout(() => { el.className = light.kind; }, 4200);
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const dt = Math.min(clock.getDelta(), 0.05);
+            const t = clock.getElapsedTime();
+
+            // Which light is the hand nearest to?
+            let nearest = null;
+            if (pointerActive) {
+                raycaster.setFromCamera(pointer, camera);
+                let bestDist = 0.65; // how close the ray must pass to count as reaching
+                const probe = new THREE.Vector3();
+                for (const l of lights) {
+                    raycaster.ray.closestPointToPoint(l.sprite.position, probe);
+                    const d = probe.distanceTo(l.sprite.position);
+                    if (d < bestDist) { bestDist = d; nearest = l; }
+                }
+            }
+
+            if (nearest && nearest !== focused) {
+                focused = nearest;
+                speak(nearest);
+            }
+            if (!nearest) focused = null;
+
+            const probe = new THREE.Vector3();
+            for (const l of lights) {
+                // idle drift around home
+                const d = l.drift;
+                const sway = new THREE.Vector3(
+                    Math.sin(t * 0.21 + d.x) * 0.28,
+                    Math.sin(t * 0.17 + d.y) * 0.22,
+                    Math.sin(t * 0.19 + d.z) * 0.28
+                );
+
+                if (l === nearest) {
+                    l.warmth = Math.min(1, l.warmth + dt * 3);
+                } else {
+                    l.warmth = Math.max(0, l.warmth - dt * 0.8);
+                }
+
+                if (l.kind === 'quiero' && l === nearest) {
+                    // it slips away from the reaching hand, and a little further out
+                    raycaster.ray.closestPointToPoint(l.sprite.position, probe);
+                    const away = l.sprite.position.clone().sub(probe).normalize();
+                    const outward = l.sprite.position.clone().normalize();
+                    away.lerp(outward, 0.4).normalize();
+                    l.flee.addScaledVector(away, dt * 6.0);
+                }
+                // fleeing decays; the offset seeps home once the hand withdraws
+                l.flee.multiplyScalar(1 - dt * 1.6);
+                l.offset.addScaledVector(l.flee, dt);
+                l.offset.multiplyScalar(1 - dt * 0.35);
+
+                l.sprite.position.copy(l.home).add(sway).add(l.offset);
+
+                // breathing, brighter when spoken to
+                l.pulse += dt * l.pulseSpeed;
+                const breathe = 0.8 + 0.2 * Math.sin(l.pulse);
+                const excited = 1 + l.warmth * (l.kind === 'puedo' ? 0.9 : 0.4);
+                l.sprite.scale.setScalar(l.baseScale * breathe * excited);
+
+                const cold = l.kind !== 'puedo';
+                const base = cold ? COLD : WARM;
+                const hot = cold ? COLD_HOT : WARM_HOT;
+                l.sprite.material.color.copy(base).lerp(hot, l.warmth);
+                l.sprite.material.opacity = (cold ? 0.72 : 0.88) * breathe + l.warmth * 0.15;
+            }
+
+            membrane.material.uniforms.uTime.value = t;
+
+            controls.update();
+            renderer.render(scene, camera);
+        }
+    </script>
+</body>
+</html>
