@@ -1,0 +1,886 @@
+<!DOCTYPE html>
+<!--
+  "Sólo porque lo sientas" — a felt presence that cannot survive being
+  looked at.
+
+  A figure of light stands far out on a night sea. She is only ever whole
+  in the periphery. Turn to face her and she comes apart into motes; the
+  water keeps her reflection a moment longer than it should. Stare at the
+  empty place she stood and a film of tears wells over the view. Look
+  away, and she re-forms somewhere else at the edge of the frame.
+
+  Reused from the hidden pieces: the night sea and sky and the glowing
+  figure from "La conexión"; the tear-film post pass from "¿Olas o
+  lágrimas?"; the family grain/vignette/aberration finish.
+
+  Press G for the tuning panel. Query params override any value,
+  e.g. ?dissolveAngle=14&tearMax=0.9&title=0
+-->
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Sólo porque lo sientas</title>
+<script src="https://cdn.counter.dev/script.js" data-id="72d92ac8-56cf-4fdd-9899-b73adbab2e4d" data-utcoffset="0"></script>
+<style>
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; background: #05060d; overscroll-behavior: none; }
+    #container { position: fixed; inset: 0; touch-action: none; }
+    canvas { display: block; width: 100vw; height: 100vh; cursor: grab; touch-action: none; }
+    canvas:active { cursor: grabbing; }
+
+    #title {
+        position: fixed; inset: 0;
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        pointer-events: none; z-index: 10; text-align: center; padding: 1.5rem;
+        transition: opacity 4s ease 1s;
+    }
+    #title.gone { opacity: 0; }
+    #title h1 {
+        font-family: "Georgia", "Times New Roman", serif;
+        font-weight: 400; font-style: italic;
+        font-size: clamp(1.7rem, 5.4vw, 3.4rem);
+        letter-spacing: 0.03em;
+        color: #ede7f2;
+        margin: 0;
+        text-shadow: 0 2px 18px rgba(0, 0, 0, 0.9), 0 0 34px rgba(150, 120, 220, 0.45), 0 0 90px rgba(255, 111, 174, 0.3);
+        opacity: 0;
+        animation: bloom 5s ease forwards 0.7s;
+    }
+    #whisper {
+        font-family: "Georgia", serif; font-style: italic;
+        font-size: clamp(0.9rem, 2.3vw, 1.1rem);
+        color: rgba(237, 231, 242, 0.6);
+        text-shadow: 0 1px 12px rgba(0, 0, 0, 0.8);
+        margin-top: 1.4rem; opacity: 0;
+        animation: bloom 5s ease forwards 2.4s;
+    }
+    @keyframes bloom {
+        from { opacity: 0; filter: blur(10px); transform: translateY(10px); }
+        to   { opacity: 1; filter: blur(0);    transform: translateY(0); }
+    }
+
+    #hint {
+        position: fixed; bottom: 1.4rem; left: 0; right: 0; text-align: center;
+        font-family: "Courier New", monospace; font-size: 0.7rem;
+        letter-spacing: 0.3em; text-transform: uppercase;
+        color: rgba(237, 231, 242, 0.3); pointer-events: none; z-index: 9;
+        opacity: 0; animation: bloom 3s ease forwards 7s;
+    }
+
+    /* what the periphery says, and what the stare says */
+    .murmur {
+        position: fixed; left: 0; right: 0;
+        bottom: clamp(3.6rem, 11vh, 6rem);
+        text-align: center; pointer-events: none; z-index: 9;
+        font-family: "Georgia", serif; font-style: italic;
+        font-size: clamp(0.95rem, 2.6vw, 1.3rem);
+        letter-spacing: 0.12em;
+        opacity: 0;
+        transition: opacity 1.6s ease;
+    }
+    #felt {
+        color: rgba(255, 183, 210, 0.75);
+        text-shadow: 0 1px 12px rgba(0, 0, 0, 0.8), 0 0 26px rgba(255, 111, 174, 0.45);
+    }
+    #gone {
+        color: rgba(170, 168, 214, 0.7);
+        text-shadow: 0 1px 12px rgba(0, 0, 0, 0.8), 0 0 26px rgba(110, 96, 210, 0.5);
+    }
+    .lil-gui { z-index: 20; --background-color: rgba(6, 7, 13, 0.92); }
+</style>
+</head>
+<body>
+    <div id="container"></div>
+    <div id="title">
+        <h1>Sólo porque lo sientas,<br>no significa que esté ahí.</h1>
+        <div id="whisper">Mi corazón es mío, y sus sueños guardan silencio.</div>
+    </div>
+    <div id="hint">gira para buscar &nbsp;·&nbsp; mirarlo directamente lo deshace</div>
+    <div class="murmur" id="felt">lo sientes</div>
+    <div class="murmur" id="gone">no hay nada</div>
+
+    <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/",
+        "lil-gui": "https://cdn.jsdelivr.net/npm/lil-gui@0.19.1/dist/lil-gui.esm.min.js"
+      }
+    }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+        import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+        import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
+        import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+        import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+        import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+        import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
+        import { MeshSurfaceSampler } from 'three/addons/math/MeshSurfaceSampler.js';
+        import GUI from 'lil-gui';
+
+        const params = {
+            dpr: Math.min(window.devicePixelRatio, 1.6),
+            // --- the presence ---
+            distance: 46,          // how far out on the water it stands
+            figureScale: 2.6,
+            figureGlow: 1.0,
+            figureYaw: 0,          // degrees: turn the sculpt if it faces the wrong way
+            dissolveAngle: 16,     // degrees off-centre: closer than this, it comes apart
+            holdAngle: 32,         // further out than this, it is whole
+            dissolveRate: 1.4,     // how fast it comes apart under the gaze
+            reformRate: 0.35,      // how slowly it dares to come back
+            goneBeforeMoving: 4.0, // seconds fully gone before it moves elsewhere
+            // --- the mist it becomes ---
+            motes: 1400,
+            scatterReach: 16,      // how far the motes drift when it is not there
+            loft: 34,              // how high they climb to join the stars
+            // --- the tears ---
+            tearMax: 0.8,          // how far the film can well while staring at nothing
+            tearRise: 0.35,        // per second, while staring at the empty place
+            tearFall: 0.5,         // per second, once you look away
+            distortion: 0.05,
+            tearBlur: 2.6,
+            fringing: 0.55,
+            poolTop: 0.55,
+            // --- look ---
+            exposure: 1.05,
+            bloomStrength: 0.9,
+            bloomRadius: 0.7,
+            bloomThreshold: 0.4,
+            grain: 0.035,
+            vignette: 1.0,
+            aberration: 0.0012,    // baseline; grows as the presence dissolves
+            autoDrift: 0.010,      // idle gaze wander, radians/s
+        };
+
+        const Q = new URLSearchParams(location.search);
+        Object.keys(params).forEach((k) => { if (Q.has(k)) params[k] = parseFloat(Q.get(k)); });
+
+        const PRESENCE_WARM = new THREE.Color(0xff6fae);   // her colour, from La conexión
+        const PRESENCE_COLD = new THREE.Color(0x6f5cd8);   // what the mist cools to
+
+        let camera, scene, renderer, composer, tearPass, bloomPass, finalPass;
+        let seaMat, skyMat, figure, motes, halo;
+        const clock = new THREE.Clock();
+
+        // deterministic, same night every visit
+        let _seed = 20260804;
+        function rand() { _seed = (_seed * 16807) % 2147483647; return (_seed - 1) / 2147483646; }
+
+        // ============================================================
+        //  STATE — how much of it is there, and how much you are crying
+        // ============================================================
+        const state = {
+            presence: 1.0,        // 1 whole in the periphery -> 0 dissolved
+            azimuth: 0.9,         // where it stands, around you
+            goneFor: 0,           // seconds spent fully dissolved
+            tear: 0.12,           // the welling film
+            blink: 0,
+            staring: 0,           // 1 while the gaze rests on the empty place
+        };
+
+        // ============================================================
+        //  SKY — from "La conexión": night gradient, stars, one stain of
+        //  colour above the presence, fading as the presence fades.
+        // ============================================================
+        function buildSky() {
+            skyMat = new THREE.ShaderMaterial({
+                side: THREE.BackSide, fog: false, depthWrite: false,
+                uniforms: {
+                    uTop: { value: new THREE.Color(0x02030a) },
+                    uMid: { value: new THREE.Color(0x060a17) },
+                    uHorizon: { value: new THREE.Color(0x0e0e22) },
+                    uStain: { value: PRESENCE_WARM.clone() },
+                    uStainDir: { value: new THREE.Vector3(1, 0.2, 0) },
+                    uPresence: { value: 1 },
+                },
+                vertexShader: `
+                    varying vec3 vDir;
+                    void main(){
+                        vDir = position;
+                        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+                    }
+                `,
+                fragmentShader: `
+                    precision highp float;
+                    uniform vec3 uTop, uMid, uHorizon, uStain, uStainDir;
+                    uniform float uPresence;
+                    varying vec3 vDir;
+                    float hash(vec2 p){
+                        p = fract(p * 0.3183099 + vec2(0.71, 0.113));
+                        p *= 17.0;
+                        return fract(p.x * p.y * (p.x + p.y));
+                    }
+                    void main(){
+                        vec3 d = normalize(vDir);
+                        float h = max(d.y, 0.0);
+                        vec3 col = mix(uHorizon, uMid, smoothstep(0.0, 0.2, h));
+                        col = mix(col, uTop, smoothstep(0.14, 0.6, h));
+                        // the sky remembers where it stands, while it stands
+                        float g = pow(max(dot(d, normalize(uStainDir)), 0.0), 14.0);
+                        col += uStain * g * 0.20 * uPresence * smoothstep(0.5, 0.0, h);
+                        // stars, thicker along one slow band
+                        vec2 sp = d.xz / max(d.y, 0.06) * 210.0;
+                        float st = step(0.9986, hash(floor(sp)));
+                        col += vec3(0.85, 0.9, 1.0) * st * smoothstep(0.08, 0.4, h) * 0.75;
+                        float band = exp(-pow((d.y - 0.4 + d.x * 0.2) * 3.2, 2.0));
+                        col += vec3(0.09, 0.11, 0.19) * band * 0.26;
+                        gl_FragColor = vec4(col, 1.0);
+                    }
+                `,
+            });
+            scene.add(new THREE.Mesh(new THREE.SphereGeometry(1500, 32, 20), skyMat));
+        }
+
+        // ============================================================
+        //  SEA — from "La conexión". One smear of light on the water where
+        //  the presence stands. The water lets it go slowly: its glow fades
+        //  behind the figure by a softer curve, the last thing of it to leave.
+        // ============================================================
+        function buildSea() {
+            seaMat = new THREE.ShaderMaterial({
+                fog: false,
+                uniforms: {
+                    uTime: { value: 0 },
+                    uDeep: { value: new THREE.Color(0x04060e) },
+                    uShallow: { value: new THREE.Color(0x0b1220) },
+                    uHorizon: { value: new THREE.Color(0x0c0c1c) },
+                    uGlowPos: { value: new THREE.Vector2(46, 0) },
+                    uGlow: { value: PRESENCE_WARM.clone() },
+                    uPresence: { value: 1 },
+                },
+                vertexShader: `
+                    varying vec3 vWorld;
+                    void main(){
+                        vec4 w = modelMatrix * vec4(position, 1.0);
+                        vWorld = w.xyz;
+                        gl_Position = projectionMatrix * viewMatrix * w;
+                    }
+                `,
+                fragmentShader: `
+                    precision highp float;
+                    uniform float uTime, uPresence;
+                    uniform vec3 uDeep, uShallow, uHorizon, uGlow;
+                    uniform vec2 uGlowPos;
+                    varying vec3 vWorld;
+                    float hash(vec2 p){
+                        p = fract(p * 0.3183099 + vec2(0.71, 0.113));
+                        p *= 17.0;
+                        return fract(p.x * p.y * (p.x + p.y));
+                    }
+                    float smear(vec2 p, vec2 at){
+                        float d = length(p - at);
+                        float ripple = 0.65 + 0.35 * sin(d * 0.5 - uTime * 1.2 + sin(p.x * 0.24 + p.y * 0.18) * 2.2);
+                        return (1.0 / (1.0 + d * d * 0.012)) * (0.35 + 0.65 * ripple);
+                    }
+                    void main(){
+                        vec2 p = vWorld.xz;
+                        float off = length(p);
+                        vec3 col = mix(uShallow, uDeep, smoothstep(20.0, 220.0, off));
+                        // the reflection outlives the figure: sqrt holds it brighter, longer
+                        float linger = sqrt(max(uPresence, 0.0));
+                        col += uGlow * smear(p, uGlowPos) * 0.34 * (0.12 + 0.88 * linger);
+                        float ripA = sin(p.x * 0.8 + uTime * 0.6 + sin(p.y * 0.5 - uTime * 0.4));
+                        float ripB = sin(p.y * 1.5 - uTime * 0.9 + hash(floor(p * 1.5)) * 6.28);
+                        col += vec3(0.5, 0.57, 0.75) * smoothstep(0.94, 1.0, ripA * ripB) * 0.05;
+                        col = mix(col, uHorizon, smoothstep(300.0, 1800.0, off));
+                        gl_FragColor = vec4(col, 1.0);
+                    }
+                `,
+            });
+            const sea = new THREE.Mesh(new THREE.PlaneGeometry(5000, 5000), seaMat);
+            sea.rotation.x = -Math.PI / 2;
+            sea.position.y = -0.4;
+            scene.add(sea);
+        }
+
+        // ============================================================
+        //  THE PRESENCE — a sculpted silhouette (ahi-assets/figure.glb,
+        //  meshopt-compressed, rendered as nothing but light), standing on
+        //  the water, because it was never subject to the world anyway.
+        //  Until the sculpt arrives — and if it never does — the capsule
+        //  ghost from "La conexión" stands in for her.
+        // ============================================================
+        function buildFigure() {
+            const g = new THREE.Group();
+            const tint = PRESENCE_WARM;
+            const bright = tint.clone().multiplyScalar(1.15);
+
+            const litMat = new THREE.MeshBasicMaterial({
+                color: tint.clone().multiplyScalar(0.7), toneMapped: false, fog: false,
+                transparent: true, opacity: 1,
+            });
+
+            const ghost = new THREE.Group();
+            const body = new THREE.Mesh(new THREE.CapsuleGeometry(0.26, 1.4, 8, 14), litMat);
+            body.position.y = 1.05;
+            ghost.add(body);
+
+            for (const s of [-1, 1]) {
+                const arm = new THREE.Mesh(new THREE.CapsuleGeometry(0.1, 0.85, 6, 8), litMat);
+                arm.position.set(s * 0.34, 1.25, 0);
+                arm.rotation.z = s * -0.22;
+                ghost.add(arm);
+            }
+
+            const headMat = new THREE.MeshBasicMaterial({
+                color: bright, toneMapped: false, fog: false, transparent: true, opacity: 1,
+            });
+            const head = new THREE.Mesh(new THREE.SphereGeometry(0.28, 14, 12), headMat);
+            head.position.y = 2.4;
+            ghost.add(head);
+            g.add(ghost);
+
+            const shellMat = new THREE.MeshBasicMaterial({
+                color: tint, toneMapped: false, fog: false, transparent: true, opacity: 0.1,
+                blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.BackSide,
+            });
+            const shell = new THREE.Mesh(new THREE.SphereGeometry(1.35, 20, 16), shellMat);
+            shell.position.y = 1.35;
+            g.add(shell);
+
+            halo = new THREE.PointLight(tint.getHex(), 55, 90, 2);
+            halo.position.y = 1.8;
+            g.add(halo);
+
+            g.scale.setScalar(params.figureScale);
+            g.userData = { litMat, headMat, shellMat, ghost, body, head, shell, mesh: null, meshS: 1, phase: rand() * 6.28 };
+            scene.add(g);
+            return g;
+        }
+
+        function loadFigure() {
+            const loader = new GLTFLoader();
+            loader.setMeshoptDecoder(MeshoptDecoder);
+            loader.load('ahi-assets/figure.glb', (gltf) => {
+                let src = null;
+                gltf.scene.traverse((o) => { if (!src && o.isMesh) src = o; });
+                if (!src) return;
+                const geo = src.geometry;
+                geo.computeBoundingBox();
+                const bb = geo.boundingBox;
+                const s = 2.75 / (bb.max.y - bb.min.y);   // as tall as the ghost stood
+                const lift = -bb.min.y * s;               // feet on the water
+
+                const u = figure.userData;
+                const mesh = new THREE.Mesh(geo, u.litMat);
+                mesh.scale.setScalar(s);
+                mesh.position.y = lift;
+                mesh.rotation.y = THREE.MathUtils.degToRad(params.figureYaw);
+                figure.remove(u.ghost);
+                figure.add(mesh);
+                u.mesh = mesh;
+                u.meshS = s;
+
+                // the mist takes her true shape: every mote's home re-seeded
+                // from the surface of the sculpt, so the dissolve holds her
+                // outline for a moment before it drifts
+                const sampler = new MeshSurfaceSampler(mesh).build();
+                const homeAttr = motes.geometry.getAttribute('aHome');
+                const pos = new THREE.Vector3();
+                for (let i = 0; i < homeAttr.count; i++) {
+                    sampler.sample(pos);
+                    homeAttr.setXYZ(i, pos.x * s, pos.y * s + lift, pos.z * s);
+                }
+                homeAttr.needsUpdate = true;
+                motes.geometry.getAttribute('position').needsUpdate = true;
+            }, undefined, () => { /* the ghost simply remains */ });
+        }
+
+        function placeFigure() {
+            const a = state.azimuth, r = params.distance;
+            figure.position.set(Math.sin(a) * r, 0, Math.cos(a) * r);
+            figure.lookAt(0, figure.position.y, 0);
+            seaMat.uniforms.uGlowPos.value.set(figure.position.x, figure.position.z);
+            skyMat.uniforms.uStainDir.value
+                .set(figure.position.x, r * 0.22, figure.position.z).normalize();
+            if (motes) motes.material.uniforms.uCenter.value.copy(figure.position);
+        }
+
+        // it never returns to the same place: somewhere else in the
+        // periphery, at least a quarter-turn from where you are looking
+        function relocate(cameraAzimuth) {
+            const side = rand() < 0.5 ? 1 : -1;
+            state.azimuth = cameraAzimuth + side * (Math.PI * 0.45 + rand() * Math.PI * 0.55);
+            placeFigure();
+        }
+
+        // ============================================================
+        //  THE MIST — what the figure comes apart into. Each mote has a
+        //  home inside the body and a direction to scatter along; one
+        //  uniform slides the whole cloud between "her" and "gone".
+        // ============================================================
+        function buildMotes() {
+            const N = Math.floor(params.motes);
+            const home = new Float32Array(N * 3);
+            const dir = new Float32Array(N * 3);
+            const seed = new Float32Array(N);
+            for (let i = 0; i < N; i++) {
+                // homes fill a rough standing body: a column, thicker mid-torso,
+                // with a knot of them where the head is
+                const isHead = rand() < 0.18;
+                const a = rand() * Math.PI * 2;
+                if (isHead) {
+                    const r = 0.34 * Math.cbrt(rand());
+                    const th = Math.acos(2 * rand() - 1);
+                    home[i * 3]     = r * Math.sin(th) * Math.cos(a);
+                    home[i * 3 + 1] = 2.4 + r * Math.cos(th);
+                    home[i * 3 + 2] = r * Math.sin(th) * Math.sin(a);
+                } else {
+                    const y = rand() * 2.1;
+                    const width = 0.14 + 0.24 * Math.sin(Math.min(1, y / 2.1) * Math.PI);
+                    const r = width * Math.sqrt(rand());
+                    home[i * 3]     = Math.cos(a) * r;
+                    home[i * 3 + 1] = y;
+                    home[i * 3 + 2] = Math.sin(a) * r;
+                }
+                // scatter direction: hard upward, ash off a fire caught by wind
+                const sa = rand() * Math.PI * 2;
+                const up = 0.9 + rand() * 2.2;
+                const v = new THREE.Vector3(Math.cos(sa), up, Math.sin(sa)).normalize();
+                dir[i * 3] = v.x; dir[i * 3 + 1] = v.y; dir[i * 3 + 2] = v.z;
+                seed[i] = rand();
+            }
+            const geo = new THREE.BufferGeometry();
+            geo.setAttribute('position', new THREE.BufferAttribute(home, 3)); // unused, but required
+            geo.setAttribute('aHome', new THREE.BufferAttribute(home, 3));
+            geo.setAttribute('aDir', new THREE.BufferAttribute(dir, 3));
+            geo.setAttribute('aSeed', new THREE.BufferAttribute(seed, 1));
+
+            const mat = new THREE.ShaderMaterial({
+                transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, fog: false,
+                uniforms: {
+                    uTime: { value: 0 },
+                    uScatter: { value: 0 },       // 0 she is whole -> 1 all mist
+                    uReach: { value: params.scatterReach },
+                    uLoft: { value: params.loft },
+                    uScale: { value: params.figureScale },
+                    uCenter: { value: new THREE.Vector3() },
+                    uWarm: { value: PRESENCE_WARM.clone() },
+                    uCold: { value: PRESENCE_COLD.clone() },
+                    uPixelRatio: { value: params.dpr },
+                },
+                vertexShader: `
+                    precision highp float;
+                    attribute vec3 aHome;
+                    attribute vec3 aDir;
+                    attribute float aSeed;
+                    uniform float uTime, uScatter, uReach, uLoft, uScale, uPixelRatio;
+                    uniform vec3 uCenter;
+                    varying float vSeed;
+                    varying float vGo;
+                    void main(){
+                        vSeed = aSeed;
+                        // each mote leaves on its own schedule, the head last
+                        float go = clamp(uScatter * (1.25 + aSeed * 0.5) - aSeed * 0.25, 0.0, 1.0);
+                        vGo = go;
+                        float reach = go * go * uReach * (0.35 + aSeed);
+                        // and past the drift, a climb: all the way up into the stars
+                        float lift = go * go * uLoft * (0.4 + aSeed * 0.9);
+                        vec3 wander = vec3(
+                            sin(uTime * 0.6 + aSeed * 40.0),
+                            sin(uTime * 0.45 + aSeed * 60.0) * 0.6,
+                            cos(uTime * 0.52 + aSeed * 50.0)
+                        ) * (0.06 + go * 1.4);
+                        vec3 p = uCenter + aHome * uScale + aDir * reach + wander;
+                        p.y += lift;
+                        vec4 mv = viewMatrix * vec4(p, 1.0);
+                        // a mote of her up close; a pinpoint like any other star by the end
+                        float size = mix(280.0 + aSeed * 340.0, 90.0 + aSeed * 60.0, go);
+                        gl_PointSize = uPixelRatio * size / max(1.0, -mv.z);
+                        gl_Position = projectionMatrix * mv;
+                    }
+                `,
+                fragmentShader: `
+                    precision highp float;
+                    uniform float uTime, uScatter;
+                    uniform vec3 uWarm, uCold;
+                    varying float vSeed;
+                    varying float vGo;
+                    void main(){
+                        float a = smoothstep(0.5, 0.05, length(gl_PointCoord - 0.5));
+                        // shimmer while she is mist, twinkle once she is sky
+                        float flicker = mix(
+                            0.55 + 0.45 * sin(uTime * (2.0 + vSeed * 5.0) + vSeed * 30.0),
+                            0.5 + 0.5 * sin(uTime * (1.0 + vSeed * 3.0) + vSeed * 80.0),
+                            vGo);
+                        // warm while she holds together, cooling as she goes,
+                        // star-white by the time she reaches them
+                        vec3 col = mix(uWarm, uCold, uScatter * (0.4 + vSeed * 0.6));
+                        col = mix(col, vec3(0.85, 0.9, 1.0), vGo * vGo * 0.85);
+                        // the mist is quiet while she is whole, loudest mid-dissolve,
+                        // and never quite gone: she is simply up there now
+                        float presence = 4.0 * uScatter * (1.0 - uScatter);
+                        float vis = 0.16 + 0.84 * max(uScatter * 0.75, presence);
+                        gl_FragColor = vec4(col * flicker, a * 0.6 * vis * (1.0 - 0.3 * vGo));
+                    }
+                `,
+            });
+            motes = new THREE.Points(geo, mat);
+            motes.frustumCulled = false;
+            scene.add(motes);
+        }
+
+        // ============================================================
+        //  TEAR PASS — from "¿Olas o lágrimas?", welling only while the
+        //  gaze holds the place where nothing is.
+        // ============================================================
+        const TearShader = {
+            uniforms: {
+                tDiffuse: { value: null },
+                uTime: { value: 0 },
+                uAmount: { value: 0.12 },
+                uBlink: { value: 0 },
+                uResolution: { value: new THREE.Vector2(1, 1) },
+                uDistortion: { value: params.distortion },
+                uBlur: { value: params.tearBlur },
+                uAberration: { value: params.fringing },
+                uPoolTop: { value: params.poolTop },
+            },
+            vertexShader: `varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
+            fragmentShader: `
+                precision highp float;
+                uniform sampler2D tDiffuse;
+                uniform float uTime, uAmount, uBlink, uDistortion, uBlur, uAberration, uPoolTop;
+                uniform vec2 uResolution;
+                varying vec2 vUv;
+
+                float hash(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+                float noise(vec2 p){
+                    vec2 i = floor(p), f = fract(p);
+                    vec2 u = f * f * (3.0 - 2.0 * f);
+                    return mix(mix(hash(i),            hash(i + vec2(1,0)), u.x),
+                               mix(hash(i + vec2(0,1)), hash(i + vec2(1,1)), u.x), u.y);
+                }
+                float fbm(vec2 p){
+                    float v = 0.0, a = 0.5;
+                    for (int i = 0; i < 4; i++){ v += a * noise(p); p *= 2.0; a *= 0.5; }
+                    return v;
+                }
+                float tearHeight(vec2 uv){
+                    float big   = fbm(uv * 3.0 + vec2(0.0, -uTime * 0.14));
+                    float small = fbm(uv * 9.0 + vec2(uTime * 0.05, -uTime * 0.42));
+                    return big * 0.7 + small * 0.3;
+                }
+                void main(){
+                    float top  = clamp(uPoolTop * (0.35 + 0.95 * uAmount), 0.04, 1.15);
+                    float pool = smoothstep(top, 0.0, vUv.y);
+                    float wet  = clamp(pool * (0.45 + 0.85 * uAmount) + uBlink * 0.6, 0.0, 1.5);
+
+                    float e = 1.0 / uResolution.x;
+                    float hL = tearHeight(vUv - vec2(e, 0.0));
+                    float hR = tearHeight(vUv + vec2(e, 0.0));
+                    float hD = tearHeight(vUv - vec2(0.0, e));
+                    float hU = tearHeight(vUv + vec2(0.0, e));
+                    vec2 offset = vec2(hR - hL, hU - hD) * wet * uDistortion * 60.0;
+
+                    vec2 buv = vUv;
+                    buv.y = mix(buv.y, 0.5 + (buv.y - 0.5) * (1.0 - 0.5 * uBlink), uBlink);
+
+                    vec2 ca = offset * (0.5 + 0.6 * wet) * uAberration;
+                    vec3 color = vec3(
+                        texture2D(tDiffuse, buv + offset + ca).r,
+                        texture2D(tDiffuse, buv + offset     ).g,
+                        texture2D(tDiffuse, buv + offset - ca).b
+                    );
+                    if (uBlur > 0.01) {
+                        vec3 acc = vec3(0.0);
+                        float rad = uBlur * wet / uResolution.x;
+                        for (int i = -2; i <= 2; i++)
+                          for (int j = -2; j <= 2; j++)
+                            acc += texture2D(tDiffuse, buv + offset + vec2(float(i), float(j)) * rad).rgb;
+                        color = mix(color, acc / 25.0, clamp(wet * 0.85, 0.0, 1.0));
+                    }
+                    gl_FragColor = vec4(color, 1.0);
+                }
+            `,
+        };
+
+        // ============================================================
+        //  FINAL — the family finish: grain, vignette, aberration that
+        //  grows while the presence is coming apart.
+        // ============================================================
+        const FinalShader = {
+            uniforms: {
+                tDiffuse: { value: null },
+                uTime: { value: 0 },
+                uGrain: { value: params.grain },
+                uVignette: { value: params.vignette },
+                uAberration: { value: params.aberration },
+            },
+            vertexShader: `varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
+            fragmentShader: `
+                precision highp float;
+                uniform sampler2D tDiffuse;
+                uniform float uTime, uGrain, uVignette, uAberration;
+                varying vec2 vUv;
+                float hash(vec2 p){
+                    p = fract(p * 0.3183099 + vec2(0.71, 0.113));
+                    p *= 17.0;
+                    return fract(p.x * p.y * (p.x + p.y));
+                }
+                void main(){
+                    vec2 d = vUv - 0.5;
+                    float r2 = dot(d, d);
+                    vec2 off = d * uAberration * (0.4 + r2 * 3.0);
+                    vec3 col;
+                    col.r = texture2D(tDiffuse, vUv + off).r;
+                    col.g = texture2D(tDiffuse, vUv).g;
+                    col.b = texture2D(tDiffuse, vUv - off).b;
+                    col += (hash(gl_FragCoord.xy + fract(uTime) * 311.7) - 0.5) * uGrain;
+                    float vig = smoothstep(0.9, 0.16, r2 * uVignette);
+                    col *= mix(0.45, 1.0, vig);
+                    gl_FragColor = vec4(col, 1.0);
+                }
+            `,
+        };
+
+        // ============================================================
+        //  CAMERA — you stand still, a little above the water, and turn.
+        // ============================================================
+        const gaze = {
+            azimuth: 0.0, elevation: 0.06,
+            azVel: 0, elVel: 0, idle: 0, dragging: false,
+        };
+        function setupControls() {
+            const el = renderer.domElement;
+            let lx = 0, ly = 0, moved = false;
+            el.addEventListener('pointerdown', (e) => {
+                gaze.dragging = true; moved = false; lx = e.clientX; ly = e.clientY;
+                gaze.azVel = 0; gaze.elVel = 0; gaze.idle = 0;
+            });
+            window.addEventListener('pointermove', (e) => {
+                if (!gaze.dragging) return;
+                const dx = e.clientX - lx, dy = e.clientY - ly; lx = e.clientX; ly = e.clientY;
+                if (Math.abs(dx) + Math.abs(dy) > 3) moved = true;
+                // you drag the night itself: the world follows the hand
+                gaze.azimuth -= dx * 0.0024;
+                gaze.elevation -= dy * 0.0016;
+                gaze.azVel = -dx * 0.0024; gaze.elVel = -dy * 0.0016;
+                gaze.idle = 0;
+            });
+            const up = () => {
+                if (gaze.dragging && !moved) state.blink = 1;   // a still tap is a blink
+                gaze.dragging = false;
+            };
+            window.addEventListener('pointerup', up);
+            window.addEventListener('pointercancel', up);
+        }
+        function updateCamera(dt) {
+            gaze.idle += dt;
+            if (!gaze.dragging) {
+                // the turn carries a little after the hand lets go
+                gaze.azimuth += gaze.azVel; gaze.elevation += gaze.elVel;
+                gaze.azVel *= 0.92; gaze.elVel *= 0.92;
+                // and the gaze wanders on its own, so it can never rest for good
+                if (gaze.idle > 3.0) gaze.azimuth += params.autoDrift * dt;
+            }
+            gaze.elevation = Math.max(-0.2, Math.min(0.55, gaze.elevation));
+            camera.position.set(0, 3.0, 0);
+            camera.lookAt(
+                Math.sin(gaze.azimuth) * Math.cos(gaze.elevation) * 10,
+                3.0 - Math.sin(gaze.elevation) * 10,
+                Math.cos(gaze.azimuth) * Math.cos(gaze.elevation) * 10
+            );
+        }
+
+        // smallest angle between where you look and where it stands
+        function angleToFigure() {
+            let d = state.azimuth - gaze.azimuth;
+            d = Math.atan2(Math.sin(d), Math.cos(d));
+            return Math.abs(d);
+        }
+
+        function buildComposer() {
+            composer = new EffectComposer(renderer);
+            composer.setPixelRatio(params.dpr);
+            composer.setSize(innerWidth, innerHeight);
+            composer.addPass(new RenderPass(scene, camera));
+            tearPass = new ShaderPass(TearShader);
+            tearPass.uniforms.uResolution.value.set(innerWidth * params.dpr, innerHeight * params.dpr);
+            composer.addPass(tearPass);
+            bloomPass = new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight),
+                params.bloomStrength, params.bloomRadius, params.bloomThreshold);
+            composer.addPass(bloomPass);
+            finalPass = new ShaderPass(FinalShader);
+            composer.addPass(finalPass);
+            composer.addPass(new OutputPass());
+        }
+
+        function init() {
+            const container = document.getElementById('container');
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(55, innerWidth / innerHeight, 0.2, 4000);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+            renderer.setPixelRatio(params.dpr);
+            renderer.setSize(innerWidth, innerHeight);
+            renderer.toneMapping = THREE.ACESFilmicToneMapping;
+            renderer.toneMappingExposure = params.exposure;
+            renderer.outputColorSpace = THREE.SRGBColorSpace;
+            container.appendChild(renderer.domElement);
+
+            scene.add(new THREE.HemisphereLight(0x36497a, 0x101320, 1.6));
+            const moon = new THREE.DirectionalLight(0x9fb2e0, 0.8);
+            moon.position.set(-120, 90, 160);
+            scene.add(moon);
+
+            buildSky();
+            buildSea();
+            figure = buildFigure();
+            buildMotes();
+            loadFigure();
+            placeFigure();
+            buildComposer();
+            setupControls();
+            setupGUI();
+
+            // it begins just off your shoulder, already felt
+            gaze.azimuth = state.azimuth - 0.62;
+
+            if (Q.get('title') === '0') document.getElementById('title').style.display = 'none';
+            setTimeout(() => document.getElementById('title').classList.add('gone'), 9500);
+            window.addEventListener('resize', onResize);
+            animate();
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const dt = Math.min(clock.getDelta(), 0.05);
+            const t = clock.elapsedTime;
+
+            updateCamera(dt);
+
+            // ---- being seen undoes it ----
+            const ang = angleToFigure();
+            const lo = THREE.MathUtils.degToRad(params.dissolveAngle);
+            const hi = THREE.MathUtils.degToRad(params.holdAngle);
+            // how directly you are looking at it, 1 dead-centre -> 0 periphery
+            const stared = 1 - THREE.MathUtils.smoothstep(ang, lo, hi);
+            if (stared > 0.5) {
+                state.presence = Math.max(0, state.presence - dt * params.dissolveRate * stared);
+            } else {
+                state.presence = Math.min(1, state.presence + dt * params.reformRate * (1 - stared));
+            }
+
+            // gone long enough under the gaze, it gives the place up entirely
+            if (state.presence <= 0.02) {
+                state.goneFor += dt;
+                if (state.goneFor > params.goneBeforeMoving) {
+                    state.goneFor = 0;
+                    relocate(gaze.azimuth);
+                }
+            } else {
+                state.goneFor = 0;
+            }
+
+            // ---- the figure itself ----
+            const p = state.presence;
+            const u = figure.userData;
+            if (u.mesh) {
+                // she breathes as one: a slow swell across the shoulders
+                const b = 1 + 0.015 * Math.sin(t * 0.9 + u.phase);
+                u.mesh.scale.set(u.meshS * b, u.meshS, u.meshS * b);
+            } else {
+                const breath = 1 + 0.05 * Math.sin(t * 0.9 + u.phase);
+                u.body.scale.set(breath, 1 / breath, breath);
+                u.head.position.y = 2.4 + 0.05 * Math.sin(t * 0.9 + u.phase);
+            }
+            u.shell.scale.setScalar(1 + 0.09 * Math.sin(t * 0.62 + u.phase));
+            // the body fades first, the head holds a beat longer
+            u.litMat.opacity = Math.pow(p, 1.6);
+            u.headMat.opacity = Math.pow(p, 1.1);
+            u.shellMat.opacity = 0.1 * p;
+            halo.intensity = 55 * params.figureGlow * p * (0.9 + 0.1 * Math.sin(t * 1.7 + u.phase));
+            figure.visible = p > 0.003;
+
+            // ---- the mist, the water, the sky ----
+            motes.material.uniforms.uTime.value = t;
+            motes.material.uniforms.uScatter.value = 1 - p;
+            seaMat.uniforms.uTime.value = t;
+            seaMat.uniforms.uPresence.value = p;
+            skyMat.uniforms.uPresence.value = p;
+
+            // ---- tears: staring at the empty place where it stood ----
+            const staringAtNothing = stared > 0.5 ? (1 - p) : 0;
+            state.staring += (staringAtNothing - state.staring) * Math.min(1, dt * 2);
+            if (state.staring > 0.3) {
+                state.tear = Math.min(params.tearMax, state.tear + dt * params.tearRise * state.staring);
+            } else {
+                state.tear = Math.max(0.12, state.tear - dt * params.tearFall);
+            }
+            state.blink = Math.max(0, state.blink - dt * 3.5);
+            const wellBreath = 0.05 * Math.sin(t * 0.3) + 0.02 * Math.sin(t * 0.83 + 1.0);
+            tearPass.uniforms.uTime.value = t;
+            tearPass.uniforms.uAmount.value = Math.max(0, state.tear + wellBreath);
+            tearPass.uniforms.uBlink.value = state.blink;
+
+            // ---- the finish: the world fringes while it is coming apart ----
+            const undoing = 4 * p * (1 - p);
+            finalPass.uniforms.uTime.value = t;
+            finalPass.uniforms.uAberration.value = params.aberration * (1 + undoing * 2.2);
+
+            // ---- the murmurs ----
+            document.getElementById('felt').style.opacity = (p * 0.55 * (ang > hi ? 1 : 0.25)).toFixed(3);
+            document.getElementById('gone').style.opacity = (state.staring * 0.6).toFixed(3);
+
+            composer.render();
+        }
+
+        function onResize() {
+            camera.aspect = innerWidth / innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(innerWidth, innerHeight);
+            composer.setSize(innerWidth, innerHeight);
+            tearPass.uniforms.uResolution.value.set(innerWidth * params.dpr, innerHeight * params.dpr);
+        }
+
+        function setupGUI() {
+            const gui = new GUI({ title: 'sólo porque lo sientas' });
+            const pr = gui.addFolder('The presence');
+            pr.add(params, 'dissolveAngle', 5, 40, 1).name('Dissolve within (°)');
+            pr.add(params, 'holdAngle', 15, 70, 1).name('Whole beyond (°)');
+            pr.add(params, 'dissolveRate', 0.2, 4, 0.05).name('Comes apart');
+            pr.add(params, 'reformRate', 0.05, 2, 0.05).name('Dares back');
+            pr.add(params, 'goneBeforeMoving', 1, 12, 0.5).name('Gone before moving');
+            pr.add(params, 'figureGlow', 0.2, 3, 0.05).name('Glow');
+            pr.add(params, 'figureYaw', -180, 180, 1).name('Turn her (°)').onChange((v) => {
+                if (figure.userData.mesh) figure.userData.mesh.rotation.y = THREE.MathUtils.degToRad(v);
+            });
+            pr.add(params, 'scatterReach', 3, 40, 0.5).name('Mist reach')
+              .onChange((v) => motes.material.uniforms.uReach.value = v);
+            pr.add(params, 'loft', 0, 80, 1).name('Into the stars')
+              .onChange((v) => motes.material.uniforms.uLoft.value = v);
+            const te = gui.addFolder('The tears');
+            te.add(params, 'tearMax', 0.2, 1.4, 0.02).name('How far they well');
+            te.add(params, 'tearRise', 0.05, 1.5, 0.01).name('Rise');
+            te.add(params, 'tearFall', 0.05, 2, 0.01).name('Fall');
+            te.add(params, 'distortion', 0, 0.12, 0.002).name('Refraction')
+              .onChange((v) => tearPass.uniforms.uDistortion.value = v);
+            te.add(params, 'tearBlur', 0, 7, 0.1).name('Blur')
+              .onChange((v) => tearPass.uniforms.uBlur.value = v);
+            const look = gui.addFolder('Look');
+            look.add(params, 'exposure', 0.4, 2, 0.02).onChange((v) => renderer.toneMappingExposure = v);
+            look.add(params, 'bloomStrength', 0, 2, 0.02).onChange((v) => bloomPass.strength = v);
+            look.add(params, 'bloomThreshold', 0, 1, 0.02).onChange((v) => bloomPass.threshold = v);
+            look.add(params, 'grain', 0, 0.2, 0.005).onChange((v) => finalPass.uniforms.uGrain.value = v);
+            look.add(params, 'vignette', 0, 2, 0.05).onChange((v) => finalPass.uniforms.uVignette.value = v);
+            look.add(params, 'autoDrift', 0, 0.08, 0.002).name('Idle wander');
+            gui.close();
+            gui.domElement.style.display = 'none';
+            window.addEventListener('keydown', (e) => {
+                if (e.key === 'g' || e.key === 'G') {
+                    const d = gui.domElement.style;
+                    d.display = d.display === 'none' ? '' : 'none';
+                }
+            });
+        }
+
+        init();
+    </script>
+</body>
+</html>
