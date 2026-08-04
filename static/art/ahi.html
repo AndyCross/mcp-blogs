@@ -657,10 +657,10 @@
                 if (!gaze.dragging) return;
                 const dx = e.clientX - lx, dy = e.clientY - ly; lx = e.clientX; ly = e.clientY;
                 if (Math.abs(dx) + Math.abs(dy) > 3) moved = true;
-                // you drag the night itself: the world follows the hand
-                gaze.azimuth -= dx * 0.0024;
+                // drag right to look right; up and down still drag the night itself
+                gaze.azimuth += dx * 0.0024;
                 gaze.elevation -= dy * 0.0016;
-                gaze.azVel = -dx * 0.0024; gaze.elVel = -dy * 0.0016;
+                gaze.azVel = dx * 0.0024; gaze.elVel = -dy * 0.0016;
                 gaze.idle = 0;
             });
             const up = () => {
