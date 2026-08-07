@@ -124,6 +124,10 @@
 
         const params = {
             dpr: Math.min(window.devicePixelRatio, 1.6),
+            // --- the frame you are looking through ---
+            fov: 55,               // vertical, on a wide screen
+            fovMax: 74,            // how far it may open on a tall one
+            hFovMin: 34,           // the horizontal arc never closes below this
             // --- the presence ---
             distance: 46,          // how far out on the water it stands
             figureScale: 2.6,
@@ -168,6 +172,25 @@
 
         const PRESENCE_WARM = new THREE.Color(0xff6fae);   // her colour, from La conexión
         const PRESENCE_COLD = new THREE.Color(0x6f5cd8);   // what the mist cools to
+
+        // ============================================================
+        //  THE FRAME — this was composed on a wide screen, where the eye
+        //  holds nearly 86° of the night and she has room to stand at the
+        //  edge of it, whole, while you turn. A phone in portrait holds 27°.
+        //  Every angle below was written against the wide frame, so at that
+        //  width she arrives already inside the dissolve and is gone in a
+        //  flash. Nothing here is authored in absolute degrees any more:
+        //  the dissolve, the reach of a drag and her size on the water are
+        //  all measured against however much night you actually have.
+        // ============================================================
+        const REF_VFOV = THREE.MathUtils.degToRad(params.fov);
+        const REF_HALF_HFOV = Math.atan(Math.tan(REF_VFOV / 2) * (16 / 9));
+        const BASE_SCALE = params.figureScale;
+        const view = {
+            halfHFov: REF_HALF_HFOV,  // half the horizontal arc, radians
+            k: 1,                     // that arc, as a share of the wide one
+            dragGain: 1,              // so a finger turns the night, not whips it
+        };
 
         let camera, scene, renderer, composer, tearPass, bloomPass, finalPass;
         let seaMat, skyMat, figure, motes, halo;
@@ -931,10 +954,12 @@
                 if (!gaze.dragging) return;
                 const dx = e.clientX - lx, dy = e.clientY - ly; lx = e.clientX; ly = e.clientY;
                 if (Math.abs(dx) + Math.abs(dy) > 3) moved = true;
-                // drag right to look right; up and down still drag the night itself
-                gaze.azimuth += dx * 0.0024;
+                // drag right to look right; up and down still drag the night itself.
+                // a narrow frame turns slower, or a thumb would throw her past it
+                const rate = 0.0024 * view.dragGain;
+                gaze.azimuth += dx * rate;
                 gaze.elevation -= dy * 0.0016;
-                gaze.azVel = dx * 0.0024; gaze.elVel = -dy * 0.0016;
+                gaze.azVel = dx * rate; gaze.elVel = -dy * 0.0016;
                 gaze.idle = 0;
             });
             const up = () => {
@@ -973,6 +998,32 @@
             return Math.abs(d);
         }
 
+        // Open the lens on a narrow frame until the horizontal arc reaches
+        // hFovMin, then re-measure everything that was written in degrees
+        // against what the frame turned out to be. She keeps the same share
+        // of the picture whichever way the phone is held.
+        function applyViewport() {
+            const aspect = innerWidth / innerHeight;
+            const needed = 2 * Math.atan(
+                Math.tan(THREE.MathUtils.degToRad(params.hFovMin) / 2) / aspect);
+            const vFov = Math.min(THREE.MathUtils.degToRad(params.fovMax),
+                                  Math.max(THREE.MathUtils.degToRad(params.fov), needed));
+            camera.fov = THREE.MathUtils.radToDeg(vFov);
+            camera.aspect = aspect;
+            camera.updateProjectionMatrix();
+
+            view.halfHFov = Math.atan(Math.tan(vFov / 2) * aspect);
+            // never wider than authored: an ultrawide screen keeps her at
+            // the distance the piece was written for
+            view.k = Math.min(1, view.halfHFov / REF_HALF_HFOV);
+            view.dragGain = Math.max(0.55, view.k);
+
+            const grow = Math.min(1.4, Math.tan(vFov / 2) / Math.tan(REF_VFOV / 2));
+            params.figureScale = BASE_SCALE * grow;
+            figure.scale.setScalar(params.figureScale);
+            motes.material.uniforms.uScale.value = params.figureScale;
+        }
+
         function buildComposer() {
             composer = new EffectComposer(renderer);
             composer.setPixelRatio(params.dpr);
@@ -992,7 +1043,7 @@
         function init() {
             const container = document.getElementById('container');
             scene = new THREE.Scene();
-            camera = new THREE.PerspectiveCamera(55, innerWidth / innerHeight, 0.2, 4000);
+            camera = new THREE.PerspectiveCamera(params.fov, innerWidth / innerHeight, 0.2, 4000);
 
             renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
             renderer.setPixelRatio(params.dpr);
@@ -1015,12 +1066,14 @@
             buildMeteors();
             loadFigure();
             placeFigure();
+            applyViewport();
             buildComposer();
             setupControls();
             setupGUI();
 
-            // it begins just off your shoulder, already felt
-            gaze.azimuth = state.azimuth - 0.62;
+            // it begins just off your shoulder, already felt: the same way
+            // into the frame whether the frame is wide or a hand's width
+            gaze.azimuth = state.azimuth - 0.83 * view.halfHFov;
 
             if (Q.get('title') === '0') document.getElementById('title').style.display = 'none';
             setTimeout(() => document.getElementById('title').classList.add('gone'), 9500);
@@ -1037,8 +1090,10 @@
 
             // ---- being seen undoes it ----
             const ang = angleToFigure();
-            const lo = THREE.MathUtils.degToRad(params.dissolveAngle);
-            const hi = THREE.MathUtils.degToRad(params.holdAngle);
+            // measured against the frame, so she comes apart at the same place
+            // in the picture on a phone as she does on a wide screen
+            const lo = THREE.MathUtils.degToRad(params.dissolveAngle) * view.k;
+            const hi = THREE.MathUtils.degToRad(params.holdAngle) * view.k;
             // how directly you are looking at it, 1 dead-centre -> 0 periphery
             const stared = 1 - THREE.MathUtils.smoothstep(ang, lo, hi);
             if (stared > 0.5) {
@@ -1135,8 +1190,7 @@
         }
 
         function onResize() {
-            camera.aspect = innerWidth / innerHeight;
-            camera.updateProjectionMatrix();
+            applyViewport();
             renderer.setSize(innerWidth, innerHeight);
             composer.setSize(innerWidth, innerHeight);
             tearPass.uniforms.uResolution.value.set(innerWidth * params.dpr, innerHeight * params.dpr);
@@ -1181,6 +1235,8 @@
             look.add(params, 'grain', 0, 0.2, 0.005).onChange((v) => finalPass.uniforms.uGrain.value = v);
             look.add(params, 'vignette', 0, 2, 0.05).onChange((v) => finalPass.uniforms.uVignette.value = v);
             look.add(params, 'autoDrift', 0, 0.08, 0.002).name('Idle wander');
+            look.add(params, 'hFovMin', 24, 70, 1).name('Narrow-frame arc (°)')
+              .onChange(applyViewport);
             gui.close();
             gui.domElement.style.display = 'none';
             window.addEventListener('keydown', (e) => {
