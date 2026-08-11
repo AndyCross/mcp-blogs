@@ -51,6 +51,18 @@
         opacity: 0;
         animation: bloom 2.4s ease forwards 1.2s;
     }
+    #forever {
+        font-family: "Georgia", serif;
+        font-variant: small-caps;
+        letter-spacing: 0.34em;
+        font-size: clamp(0.7rem, 1.6vw, 0.85rem);
+        color: rgba(198, 205, 217, 0.55);
+        margin-top: 2.2rem;
+        text-shadow: 0 1px 10px rgba(0, 0, 0, 0.75);
+        opacity: 0;
+        animation: bloom 4s ease forwards 3.2s;
+    }
+    #title.not-final #forever { display: none; }
     @keyframes bloom {
         from { opacity: 0; filter: blur(8px); transform: translateY(8px); }
         to   { opacity: 1; filter: blur(0);   transform: translateY(0); }
@@ -153,8 +165,9 @@
 <body>
     <div id="container"></div>
     <div id="title">
-        <h1>Te amaré siempre.</h1>
-        <div id="whisper">Mi amor es inmutable, pero solitario. I abide.</div>
+        <h1>You know how I feel</h1>
+        <div id="whisper">I hope you smile every day.</div>
+        <div id="forever">la última promesa</div>
     </div>
     <div id="hint">move closer and it goes sooner</div>
     <button id="memories" aria-label="what was said before">&#10044;</button>
@@ -232,6 +245,13 @@
                 title: 'Te amaré siempre.',
                 whisper: 'Abide Forever.',
                 tint: '#3e4d68'
+            },
+            {
+                date: '2026-08-13',
+                title: 'You know how I feel',
+                whisper: 'I hope you smile every day.',
+                tint: '#75809f',
+                final: true
             }
         ];
 
@@ -239,6 +259,7 @@
         let camera, scene, renderer, controls, material;
         let clock = new THREE.Clock();
         let titleTimer = null; // the timer that fades the title away after a reveal
+        let titleHoldMs = 8000; // the final pledge is allowed to stay longer
         // Tracks whether a pointer was scrolling the past rather than choosing from it.
         const dragState = { x: 0, y: 0, moved: false };
 
@@ -558,7 +579,7 @@
             setupTimeline();
 
             // Reveal the piece after the title has had its moment.
-            titleTimer = setTimeout(() => document.getElementById('title').classList.add('gone'), 8000);
+            titleTimer = setTimeout(() => document.getElementById('title').classList.add('gone'), titleHoldMs);
 
             window.addEventListener('resize', onWindowResize);
         }
@@ -647,6 +668,15 @@
             // Recolour the bloom to this pledge's tint.
             params.colorWarm = p.tint;
             material.uniforms.uColorWarm.value.set(p.tint);
+
+            // The last pledge ever. Everything slows: the rose holds its bloom
+            // longer, the orbit drifts rather than turns, the title stays for
+            // fourteen seconds instead of eight, and a closing line appears.
+            document.getElementById('title').classList.toggle('not-final', !p.final);
+            titleHoldMs = p.final ? 14000 : 8000;
+            params.loopSpeed = p.final ? 0.09 : 0.18;
+            params.bloomHold = p.final ? 1.7 : 1.0;
+            controls.autoRotateSpeed = p.final ? 0.3 : params.rotationSpeed;
         }
 
         // Bring the title back and replay its bloom, then let it fade again,
@@ -655,15 +685,16 @@
             const title = document.getElementById('title');
             const h1 = title.querySelector('h1');
             const whisper = document.getElementById('whisper');
+            const forever = document.getElementById('forever');
             title.classList.remove('gone');
             // Restart the entrance animation from the top.
-            [h1, whisper].forEach(el => {
+            [h1, whisper, forever].forEach(el => {
                 el.style.animation = 'none';
                 void el.offsetWidth; // force reflow so the animation re-runs
                 el.style.animation = '';
             });
             clearTimeout(titleTimer);
-            titleTimer = setTimeout(() => title.classList.add('gone'), 8000);
+            titleTimer = setTimeout(() => title.classList.add('gone'), titleHoldMs);
         }
 
         function buildEntries(timeline) {
@@ -700,7 +731,7 @@
                 if (age === 0) {
                     const now = document.createElement('div');
                     now.className = 'now';
-                    now.textContent = 'ahora';
+                    now.textContent = p.final ? 'la última promesa' : 'ahora';
                     entry.appendChild(now);
                 }
 
