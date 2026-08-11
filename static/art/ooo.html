@@ -259,7 +259,7 @@
         let camera, scene, renderer, controls, material;
         let clock = new THREE.Clock();
         let titleTimer = null; // the timer that fades the title away after a reveal
-        let titleHoldMs = 8000; // the final pledge is allowed to stay longer
+        let titleHoldMs = 8000; // null means the words never leave the screen
         // Tracks whether a pointer was scrolling the past rather than choosing from it.
         const dragState = { x: 0, y: 0, moved: false };
 
@@ -578,8 +578,9 @@
             setupInteraction();
             setupTimeline();
 
-            // Reveal the piece after the title has had its moment.
-            titleTimer = setTimeout(() => document.getElementById('title').classList.add('gone'), titleHoldMs);
+            // Reveal the piece after the title has had its moment. The final
+            // pledge never gets this timer: its words stay.
+            if (titleHoldMs) titleTimer = setTimeout(() => document.getElementById('title').classList.add('gone'), titleHoldMs);
 
             window.addEventListener('resize', onWindowResize);
         }
@@ -670,10 +671,10 @@
             material.uniforms.uColorWarm.value.set(p.tint);
 
             // The last pledge ever. Everything slows: the rose holds its bloom
-            // longer, the orbit drifts rather than turns, the title stays for
-            // fourteen seconds instead of eight, and a closing line appears.
+            // longer, the orbit drifts rather than turns, a closing line
+            // appears, and the words never fade. They stay forever.
             document.getElementById('title').classList.toggle('not-final', !p.final);
-            titleHoldMs = p.final ? 14000 : 8000;
+            titleHoldMs = p.final ? null : 8000;
             params.loopSpeed = p.final ? 0.09 : 0.18;
             params.bloomHold = p.final ? 1.7 : 1.0;
             controls.autoRotateSpeed = p.final ? 0.3 : params.rotationSpeed;
@@ -694,7 +695,7 @@
                 el.style.animation = '';
             });
             clearTimeout(titleTimer);
-            titleTimer = setTimeout(() => title.classList.add('gone'), titleHoldMs);
+            if (titleHoldMs) titleTimer = setTimeout(() => title.classList.add('gone'), titleHoldMs);
         }
 
         function buildEntries(timeline) {
