@@ -466,16 +466,16 @@
                 g.save();
                 g.translate(cx, cy);
                 g.rotate((((i * 7) % 5) - 2) * 0.02);
-                g.font = 'italic 32px "Apple Chancery", "Snell Roundhand", Georgia, serif';
-                // Greedy wrap at ~14 characters.
+                g.font = 'italic 42px "Apple Chancery", "Snell Roundhand", Georgia, serif';
+                // Greedy wrap at ~11 characters.
                 const lines = [];
                 let line = '';
                 for (const w of phrase.split(' ')) {
-                    if ((line + ' ' + w).trim().length > 14 && line) { lines.push(line); line = w; }
+                    if ((line + ' ' + w).trim().length > 11 && line) { lines.push(line); line = w; }
                     else line = (line + ' ' + w).trim();
                 }
                 if (line) lines.push(line);
-                const lh = 40;
+                const lh = 50;
                 // maxWidth squeezed so long lines stay on the visible paper
                 lines.forEach((l, j) => g.fillText(l, 0, (j - (lines.length - 1) / 2) * lh, cw - 104));
                 g.restore();
@@ -486,7 +486,7 @@
         }
 
         function buildLetters() {
-            const plane = new THREE.PlaneGeometry(0.30, 0.42);
+            const plane = new THREE.PlaneGeometry(0.60, 0.84);
             const geo = new THREE.InstancedBufferGeometry();
             geo.index = plane.index;
             geo.setAttribute('position', plane.getAttribute('position'));
@@ -601,11 +601,11 @@
                         vec2 cell = vec2(mod(pick, 4.0), floor(pick / 4.0));
                         float ink = texture2D(uText, (cell + tuv) / 4.0).a * paper;
 
-                        float a = (paper * 0.85 + glow * 0.50 + ink * 0.25) * fadeIn * fadeOut * flicker;
-                        // Kept well under 1.0 so additive blending stays ember,
-                        // never clamping through orange into white.
+                        float a = (paper * 0.85 + glow * 0.50 + ink * 0.45) * fadeIn * fadeOut * flicker;
+                        // Paper kept under 1.0 so additive blending stays
+                        // ember; only the ink is allowed to reach for white.
                         vec3 col = uEmber * (0.34 + paper * 0.46 * fold + glow * 0.28);
-                        col += vec3(1.0, 0.92, 0.78) * ink * 0.45;
+                        col += vec3(1.0, 0.92, 0.78) * ink * 0.75;
 
                         float f = 1.0 - exp(-pow(vDist * uFogDensity, 2.0));
                         a *= (1.0 - clamp(f, 0.0, 1.0));
