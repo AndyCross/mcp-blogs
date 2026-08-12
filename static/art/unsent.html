@@ -430,6 +430,61 @@
 
         // ---- The letters -----------------------------------------------
 
+        // What they were never sent to say. Sixteen of them; each letter
+        // picks one by its seed. Edit these to change the words.
+        const UNSENT = [
+            'te lo iba a decir',
+            'hoy te vi en todas partes',
+            'no era nada, sólo tu nombre',
+            'I nearly called',
+            'esta no la mando',
+            'duerme bien',
+            'otra vez la luna',
+            'I kept this one',
+            'me acordé de ti',
+            'nada. sólo esto.',
+            'I hope you smiled today',
+            'las olas otra vez',
+            'no hace falta que lo sepas',
+            'sigues aquí',
+            'no la envíes',
+            'buenas noches entonces'
+        ];
+
+        // One shared 4x4 atlas of handwritten pages, drawn once.
+        function makeLetterAtlas() {
+            const c = document.createElement('canvas');
+            c.width = c.height = 1024;
+            const g = c.getContext('2d');
+            const cw = 256, ch = 256;
+            g.fillStyle = 'rgba(255, 255, 255, 0.92)';
+            g.textAlign = 'center';
+            g.textBaseline = 'middle';
+            UNSENT.forEach((phrase, i) => {
+                const cx = (i % 4) * cw + cw / 2;
+                const cy = Math.floor(i / 4) * ch + ch / 2;
+                g.save();
+                g.translate(cx, cy);
+                g.rotate((((i * 7) % 5) - 2) * 0.02);
+                g.font = 'italic 32px "Apple Chancery", "Snell Roundhand", Georgia, serif';
+                // Greedy wrap at ~14 characters.
+                const lines = [];
+                let line = '';
+                for (const w of phrase.split(' ')) {
+                    if ((line + ' ' + w).trim().length > 14 && line) { lines.push(line); line = w; }
+                    else line = (line + ' ' + w).trim();
+                }
+                if (line) lines.push(line);
+                const lh = 40;
+                // maxWidth squeezed so long lines stay on the visible paper
+                lines.forEach((l, j) => g.fillText(l, 0, (j - (lines.length - 1) / 2) * lh, cw - 104));
+                g.restore();
+            });
+            const tex = new THREE.CanvasTexture(c);
+            tex.colorSpace = THREE.SRGBColorSpace;
+            return tex;
+        }
+
         function buildLetters() {
             const plane = new THREE.PlaneGeometry(0.30, 0.42);
             const geo = new THREE.InstancedBufferGeometry();
@@ -463,6 +518,7 @@
                 uniforms: {
                     uTime:  { value: 0 },
                     uEmber: { value: PALETTE.ember.clone() },
+                    uText:  { value: makeLetterAtlas() },
                     uFog:   { value: PALETTE.fog.clone() },
                     uFogDensity: { value: FOG_DENSITY }
                 },
@@ -501,11 +557,13 @@
                         vec4 mv = modelViewMatrix * vec4(wp, 1.0);
                         vDist = length(mv.xyz);
 
-                        // Face the camera, turning slowly like paper falling upward.
-                        float rot = aSeed * 3.1 + uTime * (0.18 + fract(aSeed * 7.3) * 0.22);
+                        // Face the camera, swaying rather than spinning, so
+                        // the words stay the right way up long enough to read.
+                        float rot = (fract(aSeed * 0.91) - 0.5) * 0.8
+                                  + sin(uTime * 0.35 + aSeed) * 0.45;
                         float c = cos(rot), s = sin(rot);
                         vec2 q = vec2(position.x * c - position.y * s, position.x * s + position.y * c);
-                        float scale = (0.75 + fract(aSeed * 3.9) * 0.6) * (1.0 - 0.25 * age);
+                        float scale = (0.95 + fract(aSeed * 3.9) * 0.55) * (1.0 - 0.22 * age);
                         mv.xy += q * scale;
 
                         gl_Position = projectionMatrix * mv;
@@ -514,6 +572,7 @@
                 fragmentShader: `
                     uniform float uTime;
                     uniform vec3 uEmber;
+                    uniform sampler2D uText;
                     uniform vec3 uFog;
                     uniform float uFogDensity;
 
@@ -536,10 +595,17 @@
                         float flicker = 0.70 + 0.30 * sin(uTime * 5.3 + vSeed * 19.0)
                                              * sin(uTime * 1.9 + vSeed * 4.0);
 
-                        float a = (paper * 0.85 + glow * 0.50) * fadeIn * fadeOut * flicker;
+                        // The words, faint and warm, on the face of the paper.
+                        vec2 tuv = clamp(p / vec2(0.36, 0.52) + 0.5, 0.0, 1.0);
+                        float pick = floor(fract(vSeed * 0.137) * 16.0);
+                        vec2 cell = vec2(mod(pick, 4.0), floor(pick / 4.0));
+                        float ink = texture2D(uText, (cell + tuv) / 4.0).a * paper;
+
+                        float a = (paper * 0.85 + glow * 0.50 + ink * 0.25) * fadeIn * fadeOut * flicker;
                         // Kept well under 1.0 so additive blending stays ember,
                         // never clamping through orange into white.
                         vec3 col = uEmber * (0.34 + paper * 0.46 * fold + glow * 0.28);
+                        col += vec3(1.0, 0.92, 0.78) * ink * 0.45;
 
                         float f = 1.0 - exp(-pow(vDist * uFogDensity, 2.0));
                         a *= (1.0 - clamp(f, 0.0, 1.0));
