@@ -41,6 +41,26 @@
         to   { opacity: 1; filter: blur(0);   transform: translateY(0); }
     }
 
+    /* ---- What a touched letter says ---- */
+    #said {
+        position: fixed;
+        left: 0; right: 0;
+        bottom: 12%;
+        text-align: center;
+        pointer-events: none;
+        z-index: 9;
+        font-family: "Georgia", "Times New Roman", serif;
+        font-style: italic;
+        font-size: clamp(1.1rem, 3.2vw, 1.7rem);
+        letter-spacing: 0.04em;
+        color: #f3d9b8;
+        text-shadow: 0 2px 16px rgba(0, 0, 0, 0.9), 0 0 28px rgba(255, 177, 104, 0.35);
+        opacity: 0;
+        transition: opacity 1.6s ease;
+        padding: 0 1.5rem;
+    }
+    #said.shown { opacity: 0.9; transition: opacity 0.5s ease; }
+
     #fallback {
         position: fixed;
         inset: 0;
@@ -58,6 +78,7 @@
 <body>
     <div id="container"></div>
     <div id="title"><h1>Unsent.</h1></div>
+    <div id="said" aria-live="polite"></div>
     <div id="fallback">the sea is dark tonight, and this screen cannot show it</div>
 
     <script type="importmap">
@@ -620,6 +641,45 @@
             scene.add(letters);
         }
 
+        // Mirror of the vertex shader's motion, so JS knows where each
+        // letter is and a pointer can find one to hear it.
+        const _lp = new THREE.Vector3();
+        function findLetterAt(clientX, clientY, t) {
+            const w = window.innerWidth, h = window.innerHeight;
+            const so = letterAttrs.origin.array, ss = letterAttrs.start.array;
+            const sl = letterAttrs.life.array, sd = letterAttrs.seed.array;
+            let best = -1, bestD = 52 * 52; // px² threshold
+            for (let i = 0; i < LETTER_POOL; i++) {
+                const age = (t - ss[i]) / sl[i];
+                if (age < 0 || age > 1) continue;
+                const seed = sd[i];
+                const climb = Math.pow(age, 0.82) * (4.2 + (seed % 1) * 3.4);
+                _lp.set(
+                    so[i * 3] + Math.sin(t * 0.32 + seed * 2.1) * (0.28 + age * 0.7),
+                    so[i * 3 + 1] + climb,
+                    so[i * 3 + 2] + Math.cos(t * 0.27 + seed * 1.7) * (0.22 + age * 0.5)
+                );
+                _lp.project(camera);
+                if (_lp.z > 1) continue; // behind the camera
+                const sx = (_lp.x * 0.5 + 0.5) * w;
+                const sy = (-_lp.y * 0.5 + 0.5) * h;
+                const d = (sx - clientX) * (sx - clientX) + (sy - clientY) * (sy - clientY);
+                if (d < bestD) { bestD = d; best = i; }
+            }
+            return best;
+        }
+
+        // Speak a touched letter's line, then let it sink away again.
+        let saidTimer = null;
+        function speakLetter(i) {
+            const said = document.getElementById('said');
+            const pick = Math.floor(((letterAttrs.seed.array[i] * 0.137) % 1) * 16);
+            said.textContent = UNSENT[pick];
+            said.classList.add('shown');
+            clearTimeout(saidTimer);
+            saidTimer = setTimeout(() => said.classList.remove('shown'), 2600);
+        }
+
         function releaseLetter(x, z, t) {
             const i = letterCursor;
             letterCursor = (letterCursor + 1) % LETTER_POOL;
@@ -868,9 +928,20 @@
             };
             window.addEventListener('pointermove', move);
 
+            // Drifting over a letter is enough to hear it.
+            window.addEventListener('pointermove', (e) => {
+                const i = findLetterAt(e.clientX, e.clientY, clock.getElapsedTime());
+                if (i >= 0) speakLetter(i);
+            });
+
             // Feel it, let it go, watch it cost nothing.
             window.addEventListener('pointerdown', (e) => {
                 move(e);
+                const t0 = clock.getElapsedTime();
+                // Touching a letter that is already rising reads it,
+                // rather than sending more after it.
+                const found = findLetterAt(e.clientX, e.clientY, t0);
+                if (found >= 0) { speakLetter(found); return; }
                 ndc.set(pointer.tx, -pointer.ty);
                 raycaster.setFromCamera(ndc, camera);
                 if (!raycaster.ray.intersectPlane(surface, hit)) {
