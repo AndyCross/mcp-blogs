@@ -104,6 +104,13 @@
         let scene, camera, renderer, composer, clock;
         let sea, seaMat, letters, letterMat, sky;
         let petals = [], openedCount = 6;
+        let bloomHead;
+        const BLOOM_POS = new THREE.Vector3(0, 2.1, 0);
+        const HEAD_LEAN = 0.95; // radians off vertical, toward the viewer
+        const _headDir = new THREE.Vector3();
+        const _headAxis = new THREE.Vector3();
+        const _headQ = new THREE.Quaternion();
+        const _UP = new THREE.Vector3(0, 1, 0);
 
         // The wave cycle. Everything slow in this piece is timed off it.
         let nextSwellAt = 42;
@@ -566,8 +573,14 @@
 
         function buildBloom(lightDir) {
             const group = new THREE.Group();
-            group.position.set(0, 2.1, 0);
+            group.position.copy(BLOOM_POS);
             scene.add(group);
+
+            // The head hinges at the top of the stem and leans toward the
+            // viewer, so the shape of the bloom is always given to them.
+            bloomHead = new THREE.Group();
+            group.add(bloomHead);
+            leanHeadToCamera(1);
 
             // A thin lit stem reaching down into the water, bowing slightly.
             const stemCurve = new THREE.CatmullRomCurve3([
@@ -585,7 +598,7 @@
                 new THREE.MeshLambertMaterial({ color: 0x9fb48c, emissive: 0x55684a })
             );
             core.position.y = 0.05;
-            group.add(core);
+            bloomHead.add(core);
 
             const petalGeo = new THREE.PlaneGeometry(1, 1, 10, 14);
 
@@ -708,7 +721,7 @@
                 const mesh = new THREE.Mesh(petalGeo, mat);
                 mesh.rotation.y = i * 2.39996323; // golden angle
                 mesh.renderOrder = 2;
-                group.add(mesh);
+                bloomHead.add(mesh);
 
                 petals.push({
                     mesh, mat,
@@ -726,6 +739,18 @@
             // their time, one per wave, and there is always another.
             for (let i = 0; i < openedCount; i++) petals[i].t = 1;
             applyPetals();
+        }
+
+        // Lean the head off vertical, toward the camera's side of the sea.
+        // amount = 1 snaps it there; small amounts follow the orbit gently.
+        function leanHeadToCamera(amount) {
+            _headDir.subVectors(camera.position, BLOOM_POS);
+            _headDir.y = 0;
+            if (_headDir.lengthSq() < 0.001) return;
+            _headDir.normalize();
+            _headAxis.crossVectors(_UP, _headDir).normalize();
+            _headQ.setFromAxisAngle(_headAxis, HEAD_LEAN);
+            bloomHead.quaternion.slerp(_headQ, amount);
         }
 
         function applyPetals() {
@@ -869,6 +894,7 @@
                 Math.cos(azimuth) * radius
             );
             camera.lookAt(0, 2.4 + pointer.y * 0.12, 0);
+            leanHeadToCamera(1 - Math.exp(-dt * 1.2));
             sky.position.copy(camera.position);
 
             if (composer) composer.render(); else renderer.render(scene, camera);
