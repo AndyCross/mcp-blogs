@@ -1,0 +1,842 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Unsent</title>
+<script src="https://cdn.counter.dev/script.js" data-id="72d92ac8-56cf-4fdd-9899-b73adbab2e4d" data-utcoffset="0"></script>
+<style>
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; background: #04060e; }
+    #container { position: fixed; inset: 0; }
+    canvas { display: block; width: 100vw; height: 100vh; cursor: crosshair; }
+
+    #title {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        pointer-events: none;
+        z-index: 10;
+        text-align: center;
+        padding: 1.5rem;
+        transition: opacity 4s ease;
+    }
+    #title.gone { opacity: 0; }
+    #title h1 {
+        font-family: "Georgia", "Times New Roman", serif;
+        font-weight: 400;
+        font-style: italic;
+        font-size: clamp(2rem, 7vw, 4.5rem);
+        letter-spacing: 0.03em;
+        color: #cdd5e2;
+        margin: 0;
+        text-shadow: 0 2px 20px rgba(0, 0, 0, 0.9), 0 0 34px rgba(58, 74, 110, 0.55);
+        opacity: 0;
+        animation: rise 3.5s ease forwards 0.6s;
+    }
+    @keyframes rise {
+        from { opacity: 0; filter: blur(10px); transform: translateY(10px); }
+        to   { opacity: 1; filter: blur(0);   transform: translateY(0); }
+    }
+
+    #fallback {
+        position: fixed;
+        inset: 0;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        background: radial-gradient(ellipse at 50% 30%, #101a30 0%, #04060e 70%);
+        color: rgba(205, 213, 226, 0.6);
+        font-family: "Georgia", serif;
+        font-style: italic;
+        z-index: 5;
+    }
+</style>
+</head>
+<body>
+    <div id="container"></div>
+    <div id="title"><h1>Unsent.</h1></div>
+    <div id="fallback">the sea is dark tonight, and this screen cannot show it</div>
+
+    <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+      }
+    }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+
+        // ---------------------------------------------------------------
+        // Three things happen here, all of them slowly.
+        //   The sea undulates, and every minute or so one large wave swells
+        //   across it and passes. Nothing breaks.
+        //   Letters rise out of the water, flicker, and dissolve before they
+        //   reach the top. They were written and never sent.
+        //   A bloom above the waterline unfurls one petal per wave. It is
+        //   never finished.
+        // ---------------------------------------------------------------
+
+        const isMobile = /Mobi|Android|iPhone|iPad|iPod/.test(navigator.userAgent) || window.innerWidth < 700;
+
+        const PALETTE = {
+            fog:    new THREE.Color('#05070f'), // the night the whole scene sits in
+            deep:   new THREE.Color('#060a16'), // trough of the sea
+            crest:  new THREE.Color('#1b2745'), // where a wave catches what light there is
+            sky:    new THREE.Color('#0a1022'),
+            ember:  new THREE.Color('#ffb168'), // the letters, the only warm thing here
+            living: new THREE.Color('#cfe8c8')  // the bloom
+        };
+
+        const FOG_DENSITY = 0.0135;
+        const SEA_RADIUS = 340;
+        const SEA_RINGS = isMobile ? 96 : 150;
+        const SEA_SEGS  = isMobile ? 88 : 132;
+        const LETTER_POOL = isMobile ? 120 : 220;
+        const TOTAL_PETALS = 40;
+
+        let scene, camera, renderer, composer, clock;
+        let sea, seaMat, letters, letterMat, sky;
+        let petals = [], openedCount = 4;
+
+        // The wave cycle. Everything slow in this piece is timed off it.
+        let nextSwellAt = 42;
+        let swellStart = -999;
+        const SWELL_DUR = 28;
+        let swellCounted = true;
+
+        let nextAmbientLetter = 3;
+        const pointer = { x: 0, y: 0, tx: 0, ty: 0 };
+        let azimuth = 0.7;
+        let letterCursor = 0;
+        const letterAttrs = {};
+
+        // Frame-time guard: if the machine is struggling, quietly get cheaper.
+        let slowFrames = 0, degraded = false;
+
+        const GLSL_NOISE = `
+            vec3 mod289(vec3 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
+            vec2 mod289(vec2 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
+            vec3 permute(vec3 x) { return mod289(((x * 34.0) + 1.0) * x); }
+            float snoise(vec2 v) {
+                const vec4 C = vec4(0.211324865, 0.366025404, -0.577350269, 0.024390243);
+                vec2 i  = floor(v + dot(v, C.yy));
+                vec2 x0 = v - i + dot(i, C.xx);
+                vec2 i1 = (x0.x > x0.y) ? vec2(1.0, 0.0) : vec2(0.0, 1.0);
+                vec4 x12 = x0.xyxy + C.xxzz;
+                x12.xy -= i1;
+                i = mod289(i);
+                vec3 p = permute(permute(i.y + vec3(0.0, i1.y, 1.0)) + i.x + vec3(0.0, i1.x, 1.0));
+                vec3 m = max(0.5 - vec3(dot(x0, x0), dot(x12.xy, x12.xy), dot(x12.zw, x12.zw)), 0.0);
+                m = m * m; m = m * m;
+                vec3 x = 2.0 * fract(p * C.www) - 1.0;
+                vec3 h = abs(x) - 0.5;
+                vec3 ox = floor(x + 0.5);
+                vec3 a0 = x - ox;
+                m *= 1.79284291400159 - 0.85373472095314 * (a0 * a0 + h * h);
+                vec3 g;
+                g.x  = a0.x  * x0.x  + h.x  * x0.y;
+                g.yz = a0.yz * x12.xz + h.yz * x12.yw;
+                return 130.0 * dot(m, g);
+            }
+        `;
+
+        // Shared by sea vertex and fragment: exponential-squared fog, applied
+        // by hand because every material here is a custom shader.
+        const GLSL_FOG = `
+            vec3 applyFog(vec3 col, float dist, vec3 fogCol, float density) {
+                float f = 1.0 - exp(-pow(dist * density, 2.0));
+                return mix(col, fogCol, clamp(f, 0.0, 1.0));
+            }
+        `;
+
+        if (!init()) {
+            document.getElementById('fallback').style.display = 'flex';
+        } else {
+            animate();
+        }
+
+        setTimeout(() => document.getElementById('title').classList.add('gone'), 5000);
+
+        function init() {
+            const container = document.getElementById('container');
+
+            try {
+                renderer = new THREE.WebGLRenderer({ antialias: !isMobile, powerPreference: 'high-performance' });
+            } catch (e) {
+                return false;
+            }
+            if (!renderer.getContext()) return false;
+
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, isMobile ? 1.5 : 1.75));
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setClearColor(PALETTE.fog, 1);
+            container.appendChild(renderer.domElement);
+
+            scene = new THREE.Scene();
+            clock = new THREE.Clock();
+
+            camera = new THREE.PerspectiveCamera(48, window.innerWidth / window.innerHeight, 0.1, 800);
+            camera.position.set(0, 2.9, 8.2);
+
+            // Ambient plus one soft directional light, low and off to the side,
+            // as if something is out there past the horizon.
+            scene.add(new THREE.AmbientLight(0x2a3450, 0.9));
+            const key = new THREE.DirectionalLight(0xbcd0ff, 0.55);
+            key.position.set(-6, 4, -9);
+            scene.add(key);
+            const lightDir = key.position.clone().normalize();
+
+            buildSky();
+            buildSea(lightDir);
+            buildLetters();
+            buildBloom(lightDir);
+            setupPost();
+            setupInteraction();
+
+            window.addEventListener('resize', onResize);
+            return true;
+        }
+
+        // ---- The night itself -----------------------------------------
+
+        function buildSky() {
+            const mat = new THREE.ShaderMaterial({
+                side: THREE.BackSide,
+                depthWrite: false,
+                uniforms: {
+                    uLow:  { value: PALETTE.fog.clone() },
+                    uHigh: { value: PALETTE.sky.clone() }
+                },
+                vertexShader: `
+                    varying vec3 vDir;
+                    void main() {
+                        vDir = normalize(position);
+                        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+                    }
+                `,
+                fragmentShader: `
+                    uniform vec3 uLow;
+                    uniform vec3 uHigh;
+                    varying vec3 vDir;
+
+                    float hash21(vec2 p) {
+                        return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
+                    }
+
+                    void main() {
+                        vec3 d = normalize(vDir);
+                        float h = clamp(d.y * 0.5 + 0.5, 0.0, 1.0);
+                        vec3 col = mix(uLow, uHigh, pow(h, 1.4));
+
+                        // A thin scatter of stars, only well above the horizon.
+                        if (d.y > 0.06) {
+                            vec2 cell = floor(vec2(atan(d.z, d.x) * 42.0, d.y * 90.0));
+                            float r = hash21(cell);
+                            if (r > 0.9955) {
+                                float tw = 0.55 + 0.45 * hash21(cell + 3.7);
+                                col += vec3(0.55, 0.62, 0.78) * tw * smoothstep(0.06, 0.35, d.y);
+                            }
+                        }
+                        gl_FragColor = vec4(col, 1.0);
+                    }
+                `
+            });
+            sky = new THREE.Mesh(new THREE.SphereGeometry(500, 24, 16), mat);
+            sky.frustumCulled = false;
+            scene.add(sky);
+        }
+
+        // ---- The sea ---------------------------------------------------
+
+        // A polar disc rather than a grid: vertices crowd near the camera,
+        // where the detail is actually seen, and thin out toward the fog.
+        function makeSeaGeometry(radius, rings, segs) {
+            const positions = new Float32Array((rings + 1) * segs * 3);
+            let k = 0;
+            for (let i = 0; i <= rings; i++) {
+                const r = Math.pow(i / rings, 2.3) * radius;
+                for (let j = 0; j < segs; j++) {
+                    const a = (j / segs) * Math.PI * 2;
+                    positions[k++] = Math.cos(a) * r;
+                    positions[k++] = 0;
+                    positions[k++] = Math.sin(a) * r;
+                }
+            }
+            const index = [];
+            for (let i = 0; i < rings; i++) {
+                for (let j = 0; j < segs; j++) {
+                    const j2 = (j + 1) % segs;
+                    const a = i * segs + j, b = i * segs + j2;
+                    const c = (i + 1) * segs + j2, d = (i + 1) * segs + j;
+                    index.push(a, b, c, a, c, d);
+                }
+            }
+            const geo = new THREE.BufferGeometry();
+            geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            geo.setIndex(index);
+            return geo;
+        }
+
+        function buildSea(lightDir) {
+            seaMat = new THREE.ShaderMaterial({
+                uniforms: {
+                    uTime:      { value: 0 },
+                    uSwellT:    { value: -1 },
+                    uSwellDur:  { value: SWELL_DUR },
+                    uDeep:      { value: PALETTE.deep.clone() },
+                    uCrest:     { value: PALETTE.crest.clone() },
+                    uFog:       { value: PALETTE.fog.clone() },
+                    uFogDensity:{ value: FOG_DENSITY },
+                    uLight:     { value: lightDir.clone() }
+                },
+                vertexShader: `
+                    uniform float uTime;
+                    uniform float uSwellT;
+                    uniform float uSwellDur;
+
+                    varying vec3 vWorld;
+                    varying vec3 vNormal;
+                    varying float vHeight;
+                    varying float vSwell;
+
+                    ${GLSL_NOISE}
+
+                    // The ordinary sea: four layers of noise drifting against
+                    // each other so nothing ever repeats visibly.
+                    float baseHeight(vec2 p, float t) {
+                        float h = 0.0;
+                        h += snoise(p * 0.042 + vec2(t * 0.055, t * 0.012)) * 0.90;
+                        h += snoise(p * 0.088 + vec2(-t * 0.042, t * 0.030)) * 0.44;
+                        h += snoise(p * 0.190 + vec2(t * 0.105, -t * 0.048)) * 0.17;
+                        h += snoise(p * 0.430 + vec2(-t * 0.190, t * 0.120)) * 0.055;
+                        return h;
+                    }
+
+                    // The one big wave. It rises, crosses, and goes.
+                    float swellHeight(vec2 p) {
+                        if (uSwellT < 0.0 || uSwellT > uSwellDur) return 0.0;
+                        float prog = uSwellT / uSwellDur;
+                        float crest = mix(-190.0, 190.0, prog);
+                        crest += sin(p.x * 0.018) * 7.0;
+                        float d = (p.y - crest) / 26.0;
+                        float ridge = exp(-d * d);
+                        float trail = exp(-pow((p.y - crest - 46.0) / 34.0, 2.0)) * 0.35;
+                        float env = pow(sin(prog * 3.14159265), 0.8);
+                        return (ridge + trail) * env * 5.6;
+                    }
+
+                    float totalHeight(vec2 p, float t) {
+                        return baseHeight(p, t) + swellHeight(p);
+                    }
+
+                    void main() {
+                        vec3 pos = position;
+                        vec2 p = pos.xz;
+                        float h = totalHeight(p, uTime);
+                        pos.y = h;
+
+                        float e = 0.75;
+                        float hx = totalHeight(p + vec2(e, 0.0), uTime);
+                        float hz = totalHeight(p + vec2(0.0, e), uTime);
+                        vNormal = normalize(cross(vec3(0.0, hz - h, e), vec3(e, hx - h, 0.0)));
+
+                        vHeight = h;
+                        vSwell = swellHeight(p);
+                        vec4 world = modelMatrix * vec4(pos, 1.0);
+                        vWorld = world.xyz;
+                        gl_Position = projectionMatrix * viewMatrix * world;
+                    }
+                `,
+                fragmentShader: `
+                    uniform vec3 uDeep;
+                    uniform vec3 uCrest;
+                    uniform vec3 uFog;
+                    uniform float uFogDensity;
+                    uniform vec3 uLight;
+                    uniform float uTime;
+
+                    varying vec3 vWorld;
+                    varying vec3 vNormal;
+                    varying float vHeight;
+                    varying float vSwell;
+
+                    ${GLSL_FOG}
+
+                    void main() {
+                        vec3 N = normalize(vNormal);
+                        vec3 V = normalize(cameraPosition - vWorld);
+
+                        float lift = smoothstep(-0.6, 1.1, vHeight);
+                        vec3 col = mix(uDeep, uCrest, lift * 0.85);
+
+                        float diff = max(dot(N, uLight), 0.0);
+                        col += vec3(0.10, 0.13, 0.20) * diff * 0.55;
+
+                        // Grazing angles pick up what little sky there is.
+                        float fres = pow(1.0 - max(dot(N, V), 0.0), 4.0);
+                        col += vec3(0.13, 0.17, 0.30) * fres * 0.7;
+
+                        // The big wave shows itself as a paler, harder edge.
+                        col += vec3(0.10, 0.13, 0.22) * smoothstep(1.2, 4.4, vSwell);
+
+                        float spec = pow(max(dot(reflect(-uLight, N), V), 0.0), 90.0);
+                        col += vec3(0.30, 0.36, 0.48) * spec * 0.5;
+
+                        float dist = length(cameraPosition - vWorld);
+                        col = applyFog(col, dist, uFog, uFogDensity);
+                        gl_FragColor = vec4(col, 1.0);
+                    }
+                `
+            });
+
+            sea = new THREE.Mesh(makeSeaGeometry(SEA_RADIUS, SEA_RINGS, SEA_SEGS), seaMat);
+            sea.frustumCulled = false;
+            scene.add(sea);
+        }
+
+        // ---- The letters -----------------------------------------------
+
+        function buildLetters() {
+            const plane = new THREE.PlaneGeometry(0.30, 0.42);
+            const geo = new THREE.InstancedBufferGeometry();
+            geo.index = plane.index;
+            geo.setAttribute('position', plane.getAttribute('position'));
+            geo.setAttribute('uv', plane.getAttribute('uv'));
+
+            const origin = new Float32Array(LETTER_POOL * 3);
+            const start = new Float32Array(LETTER_POOL);
+            const life = new Float32Array(LETTER_POOL);
+            const seed = new Float32Array(LETTER_POOL);
+            for (let i = 0; i < LETTER_POOL; i++) {
+                start[i] = -1000;
+                life[i] = 1;
+                seed[i] = Math.random() * 100;
+            }
+            letterAttrs.origin = new THREE.InstancedBufferAttribute(origin, 3);
+            letterAttrs.start  = new THREE.InstancedBufferAttribute(start, 1);
+            letterAttrs.life   = new THREE.InstancedBufferAttribute(life, 1);
+            letterAttrs.seed   = new THREE.InstancedBufferAttribute(seed, 1);
+            geo.setAttribute('aOrigin', letterAttrs.origin);
+            geo.setAttribute('aStart', letterAttrs.start);
+            geo.setAttribute('aLife', letterAttrs.life);
+            geo.setAttribute('aSeed', letterAttrs.seed);
+            geo.instanceCount = LETTER_POOL;
+
+            letterMat = new THREE.ShaderMaterial({
+                transparent: true,
+                depthWrite: false,
+                blending: THREE.AdditiveBlending,
+                uniforms: {
+                    uTime:  { value: 0 },
+                    uEmber: { value: PALETTE.ember.clone() },
+                    uFog:   { value: PALETTE.fog.clone() },
+                    uFogDensity: { value: FOG_DENSITY }
+                },
+                vertexShader: `
+                    uniform float uTime;
+
+                    attribute vec3 aOrigin;
+                    attribute float aStart;
+                    attribute float aLife;
+                    attribute float aSeed;
+
+                    varying float vAge;
+                    varying float vSeed;
+                    varying vec2 vUv;
+                    varying float vDist;
+
+                    void main() {
+                        float age = (uTime - aStart) / aLife;
+                        vAge = age;
+                        vSeed = aSeed;
+                        vUv = uv;
+
+                        // Spent, or not yet born: park it behind the camera.
+                        if (age < 0.0 || age > 1.0) {
+                            gl_Position = vec4(2.0, 2.0, 2.0, 1.0);
+                            return;
+                        }
+
+                        // Rising is easy at first and then reluctant.
+                        float climb = pow(age, 0.82) * (4.2 + fract(aSeed) * 3.4);
+                        vec3 wp = aOrigin;
+                        wp.y += climb;
+                        wp.x += sin(uTime * 0.32 + aSeed * 2.1) * (0.28 + age * 0.7);
+                        wp.z += cos(uTime * 0.27 + aSeed * 1.7) * (0.22 + age * 0.5);
+
+                        vec4 mv = modelViewMatrix * vec4(wp, 1.0);
+                        vDist = length(mv.xyz);
+
+                        // Face the camera, turning slowly like paper falling upward.
+                        float rot = aSeed * 3.1 + uTime * (0.18 + fract(aSeed * 7.3) * 0.22);
+                        float c = cos(rot), s = sin(rot);
+                        vec2 q = vec2(position.x * c - position.y * s, position.x * s + position.y * c);
+                        float scale = (0.75 + fract(aSeed * 3.9) * 0.6) * (1.0 - 0.25 * age);
+                        mv.xy += q * scale;
+
+                        gl_Position = projectionMatrix * mv;
+                    }
+                `,
+                fragmentShader: `
+                    uniform float uTime;
+                    uniform vec3 uEmber;
+                    uniform vec3 uFog;
+                    uniform float uFogDensity;
+
+                    varying float vAge;
+                    varying float vSeed;
+                    varying vec2 vUv;
+                    varying float vDist;
+
+                    void main() {
+                        vec2 c = abs(vUv - 0.5) * 2.0;
+                        float sheet = (1.0 - smoothstep(0.55, 1.0, c.x)) * (1.0 - smoothstep(0.6, 1.0, c.y));
+
+                        // A brighter core, and a faint fold down the middle.
+                        float core = exp(-dot(vUv - 0.5, vUv - 0.5) * 9.0);
+                        float fold = 1.0 - 0.28 * smoothstep(0.03, 0.0, abs(vUv.x - 0.5));
+
+                        float fadeIn = smoothstep(0.0, 0.14, vAge);
+                        float fadeOut = 1.0 - smoothstep(0.5, 1.0, vAge);
+                        float flicker = 0.72 + 0.28 * sin(uTime * 5.3 + vSeed * 19.0)
+                                             * sin(uTime * 1.9 + vSeed * 4.0);
+
+                        float a = sheet * fadeIn * fadeOut * flicker;
+                        vec3 col = uEmber * (0.42 + core * 0.9) * fold;
+
+                        float f = 1.0 - exp(-pow(vDist * uFogDensity, 2.0));
+                        a *= (1.0 - clamp(f, 0.0, 1.0));
+
+                        gl_FragColor = vec4(col * a, a * 0.9);
+                    }
+                `
+            });
+
+            letters = new THREE.Mesh(geo, letterMat);
+            letters.frustumCulled = false;
+            scene.add(letters);
+        }
+
+        function releaseLetter(x, z, t) {
+            const i = letterCursor;
+            letterCursor = (letterCursor + 1) % LETTER_POOL;
+            letterAttrs.origin.setXYZ(i, x, -0.2, z);
+            letterAttrs.start.setX(i, t);
+            letterAttrs.life.setX(i, 16 + Math.random() * 12);
+            letterAttrs.seed.setX(i, Math.random() * 100);
+            letterAttrs.origin.needsUpdate = true;
+            letterAttrs.start.needsUpdate = true;
+            letterAttrs.life.needsUpdate = true;
+            letterAttrs.seed.needsUpdate = true;
+        }
+
+        // ---- The bloom -------------------------------------------------
+
+        function buildBloom(lightDir) {
+            const group = new THREE.Group();
+            group.position.set(0, 1.05, 0);
+            scene.add(group);
+
+            const stemMat = new THREE.MeshBasicMaterial({ color: 0x16301f });
+            const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.075, 1.3, 8), stemMat);
+            stem.position.y = -0.62;
+            group.add(stem);
+
+            const core = new THREE.Mesh(
+                new THREE.IcosahedronGeometry(0.115, 2),
+                new THREE.MeshBasicMaterial({ color: 0xe8f3e0 })
+            );
+            core.position.y = 0.08;
+            group.add(core);
+
+            const petalGeo = new THREE.PlaneGeometry(1, 1, 10, 14);
+
+            for (let i = 0; i < TOTAL_PETALS; i++) {
+                const tt = Math.min(i / 22, 1);
+                const mat = new THREE.ShaderMaterial({
+                    transparent: true,
+                    side: THREE.DoubleSide,
+                    depthWrite: false,
+                    uniforms: {
+                        uOpen:  { value: 0.02 },
+                        uLen:   { value: 0.1 },
+                        uWidth: { value: 0.05 },
+                        uArc:   { value: 1.4 },
+                        uCup:   { value: 0.55 },
+                        uBaseR: { value: 0.05 + 0.012 * i },
+                        uAlpha: { value: 0.0 },
+                        uTime:  { value: 0 },
+                        uLiving:{ value: PALETTE.living.clone() },
+                        uLight: { value: lightDir.clone() },
+                        uFog:   { value: PALETTE.fog.clone() },
+                        uFogDensity: { value: FOG_DENSITY }
+                    },
+                    vertexShader: `
+                        uniform float uOpen;
+                        uniform float uLen;
+                        uniform float uWidth;
+                        uniform float uArc;
+                        uniform float uCup;
+                        uniform float uBaseR;
+
+                        varying vec3 vNormal;
+                        varying vec3 vWorld;
+                        varying float vAlong;
+                        varying float vAcross;
+
+                        // A petal is a bent, cupped ribbon. x is radial, y up,
+                        // z across the width; the whole thing is then tipped
+                        // outward by uOpen as it unfurls.
+                        vec3 petalPoint(vec2 uv) {
+                            float u = clamp(uv.y, 0.0, 1.0);
+                            float v = uv.x * 2.0 - 1.0;
+                            float arc = max(uArc, 0.001);
+                            float phi = arc * u;
+                            float r = uLen / arc;
+                            vec2 spine = vec2(r * (1.0 - cos(phi)), r * sin(phi));
+                            float w = uWidth * pow(sin(3.14159265 * u), 0.55);
+                            float cup = -uCup * v * v * w;
+
+                            vec3 p = vec3(spine.x + cup, spine.y, v * w);
+                            float c = cos(uOpen), s = sin(uOpen);
+                            vec3 q = vec3(p.x * c + p.y * s, -p.x * s + p.y * c, p.z);
+                            q.x += uBaseR;
+                            return q;
+                        }
+
+                        void main() {
+                            vec3 p = petalPoint(uv);
+                            float e = 0.02;
+                            vec3 du = petalPoint(uv + vec2(0.0, e)) - p;
+                            vec3 dv = petalPoint(uv + vec2(e, 0.0)) - p;
+                            vec3 n = normalize(cross(du, dv));
+
+                            vAlong = uv.y;
+                            vAcross = uv.x * 2.0 - 1.0;
+                            vNormal = normalize(normalMatrix * n);
+                            vec4 world = modelMatrix * vec4(p, 1.0);
+                            vWorld = world.xyz;
+                            gl_Position = projectionMatrix * viewMatrix * world;
+                        }
+                    `,
+                    fragmentShader: `
+                        uniform vec3 uLiving;
+                        uniform vec3 uLight;
+                        uniform vec3 uFog;
+                        uniform float uFogDensity;
+                        uniform float uAlpha;
+                        uniform float uTime;
+
+                        varying vec3 vNormal;
+                        varying vec3 vWorld;
+                        varying float vAlong;
+                        varying float vAcross;
+
+                        void main() {
+                            vec3 N = normalize(vNormal);
+                            vec3 V = normalize(cameraPosition - vWorld);
+                            if (dot(N, V) < 0.0) N = -N;
+
+                            float diff = max(dot(N, uLight), 0.0);
+                            // Thin petals pass light through from behind.
+                            float through = pow(max(dot(-N, uLight), 0.0), 2.2);
+
+                            vec3 col = uLiving * (0.20 + diff * 0.55 + through * 0.45);
+
+                            // A little iridescence at the turning edges.
+                            float fres = pow(1.0 - max(dot(N, V), 0.0), 3.0);
+                            vec3 irid = vec3(
+                                0.5 + 0.5 * sin(fres * 8.0 + 0.0),
+                                0.5 + 0.5 * sin(fres * 8.0 + 2.1),
+                                0.5 + 0.5 * sin(fres * 8.0 + 4.2)
+                            );
+                            col += irid * fres * 0.14;
+
+                            // Tips thinner and paler than the base.
+                            col *= mix(0.75, 1.15, vAlong);
+                            float edge = 1.0 - smoothstep(0.75, 1.0, abs(vAcross));
+                            float tip = 1.0 - smoothstep(0.92, 1.0, vAlong);
+
+                            float a = uAlpha * (0.55 + 0.45 * edge) * tip;
+                            float dist = length(cameraPosition - vWorld);
+                            float f = 1.0 - exp(-pow(dist * uFogDensity, 2.0));
+                            col = mix(col, uFog, clamp(f, 0.0, 1.0));
+
+                            gl_FragColor = vec4(col, a * 0.92);
+                        }
+                    `
+                });
+
+                const mesh = new THREE.Mesh(petalGeo, mat);
+                mesh.rotation.y = i * 2.39996323; // golden angle
+                mesh.renderOrder = 2;
+                group.add(mesh);
+
+                petals.push({
+                    mesh, mat,
+                    t: 0,
+                    target: {
+                        open: 0.22 + 1.28 * tt + (i % 3) * 0.03,
+                        len: 0.52 + 0.48 * tt,
+                        width: 0.15 + 0.11 * tt,
+                        arc: 1.35 - 0.55 * tt
+                    }
+                });
+            }
+
+            // The first few are already out when you arrive. The rest take
+            // their time, one per wave, and there is always another.
+            for (let i = 0; i < openedCount; i++) petals[i].t = 1;
+            applyPetals();
+        }
+
+        function applyPetals() {
+            for (let i = 0; i < petals.length; i++) {
+                const p = petals[i];
+                const e = p.t * p.t * (3 - 2 * p.t); // smoothstep
+                p.mat.uniforms.uOpen.value = THREE.MathUtils.lerp(0.03, p.target.open, e);
+                p.mat.uniforms.uLen.value = THREE.MathUtils.lerp(0.1, p.target.len, e);
+                p.mat.uniforms.uWidth.value = THREE.MathUtils.lerp(0.03, p.target.width, e);
+                p.mat.uniforms.uArc.value = THREE.MathUtils.lerp(1.5, p.target.arc, e);
+                p.mat.uniforms.uAlpha.value = e * 0.85;
+                p.mesh.visible = p.t > 0.001;
+            }
+        }
+
+        // ---- Post ------------------------------------------------------
+
+        async function setupPost() {
+            if (isMobile) return; // the glow is not worth the frames on a phone
+            try {
+                const { EffectComposer } = await import('three/addons/postprocessing/EffectComposer.js');
+                const { RenderPass } = await import('three/addons/postprocessing/RenderPass.js');
+                const { UnrealBloomPass } = await import('three/addons/postprocessing/UnrealBloomPass.js');
+                const c = new EffectComposer(renderer);
+                c.addPass(new RenderPass(scene, camera));
+                c.addPass(new UnrealBloomPass(
+                    new THREE.Vector2(window.innerWidth, window.innerHeight), 0.5, 0.75, 0.42
+                ));
+                c.setSize(window.innerWidth, window.innerHeight);
+                composer = c;
+            } catch (e) {
+                composer = null; // plain render is a perfectly good fallback
+            }
+        }
+
+        // ---- Interaction -----------------------------------------------
+
+        function setupInteraction() {
+            const raycaster = new THREE.Raycaster();
+            const surface = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+            const ndc = new THREE.Vector2();
+            const hit = new THREE.Vector3();
+
+            const move = (e) => {
+                pointer.tx = (e.clientX / window.innerWidth) * 2 - 1;
+                pointer.ty = (e.clientY / window.innerHeight) * 2 - 1;
+            };
+            window.addEventListener('pointermove', move);
+
+            // Feel it, let it go, watch it cost nothing.
+            window.addEventListener('pointerdown', (e) => {
+                move(e);
+                ndc.set(pointer.tx, -pointer.ty);
+                raycaster.setFromCamera(ndc, camera);
+                if (raycaster.ray.intersectPlane(surface, hit)) {
+                    const t = clock.getElapsedTime();
+                    const n = 1 + Math.floor(Math.random() * 2);
+                    for (let i = 0; i < n; i++) {
+                        releaseLetter(hit.x + (Math.random() - 0.5) * 0.8,
+                                      hit.z + (Math.random() - 0.5) * 0.8, t + i * 0.35);
+                    }
+                }
+            });
+
+            window.addEventListener('deviceorientation', (e) => {
+                if (e.gamma == null || e.beta == null) return;
+                pointer.tx = THREE.MathUtils.clamp(e.gamma / 35, -1, 1);
+                pointer.ty = THREE.MathUtils.clamp((e.beta - 45) / 40, -1, 1);
+            });
+        }
+
+        function onResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            if (composer) composer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        // ---- The loop --------------------------------------------------
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            const dt = Math.min(clock.getDelta(), 0.05);
+            const t = clock.getElapsedTime();
+
+            if (dt > 0.028) slowFrames++; else slowFrames = Math.max(0, slowFrames - 1);
+            if (!degraded && slowFrames > 180) {
+                degraded = true;
+                composer = null;
+                renderer.setPixelRatio(1);
+            }
+
+            // The storm always passes, and another one is always coming.
+            if (t > nextSwellAt) {
+                swellStart = t;
+                nextSwellAt = t + 60 + Math.random() * 30;
+                swellCounted = false;
+            }
+            const swellT = t - swellStart;
+            seaMat.uniforms.uTime.value = t;
+            seaMat.uniforms.uSwellT.value = (swellT >= 0 && swellT <= SWELL_DUR) ? swellT : -1;
+
+            // One petal per wave. It never runs out of things to open.
+            if (!swellCounted && swellT > SWELL_DUR) {
+                swellCounted = true;
+                if (openedCount < TOTAL_PETALS) openedCount++;
+            }
+
+            let changed = false;
+            for (let i = 0; i < petals.length; i++) {
+                const p = petals[i];
+                if (i < openedCount && p.t < 1) {
+                    p.t = Math.min(1, p.t + dt / 70); // slower than you can watch
+                    changed = true;
+                }
+            }
+            if (changed) applyPetals();
+
+            // Letters keep coming without being asked for.
+            if (t > nextAmbientLetter) {
+                nextAmbientLetter = t + 1.1 + Math.random() * 2.4;
+                const a = Math.random() * Math.PI * 2;
+                const r = 4 + Math.random() * 26;
+                releaseLetter(Math.cos(a) * r, Math.sin(a) * r - 4, t);
+            }
+            letterMat.uniforms.uTime.value = t;
+
+            // Slow orbit, with the pointer only ever nudging it.
+            pointer.x += (pointer.tx - pointer.x) * 0.03;
+            pointer.y += (pointer.ty - pointer.y) * 0.03;
+            azimuth += dt * 0.017;
+            const radius = 8.4 + Math.sin(t * 0.031) * 0.9;
+            camera.position.set(
+                Math.sin(azimuth) * radius + pointer.x * 0.55,
+                2.75 + Math.sin(t * 0.047) * 0.35 - pointer.y * 0.4,
+                Math.cos(azimuth) * radius
+            );
+            camera.lookAt(0, 1.95 + pointer.y * 0.12, 0);
+            sky.position.copy(camera.position);
+
+            if (composer) composer.render(); else renderer.render(scene, camera);
+        }
+    </script>
+</body>
+</html>
