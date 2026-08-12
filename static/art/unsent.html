@@ -101,6 +101,27 @@
         const LETTER_POOL = isMobile ? 120 : 220;
         const TOTAL_PETALS = 40;
 
+        // What they were never sent to say. Sixteen of them; each letter
+        // picks one by its seed. Edit these to change the words.
+        const UNSENT = [
+            'te lo iba a decir',
+            'hoy te vi en todas partes',
+            'no era nada, sólo tu nombre',
+            'I nearly called',
+            'esta no la mando',
+            'duerme bien',
+            'otra vez la luna',
+            'I kept this one',
+            'me acordé de ti',
+            'nada. sólo esto.',
+            'I hope you smiled today',
+            'las olas otra vez',
+            'no hace falta que lo sepas',
+            'sigues aquí',
+            'no la envíes',
+            'buenas noches entonces'
+        ];
+
         let scene, camera, renderer, composer, clock;
         let sea, seaMat, letters, letterMat, sky;
         let petals = [], openedCount = 6;
@@ -429,27 +450,6 @@
         }
 
         // ---- The letters -----------------------------------------------
-
-        // What they were never sent to say. Sixteen of them; each letter
-        // picks one by its seed. Edit these to change the words.
-        const UNSENT = [
-            'te lo iba a decir',
-            'hoy te vi en todas partes',
-            'no era nada, sólo tu nombre',
-            'I nearly called',
-            'esta no la mando',
-            'duerme bien',
-            'otra vez la luna',
-            'I kept this one',
-            'me acordé de ti',
-            'nada. sólo esto.',
-            'I hope you smiled today',
-            'las olas otra vez',
-            'no hace falta que lo sepas',
-            'sigues aquí',
-            'no la envíes',
-            'buenas noches entonces'
-        ];
 
         // One shared 4x4 atlas of handwritten pages, drawn once.
         function makeLetterAtlas() {
