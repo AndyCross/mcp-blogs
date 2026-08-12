@@ -122,25 +122,21 @@
         const LETTER_POOL = isMobile ? 120 : 220;
         const TOTAL_PETALS = 40;
 
-        // What they were never sent to say. Sixteen of them; each letter
-        // picks one by its seed. Edit these to change the words.
+        // What they were never sent to say. Each letter picks one by its
+        // seed. Edit these to change the words; up to 16 fit the atlas.
         const UNSENT = [
-            'te lo iba a decir',
-            'hoy te vi en todas partes',
-            'no era nada, sólo tu nombre',
-            'I nearly called',
-            'esta no la mando',
-            'duerme bien',
-            'otra vez la luna',
-            'I kept this one',
-            'me acordé de ti',
-            'nada. sólo esto.',
-            'I hope you smiled today',
-            'las olas otra vez',
-            'no hace falta que lo sepas',
-            'sigues aquí',
-            'no la envíes',
-            'buenas noches entonces'
+            'ooo',
+            '🦉',
+            'ilu',
+            'ilusm',
+            'ttb',
+            'xx',
+            'same sky',
+            'tqm',
+            "we'll be together always",
+            'better together',
+            'welcome new year',
+            'i love you'
         ];
 
         let scene, camera, renderer, composer, clock;
@@ -540,6 +536,7 @@
                     uTime:  { value: 0 },
                     uEmber: { value: PALETTE.ember.clone() },
                     uText:  { value: makeLetterAtlas() },
+                    uCount: { value: UNSENT.length },
                     uFog:   { value: PALETTE.fog.clone() },
                     uFogDensity: { value: FOG_DENSITY }
                 },
@@ -594,6 +591,7 @@
                     uniform float uTime;
                     uniform vec3 uEmber;
                     uniform sampler2D uText;
+                    uniform float uCount;
                     uniform vec3 uFog;
                     uniform float uFogDensity;
 
@@ -618,7 +616,7 @@
 
                         // The words, faint and warm, on the face of the paper.
                         vec2 tuv = clamp(p / vec2(0.36, 0.52) + 0.5, 0.0, 1.0);
-                        float pick = floor(fract(vSeed * 0.137) * 16.0);
+                        float pick = floor(fract(vSeed * 0.137) * uCount);
                         vec2 cell = vec2(mod(pick, 4.0), floor(pick / 4.0));
                         float ink = texture2D(uText, (cell + tuv) / 4.0).a * paper;
 
@@ -673,7 +671,7 @@
         let saidTimer = null;
         function speakLetter(i) {
             const said = document.getElementById('said');
-            const pick = Math.floor(((letterAttrs.seed.array[i] * 0.137) % 1) * 16);
+            const pick = Math.floor(((letterAttrs.seed.array[i] * 0.137) % 1) * UNSENT.length);
             said.textContent = UNSENT[pick];
             said.classList.add('shown');
             clearTimeout(saidTimer);
