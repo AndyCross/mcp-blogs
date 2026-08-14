@@ -123,7 +123,7 @@
         const TOTAL_PETALS = 40;
 
         // What they were never sent to say. Each letter picks one by its
-        // seed. Edit these to change the words; up to 16 fit the atlas.
+        // seed. Edit freely; the atlas grid sizes itself to the list.
         const UNSENT = [
             'ooo',
             '🦉',
@@ -146,6 +146,7 @@
             'wild party',
             'imu'
         ];
+        const LETTER_GRID = Math.ceil(Math.sqrt(UNSENT.length));
 
         let scene, camera, renderer, composer, clock;
         let sea, seaMat, letters, letterMat, sky;
@@ -481,17 +482,17 @@
             const c = document.createElement('canvas');
             c.width = c.height = 1024;
             const g = c.getContext('2d');
-            const cw = 256, ch = 256;
+            const cw = 1024 / LETTER_GRID, ch = 1024 / LETTER_GRID;
             g.fillStyle = 'rgba(255, 255, 255, 0.92)';
             g.textAlign = 'center';
             g.textBaseline = 'middle';
             UNSENT.forEach((phrase, i) => {
-                const cx = (i % 4) * cw + cw / 2;
-                const cy = Math.floor(i / 4) * ch + ch / 2;
+                const cx = (i % LETTER_GRID) * cw + cw / 2;
+                const cy = Math.floor(i / LETTER_GRID) * ch + ch / 2;
                 g.save();
                 g.translate(cx, cy);
                 g.rotate((((i * 7) % 5) - 2) * 0.02);
-                g.font = 'italic 42px "Apple Chancery", "Snell Roundhand", Georgia, serif';
+                g.font = `italic ${Math.round(cw * 0.165)}px "Apple Chancery", "Snell Roundhand", Georgia, serif`;
                 // Greedy wrap at ~11 characters.
                 const lines = [];
                 let line = '';
@@ -500,9 +501,9 @@
                     else line = (line + ' ' + w).trim();
                 }
                 if (line) lines.push(line);
-                const lh = 50;
+                const lh = cw * 0.195;
                 // maxWidth squeezed so long lines stay on the visible paper
-                lines.forEach((l, j) => g.fillText(l, 0, (j - (lines.length - 1) / 2) * lh, cw - 104));
+                lines.forEach((l, j) => g.fillText(l, 0, (j - (lines.length - 1) / 2) * lh, cw * 0.59));
                 g.restore();
             });
             const tex = new THREE.CanvasTexture(c);
@@ -545,6 +546,7 @@
                     uEmber: { value: PALETTE.ember.clone() },
                     uText:  { value: makeLetterAtlas() },
                     uCount: { value: UNSENT.length },
+                    uGrid:  { value: LETTER_GRID },
                     uFog:   { value: PALETTE.fog.clone() },
                     uFogDensity: { value: FOG_DENSITY }
                 },
@@ -600,6 +602,7 @@
                     uniform vec3 uEmber;
                     uniform sampler2D uText;
                     uniform float uCount;
+                    uniform float uGrid;
                     uniform vec3 uFog;
                     uniform float uFogDensity;
 
@@ -625,8 +628,8 @@
                         // The words, faint and warm, on the face of the paper.
                         vec2 tuv = clamp(p / vec2(0.36, 0.52) + 0.5, 0.0, 1.0);
                         float pick = floor(fract(vSeed * 0.137) * uCount);
-                        vec2 cell = vec2(mod(pick, 4.0), floor(pick / 4.0));
-                        float ink = texture2D(uText, (cell + tuv) / 4.0).a * paper;
+                        vec2 cell = vec2(mod(pick, uGrid), floor(pick / uGrid));
+                        float ink = texture2D(uText, (cell + tuv) / uGrid).a * paper;
 
                         float a = (paper * 0.85 + glow * 0.50 + ink * 0.45) * fadeIn * fadeOut * flicker;
                         // Paper kept under 1.0 so additive blending stays
