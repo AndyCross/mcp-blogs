@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Same Sky</title>
+<script src="https://cdn.counter.dev/script.js" data-id="72d92ac8-56cf-4fdd-9899-b73adbab2e4d" data-utcoffset="0"></script>
+<style>
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; background: #0a1524; }
+    #container { position: fixed; inset: 0; }
+    canvas { display: block; width: 100vw; height: 100vh; cursor: crosshair; }
+
+    /* ---- Title ---- */
+    #title {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        pointer-events: none;
+        z-index: 10;
+        text-align: center;
+        padding: 1.5rem;
+        transition: opacity 4s ease 1.5s;
+    }
+    #title.gone { opacity: 0; }
+    #title h1 {
+        font-family: "Georgia", "Times New Roman", serif;
+        font-weight: 400;
+        font-style: italic;
+        font-size: clamp(1.8rem, 6vw, 4rem);
+        letter-spacing: 0.02em;
+        color: #eef3fa;
+        margin: 0;
+        text-shadow: 0 2px 18px rgba(10, 24, 44, 0.85), 0 0 30px rgba(93, 132, 182, 0.7);
+        opacity: 0;
+        animation: bloom 5s ease forwards 0.8s;
+    }
+    #whisper {
+        font-family: "Georgia", serif;
+        font-style: italic;
+        font-size: clamp(1rem, 2.6vw, 1.25rem);
+        letter-spacing: 0.14em;
+        color: #e4ebf5;
+        margin-top: 1.5rem;
+        text-shadow: 0 1px 12px rgba(10, 24, 44, 0.75), 0 0 26px rgba(93, 132, 182, 0.6);
+        opacity: 0;
+        animation: bloom 2.4s ease forwards 1.2s;
+    }
+    @keyframes bloom {
+        from { opacity: 0; filter: blur(8px); transform: translateY(8px); }
+        to   { opacity: 1; filter: blur(0);   transform: translateY(0); }
+    }
+
+    /* ---- Hint ---- */
+    #hint {
+        position: fixed;
+        bottom: 1.4rem;
+        left: 0; right: 0;
+        text-align: center;
+        font-family: "Georgia", serif;
+        font-style: italic;
+        font-size: 0.8rem;
+        color: rgba(238, 243, 250, 0.45);
+        text-shadow: 0 1px 8px rgba(10, 24, 44, 0.8);
+        pointer-events: none;
+        z-index: 9;
+        opacity: 0;
+        animation: bloom 3s ease forwards 7s;
+    }
+</style>
+</head>
+<body>
+    <div id="container"></div>
+    <div id="title">
+        <h1>Same Sky</h1>
+        <div id="whisper">distintos lugares, el mismo cielo</div>
+    </div>
+    <div id="hint">drag to look around &middot; tap the sky where it shimmers</div>
+
+    <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+      }
+    }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+        // The dome is stitched from the skies in the photographs: each one
+        // contributes its mean sky colour at its azimuth, and the shader
+        // interpolates between them, so the sky you stand under is literally
+        // made of everyone's skies at once.
+
+        const DOME_RADIUS = 100;
+        const PHOTO_RADIUS = 86;
+        const MAX_PHOTOS = 24; // uniform array size in the dome shader
+
+        // ?reveal holds every photograph fully visible, for checking the fit.
+        const REVEAL_ALL = new URLSearchParams(location.search).has('reveal');
+
+        let camera, scene, renderer, controls, domeMaterial;
+        const clock = new THREE.Clock();
+        const photos = []; // { mesh, material, reveal (0..1 target), level }
+        const dragState = { x: 0, y: 0, moved: false };
+        let shimmerAll = 0; // brief global shimmer when a tap finds nothing
+
+        init();
+        animate();
+        loadManifest();
+
+        function init() {
+            const container = document.getElementById('container');
+
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 500);
+            camera.position.set(0, 0, 0.01);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.outputColorSpace = THREE.SRGBColorSpace;
+            container.appendChild(renderer.domElement);
+
+            controls = new OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+            controls.enableZoom = false;
+            controls.enablePan = false;
+            controls.rotateSpeed = -0.28; // inverted: drag the sky, not the camera
+            controls.autoRotate = true;
+            controls.autoRotateSpeed = 0.12;
+            controls.target.set(0, 0.3, -1); // start gazing a little upward
+
+            buildDome();
+            setupInteraction();
+
+            setTimeout(() => document.getElementById('title').classList.add('gone'), 8000);
+            window.addEventListener('resize', onWindowResize);
+        }
+
+        // ---- The dome ----------------------------------------------------
+
+        function buildDome() {
+            const skyColors = new Array(MAX_PHOTOS).fill(0).map(() => new THREE.Color('#7193c9'));
+            const skyAzimuths = new Float32Array(MAX_PHOTOS);
+
+            domeMaterial = new THREE.ShaderMaterial({
+                side: THREE.BackSide,
+                depthWrite: false,
+                uniforms: {
+                    uTime: { value: 0 },
+                    uCount: { value: 0 },
+                    uColors: { value: skyColors },
+                    uAzimuths: { value: skyAzimuths }
+                },
+                vertexShader: `
+                    varying vec3 vDir;
+                    void main() {
+                        vDir = normalize(position);
+                        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+                    }
+                `,
+                fragmentShader: `
+                    uniform float uTime;
+                    uniform int uCount;
+                    uniform vec3 uColors[${MAX_PHOTOS}];
+                    uniform float uAzimuths[${MAX_PHOTOS}];
+                    varying vec3 vDir;
+
+                    const float PI = 3.14159265;
+
+                    float hash(vec2 p) {
+                        return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
+                    }
+                    float noise(vec2 p) {
+                        vec2 i = floor(p), f = fract(p);
+                        vec2 u = f * f * (3.0 - 2.0 * f);
+                        return mix(mix(hash(i), hash(i + vec2(1, 0)), u.x),
+                                   mix(hash(i + vec2(0, 1)), hash(i + vec2(1, 1)), u.x), u.y);
+                    }
+                    float fbm(vec2 p) {
+                        float v = 0.0, a = 0.5;
+                        for (int i = 0; i < 4; i++) {
+                            v += a * noise(p);
+                            p *= 2.1;
+                            a *= 0.5;
+                        }
+                        return v;
+                    }
+
+                    // Blend the photo skies by angular closeness, wrapping at
+                    // 2pi. Azimuth means less and less near the zenith, so the
+                    // blend flattens toward the average of every sky overhead
+                    // (el is |dir.y|), which also kills the pinwheel artifact.
+                    vec3 stitchedSky(float az, float el) {
+                        if (uCount == 0) return vec3(0.44, 0.58, 0.79);
+                        vec3 acc = vec3(0.0);
+                        vec3 avg = vec3(0.0);
+                        float wsum = 0.0;
+                        for (int i = 0; i < ${MAX_PHOTOS}; i++) {
+                            if (i >= uCount) break;
+                            float d = abs(az - uAzimuths[i]);
+                            d = min(d, 2.0 * PI - d);
+                            float w = 1.0 / (d * d + 0.02);
+                            acc += uColors[i] * w;
+                            avg += uColors[i];
+                            wsum += w;
+                        }
+                        return mix(acc / wsum, avg / float(uCount), smoothstep(0.6, 0.95, el));
+                    }
+
+                    void main() {
+                        vec3 dir = normalize(vDir);
+                        float az = atan(dir.x, dir.z) + PI; // 0..2pi
+                        float el = dir.y;                    // -1..1
+
+                        vec3 mid = stitchedSky(az, abs(el));
+                        // Zenith deepens, horizon pales toward warm haze.
+                        vec3 zenith = mid * vec3(0.66, 0.74, 0.92);
+                        vec3 horizon = mix(mid, vec3(0.96, 0.94, 0.90), 0.38);
+
+                        vec3 col;
+                        if (el >= 0.0) {
+                            float t = pow(el, 0.62);
+                            col = mix(horizon, zenith, t);
+                            // Slow thin clouds, brightest near the horizon band.
+                            vec2 cuv = vec2(az * 2.2 + uTime * 0.006, el * 5.0);
+                            float cl = smoothstep(0.52, 0.82, fbm(cuv));
+                            col = mix(col, vec3(0.97), cl * 0.16 * (1.0 - el));
+                        } else {
+                            // Below the horizon: the same sky, poured into the sea.
+                            float t = pow(min(1.0, -el * 2.2), 0.7);
+                            vec3 sea = mix(horizon * 0.85, mid * vec3(0.16, 0.24, 0.38), t);
+                            float shimmer = noise(vec2(az * 40.0, el * 90.0 - uTime * 0.35));
+                            sea += shimmer * 0.03 * (1.0 - t);
+                            col = sea;
+                        }
+
+                        // Soft bright band right on the horizon line.
+                        col += vec3(0.10, 0.09, 0.07) * exp(-abs(el) * 22.0);
+
+                        gl_FragColor = vec4(col, 1.0);
+                    }
+                `
+            });
+
+            const dome = new THREE.Mesh(new THREE.SphereGeometry(DOME_RADIUS, 64, 48), domeMaterial);
+            scene.add(dome);
+        }
+
+        // ---- The photographs ----------------------------------------------
+
+        async function loadManifest() {
+            let manifest;
+            try {
+                manifest = await (await fetch('samesky-assets/manifest.json')).json();
+            } catch (e) {
+                console.error('no manifest', e);
+                return;
+            }
+            const entries = manifest.photos.slice(0, MAX_PHOTOS);
+
+            // Feed the dome the colours it is stitched from.
+            entries.forEach((p, i) => {
+                // Kept in sRGB: the dome shader writes colours out directly.
+                // A small saturation lift keeps the dome from reading grey
+                // next to the photos' own blues.
+                domeMaterial.uniforms.uColors.value[i].set(p.sky_color).offsetHSL(0, 0.08, 0);
+                domeMaterial.uniforms.uAzimuths.value[i] = p.azimuth * Math.PI / 180;
+            });
+            domeMaterial.uniforms.uCount.value = entries.length;
+
+            entries.forEach((p, i) => addPhoto(p, i));
+        }
+
+        function addPhoto(p, index) {
+            const img = new Image();
+            img.onload = () => {
+                const texture = new THREE.CanvasTexture(
+                    p.mode === 'polaroid' ? polaroidCanvas(img) : featheredCanvas(img)
+                );
+                texture.colorSpace = THREE.SRGBColorSpace;
+                texture.anisotropy = 4;
+
+                const material = new THREE.MeshBasicMaterial({
+                    map: texture,
+                    transparent: true,
+                    opacity: 0,
+                    depthWrite: false
+                });
+
+                // Angular size on the dome; polaroids are small pinned things.
+                const angular = p.mode === 'polaroid' ? 15 : 30;
+                const w = 2 * PHOTO_RADIUS * Math.tan(THREE.MathUtils.degToRad(angular / 2));
+                const aspect = p.mode === 'polaroid'
+                    ? (p.width + 0) / (p.height + 0) * (1.0 / 1.12) // frame is taller
+                    : p.width / p.height;
+                const mesh = new THREE.Mesh(new THREE.PlaneGeometry(w, w / aspect), material);
+
+                const az = THREE.MathUtils.degToRad(p.azimuth);
+                const el = THREE.MathUtils.degToRad(p.elevation);
+                mesh.position.set(
+                    PHOTO_RADIUS * Math.cos(el) * Math.sin(az),
+                    PHOTO_RADIUS * Math.sin(el),
+                    PHOTO_RADIUS * Math.cos(el) * Math.cos(az)
+                );
+                mesh.lookAt(0, 0, 0);
+                if (p.mode === 'polaroid') {
+                    mesh.rotateZ(THREE.MathUtils.degToRad(((index * 7919) % 13) - 6));
+                }
+                mesh.renderOrder = 1;
+                scene.add(mesh);
+                photos.push({ mesh, material, reveal: 0, level: 0, phase: index * 1.7 });
+            };
+            img.src = 'samesky-assets/' + p.name;
+        }
+
+        // A photo of the sky, feathered into an oval so it melts into the dome.
+        function featheredCanvas(img) {
+            const c = document.createElement('canvas');
+            c.width = img.width;
+            c.height = img.height;
+            const ctx = c.getContext('2d');
+            ctx.drawImage(img, 0, 0);
+            ctx.globalCompositeOperation = 'destination-in';
+            ctx.save();
+            ctx.translate(c.width / 2, c.height / 2);
+            ctx.scale(1, c.height / c.width);
+            const r = c.width / 2;
+            const g = ctx.createRadialGradient(0, 0, r * 0.45, 0, 0, r * 0.98);
+            g.addColorStop(0, 'rgba(0,0,0,1)');
+            g.addColorStop(1, 'rgba(0,0,0,0)');
+            ctx.fillStyle = g;
+            ctx.fillRect(-r, -r, r * 2, r * 2);
+            ctx.restore();
+            return c;
+        }
+
+        // A photo that would not melt into the sky: give it a white frame
+        // instead, and let it float there like something pinned up.
+        function polaroidCanvas(img) {
+            const border = Math.round(img.width * 0.045);
+            const bottom = Math.round(img.width * 0.16);
+            const c = document.createElement('canvas');
+            c.width = img.width + border * 2;
+            c.height = img.height + border + bottom;
+            const ctx = c.getContext('2d');
+            ctx.fillStyle = '#f4f1ea';
+            roundRect(ctx, 0, 0, c.width, c.height, Math.round(border * 0.6));
+            ctx.fill();
+            ctx.drawImage(img, border, border);
+            // faint inner shadow line around the print
+            ctx.strokeStyle = 'rgba(0,0,0,0.12)';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(border, border, img.width, img.height);
+            return c;
+        }
+
+        function roundRect(ctx, x, y, w, h, r) {
+            ctx.beginPath();
+            ctx.moveTo(x + r, y);
+            ctx.arcTo(x + w, y, x + w, y + h, r);
+            ctx.arcTo(x + w, y + h, x, y + h, r);
+            ctx.arcTo(x, y + h, x, y, r);
+            ctx.arcTo(x, y, x + w, y, r);
+            ctx.closePath();
+        }
+
+        // ---- Interaction ---------------------------------------------------
+
+        function setupInteraction() {
+            const raycaster = new THREE.Raycaster();
+            const pointer = new THREE.Vector2();
+
+            renderer.domElement.addEventListener('pointerdown', (e) => {
+                dragState.x = e.clientX;
+                dragState.y = e.clientY;
+                dragState.moved = false;
+            });
+            renderer.domElement.addEventListener('pointermove', (e) => {
+                if (Math.abs(e.clientX - dragState.x) > 7 || Math.abs(e.clientY - dragState.y) > 7) {
+                    dragState.moved = true;
+                }
+            });
+            renderer.domElement.addEventListener('pointerup', (e) => {
+                if (dragState.moved) return; // that was a look-around, not a tap
+
+                pointer.x = (e.clientX / window.innerWidth) * 2 - 1;
+                pointer.y = -(e.clientY / window.innerHeight) * 2 + 1;
+                raycaster.setFromCamera(pointer, camera);
+
+                // A direct hit reveals that photo; otherwise the nearest one
+                // within a forgiving cone; otherwise everything shimmers so
+                // you can see where they are hiding.
+                const hit = raycaster.intersectObjects(photos.map(p => p.mesh))[0];
+                let chosen = hit && photos.find(p => p.mesh === hit.object);
+                if (!chosen) {
+                    const dir = raycaster.ray.direction;
+                    let best = 0.94; // cos ~20 degrees
+                    for (const p of photos) {
+                        const d = p.mesh.position.clone().normalize().dot(dir);
+                        if (d > best) { best = d; chosen = p; }
+                    }
+                }
+                if (chosen) {
+                    chosen.reveal = 1;
+                    clearTimeout(chosen.timer);
+                    chosen.timer = setTimeout(() => { chosen.reveal = 0; }, 7000);
+                } else {
+                    shimmerAll = 1;
+                }
+            });
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const dt = Math.min(clock.getDelta(), 0.05);
+            const t = clock.getElapsedTime();
+
+            domeMaterial.uniforms.uTime.value = t;
+            shimmerAll = Math.max(0, shimmerAll - dt * 0.5);
+
+            for (const p of photos) {
+                // Base state: a slow breathing shimmer, just visible enough
+                // to be found. Revealed: the photograph itself.
+                const breathe = 0.05 + 0.035 * (0.5 + 0.5 * Math.sin(t * 0.7 + p.phase));
+                const target = REVEAL_ALL ? 1
+                    : Math.max(p.reveal, Math.min(1, breathe + shimmerAll * 0.3));
+                p.level = REVEAL_ALL ? 1
+                    : p.level + (target - p.level) * Math.min(1, dt * (p.reveal ? 1.6 : 0.9));
+                p.material.opacity = p.level;
+            }
+
+            controls.update();
+            renderer.render(scene, camera);
+        }
+    </script>
+</body>
+</html>

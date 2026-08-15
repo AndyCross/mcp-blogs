@@ -1,0 +1,88 @@
+{
+  "photos": [
+    {
+      "name": "img_5010.jpg",
+      "source": "IMG_5010.HEIC",
+      "mode": "sky",
+      "width": 1200,
+      "height": 1600,
+      "sky_fraction": 0.805,
+      "sky_color": "#667790",
+      "depth": 0.194,
+      "elevation": 21.8,
+      "azimuth": 0.0
+    },
+    {
+      "name": "img_4736.jpg",
+      "source": "IMG_4736.HEIC",
+      "mode": "sky",
+      "width": 1600,
+      "height": 1200,
+      "sky_fraction": 0.872,
+      "sky_color": "#5d779d",
+      "depth": 0.287,
+      "elevation": 24.6,
+      "azimuth": 51.4
+    },
+    {
+      "name": "img_4988.jpg",
+      "source": "IMG_4988.HEIC",
+      "mode": "sky",
+      "width": 1200,
+      "height": 1600,
+      "sky_fraction": 0.745,
+      "sky_color": "#7697cb",
+      "depth": 0.367,
+      "elevation": 27.0,
+      "azimuth": 102.9
+    },
+    {
+      "name": "img_5125.jpg",
+      "source": "IMG_5125.HEIC",
+      "mode": "polaroid",
+      "width": 1200,
+      "height": 900,
+      "sky_fraction": 0.625,
+      "sky_color": "#6a8ec8",
+      "depth": 0.405,
+      "elevation": 12.9,
+      "azimuth": 154.3
+    },
+    {
+      "name": "img_4716.jpg",
+      "source": "IMG_4716.HEIC",
+      "mode": "polaroid",
+      "width": 1200,
+      "height": 900,
+      "sky_fraction": 0.585,
+      "sky_color": "#6387c3",
+      "depth": 0.414,
+      "elevation": 13.0,
+      "azimuth": 205.7
+    },
+    {
+      "name": "img_4798.jpg",
+      "source": "IMG_4798.HEIC",
+      "mode": "sky",
+      "width": 1600,
+      "height": 1200,
+      "sky_fraction": 1.0,
+      "sky_color": "#446aa0",
+      "depth": 0.491,
+      "elevation": 30.7,
+      "azimuth": 257.1
+    },
+    {
+      "name": "img_4797.jpg",
+      "source": "IMG_4797.HEIC",
+      "mode": "sky",
+      "width": 1600,
+      "height": 1200,
+      "sky_fraction": 0.784,
+      "sky_color": "#35558f",
+      "depth": 0.622,
+      "elevation": 34.7,
+      "azimuth": 308.6
+    }
+  ]
+}
