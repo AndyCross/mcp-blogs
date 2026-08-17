@@ -134,7 +134,8 @@
     {
       "name": "img_5170.jpg",
       "width": 720,
-      "height": 591
+      "height": 591,
+      "note": "Happy holidays, chica x"
     },
     {
       "name": "img_5185.jpg",
@@ -149,8 +150,7 @@
     {
       "name": "img_5299.jpg",
       "width": 720,
-      "height": 591,
-      "note": "Happy holidays, chica x"
+      "height": 591
     }
   ]
 }
