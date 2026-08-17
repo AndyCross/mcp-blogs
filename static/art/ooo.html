@@ -26,6 +26,12 @@
         text-align: center;
         padding: 1.5rem;
         transition: opacity 4s ease 1.5s;
+        /* A soft dark pool behind the words so they read against the bloom.
+           It lives on the title, so it leaves when the words do. */
+        background: radial-gradient(ellipse 62% 42% at center,
+            rgba(0, 0, 0, 0.66) 0%,
+            rgba(0, 0, 0, 0.38) 45%,
+            rgba(0, 0, 0, 0.0) 72%);
     }
     #title.gone { opacity: 0; }
     #title h1 {
@@ -34,9 +40,9 @@
         font-style: italic;
         font-size: clamp(1.8rem, 6vw, 4rem);
         letter-spacing: 0.02em;
-        color: #c6cdd9;
+        color: #dde3ed;
         margin: 0;
-        text-shadow: 0 2px 18px rgba(0, 0, 0, 0.85), 0 0 30px rgba(62, 77, 104, 0.6);
+        text-shadow: 0 2px 6px rgba(0, 0, 0, 0.95), 0 2px 22px rgba(0, 0, 0, 0.9), 0 0 30px rgba(62, 77, 104, 0.6);
         opacity: 0;
         animation: bloom 5s ease forwards 0.8s;
     }
@@ -45,9 +51,9 @@
         font-style: italic;
         font-size: clamp(1rem, 2.6vw, 1.25rem);
         letter-spacing: 0.14em;
-        color: #d2d8e2;
+        color: #e2e7ef;
         margin-top: 1.5rem;
-        text-shadow: 0 1px 12px rgba(0, 0, 0, 0.75), 0 0 26px rgba(62, 77, 104, 0.5);
+        text-shadow: 0 1px 4px rgba(0, 0, 0, 0.95), 0 1px 16px rgba(0, 0, 0, 0.85), 0 0 26px rgba(62, 77, 104, 0.5);
         opacity: 0;
         animation: bloom 2.4s ease forwards 1.2s;
     }
@@ -56,9 +62,9 @@
         font-variant: small-caps;
         letter-spacing: 0.34em;
         font-size: clamp(0.7rem, 1.6vw, 0.85rem);
-        color: rgba(198, 205, 217, 0.55);
+        color: rgba(210, 217, 229, 0.7);
         margin-top: 2.2rem;
-        text-shadow: 0 1px 10px rgba(0, 0, 0, 0.75);
+        text-shadow: 0 1px 3px rgba(0, 0, 0, 0.95), 0 1px 10px rgba(0, 0, 0, 0.8);
         opacity: 0;
         animation: bloom 4s ease forwards 3.2s;
     }
@@ -669,8 +675,8 @@
             const whisper = document.getElementById('whisper');
             h1.textContent = p.title;
             whisper.textContent = p.whisper;
-            h1.style.textShadow = `0 2px 18px rgba(0, 0, 0, 0.85), 0 0 30px ${hexToRgba(p.tint, 0.6)}`;
-            whisper.style.textShadow = `0 1px 12px rgba(0, 0, 0, 0.75), 0 0 26px ${hexToRgba(p.tint, 0.5)}`;
+            h1.style.textShadow = `0 2px 6px rgba(0, 0, 0, 0.95), 0 2px 22px rgba(0, 0, 0, 0.9), 0 0 30px ${hexToRgba(p.tint, 0.6)}`;
+            whisper.style.textShadow = `0 1px 4px rgba(0, 0, 0, 0.95), 0 1px 16px rgba(0, 0, 0, 0.85), 0 0 26px ${hexToRgba(p.tint, 0.5)}`;
 
             // Recolour the bloom to this pledge's tint.
             params.colorWarm = p.tint;
