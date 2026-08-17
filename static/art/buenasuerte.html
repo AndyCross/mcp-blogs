@@ -5,6 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Buena Suerte</title>
 <script src="https://cdn.counter.dev/script.js" data-id="72d92ac8-56cf-4fdd-9899-b73adbab2e4d" data-utcoffset="0"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700&display=swap">
 <style>
     * { box-sizing: border-box; }
     html, body {
@@ -96,6 +99,54 @@
         width: 100%;
         height: auto;
     }
+    /* a ghost card: a day that was played but never screenshotted,
+       redrawn in the same layout with the time unknown */
+    .ghostwrap { container-type: inline-size; }
+    .ghostcard {
+        aspect-ratio: 720 / 591;
+        background: #038839;
+        font-family: "Montserrat", "Avenir Next", "Trebuchet MS", sans-serif;
+        font-weight: 600;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        user-select: none;
+    }
+    .ghostcard .gtitle {
+        margin-top: 8cqw;
+        font-size: 4.8cqw;
+        color: #a5f0ae;
+    }
+    .ghostcard .gby {
+        margin-top: 1.4cqw;
+        font-size: 3.6cqw;
+        font-weight: 500;
+        color: #8fdf9f;
+    }
+    .ghostcard .gtime {
+        margin-top: 11.5cqw;
+        font-size: 15.5cqw;
+        color: #ffffff;
+        letter-spacing: 0.02em;
+    }
+    .ghostcard .gstats {
+        margin-top: 12cqw;
+        display: flex;
+        gap: 13cqw;
+    }
+    .ghostcard .gstats b {
+        display: block;
+        font-size: 6.8cqw;
+        color: #a5f0ae;
+    }
+    .ghostcard .gstats span {
+        display: block;
+        margin-top: 0.6cqw;
+        font-size: 3.4cqw;
+        color: #a5f0ae;
+    }
+
     /* a note written on the polaroid's chin */
     .ticket.noted .frame { padding-bottom: 56px; }
     .ticket figcaption {
@@ -183,13 +234,32 @@
 
                     const frame = document.createElement('div');
                     frame.className = 'frame';
-                    const img = document.createElement('img');
-                    img.src = 'buenasuerte-assets/' + c.name;
-                    img.width = c.width;
-                    img.height = c.height;
-                    img.alt = 'A kept score from the daily puzzle';
-                    img.loading = 'lazy';
-                    frame.appendChild(img);
+                    if (c.ghost) {
+                        frame.classList.add('ghostwrap');
+                        const card = document.createElement('div');
+                        card.className = 'ghostcard';
+                        card.setAttribute('role', 'img');
+                        card.setAttribute('aria-label',
+                            'Puzzle ' + c.number + ', played but never screenshotted');
+                        card.innerHTML =
+                            '<div class="gtitle">#' + c.number + '</div>' +
+                            '<div class="gby">played, not kept</div>' +
+                            '<div class="gtime">??:??</div>' +
+                            '<div class="gstats">' +
+                                '<div><b>?</b><span>Hints</span></div>' +
+                                '<div><b>' + c.streak + '</b><span>Streak</span></div>' +
+                                '<div><b>' + c.longest + '</b><span>Longest</span></div>' +
+                            '</div>';
+                        frame.appendChild(card);
+                    } else {
+                        const img = document.createElement('img');
+                        img.src = 'buenasuerte-assets/' + c.name;
+                        img.width = c.width;
+                        img.height = c.height;
+                        img.alt = 'A kept score from the daily puzzle';
+                        img.loading = 'lazy';
+                        frame.appendChild(img);
+                    }
 
                     if (c.note) {
                         fig.classList.add('noted');

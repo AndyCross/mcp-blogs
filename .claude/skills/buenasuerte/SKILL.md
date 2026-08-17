@@ -52,6 +52,23 @@ which puzzle is which. Keep notes short (one line, it has to fit the
 chin). Reruns of the converter keep notes, so edit the manifest freely.
 Mirror the manifest to `public/art/buenasuerte-assets/` after editing.
 
+## Ghost cards (days played but never screenshotted)
+
+The wall can hold hand-written "ghost" entries for days with no
+screenshot: the page redraws the score card itself, with ??:?? as the
+time. Add one to the manifest like this:
+
+```json
+{ "name": "img_4500.ghost", "ghost": true, "number": 878, "streak": 32, "longest": 215, "note": "didn't send this one anywhere" }
+```
+
+The `name` is a fake filename chosen so a plain string sort places the
+ghost between the right neighbours (real cards are named img_NNNN.jpg in
+play order). Take `streak` from the cards either side (previous + 1) and
+`number` from the gap. Reruns of the converter keep ghost entries, same
+as notes. Ghost card colours in `buenasuerte.html` were sampled from the
+real JPEGs (`#038839` green); if the app restyles, resample.
+
 ## Verifying
 
 Screenshot the page headlessly and Read the PNG to check the layout:

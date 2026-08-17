@@ -19,7 +19,11 @@ is chronological, so the manifest preserves the order the puzzles
 were played.
 
 Cards may carry a handwritten "note" in the manifest (added by hand);
-reruns keep any notes already there.
+reruns keep any notes already there. The manifest may also hold "ghost"
+cards, written by hand for days that were played but never screenshotted
+(the page draws these itself); their "name" is a fake filename chosen so
+a plain sort drops them between the right neighbours, and reruns keep
+them too.
 
 Usage:
     tools/puzzle.py ~/Downloads/puzzle static/art/buenasuerte-assets
@@ -59,12 +63,15 @@ def main() -> int:
 
     args.out.mkdir(parents=True, exist_ok=True)
 
-    # Notes are written into the manifest by hand; carry them across.
+    # Notes and ghost cards are written into the manifest by hand;
+    # carry them across.
     notes = {}
+    ghosts = []
     manifest_path = args.out / "manifest.json"
     if manifest_path.exists():
-        old = json.loads(manifest_path.read_text())
-        notes = {c["name"]: c["note"] for c in old.get("cards", []) if c.get("note")}
+        old_cards = json.loads(manifest_path.read_text()).get("cards", [])
+        notes = {c["name"]: c["note"] for c in old_cards if c.get("note") and not c.get("ghost")}
+        ghosts = [c for c in old_cards if c.get("ghost")]
 
     entries = []
     for path in sources:
@@ -89,8 +96,10 @@ def main() -> int:
         entries.append(entry)
         print(f"  {path.name} -> {out_name} ({card.width}x{card.height})")
 
-    manifest_path.write_text(json.dumps({"cards": entries}, indent=2) + "\n")
-    print(f"\n{len(entries)} cards written to {args.out}")
+    merged = sorted(entries + ghosts, key=lambda c: c["name"])
+    manifest_path.write_text(json.dumps({"cards": merged}, indent=2) + "\n")
+    kept = f" (+ {len(ghosts)} ghost)" if ghosts else ""
+    print(f"\n{len(entries)} cards written to {args.out}{kept}")
     return 0
 
 
