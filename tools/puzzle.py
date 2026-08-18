@@ -51,6 +51,7 @@ def main() -> int:
     ap = argparse.ArgumentParser(description="Crop puzzle score screenshots for the web.")
     ap.add_argument("source", type=Path, help="folder of PNG screenshots")
     ap.add_argument("out", type=Path, help="output folder for JPEGs + manifest.json")
+    ap.add_argument("--force", action="store_true", help="reconvert screenshots that already have a JPEG")
     args = ap.parse_args()
 
     sources = sorted(
@@ -74,7 +75,22 @@ def main() -> int:
         ghosts = [c for c in old_cards if c.get("ghost")]
 
     entries = []
+    skipped = 0
     for path in sources:
+        out_name = path.stem.lower().replace(" ", "-") + ".jpg"
+        out_path = args.out / out_name
+
+        # Incremental: a screenshot that already has its JPEG is only
+        # re-read for its manifest entry if forced.
+        if out_path.exists() and not args.force:
+            with Image.open(out_path) as done:
+                entry = {"name": out_name, "width": done.width, "height": done.height}
+            if out_name in notes:
+                entry["note"] = notes[out_name]
+            entries.append(entry)
+            skipped += 1
+            continue
+
         img = Image.open(path).convert("RGB")
         w, h = img.size
         # Scale the fixed crop if a screenshot arrives at another size.
@@ -82,9 +98,8 @@ def main() -> int:
         card = img.crop((0, round(CROP_TOP * scale), w, round(CROP_BOTTOM * scale)))
         card.thumbnail((OUT_WIDTH, OUT_WIDTH * 4), Image.LANCZOS)
 
-        out_name = path.stem.lower().replace(" ", "-") + ".jpg"
         card.save(
-            args.out / out_name,
+            out_path,
             "JPEG",
             quality=JPEG_QUALITY,
             optimize=True,
@@ -99,7 +114,7 @@ def main() -> int:
     merged = sorted(entries + ghosts, key=lambda c: c["name"])
     manifest_path.write_text(json.dumps({"cards": merged}, indent=2) + "\n")
     kept = f" (+ {len(ghosts)} ghost)" if ghosts else ""
-    print(f"\n{len(entries)} cards written to {args.out}{kept}")
+    print(f"\n{len(entries)} cards in {args.out} ({len(entries) - skipped} new, {skipped} already done){kept}")
     return 0
 
 

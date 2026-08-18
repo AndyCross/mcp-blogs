@@ -21,8 +21,13 @@ order they were played. This skill updates it.
    tools/puzzle.py ~/Downloads/puzzle static/art/buenasuerte-assets
    ```
 
-   It crops each screenshot to title + timer + streak, writes web-ready
-   JPEGs and `manifest.json`, and preserves any existing `note` fields.
+   It is incremental: screenshots that already have a JPEG are skipped
+   (pass --force to redo them all), so it only reports the new cards.
+   It preserves existing `note` fields and ghost entries.
+
+   Keep it token-cheap: don't Read the original PNGs (they are large).
+   To learn what a new card says (puzzle number, streak, for the archive
+   text), Read its small output JPEG in `buenasuerte-assets/` instead.
 3. Mirror to the built site (Hugo copies static/ verbatim at build, but
    the repo keeps `public/` in sync by hand):
 
@@ -83,7 +88,9 @@ kill %1
 
 Check: every card fades in pinned at a slight tilt, noted cards show
 their handwriting in the deeper chin, and the closing line "buena
-suerte, donde estés" sits under the wall.
+suerte, donde estés" sits under the wall. If the change only touched
+one card, crop the screenshot to that region with PIL before Reading
+it, rather than Reading the whole tall page.
 
 ## Style
 
