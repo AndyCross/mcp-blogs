@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Nunca</title>
+<script src="https://cdn.counter.dev/script.js" data-id="72d92ac8-56cf-4fdd-9899-b73adbab2e4d" data-utcoffset="0"></script>
+<meta name="robots" content="noindex, nofollow">
+<style>
+    * { box-sizing: border-box; }
+    html, body {
+        margin: 0; padding: 0; height: 100%;
+        overflow: hidden;
+        background: #020306;
+        cursor: default;
+    }
+    #dust {
+        position: fixed;
+        inset: 0;
+        width: 100vw;
+        height: 100vh;
+        display: block;
+    }
+    #line {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        flex-wrap: wrap;
+        align-content: center;
+        justify-content: center;
+        padding: 2rem;
+        max-width: 34rem;
+        margin: 0 auto;
+        text-align: center;
+        pointer-events: none;
+        font-family: "Georgia", "Times New Roman", serif;
+        font-style: italic;
+        font-weight: 400;
+        font-size: clamp(1.5rem, 5vw, 2.6rem);
+        letter-spacing: 0.02em;
+        color: #9aa3b4;
+    }
+    #line span {
+        margin: 0 0.32em;
+        opacity: 0;
+        filter: blur(7px);
+        transform: translateY(6px);
+        transition: opacity 2.8s ease, filter 2.8s ease, transform 2.8s ease;
+        text-shadow: 0 0 22px rgba(74, 84, 108, 0.45), 0 2px 6px rgba(0, 0, 0, 0.9);
+    }
+    #line span.on {
+        opacity: 1;
+        filter: blur(0);
+        transform: translateY(0);
+    }
+    /* letting go takes longer than arriving */
+    #line span.gone {
+        transition: opacity 5.5s ease, filter 5.5s ease, transform 5.5s ease;
+        opacity: 0;
+        filter: blur(9px);
+        transform: translateY(-4px);
+    }
+</style>
+</head>
+<body>
+    <canvas id="dust"></canvas>
+    <div id="line" aria-label="I can't believe I will never see you again."></div>
+
+    <script>
+        // The whole piece is one sentence, said into the dark, over and over.
+        const WORDS = ["I", "can't", "believe", "I", "will", "never", "see", "you", "again."];
+        // Hesitation before each word. The longest silence sits before "never",
+        // because that is the word that costs the most to say.
+        const GAPS = [0, 750, 950, 1500, 650, 1900, 1000, 600, 850];
+        const NEVER = 5;
+
+        const line = document.getElementById('line');
+        const spans = WORDS.map(w => {
+            const s = document.createElement('span');
+            s.textContent = w;
+            line.appendChild(s);
+            return s;
+        });
+
+        function cycle() {
+            let t = 3000; // darkness first
+            spans.forEach((s, i) => {
+                t += GAPS[i];
+                setTimeout(() => { s.classList.remove('gone'); s.classList.add('on'); }, t);
+            });
+
+            t += 8000; // the whole line holds
+
+            // Everything is let go of, except one word.
+            spans.forEach((s, i) => {
+                if (i === NEVER) return;
+                const drift = 400 + ((i * 733) % 1400); // ragged, not simultaneous
+                setTimeout(() => { s.classList.remove('on'); s.classList.add('gone'); }, t + drift);
+            });
+
+            t += 7500; // "never" stays alone
+            setTimeout(() => { spans[NEVER].classList.remove('on'); spans[NEVER].classList.add('gone'); }, t);
+
+            t += 8000; // its fade, then the dark again
+            setTimeout(cycle, t);
+        }
+        cycle();
+
+        // Dust, sinking the whole time, indifferent to the words.
+        const canvas = document.getElementById('dust');
+        const ctx = canvas.getContext('2d');
+        let W, H, motes;
+
+        function resize() {
+            W = canvas.width = window.innerWidth;
+            H = canvas.height = window.innerHeight;
+            const n = Math.round((W * H) / 26000);
+            motes = Array.from({ length: n }, () => ({
+                x: Math.random() * W,
+                y: Math.random() * H,
+                r: 0.4 + Math.random() * 1.1,
+                vy: 0.06 + Math.random() * 0.22,
+                vx: (Math.random() - 0.5) * 0.05,
+                a: 0.03 + Math.random() * 0.09,
+                ph: Math.random() * Math.PI * 2
+            }));
+        }
+        resize();
+        window.addEventListener('resize', resize);
+
+        function draw(now) {
+            ctx.fillStyle = '#020306';
+            ctx.fillRect(0, 0, W, H);
+            for (const m of motes) {
+                m.y += m.vy;
+                m.x += m.vx + Math.sin(now * 0.0003 + m.ph) * 0.04;
+                if (m.y > H + 2) { m.y = -2; m.x = Math.random() * W; }
+                if (m.x < -2) m.x = W + 2;
+                if (m.x > W + 2) m.x = -2;
+                const tw = 0.75 + 0.25 * Math.sin(now * 0.0011 + m.ph);
+                ctx.beginPath();
+                ctx.arc(m.x, m.y, m.r, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(150, 160, 182, ${m.a * tw})`;
+                ctx.fill();
+            }
+            requestAnimationFrame(draw);
+        }
+        requestAnimationFrame(draw);
+    </script>
+</body>
+</html>
