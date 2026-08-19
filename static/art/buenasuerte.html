@@ -270,9 +270,9 @@
                     fig.appendChild(frame);
                     wall.appendChild(fig);
 
-                    setTimeout(() => fig.classList.add('in'), 1800 + i * 320);
+                    setTimeout(() => fig.classList.add('in'), 1200 + i * 180);
                 });
-                setTimeout(() => closing.classList.add('in'), 1800 + cards.length * 320 + 1200);
+                setTimeout(() => closing.classList.add('in'), 1200 + cards.length * 180 + 1200);
             })
             .catch(err => console.error('no manifest', err));
     </script>
