@@ -41,6 +41,13 @@ order they were played. This skill updates it.
    `static/art/todas-c51e1c2388fe29fe.html` (it mentions "#885 to #900"
    and "39 to 54") and mirror that file to `public/art/` too.
 
+   The card text also carries the date range of the run, "20 July to
+   19 August 2026" style. The puzzle is daily and the latest card is
+   today, so the first date is today minus (latest number - first
+   number) days: #872 with #902 played on 2026-08-19 gives 20 July
+   2026. Update the latest date to today whenever new cards go up (the
+   first date only moves if earlier cards are ever added).
+
 ## Writing a note on a card
 
 Notes are handwriting on a card's polaroid chin. Add a `"note"` field to
