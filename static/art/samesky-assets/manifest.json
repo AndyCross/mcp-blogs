@@ -1,6 +1,18 @@
 {
   "photos": [
     {
+      "name": "img_5352.jpg",
+      "source": "IMG_5352.HEIC",
+      "mode": "polaroid",
+      "width": 1200,
+      "height": 900,
+      "sky_fraction": 0.479,
+      "sky_color": "#a8a8a9",
+      "depth": 0.004,
+      "elevation": 8.0,
+      "azimuth": 0.0
+    },
+    {
       "name": "img_5010.jpg",
       "source": "IMG_5010.HEIC",
       "mode": "sky",
@@ -10,7 +22,43 @@
       "sky_color": "#667790",
       "depth": 0.194,
       "elevation": 21.8,
-      "azimuth": 0.0
+      "azimuth": 18.0
+    },
+    {
+      "name": "img_5346.jpg",
+      "source": "IMG_5346.HEIC",
+      "mode": "sky",
+      "width": 1200,
+      "height": 1600,
+      "sky_fraction": 0.725,
+      "sky_color": "#5c6e8c",
+      "depth": 0.248,
+      "elevation": 23.4,
+      "azimuth": 36.0
+    },
+    {
+      "name": "img_5303.jpg",
+      "source": "IMG_5303.HEIC",
+      "mode": "polaroid",
+      "width": 900,
+      "height": 1200,
+      "sky_fraction": 0.316,
+      "sky_color": "#839bc0",
+      "depth": 0.263,
+      "elevation": 11.2,
+      "azimuth": 54.0
+    },
+    {
+      "name": "img_5290.jpg",
+      "source": "IMG_5290.HEIC",
+      "mode": "sky",
+      "width": 1600,
+      "height": 1200,
+      "sky_fraction": 0.875,
+      "sky_color": "#60789d",
+      "depth": 0.267,
+      "elevation": 24.0,
+      "azimuth": 72.0
     },
     {
       "name": "img_5233.jpg",
@@ -22,7 +70,7 @@
       "sky_color": "#8fabcf",
       "depth": 0.276,
       "elevation": 24.3,
-      "azimuth": 24.0
+      "azimuth": 90.0
     },
     {
       "name": "img_4736.jpg",
@@ -34,7 +82,7 @@
       "sky_color": "#5d779d",
       "depth": 0.287,
       "elevation": 24.6,
-      "azimuth": 48.0
+      "azimuth": 108.0
     },
     {
       "name": "img_5201.jpg",
@@ -46,7 +94,7 @@
       "sky_color": "#7590b8",
       "depth": 0.289,
       "elevation": 11.5,
-      "azimuth": 72.0
+      "azimuth": 126.0
     },
     {
       "name": "img_5227.jpg",
@@ -58,7 +106,7 @@
       "sky_color": "#7c9bcf",
       "depth": 0.358,
       "elevation": 26.7,
-      "azimuth": 96.0
+      "azimuth": 144.0
     },
     {
       "name": "img_4988.jpg",
@@ -70,7 +118,7 @@
       "sky_color": "#7697cb",
       "depth": 0.367,
       "elevation": 27.0,
-      "azimuth": 120.0
+      "azimuth": 162.0
     },
     {
       "name": "img_5247.jpg",
@@ -82,7 +130,7 @@
       "sky_color": "#4e689b",
       "depth": 0.395,
       "elevation": 12.7,
-      "azimuth": 144.0
+      "azimuth": 180.0
     },
     {
       "name": "img_5125.jpg",
@@ -94,7 +142,7 @@
       "sky_color": "#6a8ec8",
       "depth": 0.405,
       "elevation": 12.9,
-      "azimuth": 168.0
+      "azimuth": 198.0
     },
     {
       "name": "img_4716.jpg",
@@ -106,7 +154,7 @@
       "sky_color": "#6387c3",
       "depth": 0.414,
       "elevation": 13.0,
-      "azimuth": 192.0
+      "azimuth": 216.0
     },
     {
       "name": "img_5228.jpg",
@@ -118,7 +166,7 @@
       "sky_color": "#6186c5",
       "depth": 0.431,
       "elevation": 28.9,
-      "azimuth": 216.0
+      "azimuth": 234.0
     },
     {
       "name": "img_5190.jpg",
@@ -130,7 +178,7 @@
       "sky_color": "#7096d6",
       "depth": 0.44,
       "elevation": 13.3,
-      "azimuth": 240.0
+      "azimuth": 252.0
     },
     {
       "name": "img_5224.jpg",
@@ -142,7 +190,7 @@
       "sky_color": "#6f97dc",
       "depth": 0.47,
       "elevation": 13.6,
-      "azimuth": 264.0
+      "azimuth": 270.0
     },
     {
       "name": "img_4798.jpg",
@@ -166,7 +214,7 @@
       "sky_color": "#426095",
       "depth": 0.491,
       "elevation": 30.7,
-      "azimuth": 312.0
+      "azimuth": 306.0
     },
     {
       "name": "img_4797.jpg",
@@ -178,7 +226,19 @@
       "sky_color": "#35558f",
       "depth": 0.622,
       "elevation": 34.7,
-      "azimuth": 336.0
+      "azimuth": 324.0
+    },
+    {
+      "name": "img_5280.jpg",
+      "source": "IMG_5280.HEIC",
+      "mode": "sky",
+      "width": 1200,
+      "height": 1600,
+      "sky_fraction": 1.0,
+      "sky_color": "#365b99",
+      "depth": 0.625,
+      "elevation": 34.8,
+      "azimuth": 342.0
     }
   ]
 }
