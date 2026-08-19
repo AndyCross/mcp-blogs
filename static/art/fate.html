@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Lifted from Fate</title>
+<script src="https://cdn.counter.dev/script.js" data-id="72d92ac8-56cf-4fdd-9899-b73adbab2e4d" data-utcoffset="0"></script>
+<style>
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; background: #020409; }
+    #container { position: fixed; inset: 0; }
+    canvas { display: block; width: 100vw; height: 100vh; cursor: crosshair; }
+
+    /* ---- Title ---- */
+    #title {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        pointer-events: none;
+        z-index: 10;
+        text-align: center;
+        padding: 1.5rem;
+        transition: opacity 4s ease 1.5s;
+        background: radial-gradient(ellipse 66% 46% at center,
+            rgba(2, 4, 9, 0.72) 0%,
+            rgba(2, 4, 9, 0.40) 45%,
+            rgba(2, 4, 9, 0.0) 72%);
+    }
+    #title.gone { opacity: 0; }
+    #title h1 {
+        font-family: "Georgia", "Times New Roman", serif;
+        font-weight: 400;
+        font-style: italic;
+        font-size: clamp(1.7rem, 5.5vw, 3.6rem);
+        letter-spacing: 0.02em;
+        color: #e9edf5;
+        margin: 0;
+        text-shadow: 0 2px 6px rgba(0, 0, 0, 0.95), 0 2px 22px rgba(0, 0, 0, 0.9), 0 0 30px rgba(192, 128, 129, 0.55);
+        opacity: 0;
+        animation: bloom 5s ease forwards 0.8s;
+    }
+    #whisper {
+        font-family: "Georgia", serif;
+        font-style: italic;
+        font-size: clamp(0.95rem, 2.4vw, 1.2rem);
+        letter-spacing: 0.06em;
+        line-height: 1.7;
+        max-width: 42rem;
+        color: #dfe5ee;
+        margin-top: 1.5rem;
+        text-shadow: 0 1px 4px rgba(0, 0, 0, 0.95), 0 1px 16px rgba(0, 0, 0, 0.85), 0 0 26px rgba(192, 128, 129, 0.45);
+        opacity: 0;
+        animation: bloom 3s ease forwards 1.4s;
+    }
+    #lifted {
+        font-family: "Georgia", serif;
+        font-variant: small-caps;
+        letter-spacing: 0.34em;
+        font-size: clamp(0.7rem, 1.6vw, 0.85rem);
+        color: rgba(210, 217, 229, 0.7);
+        margin-top: 2.2rem;
+        text-shadow: 0 1px 3px rgba(0, 0, 0, 0.95), 0 1px 10px rgba(0, 0, 0, 0.8);
+        opacity: 0;
+        animation: bloom 4s ease forwards 3.4s;
+    }
+    @keyframes bloom {
+        from { opacity: 0; filter: blur(8px); transform: translateY(8px); }
+        to   { opacity: 1; filter: blur(0);   transform: translateY(0); }
+    }
+
+    /* ---- Hint ---- */
+    #hint {
+        position: fixed;
+        bottom: 1.4rem;
+        left: 0; right: 0;
+        text-align: center;
+        font-family: "Georgia", serif;
+        font-style: italic;
+        font-size: 0.8rem;
+        color: rgba(198, 205, 217, 0.4);
+        text-shadow: 0 1px 8px rgba(2, 4, 9, 0.8);
+        pointer-events: none;
+        z-index: 9;
+        opacity: 0;
+        animation: bloom 3s ease forwards 8s;
+    }
+
+    /* ---- Memory glyph ---- */
+    #memories {
+        position: fixed;
+        bottom: 1.1rem;
+        right: 1.3rem;
+        z-index: 11;
+        font-family: "Georgia", serif;
+        font-style: italic;
+        font-size: 1.7rem;
+        line-height: 1;
+        color: rgba(214, 221, 233, 0.75);
+        text-shadow: 0 0 14px rgba(198, 205, 217, 0.5);
+        background: none;
+        border: none;
+        padding: 0.6rem;
+        cursor: pointer;
+        opacity: 0;
+        animation: bloom 2s ease forwards 2s, beckon 4s ease-in-out infinite 4s;
+        transition: color 1.2s ease;
+    }
+    #memories:hover { color: rgba(230, 235, 244, 1); }
+    @keyframes beckon {
+        0%, 100% { text-shadow: 0 0 10px rgba(198, 205, 217, 0.35); transform: scale(1); }
+        50%      { text-shadow: 0 0 22px rgba(198, 205, 217, 0.8);  transform: scale(1.12); }
+    }
+
+    /* ---- Timeline: what fate has already given ---- */
+    #timeline {
+        position: fixed;
+        inset: 0;
+        z-index: 12;
+        display: none;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior: contain;
+        touch-action: pan-y;
+        user-select: none;
+        -webkit-user-select: none;
+        background: rgba(2, 4, 9, 0.87);
+        cursor: pointer;
+        text-align: center;
+        padding: clamp(3rem, 12vh, 6rem) 1.5rem 4rem;
+    }
+    #timeline.open { display: block; }
+    #timeline .entry {
+        max-width: 36rem;
+        margin: 0 auto 3.2rem;
+        opacity: 0;
+        animation: bloom 1.4s ease forwards;
+    }
+    #timeline .entry .date {
+        font-family: "Georgia", serif;
+        font-variant: small-caps;
+        letter-spacing: 0.22em;
+        font-size: 0.7rem;
+        opacity: 0.5;
+        margin-bottom: 0.8rem;
+    }
+    #timeline .entry h2 {
+        font-family: "Georgia", "Times New Roman", serif;
+        font-weight: 400;
+        font-style: italic;
+        font-size: clamp(1.3rem, 4vw, 2.1rem);
+        letter-spacing: 0.02em;
+        margin: 0;
+    }
+    #timeline .entry .said {
+        font-family: "Georgia", serif;
+        font-style: italic;
+        font-size: clamp(0.85rem, 2.2vw, 1.05rem);
+        line-height: 1.7;
+        opacity: 0.7;
+        margin-top: 0.9rem;
+    }
+    #timeline .entry .now {
+        font-family: "Georgia", serif;
+        font-variant: small-caps;
+        letter-spacing: 0.22em;
+        font-size: 0.65rem;
+        opacity: 0.55;
+        margin-top: 1rem;
+    }
+</style>
+</head>
+<body>
+    <div id="container"></div>
+    <div id="title">
+        <h1>The future is not immutable.</h1>
+        <div id="whisper">As we travel our own paths, the same minds smile at the same things in the same ways, seen at different times in different places with different people, but these remain the same.</div>
+        <div id="lifted">lifted from fate</div>
+    </div>
+    <div id="hint">drag to look along the threads &middot; tap to send a light down them</div>
+    <button id="memories" aria-label="what fate has already given">&#10022;</button>
+    <div id="timeline" aria-hidden="true"></div>
+
+    <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+      }
+    }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+        import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+        import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+        import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+        import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+
+        // What happened that was remarkable, lifted from fate. Oldest first.
+        // Append a new entry to update the piece: the last one becomes the
+        // opening words, and its tint runs through the threads. The old ones
+        // remain, behind the glyph.
+        const lifted = [
+            {
+                date: '2026-08-19',
+                title: 'The future is not immutable.',
+                whisper: 'As we travel our own paths, the same minds smile at the same things in the same ways, seen at different times in different places with different people, but these remain the same.',
+                tint: '#c08081'
+            }
+        ];
+
+        // The threads are coloured from the pledges: every tint that was ever
+        // said over there flows through the current here.
+        const PLEDGE_COLOURS = [
+            '#c4122e', // the first pledge
+            '#b8155a',
+            '#d1102e',
+            '#3e4d68', // abide forever
+            '#75809f',
+            '#4a7ac9', // same sky
+            '#c08081'  // the last promise
+        ];
+
+        // Each pledge tint also gets a luminous sibling, hue-nudged and lifted,
+        // the colour it would glow if it were alive down here. Interleaved,
+        // they make the pool every pair of strands draws its own palette from.
+        const COLOUR_POOL = PLEDGE_COLOURS.flatMap(hex => {
+            const base = new THREE.Color(hex);
+            const glow = base.clone().offsetHSL(0.035, 0.22, 0.16);
+            return [base, glow];
+        });
+
+        // A pair shares one palette (they are a pair in colour too): a window
+        // of consecutive colours from the pool, so the run stays smooth but
+        // no two pairs need tell the same part of the story.
+        function paletteForPair(index) {
+            const start = (index * 3) % COLOUR_POOL.length;
+            const pal = [];
+            for (let i = 0; i < 7; i++) {
+                pal.push(COLOUR_POOL[(start + i) % COLOUR_POOL.length].clone());
+            }
+            return pal;
+        }
+
+        let camera, scene, renderer, composer, controls;
+        const clock = new THREE.Clock();
+        const strandMaterials = [];
+        let sporeMat = null;
+        let globalTime = 0;
+        let surge = 0;          // a tap sends brightness travelling down every thread
+        let titleTimer = null;
+        const dragState = { x: 0, y: 0, moved: false };
+
+        function init() {
+            const container = document.getElementById('container');
+
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color('#020409');
+
+            // The camera stands inside the current, not outside it.
+            camera = new THREE.PerspectiveCamera(62, window.innerWidth / window.innerHeight, 0.1, 500);
+            camera.position.set(0, 1.5, 0.01);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.toneMapping = THREE.ACESFilmicToneMapping;
+            renderer.toneMappingExposure = 1.1;
+            container.appendChild(renderer.domElement);
+
+            controls = new OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+            controls.enableZoom = false;
+            controls.enablePan = false;
+            controls.rotateSpeed = -0.26; // drag the world, not the camera
+            controls.autoRotate = true;
+            controls.autoRotateSpeed = 0.14;
+            controls.target.set(0, 2.2, -2);
+
+            composer = new EffectComposer(renderer);
+            composer.addPass(new RenderPass(scene, camera));
+            const bloom = new UnrealBloomPass(
+                new THREE.Vector2(window.innerWidth, window.innerHeight), 0.65, 0.9, 0.16);
+            composer.addPass(bloom);
+            composer.addPass(new OutputPass());
+
+            buildThreads();
+            buildMotes();
+            setupInteraction();
+            setupTimeline();
+
+            titleTimer = setTimeout(() => document.getElementById('title').classList.add('gone'), 10000);
+            window.addEventListener('resize', onWindowResize);
+        }
+
+        // ---- The threads -------------------------------------------------
+
+        // The spine a pair of strands shares: a long sweep past the camera
+        // with a slow sinuous wander, so the current feels alive rather
+        // than drawn with a ruler.
+        class FlowCurve extends THREE.Curve {
+            constructor(p) {
+                super();
+                this.origin = p.origin;
+                this.dir = p.dir.clone().normalize();
+                this.length = p.length;
+                this.amp = p.amp;
+                this.freq = p.freq;
+                this.phase = p.phase;
+                const arb = Math.abs(this.dir.y) < 0.9 ? new THREE.Vector3(0, 1, 0) : new THREE.Vector3(1, 0, 0);
+                this.normal = new THREE.Vector3().crossVectors(this.dir, arb).normalize();
+                this.binormal = new THREE.Vector3().crossVectors(this.dir, this.normal).normalize();
+            }
+            getPoint(t, target = new THREE.Vector3()) {
+                target.copy(this.origin).addScaledVector(this.dir, t * this.length);
+                const envelope = Math.sin(t * Math.PI);
+                const w1 = Math.sin(t * Math.PI * 2.0 * this.freq + this.phase) * this.amp * envelope;
+                const w2 = Math.cos(t * Math.PI * 3.0 * this.freq + this.phase * 1.7) * this.amp * 0.6 * envelope;
+                target.addScaledVector(this.normal, w1);
+                target.addScaledVector(this.binormal, w2);
+                return target;
+            }
+        }
+
+        function buildThreads() {
+            const group = new THREE.Group();
+            const PAIRS = 15;
+            const SAMPLES = 110;
+
+            for (let i = 0; i < PAIRS; i++) {
+                // Each pair passes the camera at its own bearing and distance,
+                // all carried the same way round: one current, many threads.
+                const az = (i / PAIRS) * Math.PI * 2 + (Math.random() - 0.5) * 0.5;
+                const near = 7 + Math.pow(Math.random(), 1.6) * 34;
+                const height = (Math.random() - 0.5) * 44;
+                const length = 150 + Math.random() * 90;
+
+                const closest = new THREE.Vector3(Math.cos(az) * near, height, Math.sin(az) * near);
+                const dir = new THREE.Vector3(-Math.sin(az), (Math.random() - 0.5) * 0.35, Math.cos(az));
+                const origin = closest.clone().addScaledVector(dir.clone().normalize(), -length / 2);
+
+                const spine = new FlowCurve({
+                    origin, dir, length,
+                    amp: 4 + Math.random() * 7,
+                    freq: 0.6 + Math.random() * 0.9,
+                    phase: Math.random() * Math.PI * 2
+                });
+
+                // How the two strands hold each other: they wind slowly around
+                // the spine while their separation breathes. Sometimes near
+                // enough to touch, sometimes far apart, never unlinked.
+                const twistTurns = 2.5 + Math.random() * 3.5;
+                const twistPhase = Math.random() * Math.PI * 2;
+                const sepMin = 0.35 + Math.random() * 0.4;
+                const sepMax = 2.6 + Math.random() * 3.4;
+                const breathFreq = 1.0 + Math.random() * 2.0;
+                const breathPhase = Math.random() * Math.PI * 2;
+                const thickness = 0.14 + Math.random() * 0.1;
+                const pairPalette = paletteForPair(i);
+
+                for (let s = 0; s < 2; s++) {
+                    const pts = [];
+                    for (let k = 0; k <= SAMPLES; k++) {
+                        const t = k / SAMPLES;
+                        const base = spine.getPoint(t);
+                        const theta = twistTurns * Math.PI * 2 * t + twistPhase + s * Math.PI;
+                        const breath = 0.5 + 0.5 * Math.sin(breathFreq * Math.PI * 2 * t + breathPhase);
+                        const r = (sepMin + (sepMax - sepMin) * breath) * 0.5;
+                        base.addScaledVector(spine.normal, Math.cos(theta) * r);
+                        base.addScaledVector(spine.binormal, Math.sin(theta) * r);
+                        pts.push(base.clone());
+                    }
+                    const geo = new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), SAMPLES, thickness, 6, false);
+                    const mat = makeThreadMaterial(i * 2 + s, s === 0 ? 1.0 : -1.0, pairPalette);
+                    group.add(new THREE.Mesh(geo, mat));
+                }
+            }
+            scene.add(group);
+        }
+
+        function makeThreadMaterial(seed, pulseDir, palette) {
+            const mat = new THREE.ShaderMaterial({
+                transparent: true,
+                depthWrite: false,
+                blending: THREE.AdditiveBlending,
+                side: THREE.DoubleSide,
+                uniforms: {
+                    uTime: { value: 0 },
+                    uSeed: { value: seed * 3.7 },
+                    uSurge: { value: 0 },
+                    uPulseDir: { value: pulseDir },
+                    uTint: { value: new THREE.Color(lifted[lifted.length - 1].tint) },
+                    uPalette: { value: palette }
+                },
+                vertexShader: `
+                    varying vec2 vUv;
+                    varying vec3 vNormal;
+                    varying vec3 vViewPosition;
+                    uniform float uTime;
+                    uniform float uSeed;
+
+                    void main() {
+                        vUv = uv;
+                        vNormal = normalize(normalMatrix * normal);
+
+                        // Slow drift, as if the whole current were breathing.
+                        vec3 p = position;
+                        float t = uTime * 0.35 + uSeed;
+                        float along = uv.x * 6.2831;
+                        p.x += sin(t * 0.9 + along * 1.7) * 0.9 + sin(t * 0.37 + along * 3.1) * 0.4;
+                        p.y += cos(t * 0.7 + along * 2.3) * 0.7 + sin(t * 0.51 + along * 1.3) * 0.5;
+                        p.z += sin(t * 0.6 + along * 2.9) * 0.9 + cos(t * 0.43 + along * 1.9) * 0.4;
+
+                        vec4 mv = modelViewMatrix * vec4(p, 1.0);
+                        vViewPosition = -mv.xyz;
+                        gl_Position = projectionMatrix * mv;
+                    }
+                `,
+                fragmentShader: `
+                    varying vec2 vUv;
+                    varying vec3 vNormal;
+                    varying vec3 vViewPosition;
+                    uniform float uTime;
+                    uniform float uSeed;
+                    uniform float uSurge;
+                    uniform float uPulseDir;
+                    uniform vec3 uTint;
+                    uniform vec3 uPalette[7];
+
+                    // Every pledge colour, flowing along the thread in order.
+                    vec3 paletteCol(float t) {
+                        float f = clamp(t, 0.0, 1.0) * 6.0;
+                        vec3 c = uPalette[0];
+                        for (int i = 0; i < 6; i++) {
+                            c = mix(c, uPalette[i + 1], clamp(f - float(i), 0.0, 1.0));
+                        }
+                        return c;
+                    }
+
+                    void main() {
+                        // Threads emerge from the dark and return to it.
+                        float ends = smoothstep(0.0, 0.14, vUv.x) * smoothstep(1.0, 0.86, vUv.x);
+                        if (ends <= 0.002) discard;
+
+                        vec3 viewDir = normalize(vViewPosition);
+                        vec3 n = normalize(vNormal);
+                        float NdotV = abs(dot(n, viewDir));
+                        float rim = pow(1.0 - NdotV, 2.1);
+                        float core = pow(NdotV, 3.0) * 0.3;
+
+                        float grad = fract(vUv.x * 0.8 - uTime * 0.02 + uSeed * 0.13);
+                        // fold so the run through the colours has no seam
+                        float folded = 1.0 - abs(1.0 - 2.0 * grad);
+                        vec3 base = paletteCol(folded);
+                        base = mix(base, uTint, 0.12);
+
+                        // Light travelling the thread; a tap makes it bright
+                        // and quick for a moment.
+                        float speed = 0.5 + uSurge * 2.2;
+                        float pc = vUv.x * 3.0 * uPulseDir - uTime * speed + uSeed;
+                        float pulse = pow(max(0.0, sin(pc * 6.2831)), 9.0);
+                        pulse *= 0.8 + uSurge * 3.0;
+
+                        vec3 col = base * (rim + core) * 1.35;
+                        col += mix(uTint, vec3(0.94, 0.95, 1.0), 0.45) * pulse;
+
+                        float alpha = clamp((rim * 0.65 + core + pulse * 0.5) * ends, 0.0, 1.0);
+                        gl_FragColor = vec4(col, alpha);
+                    }
+                `
+            });
+            strandMaterials.push(mat);
+            return mat;
+        }
+
+        // ---- Drifting motes: the small chances around the threads ----------
+
+        function buildMotes() {
+            const COUNT = 520;
+            const geo = new THREE.BufferGeometry();
+            const pos = new Float32Array(COUNT * 3);
+            const scale = new Float32Array(COUNT);
+            const phase = new Float32Array(COUNT);
+            const col = new Float32Array(COUNT * 3);
+            for (let i = 0; i < COUNT; i++) {
+                const r = 6 + Math.random() * 80;
+                const th = Math.random() * Math.PI * 2;
+                pos[i * 3] = Math.cos(th) * r;
+                pos[i * 3 + 1] = (Math.random() - 0.5) * 70;
+                pos[i * 3 + 2] = Math.sin(th) * r;
+                scale[i] = 0.4 + Math.random() * 1.8;
+                phase[i] = Math.random() * Math.PI * 2;
+                // Every mote keeps its own colour from the pool.
+                const c = COLOUR_POOL[Math.floor(Math.random() * COLOUR_POOL.length)];
+                col[i * 3] = c.r;
+                col[i * 3 + 1] = c.g;
+                col[i * 3 + 2] = c.b;
+            }
+            geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+            geo.setAttribute('aScale', new THREE.BufferAttribute(scale, 1));
+            geo.setAttribute('aPhase', new THREE.BufferAttribute(phase, 1));
+            geo.setAttribute('aCol', new THREE.BufferAttribute(col, 3));
+
+            sporeMat = new THREE.ShaderMaterial({
+                transparent: true,
+                depthWrite: false,
+                blending: THREE.AdditiveBlending,
+                uniforms: {
+                    uTime: { value: 0 },
+                    uColorB: { value: new THREE.Color(lifted[lifted.length - 1].tint) }
+                },
+                vertexShader: `
+                    attribute float aScale;
+                    attribute float aPhase;
+                    attribute vec3 aCol;
+                    varying float vPhase;
+                    varying vec3 vCol;
+                    uniform float uTime;
+                    void main() {
+                        vPhase = aPhase;
+                        vCol = aCol;
+                        vec3 p = position;
+                        float t = uTime * 0.2 + aPhase;
+                        p.y += sin(t * 0.6) * 2.0;
+                        p.x += cos(t * 0.5) * 1.6;
+                        p.z += sin(t * 0.45) * 1.6;
+                        vec4 mv = modelViewMatrix * vec4(p, 1.0);
+                        gl_PointSize = (aScale * 26.0) / -mv.z;
+                        gl_Position = projectionMatrix * mv;
+                    }
+                `,
+                fragmentShader: `
+                    varying float vPhase;
+                    varying vec3 vCol;
+                    uniform float uTime;
+                    uniform vec3 uColorB;
+                    void main() {
+                        vec2 c = gl_PointCoord - 0.5;
+                        float d = length(c);
+                        if (d > 0.5) discard;
+                        float glow = pow(1.0 - smoothstep(0.0, 0.5, d), 1.8);
+                        float tw = sin(uTime * 1.8 + vPhase) * 0.3 + 0.7;
+                        vec3 col = mix(vCol, uColorB, 0.18);
+                        gl_FragColor = vec4(col, glow * tw * 0.4);
+                    }
+                `
+            });
+            scene.add(new THREE.Points(geo, sporeMat));
+        }
+
+        // ---- Interaction ---------------------------------------------------
+
+        function setupInteraction() {
+            const dom = renderer.domElement;
+            dom.addEventListener('pointerdown', (e) => {
+                dragState.x = e.clientX;
+                dragState.y = e.clientY;
+                dragState.moved = false;
+            });
+            dom.addEventListener('pointermove', (e) => {
+                if (Math.abs(e.clientX - dragState.x) > 7 || Math.abs(e.clientY - dragState.y) > 7) {
+                    dragState.moved = true;
+                }
+            });
+            dom.addEventListener('pointerup', () => {
+                if (dragState.moved) return; // a look-around, not a tap
+                surge = 1.0;
+            });
+        }
+
+        // ---- The history, kept like the pledges are kept -------------------
+
+        function setupTimeline() {
+            applyEntry(lifted[lifted.length - 1]);
+
+            const timeline = document.getElementById('timeline');
+            const glyph = document.getElementById('memories');
+
+            glyph.addEventListener('click', (e) => {
+                e.stopPropagation();
+                buildEntries(timeline);
+                dragState.moved = false;
+                timeline.classList.add('open');
+                timeline.scrollTop = 0;
+                timeline.setAttribute('aria-hidden', 'false');
+            });
+            timeline.addEventListener('pointerdown', (e) => {
+                dragState.moved = false;
+                dragState.x = e.clientX;
+                dragState.y = e.clientY;
+            });
+            timeline.addEventListener('pointermove', (e) => {
+                if (Math.abs(e.clientX - dragState.x) > 8 || Math.abs(e.clientY - dragState.y) > 8) {
+                    dragState.moved = true;
+                }
+                if (e.pointerType === 'mouse' && e.buttons === 1) {
+                    timeline.scrollTop -= e.movementY;
+                }
+            });
+            timeline.addEventListener('wheel', (e) => e.stopPropagation(), { passive: true });
+            timeline.addEventListener('click', () => {
+                if (dragState.moved) return;
+                closeTimeline(timeline);
+            });
+        }
+
+        function closeTimeline(timeline) {
+            timeline.classList.remove('open');
+            timeline.setAttribute('aria-hidden', 'true');
+        }
+
+        // Speak an entry: its words on the screen, its tint through every
+        // thread, so revisiting an old day lands as it did when it happened.
+        function applyEntry(p) {
+            const h1 = document.querySelector('#title h1');
+            const whisper = document.getElementById('whisper');
+            h1.textContent = p.title;
+            whisper.textContent = p.whisper;
+            h1.style.textShadow = `0 2px 6px rgba(0, 0, 0, 0.95), 0 2px 22px rgba(0, 0, 0, 0.9), 0 0 30px ${hexToRgba(p.tint, 0.55)}`;
+            whisper.style.textShadow = `0 1px 4px rgba(0, 0, 0, 0.95), 0 1px 16px rgba(0, 0, 0, 0.85), 0 0 26px ${hexToRgba(p.tint, 0.45)}`;
+
+            const tint = new THREE.Color(p.tint);
+            strandMaterials.forEach(m => m.uniforms.uTint.value.copy(tint));
+            if (sporeMat) sporeMat.uniforms.uColorB.value.copy(tint);
+        }
+
+        function revealTitle() {
+            const title = document.getElementById('title');
+            const parts = [title.querySelector('h1'), document.getElementById('whisper'), document.getElementById('lifted')];
+            title.classList.remove('gone');
+            parts.forEach(el => {
+                el.style.animation = 'none';
+                void el.offsetWidth; // force reflow so the animation re-runs
+                el.style.animation = '';
+            });
+            clearTimeout(titleTimer);
+            titleTimer = setTimeout(() => title.classList.add('gone'), 10000);
+        }
+
+        function buildEntries(timeline) {
+            timeline.textContent = '';
+            const n = lifted.length;
+            lifted.forEach((p, i) => {
+                const age = n - 1 - i;
+                const entry = document.createElement('div');
+                entry.className = 'entry';
+                entry.style.color = '#' + new THREE.Color(p.tint).lerp(new THREE.Color('#c6cdd9'), 0.55).getHexString();
+                entry.style.opacity = 0;
+                entry.style.animationDelay = `${0.15 + i * 0.2}s`;
+                const brightness = Math.max(0.45, 1 - age * 0.18);
+                entry.style.filter = `brightness(${brightness})`;
+
+                const date = document.createElement('div');
+                date.className = 'date';
+                date.textContent = p.date;
+                entry.appendChild(date);
+
+                const h2 = document.createElement('h2');
+                h2.textContent = p.title;
+                h2.style.textShadow = `0 0 24px ${hexToRgba(p.tint, 0.5)}`;
+                entry.appendChild(h2);
+
+                const said = document.createElement('div');
+                said.className = 'said';
+                said.textContent = p.whisper;
+                entry.appendChild(said);
+
+                if (age === 0) {
+                    const now = document.createElement('div');
+                    now.className = 'now';
+                    now.textContent = 'today';
+                    entry.appendChild(now);
+                }
+
+                entry.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    if (dragState.moved) return;
+                    applyEntry(p);
+                    closeTimeline(timeline);
+                    revealTitle();
+                });
+                timeline.appendChild(entry);
+            });
+        }
+
+        function hexToRgba(hex, a) {
+            const c = new THREE.Color(hex);
+            return `rgba(${Math.round(c.r * 255)}, ${Math.round(c.g * 255)}, ${Math.round(c.b * 255)}, ${a})`;
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            composer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const dt = Math.min(clock.getDelta(), 0.05);
+            globalTime += dt;
+            surge = Math.max(0, surge - dt * 0.6);
+
+            strandMaterials.forEach(m => {
+                m.uniforms.uTime.value = globalTime;
+                m.uniforms.uSurge.value = surge;
+            });
+            if (sporeMat) sporeMat.uniforms.uTime.value = globalTime;
+
+            controls.update();
+            composer.render();
+        }
+
+        init();
+        animate();
+    </script>
+</body>
+</html>
