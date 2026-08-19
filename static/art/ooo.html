@@ -98,18 +98,23 @@
         z-index: 11;
         font-family: "Georgia", serif;
         font-style: italic;
-        font-size: 1.15rem;
+        font-size: 1.7rem;
         line-height: 1;
-        color: rgba(198, 205, 217, 0.3);
+        color: rgba(214, 221, 233, 0.75);
+        text-shadow: 0 0 14px rgba(198, 205, 217, 0.5);
         background: none;
         border: none;
         padding: 0.6rem;
         cursor: pointer;
         opacity: 0;
-        animation: bloom 3s ease forwards 9s;
+        animation: bloom 2s ease forwards 2s, beckon 4s ease-in-out infinite 4s;
         transition: color 1.2s ease;
     }
-    #memories:hover { color: rgba(198, 205, 217, 0.75); }
+    #memories:hover { color: rgba(230, 235, 244, 1); }
+    @keyframes beckon {
+        0%, 100% { text-shadow: 0 0 10px rgba(198, 205, 217, 0.35); transform: scale(1); }
+        50%      { text-shadow: 0 0 22px rgba(198, 205, 217, 0.8);  transform: scale(1.12); }
+    }
 
     /* ---- Timeline: what was said before ---- */
     #timeline {
@@ -123,7 +128,7 @@
         touch-action: pan-y;
         user-select: none;
         -webkit-user-select: none;
-        background: rgba(0, 0, 0, 0.55);
+        background: rgba(0, 0, 0, 0.85);
         cursor: pointer;
         text-align: center;
         padding: clamp(3rem, 12vh, 6rem) 1.5rem 4rem;
@@ -133,7 +138,7 @@
         max-width: 34rem;
         margin: 0 auto 3.2rem;
         opacity: 0;
-        animation: bloom 3.5s ease forwards;
+        animation: bloom 1.4s ease forwards;
     }
     #timeline .entry .date {
         font-family: "Georgia", serif;
@@ -733,7 +738,7 @@
                 // stays in the glow beneath it.
                 entry.style.color = '#' + new THREE.Color(p.tint).lerp(new THREE.Color('#c6cdd9'), 0.55).getHexString();
                 entry.style.opacity = 0;
-                entry.style.animationDelay = `${0.4 + i * 0.9}s`;
+                entry.style.animationDelay = `${0.15 + i * 0.2}s`;
                 // Older pledges have faded with time.
                 const brightness = Math.max(0.45, 1 - age * 0.18);
                 entry.style.filter = `brightness(${brightness})`;
