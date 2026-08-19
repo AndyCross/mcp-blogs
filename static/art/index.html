@@ -59,6 +59,23 @@
   .card p { color: var(--text-secondary); margin: 0; font-size: 0.95rem; }
   .date { display: block; margin-top: 0.9rem; font-size: 0.78rem; color: var(--text-secondary); opacity: 0.7; letter-spacing: 0.03em; }
   .tag { display: inline-block; margin-top: 0.4rem; font-size: 0.8rem; color: var(--cyan-400); }
+  .new-badge {
+    display: inline-block;
+    margin-left: 0.6rem;
+    padding: 0.15rem 0.55rem;
+    font-size: 0.68rem;
+    letter-spacing: 0.08em;
+    border-radius: 999px;
+    vertical-align: middle;
+    color: #f0b8b9;
+    border: 1px solid rgba(192, 128, 129, 0.45);
+    text-shadow: 0 0 10px rgba(192, 128, 129, 0.6);
+    animation: newpulse 3s ease-in-out infinite;
+  }
+  @keyframes newpulse {
+    0%, 100% { box-shadow: 0 0 4px rgba(192, 128, 129, 0.2); }
+    50%      { box-shadow: 0 0 12px rgba(192, 128, 129, 0.55); }
+  }
 </style>
 </head>
 <body>
@@ -87,5 +104,27 @@
       </a>
     </div>
   </div>
+  <script>
+    // If the newest pledge in ooo.html is less than 24 hours old, mark the
+    // card as new. The pledge dates are day-granular, so a pledge counts as
+    // new from its midnight until the same time the next day.
+    fetch('/art/ooo.html')
+      .then(r => r.text())
+      .then(html => {
+        const dates = [...html.matchAll(/date:\s*'(\d{4}-\d{2}-\d{2})'/g)].map(m => m[1]);
+        if (!dates.length) return;
+        const latest = new Date(dates.sort().pop() + 'T00:00:00');
+        if (Date.now() - latest.getTime() < 24 * 60 * 60 * 1000) {
+          const h2 = document.querySelector('a[href="/art/ooo.html"] h2');
+          if (h2 && !h2.querySelector('.new-badge')) {
+            const badge = document.createElement('span');
+            badge.className = 'new-badge';
+            badge.textContent = 'new';
+            h2.appendChild(badge);
+          }
+        }
+      })
+      .catch(() => {}); // no badge is fine if the fetch fails
+  </script>
 </body>
 </html>
