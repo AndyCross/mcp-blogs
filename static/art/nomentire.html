@@ -41,7 +41,7 @@
         opacity: 0;
         filter: blur(8px);
         transform: translateY(8px);
-        transition: opacity 3.2s ease, filter 3.2s ease, transform 3.2s ease;
+        transition: opacity 1.6s ease, filter 1.6s ease, transform 1.6s ease;
         text-shadow: 0 0 24px rgba(70, 80, 104, 0.4), 0 2px 8px rgba(0, 0, 0, 0.95);
     }
     #lines p.on {
@@ -51,7 +51,7 @@
     }
     /* leaving is slower than arriving */
     #lines p.gone {
-        transition: opacity 5s ease, filter 5s ease, transform 5s ease;
+        transition: opacity 2.5s ease, filter 2.5s ease, transform 2.5s ease;
         opacity: 0;
         filter: blur(10px);
         transform: translateY(-5px);
@@ -205,7 +205,7 @@ void main() {
         let dim = 0, dimTarget = 0;
 
         function draw(now) {
-            dim += (dimTarget - dim) * 0.010;
+            dim += (dimTarget - dim) * 0.020;
             gl.uniform2f(uRes, canvas.width, canvas.height);
             gl.uniform1f(uTime, now * 0.001);
             gl.uniform1f(uDim, dim);
@@ -233,26 +233,26 @@ void main() {
         function hide(el) { el.classList.remove('on'); el.classList.add('gone'); }
 
         function cycle() {
-            let t = 5000; // the dark first, long enough to feel it
+            let t = 2500; // the dark first, long enough to feel it
 
             setTimeout(() => show(els[0]), t);
-            t += 10000;
+            t += 5000;
             setTimeout(() => hide(els[0]), t);
-            t += 6000;
+            t += 3000;
 
             // The second line is the one that costs. The dark presses in with it.
             setTimeout(() => { show(els[1]); dimTarget = 1; }, t);
-            t += 6500;
+            t += 3250;
             setTimeout(() => { dimTarget = 0; }, t); // and the flame comes back. It always comes back.
-            t += 5500;
+            t += 2750;
             setTimeout(() => hide(els[1]), t);
-            t += 6000;
+            t += 3000;
 
             setTimeout(() => show(els[2]), t);
-            t += 11000;
+            t += 5500;
             setTimeout(() => hide(els[2]), t);
 
-            t += 9000; // the flame alone, saying it without words
+            t += 4500; // the flame alone, saying it without words
             setTimeout(cycle, t);
         }
         cycle();
