@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>No mentiré</title>
+<script src="https://cdn.counter.dev/script.js" data-id="72d92ac8-56cf-4fdd-9899-b73adbab2e4d" data-utcoffset="0"></script>
+<meta name="robots" content="noindex, nofollow">
+<style>
+    * { box-sizing: border-box; }
+    html, body {
+        margin: 0; padding: 0; height: 100%;
+        overflow: hidden;
+        background: #010204;
+        cursor: default;
+        touch-action: none; overscroll-behavior: none;
+    }
+    canvas { display: block; width: 100vw; height: 100vh; }
+    #lines {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: flex-end;
+        padding: 0 8vw 16vh;
+        pointer-events: none;
+        text-align: center;
+        font-family: "Georgia", "Times New Roman", serif;
+        font-style: italic;
+        font-weight: 400;
+        font-size: clamp(1.25rem, 3.6vw, 2rem);
+        letter-spacing: 0.03em;
+        line-height: 1.5;
+        color: #8d96a8;
+    }
+    #lines p {
+        position: absolute;
+        margin: 0;
+        max-width: 26em;
+        opacity: 0;
+        filter: blur(8px);
+        transform: translateY(8px);
+        transition: opacity 3.2s ease, filter 3.2s ease, transform 3.2s ease;
+        text-shadow: 0 0 24px rgba(70, 80, 104, 0.4), 0 2px 8px rgba(0, 0, 0, 0.95);
+    }
+    #lines p.on {
+        opacity: 1;
+        filter: blur(0);
+        transform: translateY(0);
+    }
+    /* leaving is slower than arriving */
+    #lines p.gone {
+        transition: opacity 5s ease, filter 5s ease, transform 5s ease;
+        opacity: 0;
+        filter: blur(10px);
+        transform: translateY(-5px);
+    }
+    /* the last line is the truth, so it is warmer */
+    #lines p.truth { color: #b8a389; text-shadow: 0 0 26px rgba(122, 92, 54, 0.45), 0 2px 8px rgba(0, 0, 0, 0.95); }
+</style>
+</head>
+<body>
+    <canvas id="c"></canvas>
+    <div id="lines" aria-label="Quizá nunca puedas volver a hablarme, porque mi amor no va a morir. Pero no voy a mentir sobre él."></div>
+
+    <script id="frag" type="x-shader/x-fragment">
+precision highp float;
+uniform vec2 u_res;
+uniform float u_time;
+uniform float u_dim;   // 0 = the flame burns, 1 = the dark leans on it
+
+float hash(vec2 p) {
+    return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123);
+}
+float noise(vec2 p) {
+    vec2 i = floor(p), f = fract(p);
+    vec2 u = f * f * (3.0 - 2.0 * f);
+    return mix(mix(hash(i), hash(i + vec2(1.0, 0.0)), u.x),
+               mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), u.x), u.y);
+}
+float fbm(vec2 p) {
+    float v = 0.0, a = 0.5;
+    for (int i = 0; i < 5; i++) {
+        v += a * noise(p);
+        p = p * 2.03 + vec2(17.0, 9.2);
+        a *= 0.5;
+    }
+    return v;
+}
+
+void main() {
+    vec2 frag = gl_FragCoord.xy / u_res;
+    vec2 p = frag - 0.5;
+    p.x *= u_res.x / u_res.y;
+    float t = u_time;
+
+    const float HORIZON = -0.12;
+
+    // The cold. A near-black sky with slow mist that never settles.
+    vec3 col = vec3(0.004, 0.007, 0.014);
+    float mist = fbm(p * 1.6 + vec2(t * 0.012, t * 0.004));
+    mist *= smoothstep(HORIZON - 0.05, HORIZON + 0.55, p.y);
+    col += vec3(0.010, 0.016, 0.030) * mist;
+
+    // A few stars, far apart, mostly indifferent.
+    vec2 sp = p * 42.0;
+    vec2 cell = floor(sp);
+    float star = step(0.994, hash(cell)) * pow(fract(sin(hash(cell) * 91.7 + t * 0.35) * 0.5 + 0.5), 3.0);
+    star *= smoothstep(HORIZON + 0.12, HORIZON + 0.4, p.y);
+    col += vec3(0.5, 0.6, 0.75) * star * 0.10 * smoothstep(0.35, 0.0, length(fract(sp) - 0.5));
+
+    // How much is left of the flame right now. Never nothing.
+    float alive = mix(1.0, 0.10, u_dim);
+    float flick = 0.72 + 0.28 * fbm(vec2(t * 1.7, t * 0.9));
+    flick = mix(flick, 0.55 + 0.45 * fbm(vec2(t * 4.2, 3.0)), u_dim); // it gutters under the weight
+    float glow = alive * flick;
+
+    // The flame itself, small on the horizon, alone.
+    vec2 fp = vec2(0.0, HORIZON + 0.028);
+    vec2 d = p - fp;
+    d.x += (fbm(vec2(t * 2.4, d.y * 26.0)) - 0.5) * 0.012 * (1.0 + u_dim * 1.5);
+    d.y -= 0.008;
+    float body = length(vec2(d.x * (2.6 + u_dim * 1.4), d.y * (1.15 - 0.35 * smoothstep(0.0, 0.05, d.y))));
+    float flame = smoothstep(0.030 * glow + 0.004, 0.0, body);
+    float halo = exp(-length(d * vec2(1.0, 1.3)) * (14.0 - 6.0 * glow)) * glow;
+
+    vec3 warmCore = vec3(1.0, 0.82, 0.52);
+    vec3 warmEdge = vec3(0.85, 0.38, 0.12);
+    col += warmEdge * halo * 0.55;
+    col += mix(warmEdge, warmCore, flame) * flame * glow * 1.6;
+
+    // The sea. It keeps none of the sky, only the flame.
+    if (p.y < HORIZON) {
+        float depth = HORIZON - p.y;
+        col = vec3(0.003, 0.005, 0.010) * (1.0 - depth * 0.6);
+        // A broken column of warm light, trembling, reaching toward the viewer.
+        float ripple = fbm(vec2(p.x * 30.0, p.y * 60.0 - t * 0.8));
+        float column = exp(-abs(p.x + (ripple - 0.5) * 0.05 * (depth + 0.2)) * (30.0 - 14.0 * depth));
+        column *= exp(-depth * 3.2) * (0.4 + 0.6 * ripple);
+        col += mix(warmEdge, warmCore, 0.3) * column * glow * 0.5;
+        // faint cold sheen so the water is water
+        col += vec3(0.008, 0.012, 0.020) * fbm(vec2(p.x * 8.0, p.y * 24.0 + t * 0.1)) * (1.0 - depth);
+    }
+
+    // Rain, thin and slanted, between you and the light.
+    vec2 rp = vec2(p.x * 1.0 + p.y * 0.18, p.y);
+    rp.y += t * 0.55;
+    vec2 rc = vec2(rp.x * 60.0, rp.y * 7.0);
+    float rain = step(0.965, hash(floor(rc)));
+    rain *= smoothstep(0.5, 0.0, abs(fract(rc.x) - 0.5)) * smoothstep(0.0, 0.35, fract(rc.y)) * smoothstep(1.0, 0.6, fract(rc.y));
+    col += vec3(0.04, 0.055, 0.08) * rain * 0.35;
+
+    // The dark holds the edges.
+    float vig = smoothstep(1.25, 0.25, length(p * vec2(0.85, 1.1)));
+    col *= vig;
+
+    // grain
+    col += (hash(frag * u_res + fract(t) * 61.7) - 0.5) * 0.015;
+
+    gl_FragColor = vec4(max(col, 0.0), 1.0);
+}
+    </script>
+
+    <script>
+        const canvas = document.getElementById('c');
+        const gl = canvas.getContext('webgl', { antialias: false });
+
+        function compile(type, src) {
+            const s = gl.createShader(type);
+            gl.shaderSource(s, src);
+            gl.compileShader(s);
+            if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) console.error(gl.getShaderInfoLog(s));
+            return s;
+        }
+        const prog = gl.createProgram();
+        gl.attachShader(prog, compile(gl.VERTEX_SHADER,
+            'attribute vec2 a;void main(){gl_Position=vec4(a,0.,1.);}'));
+        gl.attachShader(prog, compile(gl.FRAGMENT_SHADER, document.getElementById('frag').textContent));
+        gl.linkProgram(prog);
+        gl.useProgram(prog);
+
+        const buf = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
+        const loc = gl.getAttribLocation(prog, 'a');
+        gl.enableVertexAttribArray(loc);
+        gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+
+        const uRes = gl.getUniformLocation(prog, 'u_res');
+        const uTime = gl.getUniformLocation(prog, 'u_time');
+        const uDim = gl.getUniformLocation(prog, 'u_dim');
+
+        function resize() {
+            const dpr = Math.min(window.devicePixelRatio || 1, 2);
+            canvas.width = Math.round(window.innerWidth * dpr);
+            canvas.height = Math.round(window.innerHeight * dpr);
+            gl.viewport(0, 0, canvas.width, canvas.height);
+        }
+        resize();
+        window.addEventListener('resize', resize);
+
+        // The dark leans on the flame while the second line is being said,
+        // and the flame does not go out. That is the whole argument.
+        let dim = 0, dimTarget = 0;
+
+        function draw(now) {
+            dim += (dimTarget - dim) * 0.010;
+            gl.uniform2f(uRes, canvas.width, canvas.height);
+            gl.uniform1f(uTime, now * 0.001);
+            gl.uniform1f(uDim, dim);
+            gl.drawArrays(gl.TRIANGLES, 0, 3);
+            requestAnimationFrame(draw);
+        }
+        requestAnimationFrame(draw);
+
+        // One sentence in three breaths, said to no one, then said again.
+        const LINES = [
+            'Quizá nunca puedas volver a hablarme.',
+            'Porque mi amor no va a morir.',
+            'Pero no voy a mentir sobre él.'
+        ];
+        const holder = document.getElementById('lines');
+        const els = LINES.map((text, i) => {
+            const p = document.createElement('p');
+            p.textContent = text;
+            if (i === 2) p.classList.add('truth');
+            holder.appendChild(p);
+            return p;
+        });
+
+        function show(el) { el.classList.remove('gone'); el.classList.add('on'); }
+        function hide(el) { el.classList.remove('on'); el.classList.add('gone'); }
+
+        function cycle() {
+            let t = 5000; // the dark first, long enough to feel it
+
+            setTimeout(() => show(els[0]), t);
+            t += 10000;
+            setTimeout(() => hide(els[0]), t);
+            t += 6000;
+
+            // The second line is the one that costs. The dark presses in with it.
+            setTimeout(() => { show(els[1]); dimTarget = 1; }, t);
+            t += 6500;
+            setTimeout(() => { dimTarget = 0; }, t); // and the flame comes back. It always comes back.
+            t += 5500;
+            setTimeout(() => hide(els[1]), t);
+            t += 6000;
+
+            setTimeout(() => show(els[2]), t);
+            t += 11000;
+            setTimeout(() => hide(els[2]), t);
+
+            t += 9000; // the flame alone, saying it without words
+            setTimeout(cycle, t);
+        }
+        cycle();
+    </script>
+</body>
+</html>
