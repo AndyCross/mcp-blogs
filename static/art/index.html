@@ -105,16 +105,16 @@
     </div>
   </div>
   <script>
-    // If the newest pledge in ooo.html is less than 24 hours old, mark the
+    // If the newest pledge in ooo.html is less than 36 hours old, mark the
     // card as new. The pledge dates are day-granular, so a pledge counts as
-    // new from its midnight until the same time the next day.
+    // new from its midnight until midday the following day.
     fetch('/art/ooo.html')
       .then(r => r.text())
       .then(html => {
         const dates = [...html.matchAll(/date:\s*'(\d{4}-\d{2}-\d{2})'/g)].map(m => m[1]);
         if (!dates.length) return;
         const latest = new Date(dates.sort().pop() + 'T00:00:00');
-        if (Date.now() - latest.getTime() < 24 * 60 * 60 * 1000) {
+        if (Date.now() - latest.getTime() < 36 * 60 * 60 * 1000) {
           const h2 = document.querySelector('a[href="/art/ooo.html"] h2');
           if (h2 && !h2.querySelector('.new-badge')) {
             const badge = document.createElement('span');
