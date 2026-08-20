@@ -51,9 +51,13 @@ pledges stay behind the glyph in the corner, fading with age.
    <div id="whisper">...new whisper...</div>
    ```
 
-6. Do not rewrite or delete earlier pledges; the history is the point.
+6. Update the ooo card's date range on the art index
+   (`static/art/index.html`): its `<time>` reads
+   "25 June 2026 – DD Month YYYY – Forever"; walk the middle date
+   forward to the new pledge's date.
+7. Do not rewrite or delete earlier pledges; the history is the point.
    Only edit an old entry if the user explicitly asks.
-7. Commit and push when asked, in this repo's usual one-line poetic
+8. Commit and push when asked, in this repo's usual one-line poetic
    commit style.
 
 ## Notes
