@@ -7,9 +7,11 @@ description: Update the Same Sky art page with new sky photos. Use when the user
 
 The art page at `static/art/samesky.html` is a walkable sky dome stitched
 from photographs of the sky taken in different places. Sky-heavy photos
-feather straight into the dome; photos with a subject in front of some sky
-float as white-framed polaroids; photos with no meaningful sky are
-rejected. This skill adds new photos and rebuilds the assets.
+feather straight into the dome; seascapes (sky over open water) get their
+own horizon line pinned to the dome's horizon; photos with a subject in
+front of some sky float as white-framed polaroids; photos with no
+meaningful sky are rejected. This skill adds new photos and rebuilds the
+assets.
 
 ## Adding new photos
 
@@ -45,12 +47,12 @@ rejected. This skill adds new photos and rebuilds the assets.
 
 ## Limits and knobs
 
-- The page's dome shader supports up to 24 photos (`MAX_PHOTOS` in
-  `samesky.html`); the manifest is truncated beyond that. If the folder
-  grows past 24, raise `MAX_PHOTOS` in BOTH `static/art/samesky.html`
-  and its `public/art/` mirror, or cull older photos from the folder.
+- There is no photo cap: the page compiles its dome shader at load time
+  with uniform arrays sized to the manifest, so any number of photos
+  works without touching the HTML.
 - Classification thresholds live at the top of `tools/samesky.py`
-  (`SKY_MODE_MIN`, `POLAROID_MIN`). If a photo classifies wrongly,
+  (`SKY_MODE_MIN`, `POLAROID_MIN`, and `HORIZON_MIN_STEP` /
+  `HORIZON_MAX_FRAC` for seascape detection). If a photo classifies wrongly,
   discuss adjusting them rather than hand-editing the manifest: the
   fitter overwrites `manifest.json` on every run.
 - Checking the fit visually: open the page with `?reveal` in the URL to

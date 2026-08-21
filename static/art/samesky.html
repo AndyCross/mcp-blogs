@@ -100,7 +100,6 @@
 
         const DOME_RADIUS = 100;
         const PHOTO_RADIUS = 86;
-        const MAX_PHOTOS = 24; // uniform array size in the dome shader
 
         // ?reveal holds every photograph fully visible, for checking the fit.
         const REVEAL_ALL = new URLSearchParams(location.search).has('reveal');
@@ -138,7 +137,6 @@
             controls.autoRotateSpeed = 0.12;
             controls.target.set(0, 0.3, -1); // start gazing a little upward
 
-            buildDome();
             setupInteraction();
 
             setTimeout(() => document.getElementById('title').classList.add('gone'), 8000);
@@ -147,9 +145,11 @@
 
         // ---- The dome ----------------------------------------------------
 
-        function buildDome() {
-            const skyColors = new Array(MAX_PHOTOS).fill(0).map(() => new THREE.Color('#7193c9'));
-            const skyAzimuths = new Float32Array(MAX_PHOTOS);
+        // The shader is compiled per-visit with its uniform arrays sized to
+        // however many photos the manifest holds, so there is no fixed cap.
+        function buildDome(slots) {
+            const skyColors = new Array(slots).fill(0).map(() => new THREE.Color('#7193c9'));
+            const skyAzimuths = new Float32Array(slots);
 
             domeMaterial = new THREE.ShaderMaterial({
                 side: THREE.BackSide,
@@ -170,8 +170,8 @@
                 fragmentShader: `
                     uniform float uTime;
                     uniform int uCount;
-                    uniform vec3 uColors[${MAX_PHOTOS}];
-                    uniform float uAzimuths[${MAX_PHOTOS}];
+                    uniform vec3 uColors[${slots}];
+                    uniform float uAzimuths[${slots}];
                     varying vec3 vDir;
 
                     const float PI = 3.14159265;
@@ -204,7 +204,7 @@
                         vec3 acc = vec3(0.0);
                         vec3 avg = vec3(0.0);
                         float wsum = 0.0;
-                        for (int i = 0; i < ${MAX_PHOTOS}; i++) {
+                        for (int i = 0; i < ${slots}; i++) {
                             if (i >= uCount) break;
                             float d = abs(az - uAzimuths[i]);
                             d = min(d, 2.0 * PI - d);
@@ -263,9 +263,11 @@
                 manifest = await (await fetch('samesky-assets/manifest.json')).json();
             } catch (e) {
                 console.error('no manifest', e);
+                buildDome(1); // empty sky is better than no sky
                 return;
             }
-            const entries = manifest.photos.slice(0, MAX_PHOTOS);
+            const entries = manifest.photos;
+            buildDome(Math.max(entries.length, 1));
 
             // Feed the dome the colours it is stitched from.
             entries.forEach((p, i) => {
@@ -305,7 +307,13 @@
                 const mesh = new THREE.Mesh(new THREE.PlaneGeometry(w, w / aspect), material);
 
                 const az = THREE.MathUtils.degToRad(p.azimuth);
-                const el = THREE.MathUtils.degToRad(p.elevation);
+                let el = THREE.MathUtils.degToRad(p.elevation);
+                if (p.mode === 'horizon' && p.horizon != null) {
+                    // Seascape: sink the centre so the photo's own horizon
+                    // line lands on the dome's, sky above, sea below.
+                    const angularHeight = angular / aspect;
+                    el = THREE.MathUtils.degToRad((p.horizon - 0.5) * angularHeight);
+                }
                 mesh.position.set(
                     PHOTO_RADIUS * Math.cos(el) * Math.sin(az),
                     PHOTO_RADIUS * Math.sin(el),
@@ -430,7 +438,7 @@
             const dt = Math.min(clock.getDelta(), 0.05);
             const t = clock.getElapsedTime();
 
-            domeMaterial.uniforms.uTime.value = t;
+            if (domeMaterial) domeMaterial.uniforms.uTime.value = t;
             shimmerAll = Math.max(0, shimmerAll - dt * 0.5);
 
             for (const p of photos) {
