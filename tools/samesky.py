@@ -37,8 +37,10 @@ from __future__ import annotations
 import argparse
 import colorsys
 import json
+import re
 import sys
 from dataclasses import dataclass, field
+from datetime import datetime
 from pathlib import Path
 
 from PIL import Image, ImageOps
@@ -81,12 +83,37 @@ class Fit:
     elevation: float = 0.0  # degrees above horizon, set after placement
     azimuth: float = 0.0    # degrees, set after placement
     horizon: float | None = None  # horizon line as a fraction of frame height from the top
+    taken: str | None = None  # capture date, YYYY-MM-DD
 
 
 @dataclass
 class Report:
     fits: list[Fit] = field(default_factory=list)
     rejected: list[tuple[str, str]] = field(default_factory=list)
+
+
+def taken_date(path: Path, img: Image.Image) -> str | None:
+    """The day the photograph was taken, YYYY-MM-DD.
+
+    EXIF first (DateTimeOriginal, then the plain DateTime); the file's
+    own modification time if the camera left nothing behind.
+    """
+    try:
+        exif = img.getexif()
+        raw = exif.get(36867) or exif.get(306)
+        if not raw:
+            ifd = exif.get_ifd(0x8769)
+            raw = ifd.get(36867) or ifd.get(36868)
+        if raw:
+            stamp = str(raw).strip().split(" ")[0].replace(":", "-")
+            if re.fullmatch(r"\d{4}-\d{2}-\d{2}", stamp):
+                return stamp
+    except Exception:  # noqa: BLE001 - a missing date is not worth failing over
+        pass
+    try:
+        return datetime.fromtimestamp(path.stat().st_mtime).strftime("%Y-%m-%d")
+    except Exception:  # noqa: BLE001
+        return None
 
 
 def is_sky_pixel(r: int, g: int, b: int) -> bool:
@@ -276,6 +303,7 @@ def process_one(path: Path, out_dir: Path, report: Report, write: bool) -> None:
         report.rejected.append((path.name, f"could not read ({exc})"))
         return
 
+    taken = taken_date(path, img)
     sky_fraction, mean_rgb = analyse(img)
     mode = classify(sky_fraction)
     # A seascape trumps the walk-based classes: its own horizon gets
@@ -314,6 +342,7 @@ def process_one(path: Path, out_dir: Path, report: Report, write: bool) -> None:
             sky_color="#{:02x}{:02x}{:02x}".format(*mean_rgb),
             depth=round(blue_depth(mean_rgb), 3),
             horizon=horizon,
+            taken=taken,
         )
     )
 
@@ -353,6 +382,7 @@ def main() -> int:
             f"{f.sky_color}  depth {f.depth:.2f}  "
             f"az {f.azimuth:>5.1f}  el {f.elevation:>4.1f}"
             + (f"  horizon {f.horizon:.0%} down" if f.horizon is not None else "")
+            + (f"  {f.taken}" if f.taken else "  (no date)")
         )
     for name, reason in report.rejected:
         print(f"  {name:<18} REJECTED {reason}")

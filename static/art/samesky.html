@@ -55,6 +55,23 @@
     }
 
     /* ---- Hint ---- */
+    /* ---- Date of a revealed photograph ---- */
+    #taken {
+        position: fixed;
+        bottom: 3.6rem;
+        left: 0; right: 0;
+        text-align: center;
+        font-family: "Georgia", serif;
+        font-style: italic;
+        font-size: clamp(0.9rem, 2.2vw, 1.05rem);
+        letter-spacing: 0.1em;
+        color: rgba(238, 243, 250, 0.82);
+        text-shadow: 0 1px 10px rgba(10, 24, 44, 0.85), 0 0 22px rgba(93, 132, 182, 0.5);
+        pointer-events: none;
+        z-index: 9;
+        opacity: 0;
+    }
+
     #hint {
         position: fixed;
         bottom: 1.4rem;
@@ -78,6 +95,7 @@
         <h1>Same Sky</h1>
         <div id="whisper">distintos lugares, el mismo cielo</div>
     </div>
+    <div id="taken"></div>
     <div id="hint">drag to look around &middot; tap the sky where it shimmers</div>
 
     <script type="importmap">
@@ -108,6 +126,9 @@
         const clock = new THREE.Clock();
         const photos = []; // { mesh, material, reveal (0..1 target), level }
         const dragState = { x: 0, y: 0, moved: false };
+        const takenEl = () => document.getElementById('taken');
+        let shown = null;      // the photo whose date is on screen
+        let takenLevel = 0;    // eased opacity of that date
         let shimmerAll = 0; // brief global shimmer when a tap finds nothing
 
         init();
@@ -325,7 +346,10 @@
                 }
                 mesh.renderOrder = 1;
                 scene.add(mesh);
-                photos.push({ mesh, material, reveal: 0, level: 0, phase: index * 1.7 });
+                photos.push({
+                    mesh, material, reveal: 0, level: 0,
+                    phase: index * 1.7, taken: p.taken || null
+                });
             };
             img.src = 'samesky-assets/' + p.name;
         }
@@ -419,12 +443,30 @@
                 }
                 if (chosen) {
                     chosen.reveal = 1;
+                    showDate(chosen);
                     clearTimeout(chosen.timer);
                     chosen.timer = setTimeout(() => { chosen.reveal = 0; }, 7000);
                 } else {
                     shimmerAll = 1;
                 }
             });
+        }
+
+        // The day someone looked up. Nothing about where: the whole point
+        // is that it was a different place and the same sky.
+        const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June',
+                        'July', 'August', 'September', 'October', 'November', 'December'];
+
+        function prettyDate(iso) {
+            const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso || '');
+            if (!m) return '';
+            return `${Number(m[3])} ${MONTHS[Number(m[2]) - 1]} ${m[1]}`;
+        }
+
+        function showDate(photo) {
+            const text = prettyDate(photo.taken);
+            shown = text ? photo : null;
+            takenEl().textContent = text;
         }
 
         function onWindowResize() {
@@ -451,6 +493,12 @@
                     : p.level + (target - p.level) * Math.min(1, dt * (p.reveal ? 1.6 : 0.9));
                 p.material.opacity = p.level;
             }
+
+            // The date rises with its photograph and leaves when it does.
+            const wanted = shown && shown.reveal ? 1 : 0;
+            takenLevel += (wanted - takenLevel) * Math.min(1, dt * (wanted ? 2.2 : 1.1));
+            takenEl().style.opacity = takenLevel.toFixed(3);
+            if (!wanted && takenLevel < 0.01) shown = null;
 
             controls.update();
             renderer.render(scene, camera);
