@@ -10,13 +10,22 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700&display=swap">
 <style>
     * { box-sizing: border-box; }
+    html {
+        background: #071a10;
+    }
     html, body {
         margin: 0;
         padding: 0;
         min-height: 100%;
+    }
+    /* the dark green room the wall hangs in, painted once and left alone */
+    body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        z-index: -1;
         background:
             radial-gradient(120% 90% at 50% 0%, #123a22 0%, #0b2417 55%, #071a10 100%);
-        background-attachment: fixed;
     }
     body {
         font-family: "Georgia", "Times New Roman", serif;
@@ -66,6 +75,9 @@
     }
     .ticket {
         position: relative;
+        /* off-screen tickets skip layout, paint and their sway animation */
+        content-visibility: auto;
+        contain-intrinsic-size: auto 290px;
         opacity: 0;
         transform: translateY(26px) rotate(var(--tilt));
         transition: opacity 1.6s ease, transform 1.6s ease;
@@ -199,6 +211,7 @@
     @media (prefers-reduced-motion: reduce) {
         .ticket, header h1, #whisper { animation: none; opacity: 1; transform: rotate(var(--tilt)); }
         .ticket { transition: none; }
+        footer { transition: none; }
     }
 </style>
 </head>
@@ -220,6 +233,22 @@
 
         // Deterministic small tilt per ticket, like things pinned by hand.
         const tilt = i => (((i * 7919) % 9) - 4) * 0.55;
+
+        // Tickets arrive as you reach them, not on a clock. A card that has
+        // scrolled past is already pinned; one still below waits its turn.
+        // Cards that come into view together still land one at a time.
+        let firstBatch = true;
+        const reveal = new IntersectionObserver((entries, obs) => {
+            let n = 0;
+            for (const e of entries) {
+                if (!e.isIntersecting) continue;
+                const el = e.target;
+                obs.unobserve(el);
+                setTimeout(() => el.classList.add('in'),
+                           (firstBatch ? 1200 : 0) + n++ * 140);
+            }
+            if (n) firstBatch = false;
+        }, { rootMargin: '200px 0px', threshold: 0 });
 
         fetch('buenasuerte-assets/manifest.json')
             .then(r => r.json())
@@ -257,7 +286,8 @@
                         img.width = c.width;
                         img.height = c.height;
                         img.alt = 'A kept score from the daily puzzle';
-                        img.loading = 'lazy';
+                        img.loading = i < 3 ? 'eager' : 'lazy';
+                        img.decoding = 'async';
                         frame.appendChild(img);
                     }
 
@@ -270,9 +300,9 @@
                     fig.appendChild(frame);
                     wall.appendChild(fig);
 
-                    setTimeout(() => fig.classList.add('in'), 1200 + i * 180);
+                    reveal.observe(fig);
                 });
-                setTimeout(() => closing.classList.add('in'), 1200 + cards.length * 180 + 1200);
+                reveal.observe(closing);
             })
             .catch(err => console.error('no manifest', err));
     </script>
