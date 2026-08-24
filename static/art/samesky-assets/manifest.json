@@ -24,7 +24,7 @@
       "sky_color": "#667790",
       "depth": 0.194,
       "elevation": 21.8,
-      "azimuth": 17.1,
+      "azimuth": 16.4,
       "horizon": null,
       "taken": "2026-08-08"
     },
@@ -34,11 +34,11 @@
       "mode": "sky",
       "width": 1200,
       "height": 1600,
-      "sky_fraction": 0.757,
+      "sky_fraction": 0.985,
       "sky_color": "#95adc3",
       "depth": 0.198,
       "elevation": 21.9,
-      "azimuth": 34.3,
+      "azimuth": 32.7,
       "horizon": null,
       "taken": "2026-08-22"
     },
@@ -52,7 +52,7 @@
       "sky_color": "#5c6e8c",
       "depth": 0.248,
       "elevation": 23.4,
-      "azimuth": 51.4,
+      "azimuth": 49.1,
       "horizon": null,
       "taken": "2026-08-18"
     },
@@ -66,7 +66,7 @@
       "sky_color": "#839bc0",
       "depth": 0.263,
       "elevation": 11.2,
-      "azimuth": 68.6,
+      "azimuth": 65.5,
       "horizon": null,
       "taken": "2026-08-17"
     },
@@ -80,7 +80,7 @@
       "sky_color": "#60789d",
       "depth": 0.267,
       "elevation": 24.0,
-      "azimuth": 85.7,
+      "azimuth": 81.8,
       "horizon": null,
       "taken": "2026-08-17"
     },
@@ -90,11 +90,11 @@
       "mode": "horizon",
       "width": 1600,
       "height": 1200,
-      "sky_fraction": 0.894,
+      "sky_fraction": 0.912,
       "sky_color": "#8fabcf",
       "depth": 0.276,
       "elevation": 0.0,
-      "azimuth": 102.9,
+      "azimuth": 98.2,
       "horizon": 0.115,
       "taken": "2026-08-15"
     },
@@ -108,7 +108,7 @@
       "sky_color": "#5d779d",
       "depth": 0.287,
       "elevation": 24.6,
-      "azimuth": 120.0,
+      "azimuth": 114.5,
       "horizon": null,
       "taken": "2026-08-01"
     },
@@ -122,9 +122,23 @@
       "sky_color": "#7590b8",
       "depth": 0.289,
       "elevation": 0.0,
-      "azimuth": 137.1,
+      "azimuth": 130.9,
       "horizon": 0.609,
       "taken": "2026-08-15"
+    },
+    {
+      "name": "img_5507.jpg",
+      "source": "IMG_5507.HEIC",
+      "mode": "polaroid",
+      "width": 900,
+      "height": 1200,
+      "sky_fraction": 0.479,
+      "sky_color": "#475675",
+      "depth": 0.34,
+      "elevation": 12.1,
+      "azimuth": 147.3,
+      "horizon": null,
+      "taken": "2026-08-24"
     },
     {
       "name": "img_5227.jpg",
@@ -136,7 +150,7 @@
       "sky_color": "#7c9bcf",
       "depth": 0.358,
       "elevation": 26.7,
-      "azimuth": 154.3,
+      "azimuth": 163.6,
       "horizon": null,
       "taken": "2026-08-15"
     },
@@ -150,7 +164,7 @@
       "sky_color": "#7697cb",
       "depth": 0.367,
       "elevation": 27.0,
-      "azimuth": 171.4,
+      "azimuth": 180.0,
       "horizon": null,
       "taken": "2026-08-08"
     },
@@ -160,27 +174,13 @@
       "mode": "polaroid",
       "width": 1200,
       "height": 900,
-      "sky_fraction": 0.629,
+      "sky_fraction": 0.63,
       "sky_color": "#4e689b",
       "depth": 0.395,
       "elevation": 12.7,
-      "azimuth": 188.6,
+      "azimuth": 196.4,
       "horizon": null,
       "taken": "2026-08-16"
-    },
-    {
-      "name": "img_5125.jpg",
-      "source": "IMG_5125.HEIC",
-      "mode": "polaroid",
-      "width": 1200,
-      "height": 900,
-      "sky_fraction": 0.625,
-      "sky_color": "#6a8ec8",
-      "depth": 0.405,
-      "elevation": 12.9,
-      "azimuth": 205.7,
-      "horizon": null,
-      "taken": "2026-08-13"
     },
     {
       "name": "img_4716.jpg",
@@ -188,13 +188,27 @@
       "mode": "polaroid",
       "width": 1200,
       "height": 900,
-      "sky_fraction": 0.585,
-      "sky_color": "#6387c3",
-      "depth": 0.414,
-      "elevation": 13.0,
-      "azimuth": 222.9,
+      "sky_fraction": 0.611,
+      "sky_color": "#6184bf",
+      "depth": 0.405,
+      "elevation": 12.9,
+      "azimuth": 212.7,
       "horizon": null,
       "taken": "2026-07-31"
+    },
+    {
+      "name": "img_5125.jpg",
+      "source": "IMG_5125.HEIC",
+      "mode": "polaroid",
+      "width": 1200,
+      "height": 900,
+      "sky_fraction": 0.626,
+      "sky_color": "#6a8ec8",
+      "depth": 0.405,
+      "elevation": 12.9,
+      "azimuth": 229.1,
+      "horizon": null,
+      "taken": "2026-08-13"
     },
     {
       "name": "img_5228.jpg",
@@ -206,7 +220,7 @@
       "sky_color": "#6186c5",
       "depth": 0.431,
       "elevation": 28.9,
-      "azimuth": 240.0,
+      "azimuth": 245.5,
       "horizon": null,
       "taken": "2026-08-15"
     },
@@ -220,7 +234,7 @@
       "sky_color": "#7096d6",
       "depth": 0.44,
       "elevation": 13.3,
-      "azimuth": 257.1,
+      "azimuth": 261.8,
       "horizon": null,
       "taken": "2026-08-15"
     },
@@ -234,7 +248,7 @@
       "sky_color": "#6f97dc",
       "depth": 0.47,
       "elevation": 13.6,
-      "azimuth": 274.3,
+      "azimuth": 278.2,
       "horizon": null,
       "taken": "2026-08-15"
     },
@@ -248,7 +262,7 @@
       "sky_color": "#446aa0",
       "depth": 0.491,
       "elevation": 30.7,
-      "azimuth": 291.4,
+      "azimuth": 294.5,
       "horizon": null,
       "taken": "2026-08-02"
     },
@@ -262,7 +276,7 @@
       "sky_color": "#426095",
       "depth": 0.491,
       "elevation": 30.7,
-      "azimuth": 308.6,
+      "azimuth": 310.9,
       "horizon": null,
       "taken": "2026-08-15"
     },
@@ -276,7 +290,7 @@
       "sky_color": "#35558f",
       "depth": 0.622,
       "elevation": 34.7,
-      "azimuth": 325.7,
+      "azimuth": 327.3,
       "horizon": null,
       "taken": "2026-08-02"
     },
@@ -290,7 +304,7 @@
       "sky_color": "#365b99",
       "depth": 0.625,
       "elevation": 34.8,
-      "azimuth": 342.9,
+      "azimuth": 343.6,
       "horizon": null,
       "taken": "2026-08-16"
     }

@@ -122,6 +122,10 @@ def is_sky_pixel(r: int, g: int, b: int) -> bool:
     # enough that it isn't a shadow or dark water.
     if b > r + 12 and b >= g - 6 and b > 90:
         return True
+    # Deep zenith blue: a clear sky shot nearly straight up reads navy,
+    # well under the brightness floor above, but strongly blue-dominant.
+    if b > r + 30 and b > g + 20 and b > 60:
+        return True
     # Cloud / haze: bright and nearly grey.
     lo, hi = min(r, g, b), max(r, g, b)
     if lo > 165 and (hi - lo) < 42:
