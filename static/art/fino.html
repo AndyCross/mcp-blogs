@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>За тебе, брате</title>
+<script src="https://cdn.counter.dev/script.js" data-id="72d92ac8-56cf-4fdd-9899-b73adbab2e4d" data-utcoffset="0"></script>
+<style>
+  :root{
+    --night:#0d0b09;        /* candlelit bodega dark, warm not blue */
+    --bone:#e7ddc8;         /* text */
+    --fino:#e9c368;         /* pale straw gold */
+    --dim:#6b6152;
+  }
+  html,body{margin:0;height:100%;background:var(--night);overflow:hidden;
+    font-family:Georgia,'Iowan Old Style','Times New Roman',serif;color:var(--bone);}
+  #stage{position:fixed;inset:0;outline:none;}
+  #stage:focus-visible{box-shadow:inset 0 0 0 2px rgba(233,195,104,.35);}
+  /* vignette — the room, not the void */
+  #vignette{position:fixed;inset:0;pointer-events:none;
+    background:radial-gradient(ellipse 90% 70% at 50% 42%, transparent 45%, rgba(5,4,3,.55) 100%);}
+  .dedication{position:fixed;top:22px;left:26px;font-style:italic;font-size:15px;
+    letter-spacing:.04em;color:var(--dim);pointer-events:none;user-select:none;}
+  #hint{position:fixed;bottom:34px;left:0;right:0;text-align:center;font-size:14px;
+    letter-spacing:.14em;text-transform:lowercase;color:var(--dim);
+    pointer-events:none;user-select:none;transition:opacity 1.2s ease;}
+  #hint.gone{opacity:0;}
+  #toast{position:fixed;left:0;right:0;top:12%;text-align:center;pointer-events:none;
+    user-select:none;opacity:0;transform:translateY(6px);
+    transition:opacity 1.4s ease, transform 1.4s ease;}
+  #toast.show{opacity:1;transform:translateY(0);}
+  #toast .uk{font-size:clamp(26px,4.4vw,44px);letter-spacing:.06em;color:var(--bone);}
+  #toast .en{margin-top:10px;font-style:italic;font-size:clamp(13px,1.6vw,16px);
+    letter-spacing:.08em;color:var(--fino);opacity:.85;}
+  @media (prefers-reduced-motion: reduce){
+    #toast{transition:opacity .3s linear, transform 0s;}
+  }
+</style>
+</head>
+<body>
+<div id="stage" tabindex="0" aria-label="A toast. Press and drag upward, or hold the up arrow, to raise the glass."></div>
+<div id="vignette"></div>
+<div class="dedication">for my brother</div>
+<div id="hint">press &amp; drag up to raise the glass</div>
+<div id="toast">
+  <div class="uk">За тебе, брате.</div>
+  <div class="en">to you, brother — to fino, to the work, to coming home</div>
+</div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
+
+/* ============================================================
+   CHEERS, BROTHER — scene spec (all units metres)
+   Camera .......... eye of the drinker. pos(0,.285,.60) fov 35
+   Table ........... y=0 plane, dark oiled wood
+   Glass ........... copita, 16cm, rests at z=+0.16 centre
+                     raised: +0.175m up, tilted 8° toward viewer,
+                     bowl mouth then sits exactly on the
+                     camera→bust sightline
+   Bust ............ him, at (0,.285,-0.30), facing the drinker.
+                     Ghosted until the glass is raised; resolves
+                     (opacity + warm key light + drift settles)
+                     as raise → 1. The real scan (fino/camo.glb,
+                     meshopt-compressed) swaps in over a rough
+                     placeholder once it arrives.
+   Fino ............ code-built lathe inside the bowl, filled to
+                     just below the widest point, gold that
+                     deepens with depth (fake via opacity+coat)
+   Mechanic ........ one gesture. drag up / hold ↑. At the top the
+                     toast holds for a breath, the words appear,
+                     then the glass eases back down on its own.
+   ============================================================ */
+
+const REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const stage = document.getElementById('stage');
+
+const renderer = new THREE.WebGLRenderer({ antialias:true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setSize(innerWidth, innerHeight);
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.05;
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+stage.appendChild(renderer.domElement);
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x0d0b09);
+scene.fog = new THREE.Fog(0x0d0b09, 0.9, 2.2);
+
+const camera = new THREE.PerspectiveCamera(35, innerWidth/innerHeight, 0.01, 10);
+camera.position.set(0, 0.285, 0.60);
+camera.lookAt(0, 0.25, -0.1);
+
+/* ---------- environment: a tiny lit room, baked to a PMREM ----------
+   gives the glass real things to reflect: a warm window right,
+   a cool sliver left, a faint ceiling. */
+{
+  const env = new THREE.Scene();
+  const add = (w,h,c,i,x,y,z,ry=0)=>{
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(w,h),
+      new THREE.MeshBasicMaterial({ color:new THREE.Color(c).multiplyScalar(i) }));
+    m.position.set(x,y,z); m.rotation.y = ry; env.add(m);
+  };
+  env.background = new THREE.Color(0x050403);
+  add(1.6, 2.2, 0xffb877, 6.0,  2.2, 1.0, 0,  -Math.PI/2); // warm candle wall, right
+  add(0.5, 2.0, 0x7fa0c8, 1.2, -2.2, 1.0, 0,   Math.PI/2); // cool sliver, left
+  add(2.0, 2.0, 0xfff2dd, 0.6,  0,   2.4, 0);              // faint glow ahead/up
+  const pmrem = new THREE.PMREMGenerator(renderer);
+  scene.environment = pmrem.fromScene(env, 0.05).texture;
+}
+
+/* ---------- lights ---------- */
+const ambient = new THREE.AmbientLight(0x2a241c, 0.9);
+scene.add(ambient);
+
+// the candle — warm key near the glass, flickers gently
+const candle = new THREE.PointLight(0xffc27a, 7, 0, 2);
+candle.position.set(0.28, 0.30, 0.28);
+candle.castShadow = true;
+candle.shadow.mapSize.set(1024,1024);
+candle.shadow.bias = -0.0005;
+scene.add(candle);
+
+// cool rim from behind-left so the bust reads even when ghosted
+const rim = new THREE.DirectionalLight(0x8fb0d8, 0.7);
+rim.position.set(-0.8, 0.7, -0.9);
+scene.add(rim);
+
+// HIS light — warm spot that only wakes when the glass is raised
+const bustKey = new THREE.SpotLight(0xffd9a0, 0, 2.5, 0.55, 0.9, 1.6);
+bustKey.position.set(0.35, 0.62, 0.15);
+scene.add(bustKey);
+scene.add(bustKey.target);
+
+/* ---------- table ---------- */
+{
+  const table = new THREE.Mesh(
+    new THREE.CircleGeometry(1.4, 48).rotateX(-Math.PI/2),
+    new THREE.MeshStandardMaterial({ color:0x241a10, roughness:0.85, metalness:0.05 })
+  );
+  table.receiveShadow = true;
+  scene.add(table);
+}
+
+/* ---------- the copita (matches the Meshy silhouette) ----------
+   outer wall up → rim → inner wall down: one closed lathe = real
+   glass thickness (~1.5mm), which is what makes refraction honest. */
+const glassGroup = new THREE.Group();
+glassGroup.position.set(0, 0, 0.16);
+scene.add(glassGroup);
+
+const P = (r,y)=>new THREE.Vector2(r,y);
+const copitaProfile = [
+  // foot
+  P(0.0005,0.0008), P(0.014,0.0006), P(0.030,0.0012), P(0.0335,0.0024),
+  P(0.030,0.0045), P(0.011,0.0068),
+  // stem
+  P(0.0052,0.011), P(0.0038,0.022), P(0.0035,0.046), P(0.0042,0.062),
+  // bowl, outer — widest at lower third, tapering rim
+  P(0.0075,0.0725), P(0.016,0.080), P(0.0255,0.0915), P(0.0305,0.106),
+  P(0.0295,0.121), P(0.0262,0.137), P(0.0228,0.151), P(0.0215,0.1595),
+  // rim lip
+  P(0.0205,0.160),
+  // bowl, inner (wall ≈1.2–1.5mm)
+  P(0.0203,0.1585), P(0.0216,0.151), P(0.0249,0.137), P(0.0282,0.121),
+  P(0.0291,0.106), P(0.0242,0.0925), P(0.0150,0.0818), P(0.0078,0.0752),
+  P(0.0005,0.0738)
+];
+const glassMat = new THREE.MeshPhysicalMaterial({
+  color:0xfbfbf8, transmission:1.0, roughness:0.045, ior:1.45,
+  thickness:0.0025, specularIntensity:1, envMapIntensity:1.1
+});
+const copita = new THREE.Mesh(new THREE.LatheGeometry(copitaProfile, 96), glassMat);
+copita.castShadow = false;
+glassGroup.add(copita);
+
+/* ---------- the fino, code-poured ----------
+   fills to y≈0.109 — just above the bowl's widest point: a proper
+   half-pour, leaving the tapered chimney clear for him to appear in.
+   opacity-based (not transmissive) so it stays visible THROUGH the
+   transmissive glass wall. clearcoat sells the wet surface. */
+const finoProfile = [
+  P(0.0005,0.0748), P(0.0072,0.0762), P(0.0142,0.0828), P(0.0232,0.0935),
+  P(0.0276,0.1060), P(0.0278,0.1085),
+  P(0.0272,0.1092),           // meniscus lip
+  P(0.0180,0.1082), P(0.0090,0.1080), P(0.0005,0.1080) // surface dips a hair
+];
+const finoMat = new THREE.MeshPhysicalMaterial({
+  color:0xe9c368, transparent:true, opacity:0.85, roughness:0.06,
+  metalness:0, clearcoat:1, clearcoatRoughness:0.08, envMapIntensity:0.9,
+  side:THREE.DoubleSide, depthWrite:true
+});
+const fino = new THREE.Mesh(new THREE.LatheGeometry(finoProfile, 96), finoMat);
+glassGroup.add(fino);
+
+// a coin of deeper gold at the heart of the pour — depth without volumetrics
+const finoHeart = new THREE.Mesh(
+  new THREE.SphereGeometry(0.016, 24, 16),
+  new THREE.MeshBasicMaterial({ color:0xb57f2e, transparent:true, opacity:0.35 })
+);
+finoHeart.scale.set(1.15, 0.75, 1.15);
+finoHeart.position.y = 0.092;
+glassGroup.add(finoHeart);
+
+/* ---------- HIM ----------
+   the placeholder bust stands in while fino/camo.glb (his real
+   scan, meshopt-compressed to 16 MB) downloads; then it swaps in
+   and inherits the ghosting, light, drift and toast unchanged. */
+const bust = new THREE.Group();
+bust.position.set(0, 0, -0.30);
+scene.add(bust);
+const ghostable = [];
+const placeholder = new THREE.Group();
+bust.add(placeholder);
+const M = (c,r=0.6)=>{ const m=new THREE.MeshStandardMaterial({color:c,roughness:r,transparent:true}); ghostable.push(m); return m; };
+{
+  const olive=0x5c5a3e, oliveDk=0x4a4832, skin=0xc99a80, beard=0x2c221c,
+        camoA=0x8a8468, shade=0x14100e;
+  const shoulders = new THREE.Mesh(new THREE.BoxGeometry(0.26,0.11,0.13), M(olive,0.85));
+  shoulders.geometry.translate(0,0.180,0); placeholder.add(shoulders);
+  const chest = new THREE.Mesh(new THREE.BoxGeometry(0.20,0.06,0.11), M(oliveDk,0.85));
+  chest.geometry.translate(0,0.238,0.005); placeholder.add(chest);
+  const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.032,0.038,0.05,20), M(skin,0.7));
+  neck.position.y=0.252; placeholder.add(neck);
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.072,32,24), M(skin,0.65));
+  head.scale.set(0.92,1.05,0.95); head.position.y=0.305; placeholder.add(head);
+  const jaw = new THREE.Mesh(new THREE.SphereGeometry(0.070,28,20,0,Math.PI*2,Math.PI*0.45,Math.PI*0.55), M(beard,0.95));
+  jaw.scale.set(0.97,1.05,1.0); jaw.position.y=0.298; jaw.position.z=0.006; placeholder.add(jaw);
+  const glasses = new THREE.Mesh(new THREE.BoxGeometry(0.115,0.026,0.03), M(shade,0.25));
+  glasses.position.set(0,0.318,0.058); placeholder.add(glasses);
+  const crown = new THREE.Mesh(new THREE.CylinderGeometry(0.078,0.083,0.062,28), M(camoA,0.95));
+  crown.position.y=0.372; placeholder.add(crown);
+  const brim = new THREE.Mesh(new THREE.CylinderGeometry(0.128,0.132,0.010,32), M(camoA,0.95));
+  brim.position.y=0.346; brim.rotation.x=0.06; placeholder.add(brim);
+  placeholder.traverse(o=>{ if(o.isMesh){ o.castShadow=true; } });
+}
+bustKey.target.position.set(0, 0.30, -0.30);
+
+/* ---------- the real him ---------- */
+const HIM_HEIGHT = 0.42;   // metres, chest-up; tune so the head reads ~19cm
+const HIM_ROT_Y  = 0;      // radians, if the scan doesn't face the drinker
+{
+  const loader = new GLTFLoader();
+  loader.setMeshoptDecoder(MeshoptDecoder);
+  loader.load('fino/camo.glb', (gltf)=>{
+    const him = gltf.scene;
+    him.rotation.y = HIM_ROT_Y;
+    const box = new THREE.Box3().setFromObject(him);
+    const size = box.getSize(new THREE.Vector3());
+    him.scale.setScalar(HIM_HEIGHT / size.y);
+    box.setFromObject(him);
+    const centre = box.getCenter(new THREE.Vector3());
+    him.position.set(-centre.x, -box.min.y, -centre.z);
+    ghostable.length = 0;    // retire the placeholder materials
+    him.traverse(o=>{
+      if(o.isMesh){
+        o.castShadow = true;
+        o.material.transparent = true;
+        ghostable.push(o.material);
+      }
+    });
+    bust.remove(placeholder);
+    bust.add(him);
+  }, undefined, (err)=>{ console.error('camo.glb failed; the placeholder stands the round', err); });
+}
+
+/* ---------- dust motes — the air of the room ---------- */
+let motes=null;
+{
+  const N=70, pos=new Float32Array(N*3);
+  for(let i=0;i<N;i++){ pos[i*3]=(Math.random()-0.5)*0.7; pos[i*3+1]=Math.random()*0.55+0.05; pos[i*3+2]=(Math.random()-0.5)*0.8-0.05; }
+  const g=new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos,3));
+  motes = new THREE.Points(g, new THREE.PointsMaterial({
+    color:0xffe9c0, size:0.0035, transparent:true, opacity:0.30,
+    blending:THREE.AdditiveBlending, depthWrite:false, sizeAttenuation:true }));
+  scene.add(motes);
+}
+
+/* ---------- the mechanic: one gesture, one meaning ---------- */
+let raise=0, target=0, dragging=false, dragStartY=0, dragStartRaise=0;
+let holdUntil=0, toastShown=false, everToasted=false;
+const hint=document.getElementById('hint'), toastEl=document.getElementById('toast');
+const clamp=(v,a,b)=>Math.min(b,Math.max(a,v));
+const smooth=(a,b,x)=>{ const t=clamp((x-a)/(b-a),0,1); return t*t*(3-2*t); };
+
+stage.addEventListener('pointerdown', e=>{
+  dragging=true; dragStartY=e.clientY; dragStartRaise=raise; holdUntil=0;
+  stage.setPointerCapture(e.pointerId);
+});
+stage.addEventListener('pointermove', e=>{
+  if(!dragging) return;
+  target = clamp(dragStartRaise + (dragStartY - e.clientY)/(innerHeight*0.38), 0, 1);
+});
+const release=()=>{
+  if(!dragging) return; dragging=false;
+  if(raise>0.90){ target=1; holdUntil=performance.now()+1800; } // the toast holds for a breath
+  else target=0;
+};
+stage.addEventListener('pointerup', release);
+stage.addEventListener('pointercancel', release);
+addEventListener('keydown', e=>{ if(e.code==='ArrowUp'||e.code==='Space'){ target=1; holdUntil=0; e.preventDefault(); }});
+addEventListener('keyup',   e=>{ if(e.code==='ArrowUp'||e.code==='Space'){ if(raise>0.90){ target=1; holdUntil=performance.now()+1800; } else target=0; }});
+
+/* ---------- frame ---------- */
+const clock=new THREE.Clock();
+function frame(){
+  requestAnimationFrame(frame);
+  const dt=Math.min(clock.getDelta(),0.05), t=clock.elapsedTime;
+
+  if(!dragging && holdUntil && performance.now()>holdUntil){ holdUntil=0; target=0; }
+  raise += (target-raise)*Math.min(1, dt*(dragging?10:2.6));
+
+  // the glass: rises 17.5cm and tips 8° toward the drinker
+  glassGroup.position.y = raise*0.175;
+  glassGroup.rotation.x = -raise*0.14;
+
+  // him: resolve begins in the last quarter of the raise
+  const resolve = smooth(0.72, 0.985, raise);
+  const ghost = 0.055 + 0.945*resolve;
+  for(const m of ghostable) m.opacity = ghost;
+  bustKey.intensity = resolve*26;
+  // unresolved, he drifts like a thought; resolved, he is still
+  const drift = REDUCED ? 0 : (1-resolve);
+  bust.position.x = Math.sin(t*0.9)*0.006*drift;
+  bust.position.y = Math.sin(t*0.6+1.7)*0.004*drift;
+  bust.rotation.y = Math.sin(t*0.4)*0.05*drift;
+
+  // candle breathes
+  candle.intensity = REDUCED ? 7 : 7 + Math.sin(t*11)*0.35 + Math.sin(t*23+1)*0.25;
+
+  // the room's slow breath
+  if(!REDUCED){
+    camera.position.x = Math.sin(t*0.22)*0.004;
+    camera.position.y = 0.285 + Math.sin(t*0.31)*0.002;
+    camera.lookAt(0,0.25,-0.1);
+    const p=motes.geometry.attributes.position;
+    for(let i=0;i<p.count;i++){
+      let y=p.getY(i)+dt*0.008; if(y>0.62) y=0.05; p.setY(i,y);
+    }
+    p.needsUpdate=true;
+  }
+
+  // the words
+  if(raise>0.965 && !toastShown){ toastShown=true; toastEl.classList.add('show');
+    if(!everToasted){ everToasted=true; hint.classList.add('gone'); } }
+  if(raise<0.55 && toastShown){ toastShown=false; toastEl.classList.remove('show'); }
+
+  renderer.render(scene,camera);
+}
+frame();
+
+addEventListener('resize', ()=>{
+  camera.aspect=innerWidth/innerHeight; camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth,innerHeight);
+});
+stage.focus();
+</script>
+</body>
+</html>
