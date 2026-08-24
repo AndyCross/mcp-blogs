@@ -265,7 +265,17 @@
         let globalTime = 0;
         let surge = 0;          // a tap sends brightness travelling down every thread
         let titleTimer = null;
+        let currentEntry = lifted[lifted.length - 1];
         const dragState = { x: 0, y: 0, moved: false };
+
+        // How long the words stay: enough time to actually read them.
+        // Roughly 320ms a word on top of the bloom-in, never less than
+        // the old ten seconds so short entries feel the same.
+        function titleHoldTime() {
+            const words = (currentEntry.title + ' ' + currentEntry.whisper)
+                .trim().split(/\s+/).length;
+            return Math.max(10000, 4500 + words * 320);
+        }
 
         function init() {
             const container = document.getElementById('container');
@@ -306,7 +316,7 @@
             setupInteraction();
             setupTimeline();
 
-            titleTimer = setTimeout(() => document.getElementById('title').classList.add('gone'), 10000);
+            titleTimer = setTimeout(() => document.getElementById('title').classList.add('gone'), titleHoldTime());
             window.addEventListener('resize', onWindowResize);
         }
 
@@ -629,6 +639,7 @@
         // Speak an entry: its words on the screen, its tint through every
         // thread, so revisiting an old day lands as it did when it happened.
         function applyEntry(p) {
+            currentEntry = p;
             const h1 = document.querySelector('#title h1');
             const whisper = document.getElementById('whisper');
             h1.textContent = p.title;
@@ -651,7 +662,7 @@
                 el.style.animation = '';
             });
             clearTimeout(titleTimer);
-            titleTimer = setTimeout(() => title.classList.add('gone'), 10000);
+            titleTimer = setTimeout(() => title.classList.add('gone'), titleHoldTime());
         }
 
         function buildEntries(timeline) {
