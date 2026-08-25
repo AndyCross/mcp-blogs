@@ -99,26 +99,35 @@
     </div>
   </div>
   <script>
-    // If the newest pledge in ooo.html is less than 36 hours old, mark the
-    // card as new. The pledge dates are day-granular, so a pledge counts as
-    // new from its midnight until midday the following day.
+    // A card counts as new from its date's midnight until midday the
+    // following day (36 hours), same rule everywhere.
+    const FRESH_MS = 36 * 60 * 60 * 1000;
+    function markNew(href, isoDate) {
+      if (!isoDate) return;
+      const latest = new Date(isoDate + 'T00:00:00');
+      if (Date.now() - latest.getTime() >= FRESH_MS) return;
+      const h2 = document.querySelector(`a[href="${href}"] h2`);
+      if (h2 && !h2.querySelector('.new-badge')) {
+        const badge = document.createElement('span');
+        badge.className = 'new-badge';
+        badge.textContent = 'new';
+        h2.appendChild(badge);
+      }
+    }
+
+    // The pledge dates live inside ooo.html itself, so fetch and parse them.
     fetch('/art/ooo.html')
       .then(r => r.text())
       .then(html => {
         const dates = [...html.matchAll(/date:\s*'(\d{4}-\d{2}-\d{2})'/g)].map(m => m[1]);
-        if (!dates.length) return;
-        const latest = new Date(dates.sort().pop() + 'T00:00:00');
-        if (Date.now() - latest.getTime() < 36 * 60 * 60 * 1000) {
-          const h2 = document.querySelector('a[href="/art/ooo.html"] h2');
-          if (h2 && !h2.querySelector('.new-badge')) {
-            const badge = document.createElement('span');
-            badge.className = 'new-badge';
-            badge.textContent = 'new';
-            h2.appendChild(badge);
-          }
-        }
+        if (dates.length) markNew('/art/ooo.html', dates.sort().pop());
       })
       .catch(() => {}); // no badge is fine if the fetch fails
+
+    // Buena Suerte's card date is kept at the latest pinned score, so the
+    // card's own datetime is the freshness signal.
+    markNew('/art/buenasuerte.html',
+      document.querySelector('a[href="/art/buenasuerte.html"] time')?.getAttribute('datetime'));
   </script>
 </body>
 </html>
