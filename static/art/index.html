@@ -99,9 +99,9 @@
     </div>
   </div>
   <script>
-    // A card counts as new from its date's midnight until midday the
-    // following day (36 hours), same rule everywhere.
-    const FRESH_MS = 36 * 60 * 60 * 1000;
+    // A card counts as new from its date's midnight through the end of
+    // the following day (48 hours), same rule everywhere.
+    const FRESH_MS = 48 * 60 * 60 * 1000;
     function markNew(href, isoDate) {
       if (!isoDate) return;
       const latest = new Date(isoDate + 'T00:00:00');
