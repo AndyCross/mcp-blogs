@@ -14,7 +14,10 @@ order they were played. This skill updates it.
 1. Screenshots are iPhone score screens (1206x2622 PNGs), usually in
    `~/Downloads/puzzle/`. Ask where they are if unclear. New screenshots
    go in the SAME folder as the old ones: the converter processes the
-   whole folder and filename order (IMG_NNNN) is the play order.
+   whole folder and filename order (IMG_NNNN) is the play order. A file
+   not named IMG_NNNN (e.g. a Mac "Screenshot ..." capture) sorts wrong
+   and lands out of order: rename it to an unused IMG_NNNN that sits
+   between its neighbours BEFORE converting.
 2. Run the converter:
 
    ```
@@ -47,6 +50,11 @@ order they were played. This skill updates it.
    number) days: #872 with #902 played on 2026-08-19 gives 20 July
    2026. Update the latest date to today whenever new cards go up (the
    first date only moves if earlier cards are ever added).
+
+5. The art index `static/art/index.html` shows a "last updated" date on
+   the Buena Suerte card (a `<time>` element with both a `datetime`
+   attribute and visible text). Set it to today whenever new cards go
+   up, and mirror the file to `public/art/index.html`.
 
 ## Writing a note on a card
 
