@@ -96,6 +96,12 @@
         <time class="date" datetime="2026-08-29">29 August 2026</time>
         <span class="tag">Open →</span>
       </a>
+      <a class="card" href="/art/samesky.html">
+        <h2>Same Sky</h2>
+        <p>A sky dome stitched from photographs of the sky, each one tinting the dome at its own bearing. The photos hide in it as faint shimmers; tap one and it comes forward. Distintos lugares, el mismo cielo.</p>
+        <time class="date" datetime="2026-08-24">24 August 2026</time>
+        <span class="tag">Open →</span>
+      </a>
     </div>
   </div>
   <script>
@@ -128,6 +134,10 @@
     // card's own datetime is the freshness signal.
     markNew('/art/buenasuerte.html',
       document.querySelector('a[href="/art/buenasuerte.html"] time')?.getAttribute('datetime'));
+
+    // Same Sky's card date is kept at the most recent photograph in the dome.
+    markNew('/art/samesky.html',
+      document.querySelector('a[href="/art/samesky.html"] time')?.getAttribute('datetime'));
   </script>
 </body>
 </html>
