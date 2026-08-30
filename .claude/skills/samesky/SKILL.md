@@ -34,13 +34,15 @@ assets.
 
    Keep it token-cheap: don't Read the source HEICs or output JPEGs;
    the printed report tells you everything about how each photo fitted.
-3. Mirror to the built site (Hugo copies static/ verbatim at build, but
-   the repo keeps `public/` in sync by hand):
+3. Bump the Same Sky card date in both art indexes to the newest
+   photograph's date: the `<time>` element on the Same Sky card in
+   `static/art/index.html` and in the secret archive
+   (`static/art/todas-c51e1c2388fe29fe.html`). The index's "new" badge
+   reads that datetime, so a stale date means new photos arrive
+   unannounced.
 
-   ```
-   rsync -a --delete static/art/samesky-assets/ public/art/samesky-assets/
-   cp static/art/samesky.html public/art/samesky.html
-   ```
+   Don't mirror anything into `public/`; it's gitignored and Hugo
+   rebuilds it from `static/` automatically.
 
 4. Report the outcome to the user: which photos went in as sky vs
    polaroid, and any rejections with their reasons so they can decide
