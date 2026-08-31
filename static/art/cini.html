@@ -16,10 +16,16 @@
   an İznik palette. The interlace mode traces strands through the
   crossings and weaves them over/under alternately.
 
-  The dome tiling is radial rather than periodic: a polar grid of
-  quads around a central 16-gon, ring radii growing geometrically so
-  the motifs scale outward the way a tiled dome does when you stand
-  under it and look up. Samarkand palette to match.
+  The dome tiling is radial rather than periodic: rings of cells
+  around a central 16-gon. When the cells grow too wide the sector
+  count doubles through a ring of pentagons, which is how a real dome
+  keeps its pattern density constant from crown to rim. The penrose
+  tiling is quasi-periodic (P3 rhombs by Robinson-triangle
+  subdivision), so the pattern never repeats however far you wander.
+
+  The offset δ slides each edge's two contact points apart along the
+  edge (Kaplan's two-point extension of Hankin), which opens up the
+  family of patterns with parallel-sided straps.
 
   Controls: pick a tiling, drag θ, switch render modes, or let θ
   breathe on its own.
@@ -33,7 +39,7 @@
 <style>
   * { box-sizing: border-box; }
   html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; background: #0b0e14; }
-  canvas { display: block; width: 100vw; height: 100vh; cursor: grab; }
+  canvas { display: block; width: 100vw; height: 100vh; cursor: grab; touch-action: none; }
   canvas:active { cursor: grabbing; }
 
   #title {
@@ -112,7 +118,15 @@
     font-family: inherit; font-size: 0.66rem; cursor: pointer;
   }
   .modes button.on { background: #2a3550; color: #f2ead6; border-color: rgba(232, 201, 106, 0.6); }
-  .checks { display: flex; gap: 1rem; margin-top: 0.7rem; }
+  .checks { display: flex; flex-wrap: wrap; gap: 0.45rem 0.9rem; margin-top: 0.7rem; }
+  #save {
+    width: 100%; margin-top: 0.8rem; padding: 0.4rem 0;
+    background: #10151f; color: rgba(242, 234, 214, 0.85);
+    border: 1px solid rgba(242, 234, 214, 0.2); border-radius: 5px;
+    font-family: inherit; font-size: 0.66rem; cursor: pointer;
+    letter-spacing: 0.15em; text-transform: uppercase;
+  }
+  #save:active { background: #2a3550; }
   .checks label { display: flex; align-items: center; gap: 0.35rem; cursor: pointer; opacity: 0.85; }
   input[type="checkbox"] { accent-color: #e8c96a; }
   #mood { font-size: 0.62rem; opacity: 0.5; margin-top: 0.25rem; letter-spacing: 0.15em; }
@@ -140,12 +154,17 @@
           <option value="square">square · 4⁴</option>
           <option value="tri">triangular · 3⁶</option>
           <option value="dome">samarkand dome · radial</option>
+          <option value="penrose">penrose · quasi-periodic</option>
         </select>
       </div>
       <div class="row">
         <label>contact angle θ <span class="val" id="thetaVal">36°</span></label>
         <input type="range" id="theta" min="15" max="85" step="0.5" value="36">
         <div id="mood">acute</div>
+      </div>
+      <div class="row">
+        <label>contact offset δ <span class="val" id="deltaVal">0.00</span></label>
+        <input type="range" id="delta" min="0" max="0.45" step="0.01" value="0">
       </div>
       <div class="row">
         <label>render</label>
@@ -157,10 +176,12 @@
       </div>
       <div class="row">
         <label>palette</label>
-        <div class="modes">
-          <button data-pal="iznik" class="on">i̇znik</button>
-          <button data-pal="samarkand">samarkand</button>
-        </div>
+        <select id="palette">
+          <option value="iznik" selected>i̇znik · white &amp; cobalt</option>
+          <option value="samarkand">samarkand · gold on lapis</option>
+          <option value="fez">fez · zellige</option>
+          <option value="alhambra">alhambra · earth</option>
+        </select>
       </div>
       <div class="row">
         <label>zoom <span class="val" id="zoomVal"></span></label>
@@ -168,8 +189,10 @@
       </div>
       <div class="checks">
         <label><input type="checkbox" id="animate"> breathe θ</label>
+        <label><input type="checkbox" id="grout" checked> grout</label>
         <label><input type="checkbox" id="scaffold"> scaffold</label>
       </div>
+      <button id="save">save png</button>
     </div>
   </div>
 
@@ -189,8 +212,10 @@ const state = {
   mode: 'mosaic',     // mosaic | weave | lines
   scale: 72,          // pixels per tiling-edge unit
   panX: 0, panY: 0,   // pixels
+  delta: 0,           // contact point offset along each edge
   animate: false,
   scaffold: false,
+  grout: true,
   pal: 'iznik',
 };
 
@@ -348,31 +373,80 @@ const GEN = {
     return t;
   },
 
-  // radial polar grid: central 16-gon, then rings of quads whose radii
-  // grow geometrically, so every cell stays roughly square and the
-  // pattern scales outward like a dome seen from directly below
+  // radial: rings of cells around a central 16-gon. When the cells grow
+  // too wide the sector count doubles through a ring of pentagons, which
+  // is how a real dome keeps its pattern density constant crown to rim
   dome(uc, R) {
-    const t = [], S = 16;
-    const half = Math.sin(Math.PI / S);
-    const r0 = 1 / (2 * half);          // central polygon edge length 1
-    const q = 1 + 2 * half;             // ring height ≈ ring cell width
-    const dmax = Math.hypot(uc[0], uc[1]) + R;
-    const centre = regularPoly(0, 0, S, r0, 0);
-    if (near([0, 0], uc, R)) t.push(centre);
-    let ri = r0;
-    while (ri < dmax) {
-      const ro = ri * q;
-      for (let k = 0; k < S; k++) {
-        const a0 = k * 2 * Math.PI / S, a1 = (k + 1) * 2 * Math.PI / S;
-        const cell = [
-          [ri * Math.cos(a0), ri * Math.sin(a0)],
-          [ri * Math.cos(a1), ri * Math.sin(a1)],
-          [ro * Math.cos(a1), ro * Math.sin(a1)],
-          [ro * Math.cos(a0), ro * Math.sin(a0)],
-        ];
-        if (near(centroid(cell), uc, R)) t.push(cell);
+    const t = [];
+    let S = 16;
+    let ri = 1 / (2 * Math.sin(Math.PI / S));   // central polygon edge = 1
+    const d = Math.hypot(uc[0], uc[1]);
+    if (near([0, 0], uc, R)) t.push(regularPoly(0, 0, S, ri, 0));
+    const P = (r, a) => [r * Math.cos(a), r * Math.sin(a)];
+    while (ri < d + R) {
+      const ro = ri + 1;
+      const doubling = 2 * ri * Math.sin(Math.PI / S) > 1.55;
+      if (ro > d - R - 1) {                     // ring touches the view
+        for (let k = 0; k < S; k++) {
+          const a0 = k * 2 * Math.PI / S, a1 = (k + 1) * 2 * Math.PI / S;
+          const cell = doubling
+            ? [P(ri, a0), P(ri, a1), P(ro, a1), P(ro, (a0 + a1) / 2), P(ro, a0)]
+            : [P(ri, a0), P(ri, a1), P(ro, a1), P(ro, a0)];
+          if (near(centroid(cell), uc, R)) t.push(cell);
+        }
       }
+      if (doubling) S *= 2;
       ri = ro;
+    }
+    return t;
+  },
+
+  // quasi-periodic: P3 penrose rhombs via Robinson-triangle subdivision
+  // from a wheel of ten around the origin; the pattern never repeats
+  penrose(uc, R) {
+    const PHI = (1 + Math.sqrt(5)) / 2, inv = 1 / PHI;
+    const need = Math.hypot(uc[0], uc[1]) + R + 2;
+    const n = Math.max(2, Math.ceil(Math.log(need) / Math.log(PHI)));
+    const R0 = Math.pow(PHI, n);
+    let tris = [];
+    for (let i = 0; i < 10; i++) {
+      const b = [R0 * Math.cos((2 * i - 1) * Math.PI / 10), R0 * Math.sin((2 * i - 1) * Math.PI / 10)];
+      const c = [R0 * Math.cos((2 * i + 1) * Math.PI / 10), R0 * Math.sin((2 * i + 1) * Math.PI / 10)];
+      tris.push(i % 2 ? [0, [0, 0], b, c] : [0, [0, 0], c, b]);
+    }
+    const mix = (A, B, f) => [A[0] + (B[0] - A[0]) * f, A[1] + (B[1] - A[1]) * f];
+    for (let lvl = 0; lvl < n; lvl++) {
+      const reach = R + 2 * R0 * Math.pow(inv, lvl) + 1;  // triangle size bound
+      const nxt = [];
+      for (const [ty, A, B, C] of tris) {
+        if (Math.hypot(A[0] - uc[0], A[1] - uc[1]) > reach &&
+            Math.hypot(B[0] - uc[0], B[1] - uc[1]) > reach &&
+            Math.hypot(C[0] - uc[0], C[1] - uc[1]) > reach) continue;
+        if (ty === 0) {
+          const Q = mix(A, B, inv);
+          nxt.push([0, C, Q, B], [1, Q, C, A]);
+        } else {
+          const Q = mix(B, A, inv);
+          const V = mix(B, C, inv);
+          nxt.push([1, V, C, A], [1, Q, V, B], [0, V, Q, A]);
+        }
+      }
+      tris = nxt;
+    }
+    // each triangle is half a rhomb: reflect its apex across the base and
+    // let the centroid dedupe in genTiles merge the mirror twins
+    const t = [];
+    for (const [, A, B, C] of tris) {
+      const ab = (A[0] - B[0]) ** 2 + (A[1] - B[1]) ** 2;
+      const bc = (B[0] - C[0]) ** 2 + (B[1] - C[1]) ** 2;
+      const ca = (C[0] - A[0]) ** 2 + (C[1] - A[1]) ** 2;
+      const eA = Math.abs(ab - ca), eB = Math.abs(ab - bc), eC = Math.abs(bc - ca);
+      let apex = A, u = B, v = C;
+      if (eB < eA && eB <= eC) { apex = B; u = A; v = C; }
+      else if (eC < eA && eC < eB) { apex = C; u = A; v = B; }
+      const D = [u[0] + v[0] - apex[0], u[1] + v[1] - apex[1]];
+      const rhomb = [apex, u, D, v];
+      if (near(centroid(rhomb), uc, R)) t.push(rhomb);
     }
     return t;
   },
@@ -400,7 +474,7 @@ function genTiles() {
 // inward. Each ray is cut at its first collision with another ray of the
 // same tile. The collisions are the pattern.
 
-function hankin(poly, thetaDeg) {
+function hankin(poly, thetaDeg, delta) {
   const th = thetaDeg * Math.PI / 180;
   const c = Math.cos(th), s = Math.sin(th);
   const n = poly.length, rays = [];
@@ -410,8 +484,12 @@ function hankin(poly, thetaDeg) {
     const len = Math.hypot(b[0] - a[0], b[1] - a[1]);
     const t = [(b[0] - a[0]) / len, (b[1] - a[1]) / len];
     const nn = [-t[1], t[0]];                 // inward normal (poly is CCW)
-    rays.push({ o: m, d: [t[0] * c + nn[0] * s, t[1] * c + nn[1] * s] });
-    rays.push({ o: m, d: [-t[0] * c + nn[0] * s, -t[1] * c + nn[1] * s] });
+    // two contact points, symmetric about the midpoint; at δ=0 they merge
+    const off = (delta || 0) * len / 2;
+    rays.push({ o: [m[0] - t[0] * off, m[1] - t[1] * off],
+                d: [t[0] * c + nn[0] * s, t[1] * c + nn[1] * s] });
+    rays.push({ o: [m[0] + t[0] * off, m[1] + t[1] * off],
+                d: [-t[0] * c + nn[0] * s, -t[1] * c + nn[1] * s] });
   }
   // how far each ray can go before leaving the tile (guards degenerate cases)
   function exitDist(r) {
@@ -436,6 +514,7 @@ function hankin(poly, thetaDeg) {
   for (let i = 0; i < rays.length; i++) {
     const r = rays[i];
     for (let j = i + 1; j < rays.length; j++) {
+      if ((i >> 1) === (j >> 1)) continue;    // never pair an edge with itself
       const q = rays[j];
       const cross = r.d[0] * q.d[1] - r.d[1] * q.d[0];
       if (Math.abs(cross) < 1e-9) continue;
@@ -465,18 +544,26 @@ let protoCache = new Map();
 
 function tileSegments(poly) {
   const c = centroid(poly);
-  const rel = poly.map(p => [p[0] - c[0], p[1] - c[1]]);
-  const key = state.theta.toFixed(2) + '|' +
+  // dome cells within a ring are rotated copies of one another;
+  // canonicalise the rotation so a whole ring shares one cache entry
+  const ang = state.tiling === 'dome' ? Math.atan2(c[1], c[0]) : 0;
+  const ca = Math.cos(-ang), sa = Math.sin(-ang);
+  const rel = poly.map(p => {
+    const x = p[0] - c[0], y = p[1] - c[1];
+    return [x * ca - y * sa, x * sa + y * ca];
+  });
+  const key = state.theta.toFixed(2) + '|' + state.delta.toFixed(3) + '|' +
     rel.map(p => p[0].toFixed(3) + ',' + p[1].toFixed(3)).join(';');
   let segs = protoCache.get(key);
   if (!segs) {
-    if (protoCache.size > 96) protoCache = new Map();
-    segs = hankin(rel, state.theta);
+    if (protoCache.size > 512) protoCache = new Map();
+    segs = hankin(rel, state.theta, state.delta);
     protoCache.set(key, segs);
   }
+  const cb = Math.cos(ang), sb = Math.sin(ang);
   return segs.map(sg => [
-    [sg[0][0] + c[0], sg[0][1] + c[1]],
-    [sg[1][0] + c[0], sg[1][1] + c[1]],
+    [sg[0][0] * cb - sg[0][1] * sb + c[0], sg[0][0] * sb + sg[0][1] * cb + c[1]],
+    [sg[1][0] * cb - sg[1][1] * sb + c[0], sg[1][0] * sb + sg[1][1] * cb + c[1]],
   ]);
 }
 
@@ -579,6 +666,8 @@ function extractFaces(g) {
 
 // İznik: white ground, cobalt stars, then turquoise / coral / sage / gold.
 // Samarkand: gold stars on lapis, mostly golds and blues after that.
+// Fez: zellige — white ground, deep green, cobalt, saffron, terracotta.
+// Alhambra: earth — plaster ground, ochres, olive, faded lapis.
 const PALETTES = {
   iznik: {
     ground: '#ece2cb',
@@ -587,6 +676,7 @@ const PALETTES = {
     outline: '#1d1a14',
     bg: '#141210',
     line: '#e6d9b8',
+    strands: ['#e6d9b8', '#c9a13b', '#1a7f80'],
   },
   samarkand: {
     ground: '#24357c',
@@ -595,6 +685,25 @@ const PALETTES = {
     outline: '#151007',
     bg: '#0d1130',
     line: '#e0bf5e',
+    strands: ['#e0bf5e', '#b8892e', '#5d78c0'],
+  },
+  fez: {
+    ground: '#e8e3d5',
+    star: '#1f6b47',
+    cycle: ['#173c66', '#c9a13b', '#9c4a2a', '#1a7f80', '#23221f', '#5b8c4a'],
+    outline: '#15140f',
+    bg: '#101310',
+    line: '#dfe5d0',
+    strands: ['#dfe5d0', '#3f7f5c', '#c9a13b'],
+  },
+  alhambra: {
+    ground: '#d9c49a',
+    star: '#7c3a22',
+    cycle: ['#a8683a', '#4f6b45', '#31548a', '#8c2f26', '#b6924e', '#5e4a33'],
+    outline: '#241a10',
+    bg: '#171208',
+    line: '#d9c49a',
+    strands: ['#d9c49a', '#a8683a', '#4f6b45'],
   },
 };
 let PAL = PALETTES.iznik;
@@ -749,33 +858,62 @@ function render() {
         console.log('DEBUG verts=' + g.verts.length + ' edges=' + g.edges.length +
           ' faces=' + faces.length + ' classes=' + JSON.stringify(byClass));
       }
+      // grout: inset every face toward its centroid and round the corners
+      // with a same-colour stroke, so the dark ground reads as mortar
+      const gW = state.grout ? 1.0 * px : 0;
       for (const f of faces) {
-        ctx.fillStyle = f.fill || PAL.ground;
+        const fill = f.fill || PAL.ground;
+        ctx.fillStyle = fill;
+        let poly = f.poly;
+        if (gW) {
+          const fc = centroid(poly);
+          poly = poly.map(p => {
+            const dx = p[0] - fc[0], dy = p[1] - fc[1];
+            const dl = Math.hypot(dx, dy) || 1;
+            const k = Math.max(0.55, 1 - 2.2 * gW / dl);
+            return [fc[0] + dx * k, fc[1] + dy * k];
+          });
+        }
         ctx.beginPath();
-        ctx.moveTo(f.poly[0][0], f.poly[0][1]);
-        for (let i = 1; i < f.poly.length; i++) ctx.lineTo(f.poly[i][0], f.poly[i][1]);
+        ctx.moveTo(poly[0][0], poly[0][1]);
+        for (let i = 1; i < poly.length; i++) ctx.lineTo(poly[i][0], poly[i][1]);
         ctx.closePath();
         ctx.fill();
+        if (gW) {
+          ctx.strokeStyle = fill;
+          ctx.lineWidth = 1.6 * gW;
+          ctx.lineJoin = 'round';
+          ctx.stroke();
+        }
       }
-      ctx.strokeStyle = PAL.outline;
-      ctx.lineWidth = 1.4 * px;
-      ctx.lineCap = 'round';
-      ctx.beginPath();
-      for (const [u, v] of g.edges) {
-        ctx.moveTo(g.verts[u][0], g.verts[u][1]);
-        ctx.lineTo(g.verts[v][0], g.verts[v][1]);
+      if (!gW) {
+        ctx.strokeStyle = PAL.outline;
+        ctx.lineWidth = 1.4 * px;
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        for (const [u, v] of g.edges) {
+          ctx.moveTo(g.verts[u][0], g.verts[u][1]);
+          ctx.lineTo(g.verts[v][0], g.verts[v][1]);
+        }
+        ctx.stroke();
       }
-      ctx.stroke();
     } else {
       // weave: flat straps first, then redraw the "over" strand locally at
       // each crossing so its casing cuts across the strand underneath
       const { strands, overAt, edgeStrand } = buildStrands(g);
       const bg = '#0b0e14';
-      const strap = PAL.line;
+      const sPal = PAL.strands;
+      const cols = strands.map(path => {        // stable colour per strand
+        let cx = 0, cy = 0;
+        for (const v of path) { cx += g.verts[v][0]; cy += g.verts[v][1]; }
+        const h = Math.abs((Math.round(cx / path.length * 4) * 73856093) ^
+                           (Math.round(cy / path.length * 4) * 19349663));
+        return sPal[h % sPal.length];
+      });
       const strapW = Math.max(4.5, Math.min(12, state.scale * 0.15)) * px;
       const casing = strapW + 3.5 * px;
       for (const s of strands) strokePath(s, g.verts, bg, casing);
-      for (const s of strands) strokePath(s, g.verts, strap, strapW);
+      strands.forEach((s, i) => strokePath(s, g.verts, cols[i], strapW));
 
       // at every crossing, cut a short gap into the under strand, then lay
       // the over strand's fill back across it
@@ -806,7 +944,7 @@ function render() {
           ctx.stroke();
         };
         drawPiece(toward(under[0], gapL), toward(under[1], gapL), bg, casing);
-        drawPiece(toward(over[0], overL), toward(over[1], overL), strap, strapW);
+        drawPiece(toward(over[0], overL), toward(over[1], overL), cols[si], strapW);
       }
     }
   }
@@ -866,9 +1004,20 @@ thetaSlider.addEventListener('input', () => {
   scheduleRebuild();
 });
 
+const deltaSlider = document.getElementById('delta');
+const deltaVal = document.getElementById('deltaVal');
+function updateDeltaLabel() { deltaVal.textContent = Number(state.delta).toFixed(2); }
+deltaSlider.addEventListener('input', () => {
+  state.delta = parseFloat(deltaSlider.value);
+  updateDeltaLabel();
+  scheduleRebuild();
+});
+
 document.getElementById('tiling').addEventListener('change', e => {
   state.tiling = e.target.value;
-  setPal(state.tiling === 'dome' ? 'samarkand' : 'iznik');
+  if (state.tiling === 'dome') setPal('samarkand');
+  else if (state.pal === 'samarkand') setPal('iznik');
+  protoCache = new Map();
   scheduleRebuild();
 });
 
@@ -876,17 +1025,14 @@ function setPal(name) {
   if (!PALETTES[name]) return;
   state.pal = name;
   PAL = PALETTES[name];
-  document.querySelectorAll('[data-pal]').forEach(x => x.classList.toggle('on', x.dataset.pal === name));
-  protoCache = new Map();
+  document.getElementById('palette').value = name;
   scheduleRebuild();
 }
-for (const b of document.querySelectorAll('[data-pal]')) {
-  b.addEventListener('click', () => setPal(b.dataset.pal));
-}
+document.getElementById('palette').addEventListener('change', e => setPal(e.target.value));
 
 const zoomSlider = document.getElementById('zoom');
 const zoomVal = document.getElementById('zoomVal');
-function updateZoomLabel() { zoomVal.textContent = state.scale + 'px'; }
+function updateZoomLabel() { zoomVal.textContent = Math.round(state.scale) + 'px'; }
 zoomSlider.addEventListener('input', () => {
   state.scale = parseInt(zoomSlider.value, 10);
   updateZoomLabel();
@@ -902,7 +1048,18 @@ for (const b of document.querySelectorAll('.modes button[data-mode]')) {
 }
 
 document.getElementById('animate').addEventListener('change', e => { state.animate = e.target.checked; });
+document.getElementById('grout').addEventListener('change', e => { state.grout = e.target.checked; scheduleRebuild(); });
 document.getElementById('scaffold').addEventListener('change', e => { state.scaffold = e.target.checked; scheduleRebuild(); });
+
+document.getElementById('save').addEventListener('click', () => {
+  canvas.toBlob(blob => {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'cini-' + state.tiling + '-' + Math.round(state.theta) + '.png';
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  });
+});
 
 const panel = document.getElementById('panel');
 document.getElementById('panelHead').addEventListener('click', () => {
@@ -910,28 +1067,70 @@ document.getElementById('panelHead').addEventListener('click', () => {
   document.getElementById('panelToggle').textContent = panel.classList.contains('closed') ? '+' : '−';
 });
 
-// drag to pan
-let dragging = false, lastX = 0, lastY = 0;
+// drag to pan, pinch to zoom, double-tap to recentre
+const pointers = new Map();
+let pinchDist = 0, pinchMid = null, lastTap = 0, lastTapX = 0, lastTapY = 0;
+
+function zoomAt(sx, sy, factor) {
+  const next = Math.max(34, Math.min(150, state.scale * factor));
+  factor = next / state.scale;
+  // keep the world point under (sx, sy) fixed while the scale changes
+  state.panX = sx - W / 2 - (sx - W / 2 - state.panX) * factor;
+  state.panY = sy - H / 2 - (sy - H / 2 - state.panY) * factor;
+  state.scale = next;
+  zoomSlider.value = Math.round(next);
+  updateZoomLabel();
+  scheduleRebuild();
+}
+
 canvas.addEventListener('pointerdown', e => {
-  dragging = true; lastX = e.clientX; lastY = e.clientY;
   canvas.setPointerCapture(e.pointerId);
+  pointers.set(e.pointerId, [e.clientX, e.clientY]);
+  if (pointers.size === 1) {
+    const now = performance.now();
+    if (now - lastTap < 320 &&
+        Math.hypot(e.clientX - lastTapX, e.clientY - lastTapY) < 40) {
+      state.panX = 0; state.panY = 0;
+      scheduleRebuild();
+      lastTap = 0;
+    } else { lastTap = now; lastTapX = e.clientX; lastTapY = e.clientY; }
+  } else if (pointers.size === 2) {
+    const [a, b] = [...pointers.values()];
+    pinchDist = Math.hypot(a[0] - b[0], a[1] - b[1]);
+    pinchMid = [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2];
+  }
   dismissTitle();
 });
 canvas.addEventListener('pointermove', e => {
-  if (!dragging) return;
-  state.panX += e.clientX - lastX;
-  state.panY += e.clientY - lastY;
-  lastX = e.clientX; lastY = e.clientY;
-  scheduleRebuild();
+  if (!pointers.has(e.pointerId)) return;
+  const prev = pointers.get(e.pointerId);
+  pointers.set(e.pointerId, [e.clientX, e.clientY]);
+  if (pointers.size === 1) {
+    state.panX += e.clientX - prev[0];
+    state.panY += e.clientY - prev[1];
+    scheduleRebuild();
+  } else if (pointers.size === 2) {
+    const [a, b] = [...pointers.values()];
+    const dist = Math.hypot(a[0] - b[0], a[1] - b[1]);
+    const mid = [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2];
+    if (pinchMid) {
+      state.panX += mid[0] - pinchMid[0];
+      state.panY += mid[1] - pinchMid[1];
+    }
+    if (pinchDist > 0) zoomAt(mid[0], mid[1], dist / pinchDist);
+    else scheduleRebuild();
+    pinchDist = dist; pinchMid = mid;
+  }
 });
-canvas.addEventListener('pointerup', () => { dragging = false; });
+const endPointer = e => {
+  pointers.delete(e.pointerId);
+  if (pointers.size < 2) { pinchDist = 0; pinchMid = null; }
+};
+canvas.addEventListener('pointerup', endPointer);
+canvas.addEventListener('pointercancel', endPointer);
 canvas.addEventListener('wheel', e => {
   e.preventDefault();
-  const next = Math.max(34, Math.min(150, state.scale * (e.deltaY < 0 ? 1.08 : 1 / 1.08)));
-  state.scale = Math.round(next);
-  zoomSlider.value = state.scale;
-  updateZoomLabel();
-  scheduleRebuild();
+  zoomAt(e.clientX, e.clientY, e.deltaY < 0 ? 1.08 : 1 / 1.08);
 }, { passive: false });
 
 const titleEl = document.getElementById('title');
@@ -954,6 +1153,9 @@ setTimeout(dismissTitle, 7000);
   if (th >= 15 && th <= 85) { state.theta = th; thetaSlider.value = th; }
   const z = parseInt(q.get('zoom'), 10);
   if (z >= 34 && z <= 150) { state.scale = z; zoomSlider.value = z; }
+  const de = parseFloat(q.get('delta'));
+  if (de >= 0 && de <= 0.45) { state.delta = de; deltaSlider.value = de; }
+  if (q.get('grout') === '0') { state.grout = false; document.getElementById('grout').checked = false; }
   const mo = q.get('mode');
   if (['mosaic', 'weave', 'lines'].includes(mo)) {
     state.mode = mo;
@@ -964,6 +1166,7 @@ setTimeout(dismissTitle, 7000);
 }
 
 updateThetaLabel();
+updateDeltaLabel();
 updateZoomLabel();
 resize();
 requestAnimationFrame(frame);
