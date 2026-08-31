@@ -242,6 +242,7 @@
           <option value="iznik" selected>i̇znik · white &amp; cobalt</option>
           <option value="samarkand">samarkand · gold on lapis</option>
           <option value="fez">fez · zellige</option>
+          <option value="isfahan">isfahan · honey girih</option>
           <option value="alhambra">alhambra · earth</option>
         </select>
       </div>
@@ -758,6 +759,17 @@ const PALETTES = {
     line: '#dfe5d0',
     strands: ['#dfe5d0', '#3f7f5c', '#c9a13b'],
   },
+  isfahan: {
+    ground: '#c49a4e',
+    star: '#ede4cf',
+    cycle: ['#a87f3c', '#d9b96a', '#3f9391', '#8a6a30', '#2b2620', '#b98e4a'],
+    outline: '#241d12',
+    bg: '#8a6a35',
+    wbg: '#c49a4e',      // weave and lines sit on honey, not night
+    underlay: true,      // weave straps ride over the coloured mosaic field
+    line: '#2b2620',
+    strands: ['#2b2620', '#2b2620', '#ece5d3'],
+  },
   alhambra: {
     ground: '#e6dfcb',
     star: '#2f2b23',
@@ -900,7 +912,7 @@ function render() {
   const perTile = tiles.map(tileSegments);
 
   ctx.setTransform(1, 0, 0, 1, 0, 0);
-  ctx.fillStyle = state.mode === 'mosaic' ? PAL.bg : '#0b0e14';
+  ctx.fillStyle = state.mode === 'mosaic' ? PAL.bg : (PAL.wbg || '#0b0e14');
   ctx.fillRect(0, 0, canvas.width, canvas.height);
   ctx.setTransform(DPR * state.scale, 0, 0, DPR * state.scale,
     DPR * (W / 2 + state.panX), DPR * (H / 2 + state.panY));
@@ -974,8 +986,22 @@ function render() {
     } else {
       // weave: flat straps first, then redraw the "over" strand locally at
       // each crossing so its casing cuts across the strand underneath
+      // two layers like the Darb-e Imam spandrel: the coloured mosaic
+      // field first, then the strapwork riding over it
+      if (PAL.underlay) {
+        const faces = extractFaces(g);
+        colourFaces(faces);
+        for (const f of faces) {
+          ctx.fillStyle = f.fill || PAL.ground;
+          ctx.beginPath();
+          ctx.moveTo(f.poly[0][0], f.poly[0][1]);
+          for (let i = 1; i < f.poly.length; i++) ctx.lineTo(f.poly[i][0], f.poly[i][1]);
+          ctx.closePath();
+          ctx.fill();
+        }
+      }
       const { strands, overAt, edgeStrand } = buildStrands(g);
-      const bg = '#0b0e14';
+      const bg = PAL.wbg || '#0b0e14';
       const sPal = PAL.strands;
       const cols = strands.map(path => {        // stable colour per strand
         let cx = 0, cy = 0;
@@ -1111,7 +1137,7 @@ const PRESETS = {
   fez:      { tiling: '3464',    theta: 64, delta: 0,    mode: 'mosaic', pal: 'fez',       scale: 56 },
   mamluk:   { tiling: '31212',   theta: 36, delta: 0.12, mode: 'mosaic', pal: 'iznik',     scale: 56 },
   alhambra: { tiling: 'hex',     theta: 45, delta: 0,    mode: 'mosaic', pal: 'alhambra',  scale: 40 },
-  isfahan:  { tiling: 'penrose', theta: 72, delta: 0.25, mode: 'weave',  pal: 'samarkand', scale: 62 },
+  isfahan:  { tiling: 'penrose', theta: 72, delta: 0.25, mode: 'weave',  pal: 'isfahan',   scale: 44 },
 };
 
 const presetCards = document.querySelectorAll('.card[data-preset]');
