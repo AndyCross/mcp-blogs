@@ -28,7 +28,8 @@
   family of patterns with parallel-sided straps.
 
   Controls: pick a tiling, drag θ, switch render modes, or let θ
-  breathe on its own.
+  breathe on its own. The presets jump to settings tuned to evoke the
+  major historical styles, and any manual tweak steps off them.
 -->
 <html lang="en">
 <head>
@@ -84,7 +85,8 @@
 
   #panel {
     position: fixed; top: 1rem; right: 1rem; z-index: 20;
-    width: 240px;
+    width: 250px;
+    max-height: calc(100vh - 2rem); overflow-y: auto;
     font-family: "Courier New", monospace; font-size: 0.72rem;
     color: rgba(242, 234, 214, 0.85);
     background: rgba(8, 11, 18, 0.82);
@@ -99,7 +101,28 @@
     letter-spacing: 0.18em; text-transform: uppercase; font-size: 0.66rem;
   }
   #panelBody { padding: 0 0.8rem 0.8rem; }
-  #panel.closed #panelBody { display: none; }
+  #tabs { display: flex; border-top: 1px solid rgba(242, 234, 214, 0.12); border-bottom: 1px solid rgba(242, 234, 214, 0.12); }
+  .tab {
+    flex: 1; padding: 0.5rem 0;
+    background: none; border: none; cursor: pointer;
+    color: rgba(242, 234, 214, 0.5);
+    font-family: inherit; font-size: 0.64rem;
+    letter-spacing: 0.2em; text-transform: uppercase;
+  }
+  .tab.on { color: #f2ead6; box-shadow: inset 0 -2px 0 #e8c96a; }
+  #presetsBody { padding: 0.6rem 0.55rem; display: flex; flex-direction: column; gap: 6px; }
+  .card {
+    display: flex; gap: 0.6rem; align-items: center;
+    padding: 0.35rem; border-radius: 8px; cursor: pointer;
+    border: 1px solid rgba(242, 234, 214, 0.12);
+    background: rgba(16, 21, 31, 0.6);
+  }
+  .card:hover { border-color: rgba(242, 234, 214, 0.4); }
+  .card.on { border-color: rgba(232, 201, 106, 0.75); background: #2a3550; }
+  .card img { width: 52px; height: 52px; border-radius: 6px; object-fit: cover; display: block; flex: none; }
+  .card b { display: block; font-weight: normal; color: #f2ead6; font-size: 0.72rem; letter-spacing: 0.08em; }
+  .card span { display: block; font-size: 0.58rem; opacity: 0.55; margin-top: 3px; letter-spacing: 0.05em; }
+  #panel.closed #panelBody, #panel.closed #tabs, #panel.closed #presetsBody { display: none; }
   .row { margin-top: 0.7rem; }
   .row label { display: block; margin-bottom: 0.3rem; letter-spacing: 0.12em; opacity: 0.75; }
   .row .val { float: right; opacity: 1; color: #e8c96a; }
@@ -143,7 +166,46 @@
 
   <div id="panel">
     <div id="panelHead"><span>polygons in contact</span><span id="panelToggle">−</span></div>
-    <div id="panelBody">
+    <div id="tabs">
+      <button class="tab on" data-tab="presets">presets</button>
+      <button class="tab" data-tab="advanced">advanced</button>
+    </div>
+    <!--
+      Preset card photos, via Wikimedia Commons:
+      iznik.webp    — Rüstem Pasha Mosque tiles, Dosseman, CC BY-SA 4.0
+      timurid.webp  — Tilya-Kori Madrasah dome, WWELNUR, CC BY 4.0
+      fez.webp      — Bou Inania Madrasa zellige, JasmineartGallery, CC0
+      mamluk.webp   — Sultan Hassan Mosque tomb gate, Ahmed Al.Badawy, CC BY-SA 2.0
+      alhambra.webp — Alhambra alicatado wall, Dmharvey, CC BY-SA 3.0
+      isfahan.webp  — Darb-i Imam shrine spandrel, 15th c., public domain
+    -->
+    <div id="presetsBody">
+      <div class="card" data-preset="iznik" title="photo: Rüstem Pasha Mosque · Dosseman · CC BY-SA 4.0">
+        <img src="cini-assets/iznik.webp" alt="İznik tiles in the Rüstem Pasha Mosque">
+        <div><b>i̇znik court</b><span>rüstem pasha mosque, istanbul</span></div>
+      </div>
+      <div class="card" data-preset="timurid" title="photo: Tilya-Kori Madrasah · WWELNUR · CC BY 4.0">
+        <img src="cini-assets/timurid.webp" alt="Tilya-Kori dome, Samarkand">
+        <div><b>timurid dome</b><span>tilya-kori madrasa, samarkand</span></div>
+      </div>
+      <div class="card" data-preset="fez" title="photo: Bou Inania Madrasa · JasmineartGallery · CC0">
+        <img src="cini-assets/fez.webp" alt="Zellige in the Bou Inania Madrasa, Fez">
+        <div><b>fez zellige</b><span>bou inania madrasa, fez</span></div>
+      </div>
+      <div class="card" data-preset="mamluk" title="photo: Sultan Hassan Mosque · Ahmed Al.Badawy · CC BY-SA 2.0">
+        <img src="cini-assets/mamluk.webp" alt="Tomb gate of the Sultan Hassan Mosque, Cairo">
+        <div><b>mamluk rosette</b><span>sultan hassan mosque, cairo</span></div>
+      </div>
+      <div class="card" data-preset="alhambra" title="photo: the Alhambra · Dmharvey · CC BY-SA 3.0">
+        <img src="cini-assets/alhambra.webp" alt="Alicatado tilework in the Alhambra, Granada">
+        <div><b>alhambra knot</b><span>the alhambra, granada</span></div>
+      </div>
+      <div class="card" data-preset="isfahan" title="photo: Darb-e Imam shrine · 15th century · public domain">
+        <img src="cini-assets/isfahan.webp" alt="Girih spandrel at the Darb-e Imam shrine, Isfahan">
+        <div><b>isfahan girih</b><span>darb-e imam shrine, isfahan</span></div>
+      </div>
+    </div>
+    <div id="panelBody" style="display: none;">
       <div class="row">
         <label>tiling</label>
         <select id="tiling">
@@ -1030,6 +1092,59 @@ function setPal(name) {
 }
 document.getElementById('palette').addEventListener('change', e => setPal(e.target.value));
 
+// tuned settings that evoke the major historical styles
+const PRESETS = {
+  iznik:    { tiling: '488',     theta: 36, delta: 0,    mode: 'mosaic', pal: 'iznik',     scale: 72 },
+  timurid:  { tiling: 'dome',    theta: 36, delta: 0,    mode: 'mosaic', pal: 'samarkand', scale: 40 },
+  fez:      { tiling: '3464',    theta: 64, delta: 0,    mode: 'mosaic', pal: 'fez',       scale: 56 },
+  mamluk:   { tiling: '31212',   theta: 36, delta: 0.12, mode: 'mosaic', pal: 'iznik',     scale: 56 },
+  alhambra: { tiling: 'hex',     theta: 63, delta: 0.2,  mode: 'weave',  pal: 'alhambra',  scale: 84 },
+  isfahan:  { tiling: 'penrose', theta: 72, delta: 0.25, mode: 'weave',  pal: 'samarkand', scale: 62 },
+};
+
+const presetCards = document.querySelectorAll('.card[data-preset]');
+function markPreset(name) {
+  presetCards.forEach(c => c.classList.toggle('on', c.dataset.preset === name));
+}
+
+function applyPreset(name) {
+  const p = PRESETS[name];
+  if (!p) return;
+  state.tiling = p.tiling; document.getElementById('tiling').value = p.tiling;
+  state.theta = p.theta; thetaSlider.value = p.theta; updateThetaLabel();
+  state.delta = p.delta; deltaSlider.value = p.delta; updateDeltaLabel();
+  state.mode = p.mode;
+  document.querySelectorAll('.modes button[data-mode]').forEach(x => x.classList.toggle('on', x.dataset.mode === p.mode));
+  setPal(p.pal);
+  state.scale = p.scale; zoomSlider.value = p.scale; updateZoomLabel();
+  state.panX = 0; state.panY = 0;
+  markPreset(name);
+  protoCache = new Map();
+  scheduleRebuild();
+}
+
+presetCards.forEach(c => c.addEventListener('click', () => applyPreset(c.dataset.preset)));
+
+// tabs
+const panelBody = document.getElementById('panelBody');
+const presetsBody = document.getElementById('presetsBody');
+for (const tab of document.querySelectorAll('.tab')) {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(x => x.classList.toggle('on', x === tab));
+    const adv = tab.dataset.tab === 'advanced';
+    panelBody.style.display = adv ? '' : 'none';
+    presetsBody.style.display = adv ? 'none' : '';
+  });
+}
+
+// touching any advanced control steps off the preset
+for (const ev of ['input', 'change']) {
+  panelBody.addEventListener(ev, () => markPreset(''));
+}
+panelBody.addEventListener('click', e => {
+  if (e.target.dataset && e.target.dataset.mode) markPreset('');
+});
+
 const zoomSlider = document.getElementById('zoom');
 const zoomVal = document.getElementById('zoomVal');
 function updateZoomLabel() { zoomVal.textContent = Math.round(state.scale) + 'px'; }
@@ -1066,6 +1181,11 @@ document.getElementById('panelHead').addEventListener('click', () => {
   panel.classList.toggle('closed');
   document.getElementById('panelToggle').textContent = panel.classList.contains('closed') ? '+' : '−';
 });
+// on a phone the open panel would cover the art; start it folded
+if (window.innerWidth < 520) {
+  panel.classList.add('closed');
+  document.getElementById('panelToggle').textContent = '+';
+}
 
 // drag to pan, pinch to zoom, double-tap to recentre
 const pointers = new Map();
@@ -1142,9 +1262,10 @@ function dismissTitle() {
 }
 setTimeout(dismissTitle, 7000);
 
-// shareable settings, e.g. ?tiling=31212&theta=54&mode=weave&zoom=80
+// shareable settings, e.g. ?preset=isfahan or ?tiling=31212&theta=54&mode=weave
 {
   const q = new URLSearchParams(location.search);
+  if (q.has('preset')) applyPreset(q.get('preset'));
   if (q.has('tiling') && GEN[q.get('tiling')]) {
     state.tiling = q.get('tiling');
     document.getElementById('tiling').value = state.tiling;
