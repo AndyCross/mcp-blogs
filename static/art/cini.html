@@ -172,7 +172,7 @@
     </div>
     <!--
       Preset card photos, via Wikimedia Commons:
-      iznik.webp    — Rüstem Pasha Mosque tiles, Dosseman, CC BY-SA 4.0
+      hagia.webp    — Hagia Sophia omphalion, fusion-of-horizons, CC BY 2.0
       timurid.webp  — Tilya-Kori Madrasah dome, WWELNUR, CC BY 4.0
       fez.webp      — Bou Inania Madrasa zellige, JasmineartGallery, CC0
       mamluk.webp   — Sultan Hassan Mosque tomb gate, Ahmed Al.Badawy, CC BY-SA 2.0
@@ -180,9 +180,9 @@
       isfahan.webp  — Darb-i Imam shrine spandrel, 15th c., public domain
     -->
     <div id="presetsBody">
-      <div class="card" data-preset="iznik" title="photo: Rüstem Pasha Mosque · Dosseman · CC BY-SA 4.0">
-        <img src="cini-assets/iznik.webp" alt="İznik tiles in the Rüstem Pasha Mosque">
-        <div><b>i̇znik court</b><span>rüstem pasha mosque, istanbul</span></div>
+      <div class="card" data-preset="hagia" title="photo: Hagia Sophia omphalion · fusion-of-horizons · CC BY 2.0">
+        <img src="cini-assets/hagia.webp" alt="The omphalion floor of Hagia Sophia">
+        <div><b>omphalion marble</b><span>hagia sophia, istanbul</span></div>
       </div>
       <div class="card" data-preset="timurid" title="photo: Tilya-Kori Madrasah · WWELNUR · CC BY 4.0">
         <img src="cini-assets/timurid.webp" alt="Tilya-Kori dome, Samarkand">
@@ -194,7 +194,7 @@
       </div>
       <div class="card" data-preset="mamluk" title="photo: Sultan Hassan Mosque · Ahmed Al.Badawy · CC BY-SA 2.0">
         <img src="cini-assets/mamluk.webp" alt="Tomb gate of the Sultan Hassan Mosque, Cairo">
-        <div><b>mamluk rosette</b><span>sultan hassan mosque, cairo</span></div>
+        <div><b>mamluk door</b><span>sultan hassan mosque, cairo</span></div>
       </div>
       <div class="card" data-preset="alhambra" title="photo: the Alhambra · Dmharvey · CC BY-SA 3.0">
         <img src="cini-assets/alhambra.webp" alt="Alicatado tilework in the Alhambra, Granada">
@@ -243,6 +243,8 @@
           <option value="samarkand">samarkand · gold on lapis</option>
           <option value="fez">fez · zellige</option>
           <option value="isfahan">isfahan · honey girih</option>
+          <option value="mamluk">mamluk · bronze</option>
+          <option value="byzantium">byzantium · marble</option>
           <option value="alhambra">alhambra · earth</option>
         </select>
       </div>
@@ -742,22 +744,47 @@ const PALETTES = {
     strands: ['#e6d9b8', '#c9a13b', '#1a7f80'],
   },
   samarkand: {
-    ground: '#24357c',
-    star: '#d9ac3c',
-    cycle: ['#b8892e', '#31488f', '#e0bf5e', '#8a6a2f', '#2a8f8f', '#4d68a8'],
+    ground: '#3a4a8c',
+    star: '#d3ab52',
+    cycle: ['#b8973f', '#4a5a9c', '#e0c477', '#8a6a2f', '#5f8fa0', '#7a86bd'],
     outline: '#151007',
     bg: '#0d1130',
     line: '#e0bf5e',
     strands: ['#e0bf5e', '#b8892e', '#5d78c0'],
   },
   fez: {
-    ground: '#e8e3d5',
-    star: '#1f6b47',
-    cycle: ['#173c66', '#c9a13b', '#9c4a2a', '#1a7f80', '#23221f', '#5b8c4a'],
+    ground: '#211d18',
+    star: '#c46b1f',
+    cycle: ['#26231e', '#8a4a1a', '#1a7f80', '#e5dfcf', '#a03d20', '#5b8c4a'],
     outline: '#15140f',
     bg: '#101310',
-    line: '#dfe5d0',
-    strands: ['#dfe5d0', '#3f7f5c', '#c9a13b'],
+    wbg: '#211d18',
+    underlay: true,      // white straps ride over the dark zellige fills
+    line: '#ece8da',
+    strands: ['#ece8da'],
+  },
+  mamluk: {
+    ground: '#4a3517',
+    star: '#c99a3f',
+    cycle: ['#7c5a28', '#8f6a30', '#67491f', '#a37c38', '#59401c', '#8a6530'],
+    vary: ['#7c5a28', '#8f6a30', '#67491f', '#a37c38', '#59401c', '#8a6530'],
+    varyKeepStar: true,  // the central gold stars stay gold
+    outline: '#241708',
+    bg: '#2a1e0c',
+    line: '#c9a86a',
+    strands: ['#a37c38', '#8f6a30', '#c9a86a'],
+  },
+  byzantium: {
+    ground: '#a9a294',
+    star: '#6e2639',
+    cycle: ['#2e5240', '#b98d4a', '#5d6168', '#d8d2c4', '#552031', '#3f6b52'],
+    vary: ['#6e2639', '#2e5240', '#b98d4a', '#552031', '#3f6b52', '#5d6168'],
+    outline: '#3a352c',
+    bg: '#6f695c',
+    wbg: '#a9a294',
+    underlay: true,      // marble bands looping over porphyry and verd antique
+    line: '#d8d2c4',
+    strands: ['#d8d2c4'],
   },
   isfahan: {
     ground: '#c49a4e',
@@ -811,6 +838,7 @@ function colourFaces(faces) {
   if (PAL.vary) {
     for (const f of faces) {
       if (f.fill === PAL.ground) continue;
+      if (PAL.varyKeepStar && f.fill === PAL.star) continue;
       const c = centroid(f.poly);
       const h = Math.abs((Math.round(c[0] * 8) * 73856093) ^ (Math.round(c[1] * 8) * 19349663));
       f.fill = PAL.vary[h % PAL.vary.length];
@@ -1117,6 +1145,8 @@ document.getElementById('tiling').addEventListener('change', e => {
   state.tiling = e.target.value;
   if (state.tiling === 'dome') setPal('samarkand');
   else if (state.pal === 'samarkand') setPal('iznik');
+  zoomSlider.min = minZoom();
+  if (state.scale < minZoom()) { state.scale = minZoom(); zoomSlider.value = state.scale; updateZoomLabel(); }
   protoCache = new Map();
   scheduleRebuild();
 });
@@ -1132,10 +1162,10 @@ document.getElementById('palette').addEventListener('change', e => setPal(e.targ
 
 // tuned settings that evoke the major historical styles
 const PRESETS = {
-  iznik:    { tiling: '488',     theta: 36, delta: 0,    mode: 'mosaic', pal: 'iznik',     scale: 72 },
-  timurid:  { tiling: 'dome',    theta: 36, delta: 0,    mode: 'mosaic', pal: 'samarkand', scale: 40 },
-  fez:      { tiling: '3464',    theta: 64, delta: 0,    mode: 'mosaic', pal: 'fez',       scale: 56 },
-  mamluk:   { tiling: '31212',   theta: 36, delta: 0.12, mode: 'mosaic', pal: 'iznik',     scale: 56 },
+  hagia:    { tiling: 'square',  theta: 60, delta: 0.2,  mode: 'weave',  pal: 'byzantium', scale: 60 },
+  timurid:  { tiling: 'dome',    theta: 36, delta: 0,    mode: 'mosaic', pal: 'samarkand', scale: 24 },
+  fez:      { tiling: '488',     theta: 63, delta: 0.25, mode: 'weave',  pal: 'fez',       scale: 56 },
+  mamluk:   { tiling: 'dome',    theta: 63, delta: 0,    mode: 'mosaic', pal: 'mamluk',    scale: 30 },
   alhambra: { tiling: 'hex',     theta: 45, delta: 0,    mode: 'mosaic', pal: 'alhambra',  scale: 40 },
   isfahan:  { tiling: 'penrose', theta: 72, delta: 0.25, mode: 'weave',  pal: 'isfahan',   scale: 44 },
 };
@@ -1154,6 +1184,7 @@ function applyPreset(name) {
   state.mode = p.mode;
   document.querySelectorAll('.modes button[data-mode]').forEach(x => x.classList.toggle('on', x.dataset.mode === p.mode));
   setPal(p.pal);
+  zoomSlider.min = minZoom();
   state.scale = p.scale; zoomSlider.value = p.scale; updateZoomLabel();
   state.panX = 0; state.panY = 0;
   markPreset(name);
@@ -1229,8 +1260,10 @@ if (window.innerWidth < 520) {
 const pointers = new Map();
 let pinchDist = 0, pinchMid = null, lastTap = 0, lastTapX = 0, lastTapY = 0;
 
+const minZoom = () => state.tiling === 'dome' ? 22 : 34;   // dome rings stay cheap
+
 function zoomAt(sx, sy, factor) {
-  const next = Math.max(34, Math.min(150, state.scale * factor));
+  const next = Math.max(minZoom(), Math.min(150, state.scale * factor));
   factor = next / state.scale;
   // keep the world point under (sx, sy) fixed while the scale changes
   state.panX = sx - W / 2 - (sx - W / 2 - state.panX) * factor;
@@ -1311,7 +1344,7 @@ setTimeout(dismissTitle, 7000);
   const th = parseFloat(q.get('theta'));
   if (th >= 15 && th <= 85) { state.theta = th; thetaSlider.value = th; }
   const z = parseInt(q.get('zoom'), 10);
-  if (z >= 34 && z <= 150) { state.scale = z; zoomSlider.value = z; }
+  if (z >= minZoom() && z <= 150) { zoomSlider.min = minZoom(); state.scale = z; zoomSlider.value = z; }
   const de = parseFloat(q.get('delta'));
   if (de >= 0 && de <= 0.45) { state.delta = de; deltaSlider.value = de; }
   if (q.get('grout') === '0') { state.grout = false; document.getElementById('grout').checked = false; }
@@ -1321,7 +1354,7 @@ setTimeout(dismissTitle, 7000);
     document.querySelectorAll('.modes button[data-mode]').forEach(x => x.classList.toggle('on', x.dataset.mode === mo));
   }
   if (q.has('pal')) setPal(q.get('pal'));
-  else if (state.tiling === 'dome') setPal('samarkand');
+  else if (!q.has('preset') && state.tiling === 'dome') setPal('samarkand');
 }
 
 updateThetaLabel();
