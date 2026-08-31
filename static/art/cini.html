@@ -198,7 +198,7 @@
       </div>
       <div class="card" data-preset="alhambra" title="photo: the Alhambra · Dmharvey · CC BY-SA 3.0">
         <img src="cini-assets/alhambra.webp" alt="Alicatado tilework in the Alhambra, Granada">
-        <div><b>alhambra knot</b><span>the alhambra, granada</span></div>
+        <div><b>alhambra alicatado</b><span>the alhambra, granada</span></div>
       </div>
       <div class="card" data-preset="isfahan" title="photo: Darb-e Imam shrine · 15th century · public domain">
         <img src="cini-assets/isfahan.webp" alt="Girih spandrel at the Darb-e Imam shrine, Isfahan">
@@ -759,11 +759,13 @@ const PALETTES = {
     strands: ['#dfe5d0', '#3f7f5c', '#c9a13b'],
   },
   alhambra: {
-    ground: '#d9c49a',
-    star: '#7c3a22',
-    cycle: ['#a8683a', '#4f6b45', '#31548a', '#8c2f26', '#b6924e', '#5e4a33'],
-    outline: '#241a10',
-    bg: '#171208',
+    ground: '#e6dfcb',
+    star: '#2f2b23',
+    cycle: ['#66784f', '#5878a0', '#c09347', '#a35a32', '#2f2b23', '#7c94b4'],
+    // alicatado polychromy: congruent shapes cycle through the colours
+    vary: ['#2f2b23', '#66784f', '#5878a0', '#c09347', '#2f2b23', '#a35a32'],
+    outline: '#4a4234',
+    bg: '#a99d82',
     line: '#d9c49a',
     strands: ['#d9c49a', '#a8683a', '#4f6b45'],
   },
@@ -792,6 +794,16 @@ function colourFaces(faces) {
   others.sort((a, b) => b.area - a.area || b.n - a.n || (a.key < b.key ? -1 : 1));
   others.forEach((cl, i) => colour.set(cl.key, PAL.cycle[i % PAL.cycle.length]));
   for (const f of faces) f.fill = colour.get(f.n + '|' + f.area.toFixed(2));
+  // alicatado mode: everything but the ground draws its colour from a
+  // position hash, the way real cut-tile walls cycle a few glazes
+  if (PAL.vary) {
+    for (const f of faces) {
+      if (f.fill === PAL.ground) continue;
+      const c = centroid(f.poly);
+      const h = Math.abs((Math.round(c[0] * 8) * 73856093) ^ (Math.round(c[1] * 8) * 19349663));
+      f.fill = PAL.vary[h % PAL.vary.length];
+    }
+  }
 }
 
 // -------------------------------------------- strands + weave, for straps ---
@@ -1098,7 +1110,7 @@ const PRESETS = {
   timurid:  { tiling: 'dome',    theta: 36, delta: 0,    mode: 'mosaic', pal: 'samarkand', scale: 40 },
   fez:      { tiling: '3464',    theta: 64, delta: 0,    mode: 'mosaic', pal: 'fez',       scale: 56 },
   mamluk:   { tiling: '31212',   theta: 36, delta: 0.12, mode: 'mosaic', pal: 'iznik',     scale: 56 },
-  alhambra: { tiling: 'hex',     theta: 63, delta: 0.2,  mode: 'weave',  pal: 'alhambra',  scale: 84 },
+  alhambra: { tiling: 'hex',     theta: 45, delta: 0,    mode: 'mosaic', pal: 'alhambra',  scale: 40 },
   isfahan:  { tiling: 'penrose', theta: 72, delta: 0.25, mode: 'weave',  pal: 'samarkand', scale: 62 },
 };
 
