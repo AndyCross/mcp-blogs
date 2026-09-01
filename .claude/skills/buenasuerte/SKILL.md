@@ -91,21 +91,12 @@ real JPEGs (`#038839` green); if the app restyles, resample.
 
 ## Verifying
 
-Screenshot the page headlessly and Read the PNG to check the layout:
-
-```
-cd static/art && python3 -m http.server 8471 &
-"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --headless --disable-gpu \
-  --window-size=1280,2400 --virtual-time-budget=15000 \
-  --screenshot=<scratchpad>/buenasuerte.png "http://localhost:8471/buenasuerte.html"
-kill %1
-```
-
-Check: every card fades in pinned at a slight tilt, noted cards show
-their handwriting in the deeper chin, and the closing line "buena
-suerte, donde estés" sits under the wall. If the change only touched
-one card, crop the screenshot to that region with PIL before Reading
-it, rather than Reading the whole tall page.
+Don't screenshot the page headlessly; the cards reveal on scroll via an
+IntersectionObserver, so a tall one-shot capture always leaves the
+newest cards blank ("page is taller than the viewport"). The user
+checks the page in a browser themselves. Just confirm the manifest
+entry (name, note, ghost fields) looks right and that the files were
+mirrored to public/.
 
 ## Style
 
