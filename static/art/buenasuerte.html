@@ -213,9 +213,47 @@
         .ticket { transition: none; }
         footer { transition: none; }
     }
+
+    /* ---- Back to the art index ---- */
+    #back {
+        position: fixed;
+        top: 1.1rem;
+        left: 1.3rem;
+        z-index: 3;
+        font-family: "Georgia", serif;
+        font-style: italic;
+        font-size: 0.85rem;
+        letter-spacing: 0.08em;
+        color: rgba(201, 220, 205, 0.55);
+        text-decoration: none;
+        text-shadow: 0 1px 10px rgba(3, 15, 8, 0.8);
+        opacity: 0;
+        animation: bloom 3s ease forwards 1.8s;
+        transition: color 0.6s ease;
+    }
+    #back:hover { color: rgba(232, 242, 234, 0.95); }
+    #back .new-badge {
+        display: inline-block;
+        margin-left: 0.5rem;
+        padding: 0.12rem 0.5rem;
+        font-size: 0.6rem;
+        font-style: normal;
+        letter-spacing: 0.08em;
+        border-radius: 999px;
+        vertical-align: middle;
+        color: #f0b8b9;
+        border: 1px solid rgba(192, 128, 129, 0.45);
+        text-shadow: 0 0 10px rgba(192, 128, 129, 0.6);
+        animation: newpulse 3s ease-in-out infinite;
+    }
+    @keyframes newpulse {
+        0%, 100% { box-shadow: 0 0 4px rgba(192, 128, 129, 0.2); }
+        50%      { box-shadow: 0 0 12px rgba(192, 128, 129, 0.55); }
+    }
 </style>
 </head>
 <body>
+    <a id="back" href="/art/">&larr; art</a>
     <header>
         <h1>Buena Suerte</h1>
         <div id="whisper">one puzzle a day, and a thought for you</div>
@@ -305,6 +343,48 @@
                 reveal.observe(closing);
             })
             .catch(err => console.error('no manifest', err));
+    </script>
+
+    <script>
+    // Back-link freshness: mirrors the index's "new" rule. A piece counts as
+    // new from its date's midnight through the end of the following day, and
+    // the badge lights up here when one of the OTHER pieces is that fresh.
+    (function () {
+        const FRESH_MS = 48 * 60 * 60 * 1000;
+        const SELF = '/art/buenasuerte.html';
+        const fresh = iso => !!iso && (Date.now() - new Date(iso + 'T00:00:00').getTime() < FRESH_MS);
+        function showBadge() {
+            const back = document.getElementById('back');
+            if (back && !back.querySelector('.new-badge')) {
+                const badge = document.createElement('span');
+                badge.className = 'new-badge';
+                badge.textContent = 'new';
+                back.appendChild(badge);
+            }
+        }
+        // Card dates on the index cover every piece except the pledge, whose
+        // dates live inside ooo.html itself (same sources the index uses).
+        fetch('/art/index.html')
+            .then(r => r.text())
+            .then(html => {
+                const doc = new DOMParser().parseFromString(html, 'text/html');
+                doc.querySelectorAll('a.card').forEach(card => {
+                    const href = card.getAttribute('href');
+                    if (href === SELF || href === '/art/ooo.html') return;
+                    if (fresh(card.querySelector('time')?.getAttribute('datetime'))) showBadge();
+                });
+            })
+            .catch(() => {});
+        if (SELF !== '/art/ooo.html') {
+            fetch('/art/ooo.html')
+                .then(r => r.text())
+                .then(html => {
+                    const dates = [...html.matchAll(/date:\s*'(\d{4}-\d{2}-\d{2})'/g)].map(m => m[1]);
+                    if (dates.length && fresh(dates.sort().pop())) showBadge();
+                })
+                .catch(() => {});
+        }
+    })();
     </script>
 </body>
 </html>
