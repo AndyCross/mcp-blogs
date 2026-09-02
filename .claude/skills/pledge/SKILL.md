@@ -54,7 +54,11 @@ pledges stay behind the glyph in the corner, fading with age.
 6. Update the ooo card's date range on the art index
    (`static/art/index.html`): its `<time>` reads
    "25 June 2026 – DD Month YYYY – Forever"; walk the middle date
-   forward to the new pledge's date.
+   forward to the new pledge's date. Use the Edit tool (or an equally
+   targeted replacement), never a file-wide `sed`: the index holds
+   several cards and another card can carry the same date string, so
+   pin the match to the ooo card's own text and check `git diff`
+   afterwards.
 7. Do not rewrite or delete earlier pledges; the history is the point.
    Only edit an old entry if the user explicitly asks.
 8. Commit and push when asked, in this repo's usual one-line poetic

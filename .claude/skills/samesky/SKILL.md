@@ -41,6 +41,13 @@ assets.
    reads that datetime, so a stale date means new photos arrive
    unannounced.
 
+   Make those edits with the Edit tool (or an equally targeted
+   replacement), never a file-wide `sed`: both pages hold several
+   cards and another card can carry the exact same date string, so a
+   bare `s/old date/new date/` bleeds into them. Pin the match with a
+   line of the Same Sky card's own text and check `git diff` on the
+   file afterwards to confirm nothing else moved.
+
    Don't mirror anything into `public/`; it's gitignored and Hugo
    rebuilds it from `static/` automatically.
 
