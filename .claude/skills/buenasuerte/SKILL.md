@@ -9,6 +9,9 @@ The art page at `static/art/buenasuerte.html` shows kept scores from the
 daily word puzzle as polaroid tickets pinned to a dark green wall, in the
 order they were played. This skill updates it.
 
+Everything lives under `static/` only. Don't mirror anything to
+`public/`; the Hugo build regenerates it.
+
 ## Adding new scores
 
 1. Screenshots are iPhone score screens (1206x2622 PNGs), usually in
@@ -31,18 +34,11 @@ order they were played. This skill updates it.
    Keep it token-cheap: don't Read the original PNGs (they are large).
    To learn what a new card says (puzzle number, streak, for the archive
    text), Read its small output JPEG in `buenasuerte-assets/` instead.
-3. Mirror to the built site (Hugo copies static/ verbatim at build, but
-   the repo keeps `public/` in sync by hand):
-
-   ```
-   cp static/art/buenasuerte.html public/art/buenasuerte.html
-   cp -R static/art/buenasuerte-assets/. public/art/buenasuerte-assets/
-   ```
-
-4. If the run of puzzle numbers or streak range changed, update the
+3. If the run of puzzle numbers or streak range changed, update the
    page's card text on the secret archive
    `static/art/todas-c51e1c2388fe29fe.html` (it mentions "#885 to #900"
-   and "39 to 54") and mirror that file to `public/art/` too.
+   and "39 to 54"). Also bump the Buena Suerte card's `<time>` element
+   there to today.
 
    The card text also carries the date range of the run, "20 July to
    19 August 2026" style. The puzzle is daily and the latest card is
@@ -51,10 +47,18 @@ order they were played. This skill updates it.
    2026. Update the latest date to today whenever new cards go up (the
    first date only moves if earlier cards are ever added).
 
-5. The art index `static/art/index.html` shows a "last updated" date on
+4. The art index `static/art/index.html` shows a "last updated" date on
    the Buena Suerte card (a `<time>` element with both a `datetime`
    attribute and visible text). Set it to today whenever new cards go
-   up, and mirror the file to `public/art/index.html`.
+   up.
+
+Edit the archive and index cards with the Edit tool (or an equally
+targeted replacement), never a file-wide `sed`: both pages hold several
+cards, and other cards can carry the exact same date string, so a bare
+`s/old date/new date/` bleeds into them. Include enough surrounding
+context (a line of the Buena Suerte card's own text) to pin the match to
+that one card, and check `git diff` on the file afterwards to confirm
+nothing else moved.
 
 ## Writing a note on a card
 
@@ -70,7 +74,6 @@ match the user's description (usually "today's" = the latest = last
 entry) or Read the JPEGs in `static/art/buenasuerte-assets/` to see
 which puzzle is which. Keep notes short (one line, it has to fit the
 chin). Reruns of the converter keep notes, so edit the manifest freely.
-Mirror the manifest to `public/art/buenasuerte-assets/` after editing.
 
 ## Ghost cards (days played but never screenshotted)
 
@@ -95,8 +98,8 @@ Don't screenshot the page headlessly; the cards reveal on scroll via an
 IntersectionObserver, so a tall one-shot capture always leaves the
 newest cards blank ("page is taller than the viewport"). The user
 checks the page in a browser themselves. Just confirm the manifest
-entry (name, note, ghost fields) looks right and that the files were
-mirrored to public/.
+entry (name, note, ghost fields) looks right and that the archive and
+index diffs touch only the Buena Suerte cards.
 
 ## Style
 
