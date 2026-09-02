@@ -31,6 +31,15 @@ Everything lives under `static/` only. Don't mirror anything to
    (pass --force to redo them all), so it only reports the new cards.
    It preserves existing `note` fields and ghost entries.
 
+   Each card also gets a `date` (the day it was played), shown on the
+   page as an amber monospace stamp in the photo's corner, film-print
+   style. The converter reads it from the source screenshot's mtime the
+   first time it sees a card, and keeps the manifest's value on reruns
+   after that, so a card's date survives even if the PNG's mtime later
+   changes. Screenshots are taken on the day of play, so mtime is
+   right; if one was captured late, correct the `date` in the manifest
+   by hand afterwards.
+
    Keep it token-cheap: don't Read the original PNGs (they are large).
    To learn what a new card says (puzzle number, streak, for the archive
    text), Read its small output JPEG in `buenasuerte-assets/` instead.
@@ -82,13 +91,15 @@ screenshot: the page redraws the score card itself, with ??:?? as the
 time. Add one to the manifest like this:
 
 ```json
-{ "name": "img_4500.ghost", "ghost": true, "number": 878, "streak": 32, "longest": 215, "note": "didn't send this one anywhere" }
+{ "name": "img_4500.ghost", "ghost": true, "date": "2026-07-26", "number": 878, "streak": 32, "longest": 215, "note": "didn't send this one anywhere" }
 ```
 
 The `name` is a fake filename chosen so a plain string sort places the
 ghost between the right neighbours (real cards are named img_NNNN.jpg in
 play order). Take `streak` from the cards either side (previous + 1) and
-`number` from the gap. Reruns of the converter keep ghost entries, same
+`number` from the gap. The `date` is written by hand too (the puzzle is
+daily, so it is the missing day between the neighbours' dates); it gets
+the same corner stamp as a real card. Reruns of the converter keep ghost entries, same
 as notes. Ghost card colours in `buenasuerte.html` were sampled from the
 real JPEGs (`#038839` green); if the app restyles, resample.
 

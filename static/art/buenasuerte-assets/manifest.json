@@ -3,36 +3,43 @@
     {
       "name": "img_4395.jpg",
       "width": 720,
-      "height": 591
+      "height": 591,
+      "date": "2026-07-20"
     },
     {
       "name": "img_4398.jpg",
       "width": 720,
-      "height": 591
+      "height": 591,
+      "date": "2026-07-21"
     },
     {
       "name": "img_4404.jpg",
       "width": 720,
-      "height": 591
+      "height": 591,
+      "date": "2026-07-22"
     },
     {
       "name": "img_4425.jpg",
       "width": 720,
-      "height": 591
+      "height": 591,
+      "date": "2026-07-23"
     },
     {
       "name": "img_4436.jpg",
       "width": 720,
-      "height": 591
+      "height": 591,
+      "date": "2026-07-24"
     },
     {
       "name": "img_4451.jpg",
       "width": 720,
-      "height": 591
+      "height": 591,
+      "date": "2026-07-25"
     },
     {
       "name": "img_4500.ghost",
       "ghost": true,
+      "date": "2026-07-26",
       "number": 878,
       "streak": 32,
       "longest": 215,
@@ -41,31 +48,37 @@
     {
       "name": "img_4562.jpg",
       "width": 720,
-      "height": 591
+      "height": 591,
+      "date": "2026-07-27"
     },
     {
       "name": "img_4600.jpg",
       "width": 720,
-      "height": 591
+      "height": 591,
+      "date": "2026-07-28"
     },
     {
       "name": "img_4633.jpg",
       "width": 720,
-      "height": 591
+      "height": 591,
+      "date": "2026-07-29"
     },
     {
       "name": "img_4668.jpg",
       "width": 720,
-      "height": 591
+      "height": 591,
+      "date": "2026-07-30"
     },
     {
       "name": "img_4719.jpg",
       "width": 720,
-      "height": 591
+      "height": 591,
+      "date": "2026-07-31"
     },
     {
       "name": "img_4760.ghost",
       "ghost": true,
+      "date": "2026-08-01",
       "number": 884,
       "streak": 38,
       "longest": 215,
@@ -74,171 +87,203 @@
     {
       "name": "img_4806.jpg",
       "width": 720,
-      "height": 591
+      "height": 591,
+      "date": "2026-08-02"
     },
     {
       "name": "img_4873.jpg",
       "width": 720,
-      "height": 591
+      "height": 591,
+      "date": "2026-08-03"
     },
     {
       "name": "img_4894.jpg",
       "width": 720,
-      "height": 591
+      "height": 591,
+      "date": "2026-08-04"
     },
     {
       "name": "img_4924.jpg",
       "width": 720,
-      "height": 591
+      "height": 591,
+      "date": "2026-08-05"
     },
     {
       "name": "img_4955.jpg",
       "width": 720,
-      "height": 591
+      "height": 591,
+      "date": "2026-08-06"
     },
     {
       "name": "img_4973.jpg",
       "width": 720,
-      "height": 591
+      "height": 591,
+      "date": "2026-08-07"
     },
     {
       "name": "img_4989.jpg",
       "width": 720,
-      "height": 591
+      "height": 591,
+      "date": "2026-08-08"
     },
     {
       "name": "img_5035.jpg",
       "width": 720,
-      "height": 591
+      "height": 591,
+      "date": "2026-08-09"
     },
     {
       "name": "img_5054.jpg",
       "width": 720,
-      "height": 591
+      "height": 591,
+      "date": "2026-08-10"
     },
     {
       "name": "img_5073.jpg",
       "width": 720,
-      "height": 591
+      "height": 591,
+      "date": "2026-08-11"
     },
     {
       "name": "img_5100.jpg",
       "width": 720,
-      "height": 591
+      "height": 591,
+      "date": "2026-08-12"
     },
     {
       "name": "img_5130.jpg",
       "width": 720,
-      "height": 591
+      "height": 591,
+      "date": "2026-08-13"
     },
     {
       "name": "img_5170.jpg",
       "width": 720,
       "height": 591,
+      "date": "2026-08-14",
       "note": "Happy holidays, chica x"
     },
     {
       "name": "img_5185.jpg",
       "width": 720,
-      "height": 591
+      "height": 591,
+      "date": "2026-08-15"
     },
     {
       "name": "img_5241.jpg",
       "width": 720,
-      "height": 591
+      "height": 591,
+      "date": "2026-08-16"
     },
     {
       "name": "img_5299.jpg",
       "width": 720,
-      "height": 591
+      "height": 591,
+      "date": "2026-08-17"
     },
     {
       "name": "img_5339.jpg",
       "width": 720,
-      "height": 591
+      "height": 591,
+      "date": "2026-08-18"
     },
     {
       "name": "img_5358.jpg",
       "width": 720,
       "height": 591,
+      "date": "2026-08-19",
       "note": "aleta"
     },
     {
       "name": "img_5389.jpg",
       "width": 720,
       "height": 591,
+      "date": "2026-08-20",
       "note": "last day at the beach today, chica x"
     },
     {
       "name": "img_5417.jpg",
       "width": 720,
       "height": 591,
+      "date": "2026-08-21",
       "note": "I am all packed now, chica x"
     },
     {
       "name": "img_5478.jpg",
       "width": 720,
       "height": 591,
+      "date": "2026-08-22",
       "note": "flying back today, EZY8208"
     },
     {
       "name": "img_5486.jpg",
       "width": 720,
       "height": 591,
+      "date": "2026-08-23",
       "note": "home now, exceptionally lonely x"
     },
     {
       "name": "img_5497.jpg",
       "width": 720,
       "height": 591,
+      "date": "2026-08-24",
       "note": "Coffee walk? x"
     },
     {
       "name": "img_5526.jpg",
       "width": 720,
-      "height": 591
+      "height": 591,
+      "date": "2026-08-25"
     },
     {
       "name": "img_5540.jpg",
       "width": 720,
-      "height": 591
+      "height": 591,
+      "date": "2026-08-26"
     },
     {
       "name": "img_5543.jpg",
       "width": 720,
       "height": 591,
+      "date": "2026-08-27",
       "note": "i want to hold your hand, x"
     },
     {
       "name": "img_5548.jpg",
       "width": 720,
-      "height": 591
+      "height": 591,
+      "date": "2026-08-28"
     },
     {
       "name": "img_5555.jpg",
       "width": 720,
-      "height": 591
+      "height": 591,
+      "date": "2026-08-29"
     },
     {
       "name": "img_5559.jpg",
       "width": 720,
-      "height": 591
+      "height": 591,
+      "date": "2026-08-30"
     },
     {
       "name": "img_5574.jpg",
       "width": 720,
-      "height": 591
+      "height": 591,
+      "date": "2026-08-31"
     },
     {
       "name": "img_5583.jpg",
       "width": 720,
       "height": 591,
+      "date": "2026-09-01",
       "note": "welcome back, chica x"
     },
     {
       "name": "img_5598.jpg",
       "width": 720,
-      "height": 591
+      "height": 591,
+      "date": "2026-09-02"
     }
   ]
 }

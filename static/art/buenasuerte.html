@@ -159,6 +159,24 @@
         color: #a5f0ae;
     }
 
+    /* the print-shop date, burned into the corner like a film camera's
+       quartz stamp */
+    .stamp {
+        position: absolute;
+        right: 20px;
+        bottom: 36px;
+        font-family: "Menlo", "Consolas", "Courier New", monospace;
+        font-size: 0.72rem;
+        letter-spacing: 0.16em;
+        color: rgba(255, 158, 68, 0.9);
+        text-shadow:
+            0 0 6px rgba(255, 140, 40, 0.8),
+            0 0 1px rgba(255, 200, 130, 0.9);
+        pointer-events: none;
+        user-select: none;
+    }
+    .ticket.noted .stamp { bottom: 66px; }
+
     /* a note written on the polaroid's chin */
     .ticket.noted .frame { padding-bottom: 56px; }
     .ticket figcaption {
@@ -327,6 +345,14 @@
                         img.loading = i < 3 ? 'eager' : 'lazy';
                         img.decoding = 'async';
                         frame.appendChild(img);
+                    }
+
+                    if (c.date) {
+                        const stamp = document.createElement('span');
+                        stamp.className = 'stamp';
+                        const [y, m, d] = c.date.split('-');
+                        stamp.textContent = d + ' ' + m + ' ’' + y.slice(2);
+                        frame.appendChild(stamp);
                     }
 
                     if (c.note) {

@@ -34,6 +34,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+from datetime import datetime
 from pathlib import Path
 
 from PIL import Image
@@ -67,11 +68,13 @@ def main() -> int:
     # Notes and ghost cards are written into the manifest by hand;
     # carry them across.
     notes = {}
+    dates = {}
     ghosts = []
     manifest_path = args.out / "manifest.json"
     if manifest_path.exists():
         old_cards = json.loads(manifest_path.read_text()).get("cards", [])
         notes = {c["name"]: c["note"] for c in old_cards if c.get("note") and not c.get("ghost")}
+        dates = {c["name"]: c["date"] for c in old_cards if c.get("date") and not c.get("ghost")}
         ghosts = [c for c in old_cards if c.get("ghost")]
 
     entries = []
@@ -82,9 +85,13 @@ def main() -> int:
 
         # Incremental: a screenshot that already has its JPEG is only
         # re-read for its manifest entry if forced.
+        # The play date: kept from the old manifest once recorded, else
+        # read off the screenshot's mtime (the camera roll's timestamp).
+        played = dates.get(out_name) or datetime.fromtimestamp(path.stat().st_mtime).date().isoformat()
+
         if out_path.exists() and not args.force:
             with Image.open(out_path) as done:
-                entry = {"name": out_name, "width": done.width, "height": done.height}
+                entry = {"name": out_name, "width": done.width, "height": done.height, "date": played}
             if out_name in notes:
                 entry["note"] = notes[out_name]
             entries.append(entry)
@@ -105,7 +112,7 @@ def main() -> int:
             optimize=True,
             progressive=True,
         )
-        entry = {"name": out_name, "width": card.width, "height": card.height}
+        entry = {"name": out_name, "width": card.width, "height": card.height, "date": played}
         if out_name in notes:
             entry["note"] = notes[out_name]
         entries.append(entry)
