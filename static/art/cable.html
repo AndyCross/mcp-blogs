@@ -2,14 +2,26 @@
 <!--
   "Indulgencia" — the Cable Inglés ore pier at Almería, at dusk.
 
-  Built in 1904 to pour iron ore from Alquife into ships' holds, out of
-  work since 1970. Here it gets one more cargo: a ghost of glowing ore
+  Built 1902-1904 by The Alquife Mines and Railway Company to pour iron
+  ore from Alquife into ships' holds; the last ship loaded in September
+  1970. The loading pier is 108 m long, 16.2 m wide, its deck 18.6 m above
+  the sea, with timber-clad hoppers down both flanks and retractable
+  chutes beneath them. Here it gets one more cargo: a ghost of glowing ore
   runs the length of the deck and falls through the chutes into the sea,
   over and over, while the palms sway and the promenade lamps come on.
 
-  Everything is procedural — the trusswork is ~1,500 instanced iron
-  members, the palms are bent strips, the sky and sea are shaders.
-  No external assets.
+  Everything is procedural: the trusswork is close to 2,000 instanced iron
+  members, the palms are bent strips, the sky and sea are shaders that
+  share one sky function so the water reflects the dusk it sits under.
+  The lamps and the two walkers reflect in the marina. No external assets.
+
+  The sky follows the real sun and moon over Almería at the visitor's own
+  time, held between civil dusk and full night so the mood never breaks.
+  When nobody is dragging, the camera dissolves through a list of shots.
+  A ghost ore carrier condenses on the seaward flank while the cargo runs,
+  the Alcazaba stands floodlit on its hill to the west-north-west, and
+  swifts work the lamps until it is properly dark.
+  ?live=0 pins the original fixed dusk; ?when=2026-09-04T21:10 sets a time.
 
   Tuning: press G for the control panel, or use query params, e.g.
   ?exposure=1.3&emberSpeed=1.5&az=0.8&radius=70
@@ -101,15 +113,15 @@
             bloomStrength: 0.6,
             bloomRadius: 0.6,
             bloomThreshold: 0.5,
-            grain: 0.04,
+            grain: 0.03,
             vignette: 0.95,
             aberration: 0.001,
             desat: 0.3,            // how far the world is drained toward grey
             // the ghost cargo
             emberCount: 900,
             emberSpeed: 1.0,       // multiplier on each ember's own pace
-            emberSize: 3.2,
-            emberGlow: 1.9,        // brightness multiplier (bloom feeds on it)
+            emberSize: 3.0,
+            emberGlow: 1.25,       // brightness multiplier (bloom feeds on it)
             waveCycle: 46,         // seconds between one memory and the next
             // the world
             sway: 1.0,             // palm sway amount
@@ -118,6 +130,8 @@
             autoOrbit: 0.006,
             pushIn: true,
             pushTo: 92,            // radius the opening drift settles at
+            shots: true,           // the idle camera walks the shot list
+            live: true,            // real sun and moon for Almería, now
         };
 
         // URL-query overrides, e.g. ?exposure=1.3&grain=0.02&emberSpeed=2 — for tuning.
@@ -126,11 +140,16 @@
          'emberSpeed','emberSize','emberGlow','sway','lampWarmth','autoOrbit','desat','waveCycle','loversPace'].forEach((k) => {
             if (Q.has(k)) params[k] = parseFloat(Q.get(k));
         });
+        if (Q.get('live') === '0') params.live = false;
+        const HIDE = new Set((Q.get('hide') || '').split(','));   // ?hide=ship,swifts,alcazaba for tuning
+        if (Q.get('shots') === '0') params.shots = false;
 
         let camera, scene, renderer, composer, bloomPass, finalPass;
         let skyMat, seaMat, embers, emberSim;
+        let hemiLight, duskLight, fillLight, moonLight;
         const palmCrowns = [];
         const clock = new THREE.Clock();
+        let lastSkyAt = 0;
 
         // ============================================================
         //  WORLD LAYOUT (metres)
@@ -138,12 +157,13 @@
         //  x = -100 to -6, then the massive hopper block from -6 to +112.
         //  The palm line and promenade sit in front (+z), the sea behind.
         // ============================================================
-        const DECK_Y = 14.6;                     // rail deck height
+        const DECK_Y = 16.0;                     // rail deck height; the gallery above it tops out at 18.6 m
         const DECK_X0 = -104;                    // landward end of the rail deck
         const ARCADE = { x0: -102, x1: -70.6 };  // the masonry arches of the approach
         const TRESTLE = { x0: -66, x1: -6 };
         const HOPPER = { x0: -6, x1: 112 };      // the loading pier: 108 m long, 16 m wide
         const SHORE_X = 7;                       // east of this, the pier is over the sea
+        const SHIP = { x0: 26, x1: 118, z: 18.2, beam: 13.5, deckY: 6.6 };   // the ghost ore carrier, alongside the beach-side flank
         const ROAD = { x0: -98, x1: -74 };       // the avenue passing under the arches
         const LAMPS = [
             { x: -150, z: 13 }, { x: -120, z: 15 }, { x: -62, z: 13 }, { x: -40, z: 15 }, { x: -20, z: 13 },
@@ -235,12 +255,30 @@
                     }
                 }
             }
-            // the ore chutes: heavy diagonals raking down the faces
+            // the celosía: every bay of both faces cross-braced at every tier,
+            // which is what makes the real thing read as lace from the beach
+            const tiers = [[3.6, 7.2], [7.2, 10.8], [10.8, DECK_Y], [DECK_Y, TOP]];
             for (let i = 0; i < bays.length - 1; i++) {
+                const xa = bays[i], xb = bays[i + 1];
+                for (const s of [-1, 1]) {
+                    for (const [y0, y1] of tiers) {
+                        member(xa, y0, s * w, xb, y1, s * w, 0.11);
+                        member(xb, y0, s * w, xa, y1, s * w, 0.11);
+                    }
+                }
+            }
+            // the ore chutes: heavy diagonals raking down the faces, one
+            // every other bay, about twenty a side as built
+            for (let i = 0; i < bays.length - 1; i += 2) {
                 const xa = bays[i], xb = bays[i + 1];
                 for (const s of [-1, 1]) {
                     member(xa, DECK_Y, s * w, xb, 3.6, s * w, 0.34);
                 }
+            }
+            // transverse bracing under the deck, so the block has a belly
+            for (let i = 0; i < bays.length; i += 2) {
+                member(bays[i], 3.6, -w, bays[i], 10.8, 0, 0.16);
+                member(bays[i], 3.6, w, bays[i], 10.8, 0, 0.16);
             }
             // the retractable hopper housings: massive riveted plate columns
             // standing proud of the timber cladding, every other bay
@@ -327,10 +365,17 @@
             // so the block reads as a mass and not a cage
             const hull = new THREE.Mesh(
                 new THREE.BoxGeometry(HOPPER.x1 - HOPPER.x0 - 1.5, DECK_Y - 4.4, 14.6),
-                new THREE.MeshStandardMaterial({ color: 0x2b130b, roughness: 0.95, metalness: 0.1 })
+                new THREE.MeshStandardMaterial({ color: 0x3a1c11, roughness: 0.95, metalness: 0.1 })
             );
             hull.position.set((HOPPER.x0 + HOPPER.x1) / 2, 4 + (DECK_Y - 4.4) / 2, 0);
             scene.add(hull);
+            // the timber deck of the gallery, overhanging the flanks a little
+            const slab = new THREE.Mesh(
+                new THREE.BoxGeometry(HOPPER.x1 - HOPPER.x0 + 1.2, 0.45, 17.6),
+                new THREE.MeshStandardMaterial({ color: 0x2a1a12, roughness: 1.0 })
+            );
+            slab.position.set((HOPPER.x0 + HOPPER.x1) / 2, DECK_Y + 2.6, 0);
+            scene.add(slab);
         }
 
         // ============================================================
@@ -543,18 +588,167 @@
         // ============================================================
         //  SEA & SKY — shader planes; the sky feeds the fog colour
         // ============================================================
+        // one description of the dusk, used by the sky dome and reflected by
+        // the sea: warm where the sun went down, the earth's shadow climbing
+        // the sky opposite, a two-day-old moon hanging in the afterglow
+        // ------------------------------------------------------------
+        //  THE REAL SKY. Low-precision Meeus for the sun and moon over
+        //  Almería (36.84 N, 2.46 W). Scene axes: north is -x, east is +z.
+        //  The result is clamped so the piece only ever sits between civil
+        //  dusk and full night; the hour slides it along that range.
+        // ------------------------------------------------------------
+        const ALMERIA = { lat: 36.838, lon: -2.462 };
+        const RAD = Math.PI / 180;
+        const SKY = {
+            sunTrue: new THREE.Vector3(0.62, -0.15, -0.78).normalize(),   // where the sun really is (below the horizon)
+            sunGlow: new THREE.Vector3(0.62, 0.05, -0.78).normalize(),    // where it went down: the afterglow
+            moonDir: new THREE.Vector3(0.30, 0.15, -0.94).normalize(),
+            moonUp: 1, moonFrac: 0.05, dusk: 0.3, when: null,
+        };
+        function eqFromEcl(lam, beta, eps) {
+            const sl = Math.sin(lam), cl = Math.cos(lam), sb = Math.sin(beta), cb = Math.cos(beta);
+            const x = cb * cl, y = Math.cos(eps) * cb * sl - Math.sin(eps) * sb, z = Math.sin(eps) * cb * sl + Math.cos(eps) * sb;
+            return { ra: Math.atan2(y, x), dec: Math.asin(z) };
+        }
+        function sunEq(JD) {
+            const T = (JD - 2451545) / 36525;
+            const L0 = (280.46646 + 36000.76983 * T) * RAD;
+            const M = (357.52911 + 35999.05029 * T) * RAD;
+            const C = ((1.914602 - 0.004817 * T) * Math.sin(M) + 0.019993 * Math.sin(2 * M) + 0.000289 * Math.sin(3 * M)) * RAD;
+            return eqFromEcl(L0 + C, 0, (23.439291 - 0.0130042 * T) * RAD);
+        }
+        function moonEq(JD) {
+            const T = (JD - 2451545) / 36525, s = Math.sin;
+            const Lp = (218.3164477 + 481267.88123421 * T) * RAD;
+            const D = (297.8501921 + 445267.1114034 * T) * RAD;
+            const M = (357.5291092 + 35999.0502909 * T) * RAD;
+            const Mp = (134.9633964 + 477198.8675055 * T) * RAD;
+            const F = (93.2720950 + 483202.0175233 * T) * RAD;
+            const lam = Lp + RAD * (6.289 * s(Mp) + 1.274 * s(2 * D - Mp) + 0.658 * s(2 * D) + 0.214 * s(2 * Mp)
+                - 0.186 * s(M) - 0.114 * s(2 * F) + 0.059 * s(2 * D - 2 * Mp) + 0.057 * s(2 * D - M - Mp)
+                + 0.053 * s(2 * D + Mp) + 0.046 * s(2 * D - M) + 0.041 * s(Mp - M) - 0.035 * s(D) - 0.031 * s(Mp + M));
+            const beta = RAD * (5.128 * s(F) + 0.281 * s(Mp + F) + 0.278 * s(Mp - F) + 0.173 * s(2 * D - F)
+                + 0.055 * s(2 * D - Mp + F) + 0.046 * s(2 * D - Mp - F) + 0.033 * s(2 * D + F) + 0.017 * s(2 * Mp + F));
+            return eqFromEcl(lam, beta, (23.439291 - 0.0130042 * T) * RAD);
+        }
+        function horizontal(eq, JD) {
+            const gmst = 280.46061837 + 360.98564736629 * (JD - 2451545);
+            const H = (gmst + ALMERIA.lon) * RAD - eq.ra;
+            const lat = ALMERIA.lat * RAD;
+            const alt = Math.asin(Math.sin(lat) * Math.sin(eq.dec) + Math.cos(lat) * Math.cos(eq.dec) * Math.cos(H));
+            const az = Math.atan2(Math.sin(H), Math.cos(H) * Math.sin(lat) - Math.tan(eq.dec) * Math.cos(lat)) + Math.PI;
+            return { alt, az };
+        }
+        const toScene = (h, alt = h.alt, out = new THREE.Vector3()) =>
+            out.set(-Math.cos(h.az) * Math.cos(alt), Math.sin(alt), Math.sin(h.az) * Math.cos(alt));
+        // the most recent sunset (or, in daylight, the coming one): where the afterglow sits
+        function sunsetAzimuth(JD) {
+            const isUp = (j) => horizontal(sunEq(j), j).alt > -0.833 * RAD;
+            const up = isUp(JD), step = (up ? 1 : -1) / 288;
+            for (let j = JD, i = 0; i < 300; i++) { j += step; if (isUp(j) !== up) return horizontal(sunEq(j), j); }
+            return horizontal(sunEq(JD), JD);
+        }
+        function computeSky(date) {
+            const JD = date.getTime() / 86400000 + 2440587.5;
+            const sun = horizontal(sunEq(JD), JD);
+            const moon = horizontal(moonEq(JD), JD);
+            moon.alt -= 0.95 * RAD * Math.cos(moon.alt);                  // parallax, near enough
+            toScene(sun, sun.alt, SKY.sunTrue);
+            toScene(sunsetAzimuth(JD), 0.05, SKY.sunGlow);
+            toScene(moon, moon.alt, SKY.moonDir);
+            SKY.moonUp = THREE.MathUtils.smoothstep(moon.alt, -0.012, 0.02);
+            SKY.moonFrac = (1 - SKY.sunTrue.dot(SKY.moonDir)) / 2;
+            SKY.dusk = THREE.MathUtils.clamp((-6 - sun.alt / RAD) / 12, 0, 1);
+        }
+        function pushSky() {
+            for (const m of [skyMat, seaMat]) {
+                if (!m) continue;
+                m.uniforms.uMoonUp.value = SKY.moonUp;
+                m.uniforms.uDusk.value = SKY.dusk;
+            }
+            const d = SKY.dusk;
+            if (hemiLight) {
+                hemiLight.intensity = 0.95 * (1 - 0.45 * d);
+                fillLight.intensity = 0.6 * (1 - 0.5 * d);
+                duskLight.intensity = 0.7 * (1 - d);
+                duskLight.position.copy(SKY.sunGlow).multiplyScalar(300);
+                moonLight.intensity = 0.9 * SKY.moonFrac * SKY.moonUp * THREE.MathUtils.smoothstep(SKY.moonDir.y, 0.0, 0.2);
+                moonLight.position.copy(SKY.moonDir).multiplyScalar(300);
+                scene.fog.color.setHex(0x6b4634).lerp(new THREE.Color(0x1c1b26), d);
+            }
+        }
+
+        const SKY_UNIFORMS = () => ({
+            uTop:     { value: new THREE.Color(0x111a30) },
+            uMid:     { value: new THREE.Color(0x2f3d5c) },
+            uHorizon: { value: new THREE.Color(0xa25c3a) },
+            uCoolHz:  { value: new THREE.Color(0x4a4c62) },
+            uSunDir:  { value: SKY.sunGlow },
+            uSunTrue: { value: SKY.sunTrue },
+            uSunCol:  { value: new THREE.Color(0xff9a55) },
+            uMoonDir: { value: SKY.moonDir },
+            uMoonCol: { value: new THREE.Color(0xf4ecd8) },
+            uMoonUp:  { value: SKY.moonUp },
+            uDusk:    { value: SKY.dusk },
+        });
+        const SKY_GLSL = `
+            uniform vec3 uTop, uMid, uHorizon, uCoolHz, uSunDir, uSunTrue, uSunCol, uMoonDir, uMoonCol;
+            uniform float uMoonUp, uDusk;
+            float hash(vec2 p){
+                p = fract(p * 0.3183099 + vec2(0.71, 0.113));
+                p = p * 17.0 + 1.0;
+                return fract(p.x * p.y * (p.x + p.y));
+            }
+            // the moon, lit exactly as the real sun lights it: the terminator
+            // falls out of the angle between the two directions
+            vec3 moon(vec3 d){
+                if (uMoonUp < 0.001) return vec3(0.0);
+                float md = dot(d, uMoonDir);
+                float r = 0.0085;
+                float cE = dot(uSunTrue, uMoonDir);
+                float sE = sqrt(max(1.0 - cE * cE, 0.0));
+                vec3 ts = normalize(uSunTrue - uMoonDir * cE + vec3(1e-4, 0.0, 0.0));
+                vec3 tb = cross(uMoonDir, ts);
+                float u = dot(d, ts) / r, v = dot(d, tb) / r;
+                float rr = u * u + v * v;
+                float disc = smoothstep(1.12, 0.92, rr);
+                float w = sqrt(max(1.0 - rr, 0.0));
+                float lit = smoothstep(-0.06, 0.06, u * sE - w * cE);
+                float frac = (1.0 - cE) * 0.5;
+                float glow = pow(max(md, 0.0), 700.0) * (0.05 + 0.5 * frac);
+                return uMoonCol * uMoonUp * (disc * (lit * 2.4 + (1.0 - lit) * 0.05) + glow);
+            }
+            vec3 skyColour(vec3 d, float withStars){
+                float h = max(d.y, 0.0);
+                float night = uDusk;
+                vec2 dd = normalize(d.xz + vec2(1e-5, 0.0));
+                float toward = dot(normalize(uSunDir.xz), dd);         // 1 where the sun went down
+                float warm = smoothstep(-0.6, 1.0, toward) * (1.0 - 0.85 * night);
+                vec3 horizon = mix(uCoolHz * (1.0 - 0.55 * night), uHorizon, warm);
+                vec3 col = mix(horizon, uMid * (1.0 - 0.6 * night), smoothstep(0.0, 0.2 + 0.12 * warm, h));
+                col = mix(col, uTop * (1.0 - 0.6 * night), smoothstep(0.16, 0.62, h));
+                // the earth's shadow in the east: blue-grey low down, a mauve lip above it
+                float away = smoothstep(0.0, 1.0, -toward) * (1.0 - night);
+                col = mix(col, vec3(0.2, 0.22, 0.32), smoothstep(0.1, 0.0, h) * away * 0.75);
+                col += vec3(0.30, 0.13, 0.18) * smoothstep(0.04, 0.1, h) * smoothstep(0.22, 0.11, h) * away * 0.7;
+                // the sun has just gone; a soft warm bruise where it went
+                float sun = pow(max(dot(d, uSunDir), 0.0), 7.0);
+                col += uSunCol * sun * 0.32 * smoothstep(0.35, 0.0, h) * (1.0 - night);
+                // the stars come out as the glow goes
+                vec2 sp = d.xz / max(d.y, 0.08) * 160.0;
+                float st = step(0.9988, hash(floor(sp)));
+                float st2 = step(0.996, hash(floor(sp * 1.7 + 3.0)));
+                col += vec3(0.85, 0.9, 1.0) * (st * (0.6 + 0.6 * night) * 0.7 + st2 * night * 0.22) * smoothstep(0.1, 0.45, h) * withStars;
+                return col + moon(d);
+            }
+        `;
+
         function buildSky() {
             skyMat = new THREE.ShaderMaterial({
                 side: THREE.BackSide,
                 fog: false,
                 depthWrite: false,
-                uniforms: {
-                    uTop:     { value: new THREE.Color(0x131c33) },
-                    uMid:     { value: new THREE.Color(0x33415f) },
-                    uHorizon: { value: new THREE.Color(0x9c5a3a) },
-                    uSunDir:  { value: new THREE.Vector3(0.62, 0.05, -0.78).normalize() },
-                    uSunCol:  { value: new THREE.Color(0xff9a55) },
-                },
+                uniforms: SKY_UNIFORMS(),
                 vertexShader: `
                     varying vec3 vDir;
                     void main(){
@@ -565,43 +759,32 @@
                 `,
                 fragmentShader: `
                     precision highp float;
-                    uniform vec3 uTop, uMid, uHorizon, uSunDir, uSunCol;
                     varying vec3 vDir;
-                    float hash(vec2 p){
-                        p = fract(p * 0.3183099 + vec2(0.71, 0.113));
-                        p *= 17.0;
-                        return fract(p.x * p.y * (p.x + p.y));
-                    }
+                    ${SKY_GLSL}
                     void main(){
-                        vec3 d = normalize(vDir);
-                        float h = max(d.y, 0.0);
-                        vec3 col = mix(uHorizon, uMid, smoothstep(0.0, 0.22, h));
-                        col = mix(col, uTop, smoothstep(0.16, 0.62, h));
-                        // the sun has just gone; a soft warm bruise on the horizon
-                        float sun = pow(max(dot(d, uSunDir), 0.0), 7.0);
-                        col += uSunCol * sun * 0.3 * smoothstep(0.35, 0.0, h);
-                        // the stars are out now
-                        vec2 sp = d.xz / max(d.y, 0.08) * 160.0;
-                        float st = step(0.9988, hash(floor(sp)));
-                        col += vec3(0.85, 0.9, 1.0) * st * smoothstep(0.15, 0.45, h) * 0.7;
-                        gl_FragColor = vec4(col, 1.0);
+                        gl_FragColor = vec4(skyColour(normalize(vDir), 1.0), 1.0);
                     }
                 `,
             });
-            const sky = new THREE.Mesh(new THREE.SphereGeometry(800, 32, 20), skyMat);
+            const sky = new THREE.Mesh(new THREE.SphereGeometry(800, 48, 32), skyMat);
             scene.add(sky);
         }
 
+        // the lamps and the two walkers, mirrored in the water
+        const N_SEA_LIGHTS = LAMPS.length + 3;
         function buildSea() {
             seaMat = new THREE.ShaderMaterial({
                 fog: false,
                 uniforms: {
-                    uTime:    { value: 0 },
-                    uDeep:    { value: new THREE.Color(0x0d1626) },
-                    uShallow: { value: new THREE.Color(0x1e2a3f) },
-                    uGlint:   { value: new THREE.Color(0xd99a66) },
-                    uHorizon: { value: new THREE.Color(0x84492e) },
+                    ...SKY_UNIFORMS(),
+                    uTime:     { value: 0 },
+                    uEmber:    { value: 0 },
+                    uDeep:     { value: new THREE.Color(0x0b1220) },
+                    uShallow:  { value: new THREE.Color(0x1a2436) },
+                    uLightPos: { value: Array.from({ length: N_SEA_LIGHTS }, () => new THREE.Vector3(0, -50, 0)) },
+                    uLightCol: { value: Array.from({ length: N_SEA_LIGHTS }, () => new THREE.Color(0)) },
                 },
+                defines: { N_LIGHTS: N_SEA_LIGHTS, HX0: (SHORE_X + 8).toFixed(1), HX1: (HOPPER.x1 - 6).toFixed(1) },
                 vertexShader: `
                     varying vec3 vWorld;
                     void main(){
@@ -612,27 +795,62 @@
                 `,
                 fragmentShader: `
                     precision highp float;
-                    uniform float uTime;
-                    uniform vec3 uDeep, uShallow, uGlint, uHorizon;
+                    uniform float uTime, uEmber;
+                    uniform vec3 uDeep, uShallow;
+                    uniform vec3 uLightPos[N_LIGHTS];
+                    uniform vec3 uLightCol[N_LIGHTS];
                     varying vec3 vWorld;
-                    float hash(vec2 p){
-                        p = fract(p * 0.3183099 + vec2(0.71, 0.113));
-                        p *= 17.0;
-                        return fract(p.x * p.y * (p.x + p.y));
+                    ${SKY_GLSL}
+                    // slope of the surface: a long swell in from the south-east,
+                    // a cross sea, and a fine chop that fades with distance
+                    vec2 waveGrad(vec2 p, float t, float near, float mid){
+                        vec2 g = vec2(0.0);
+                        // the swell wanders a little so it never reads as ruled lines
+                        float wander = sin(p.x * 0.017 + p.y * 0.011 + t * 0.05) * 0.8;
+                        vec2 k1 = vec2(0.10, 0.07);  g += 0.14 * k1 * cos(dot(p, k1) + wander + t * 0.55);
+                        vec2 k2 = vec2(-0.21, 0.33); g += 0.07 * k2 * cos(dot(p, k2) - wander * 1.7 - t * 0.9) * mid;
+                        vec2 k3 = vec2(0.9, 0.4);    g += 0.018 * k3 * cos(dot(p, k3) + t * 1.7) * near;
+                        vec2 k4 = vec2(-0.6, 1.3);   g += 0.012 * k4 * cos(dot(p, k4) - t * 2.1) * near;
+                        vec2 c = floor(p * 3.0);
+                        float ph = hash(c) * 6.2832;
+                        g += (vec2(hash(c + 3.1), hash(c + 7.7)) - 0.5) * 0.045 * sin(t * 2.6 + ph) * near;
+                        return g;
                     }
                     void main(){
-                        // metres offshore: past the quay east, or out from the marina edge
+                        vec3 toCam = cameraPosition - vWorld;
+                        float viewDist = length(toCam);
+                        vec3 V = toCam / viewDist;
+                        float near = smoothstep(420.0, 40.0, viewDist);
+                        float mid = smoothstep(900.0, 120.0, viewDist);
+                        vec2 g = waveGrad(vWorld.xz, uTime, near, mid);
+                        vec3 n = normalize(vec3(-g.x, 1.0, -g.y));
+                        vec3 R = reflect(-V, n);
+                        R.y = abs(R.y) + 0.004;
+                        // metres offshore: past the beach east, or out from the marina edge
                         float dist = max(max(vWorld.x - 7.0, -(vWorld.z + 8.0)), 0.0);
-                        vec3 col = mix(uShallow, uDeep, smoothstep(8.0, 110.0, dist));
-                        // low-sun glitter path, strongest toward the sunset
-                        float lane = exp(-pow((vWorld.z + (vWorld.x - 80.0) * 1.26) / (30.0 + dist * 0.3), 2.0));
-                        float ripA = sin(vWorld.x * 0.9 + uTime * 0.7 + sin(vWorld.z * 0.6 - uTime * 0.5));
-                        float ripB = sin(vWorld.z * 1.7 - uTime * 1.1 + hash(floor(vWorld.xz * 2.0)) * 6.28);
-                        float sparkle = smoothstep(0.95, 1.0, ripA * ripB);
-                        col += uGlint * sparkle * (0.025 + lane * 0.3);
-                        // haze the far water into the horizon colour
-                        float off = length(vWorld.xz);
-                        col = mix(col, uHorizon, smoothstep(250.0, 1400.0, off));
+                        vec3 body = mix(uShallow, uDeep, smoothstep(8.0, 110.0, dist)) * (1.0 - 0.5 * uDusk);
+                        float fres = 0.035 + 0.965 * pow(1.0 - max(dot(V, n), 0.0), 5.0);
+                        vec3 col = mix(body, skyColour(R, 0.0) * 0.85, fres);
+                        // the lamps and the walkers, smeared on the water
+                        for (int i = 0; i < N_LIGHTS; i++) {
+                            vec3 L = uLightPos[i]; L.y = -L.y;
+                            vec3 toL = L - vWorld;
+                            float d2 = dot(toL, toL);
+                            float s = pow(max(dot(R, toL * inversesqrt(d2)), 0.0), 900.0);
+                            col += uLightCol[i] * s * 14.0 / (1.0 + d2 * 0.012);
+                        }
+                        // the ore going into the sea: a warm shiver along both flanks
+                        float cx = clamp(vWorld.x, float(HX0), float(HX1));
+                        float dz = abs(vWorld.z) - 9.5;
+                        float dEm = length(vec2(vWorld.x - cx, dz));
+                        float flick = 0.8 + 0.2 * sin(uTime * 9.0 + vWorld.x * 0.7) * sin(uTime * 6.3 + vWorld.z);
+                        col += vec3(1.0, 0.45, 0.14) * uEmber * flick * exp(-dEm * dEm / 40.0) * 0.35 * step(0.0, dz);
+                        // the pier's own dark, lying on the water beneath it
+                        float under = smoothstep(11.5, 8.0, abs(vWorld.z)) * smoothstep(-8.0, 2.0, vWorld.x) * smoothstep(float(HX1) + 10.0, float(HX1) + 3.0, vWorld.x);
+                        col *= 1.0 - 0.6 * under;
+                        // the far water hazes into whatever the sky is doing in that direction
+                        vec3 hz = normalize(vec3(-toCam.x, 0.0, -toCam.z));
+                        col = mix(col, skyColour(vec3(hz.x, 0.003, hz.z), 0.0), smoothstep(250.0, 1400.0, viewDist));
                         gl_FragColor = vec4(col, 1.0);
                     }
                 `,
@@ -801,6 +1019,140 @@
                 p.x - nx * apart - tan.x * 0.4, 1.5 + 0.05 * Math.sin(t * 3.4 + 1), p.z - nz * apart - tan.z * 0.4);
         }
 
+        // ============================================================
+        //  THE GHOST SHIP — an ore carrier of the sixties, alongside the
+        //  beach-side flank, condensing out of the dark while the cargo
+        //  runs and dissolving with it. Drawn thin, never solid.
+        // ============================================================
+        let ship, shipMats = [], shipLightMat, shipMasthead = new THREE.Vector3();
+        function buildShip() {
+            ship = new THREE.Group();
+            const hullMat = new THREE.MeshStandardMaterial({ color: 0x141821, roughness: 0.9, transparent: true, opacity: 0, depthWrite: false });
+            const topMat = new THREE.MeshStandardMaterial({ color: 0x252a36, roughness: 0.9, transparent: true, opacity: 0, depthWrite: false });
+            shipLightMat = new THREE.MeshBasicMaterial({ color: 0xfff0cc, transparent: true, opacity: 0, toneMapped: false, depthWrite: false });
+            shipMats = [hullMat, topMat];
+            const L = SHIP.x1 - SHIP.x0, b = SHIP.beam / 2, H = SHIP.deckY + 1.0;
+            // the hull in plan: a round stern at the shore end, a fine bow to seaward
+            const plan = new THREE.Shape();
+            plan.moveTo(3, -b);
+            plan.lineTo(L * 0.78, -b);
+            plan.quadraticCurveTo(L * 0.95, -b * 0.7, L, 0);
+            plan.quadraticCurveTo(L * 0.95, b * 0.7, L * 0.78, b);
+            plan.lineTo(3, b);
+            plan.quadraticCurveTo(-3.5, b * 0.9, -3.5, 0);
+            plan.quadraticCurveTo(-3.5, -b * 0.9, 3, -b);
+            const hull = new THREE.Mesh(new THREE.ExtrudeGeometry(plan, { depth: H, bevelEnabled: false }), hullMat);
+            hull.rotation.x = -Math.PI / 2;
+            hull.position.y = -1.0;
+            ship.add(hull);
+            const box = (w, h, d, x, y, z, m) => { const k = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m); k.position.set(x, y, z); ship.add(k); return k; };
+            // the accommodation block aft, a funnel, the bridge
+            box(12, 8, 11, 8, SHIP.deckY + 4, 0, topMat);
+            box(9, 3, 8, 9, SHIP.deckY + 9.5, 0, topMat);
+            const funnel = new THREE.Mesh(new THREE.CylinderGeometry(1.3, 1.5, 5, 10), topMat);
+            funnel.position.set(5, SHIP.deckY + 11, 0); ship.add(funnel);
+            // hatch coamings down the length of her
+            for (let i = 0; i < 4; i++) box(13, 1.3, 8, 24 + i * 17, SHIP.deckY + 0.65, 0, topMat);
+            // two masts, the odd light left burning
+            box(0.5, 15, 0.5, 18, SHIP.deckY + 7.5, 0, topMat);
+            box(0.5, 15, 0.5, 74, SHIP.deckY + 7.5, 0, topMat);
+            const lamp = (x, y, z, r = 0.28) => { const d = new THREE.Mesh(new THREE.SphereGeometry(r, 8, 6), shipLightMat); d.position.set(x, y, z); ship.add(d); };
+            lamp(74, SHIP.deckY + 15.2, 0, 0.34);
+            lamp(18, SHIP.deckY + 15.2, 0, 0.26);
+            for (let i = 0; i < 4; i++) lamp(4 + i * 2.6, SHIP.deckY + 4.6, 5.6, 0.16);   // a few cabin windows facing the shore
+            ship.position.set(SHIP.x0, 0, SHIP.z);
+            ship.visible = false;
+            scene.add(ship);
+            shipMasthead.set(SHIP.x0 + 74, SHIP.deckY + 15.2, SHIP.z);
+        }
+        function updateShip(env) {
+            ship.visible = env > 0.002 && !HIDE.has('ship');
+            for (const m of shipMats) m.opacity = env * 0.66;
+            shipLightMat.opacity = env;
+            ship.position.y = 0.12 * Math.sin(clock.elapsedTime * 0.35);      // riding the swell
+        }
+
+        // ============================================================
+        //  THE ALCAZABA — on its hill to the west-north-west, walls
+        //  floodlit as they are every night. Nearer and larger than
+        //  strictly true, so that it reads from the beach.
+        // ============================================================
+        function buildAlcazaba() {
+            const C = { x: -480, z: -1080 }, rot = 0.3;
+            const hill = new THREE.Mesh(
+                new THREE.ConeGeometry(230, 58, 18, 1),
+                new THREE.MeshBasicMaterial({ color: 0x201c27, fog: false })
+            );
+            hill.scale.z = 2.4;
+            hill.position.set(C.x, 29, C.z);
+            hill.rotation.y = rot;
+            scene.add(hill);
+            const wallMat = new THREE.MeshBasicMaterial({ color: 0x6a5238, fog: false, toneMapped: false });
+            const walls = new THREE.Group();
+            for (let z = -160; z <= 160; z += 32) {
+                const y = 58 * (1 - Math.abs(z) / 552) - 1;
+                const seg = new THREE.Mesh(new THREE.BoxGeometry(4, 6, 33), wallMat);
+                seg.position.set(0, y + 3, z); walls.add(seg);
+                if (z % 64 === 0) {
+                    const tower = new THREE.Mesh(new THREE.BoxGeometry(7, 10, 7), wallMat);
+                    tower.position.set(0, y + 5, z); walls.add(tower);
+                }
+            }
+            walls.position.set(C.x, 0, C.z);
+            walls.rotation.y = rot;
+            scene.add(walls);
+            hill.visible = walls.visible = !HIDE.has('alcazaba');
+        }
+
+        // ============================================================
+        //  SWIFTS — working the lamps and the palm crowns, fast and
+        //  dark against the last light, gone to roost once it is night
+        // ============================================================
+        let swifts, swiftSim = [];
+        const _sw0 = new THREE.Vector3(), _sw1 = new THREE.Vector3(), _swM = new THREE.Matrix4(),
+              _swQ = new THREE.Quaternion(), _swS = new THREE.Vector3(), _xAxis = new THREE.Vector3(1, 0, 0);
+        function buildSwifts() {
+            const anchors = [...LAMPS.map((L) => ({ x: L.x, y: 7.3, z: L.z })), ...PALMS.map((p) => ({ x: p.x, y: p.h, z: p.z }))];
+            const N = 34;
+            // a swift: two swept wings and almost no body, flying along +x
+            const geo = new THREE.BufferGeometry();
+            geo.setAttribute('position', new THREE.Float32BufferAttribute([
+                0.15, 0, 0,  -0.25, 0.03, 0.6,  -0.05, 0, 0.16,
+                0.15, 0, 0,  -0.05, 0, -0.16,  -0.25, 0.03, -0.6,
+            ], 3));
+            geo.computeVertexNormals();
+            const mat = new THREE.MeshBasicMaterial({ color: 0x07060a, side: THREE.DoubleSide, transparent: true, opacity: 1 });
+            swifts = new THREE.InstancedMesh(geo, mat, N);
+            swifts.frustumCulled = false;
+            for (let i = 0; i < N; i++) {
+                const a = anchors[Math.floor(rand() * anchors.length)];
+                swiftSim.push({
+                    cx: a.x + (rand() - 0.5) * 6, cy: a.y + 5 + rand() * 7, cz: a.z + (rand() - 0.5) * 6,
+                    rx: 7 + rand() * 9, ry: 1.5 + rand() * 2.5, rz: 6 + rand() * 8,
+                    w1: 0.55 + rand() * 0.5, w2: 0.9 + rand() * 0.8, w3: 0.5 + rand() * 0.4,
+                    p1: rand() * 6.28, p2: rand() * 6.28, p3: rand() * 6.28, flap: 9 + rand() * 5,
+                });
+            }
+            scene.add(swifts);
+        }
+        const swiftPos = (s, t, out) => out.set(
+            s.cx + s.rx * Math.sin(s.w1 * t + s.p1),
+            s.cy + s.ry * Math.sin(s.w2 * t + s.p2),
+            s.cz + s.rz * Math.cos(s.w3 * t + s.p3));
+        function updateSwifts(t) {
+            swifts.material.opacity = 1 - THREE.MathUtils.smoothstep(SKY.dusk, 0.45, 0.8);
+            swifts.visible = swifts.material.opacity > 0.02 && !HIDE.has('swifts');
+            if (!swifts.visible) return;
+            swiftSim.forEach((s, i) => {
+                swiftPos(s, t, _sw0); swiftPos(s, t + 0.05, _sw1);
+                _swQ.setFromUnitVectors(_xAxis, _sw1.sub(_sw0).normalize());
+                const flap = 0.5 + 0.5 * Math.abs(Math.sin(t * s.flap + s.p1));
+                _swM.compose(_sw0, _swQ, _swS.set(1, 1, flap));
+                swifts.setMatrixAt(i, _swM);
+            });
+            swifts.instanceMatrix.needsUpdate = true;
+        }
+
         // the rubble breakwater sheltering the marina, a low dark arm of stone
         function buildBreakwater() {
             const n = 42;
@@ -863,7 +1215,7 @@
                 vSeed = aSeed;
                 vAlpha = aAlpha;
                 vec4 mv = modelViewMatrix * vec4(position, 1.0);
-                gl_PointSize = uSize * uPixelRatio * (34.0 + aSeed * 22.0) / max(0.5, -mv.z);
+                gl_PointSize = max(uPixelRatio * 2.2, uSize * uPixelRatio * (60.0 + aSeed * 40.0) / max(0.5, -mv.z));
                 gl_Position = projectionMatrix * mv;
             }
         `;
@@ -875,7 +1227,7 @@
                 if (vAlpha < 0.01) discard;
                 vec2 d = gl_PointCoord - 0.5;
                 float a = smoothstep(0.5, 0.05, length(d));
-                vec3 hot = mix(vec3(1.0, 0.42, 0.10), vec3(1.0, 0.75, 0.32), vSeed);
+                vec3 hot = mix(vec3(1.0, 0.34, 0.06), vec3(1.0, 0.62, 0.22), vSeed);
                 gl_FragColor = vec4(hot * uGlow * (0.8 + vSeed), a * vAlpha);
             }
         `;
@@ -939,6 +1291,10 @@
                 }
                 let x, y, z, a;
                 const flicker = 0.7 + 0.3 * Math.sin(t * (8 + seed[i] * 9) + seed[i] * 40);
+                // the chutes over the ghost ship's hatches pour into her hold; the rest go into the sea
+                const inShip = side[i] > 0 && chuteX[i] > SHIP.x0 + 10 && chuteX[i] < SHIP.x1 - 16;
+                const yEnd = inShip ? SHIP.deckY + 0.5 : -0.4;
+                const zEnd = inShip ? 14.4 : 9.2;
                 if (p[i] < deckLen) {             // running the rails
                     x = x0 + p[i];
                     y = DECK_Y + 0.7 + jy[i];
@@ -948,14 +1304,14 @@
                     const q = (p[i] - deckLen) / CHUTE;
                     const qq = Math.pow(q, 1.35);      // gathering speed as it falls
                     x = chuteX[i] + q * 1.5 + jz[i] * 0.4;
-                    y = DECK_Y + 0.7 - qq * (DECK_Y + 0.4);
-                    z = side[i] * (q * 8.9 + Math.abs(jz[i]) * 0.3);
+                    y = DECK_Y + 0.7 - qq * (DECK_Y + 0.7 - yEnd);
+                    z = side[i] * (q * (zEnd - 0.3) + Math.abs(jz[i]) * 0.3);
                     a = flicker;
-                } else {                          // winking out where the ore would land
+                } else {                          // winking out where the ore lands
                     const q = (p[i] - deckLen - CHUTE) / FADE;
                     x = chuteX[i] + 1.5 + q + jz[i] * 0.6;
-                    y = 0.3 + jy[i] * 0.3 * (1 - q);
-                    z = side[i] * (9.2 + q * 1.2);
+                    y = inShip ? yEnd - q * 1.4 : 0.3 + jy[i] * 0.3 * (1 - q);
+                    z = side[i] * (zEnd + q * 1.2);
                     a = (1 - q) * (1 - q) * flicker * 0.7;
                 }
                 pos[i * 3] = x; pos[i * 3 + 1] = y; pos[i * 3 + 2] = z;
@@ -974,35 +1330,77 @@
             azimuth: 0.62, elevation: 0.09,
             azVel: 0, elVel: 0, idle: 0,
         };
+        // the shot list: where the camera goes when nobody is holding it.
+        // Each is a start and an end; the camera eases between them, then
+        // the frame goes to black and comes back somewhere else.
+        const SHOTS = [
+            { name: 'the plaza',        target: [0, 10, 0],    r: [120, 92],  az: [0.62, 0.9],    el: [0.09, 0.09],   dur: 50 },
+            { name: 'the arches',       target: [-86, 9, 0],   r: [48, 40],   az: [0.3, 0.44],    el: [0.1, 0.08],    dur: 44 },
+            { name: 'under the iron',   target: [-56, 14, 0],  r: [22, 20],   az: [0.5, 0.78],    el: [-0.55, -0.5],  dur: 42 },
+            { name: 'from the sand',    target: [60, 10, 10],  r: [72, 62],   az: [-0.72, -0.6],  el: [-0.06, -0.03], dur: 46 },
+            { name: 'out at sea',       target: [60, 12, 0],   r: [130, 112], az: [1.45, 1.36],   el: [0.05, 0.06],   dur: 50 },
+            { name: 'high and wide',    target: [-20, 8, 0],   r: [135, 118], az: [0.5, 0.62],    el: [0.2, 0.17],    dur: 46 },
+        ];
+        const shot = { idx: 0, t: 0, state: 'play', leave: 0, fade: 1, resumeAfter: 25, FADE: 1.4 };
+        const lerp = THREE.MathUtils.lerp;
+        function applyShot(sh, u) {
+            const e = u * u * (3 - 2 * u);
+            controls.target.set(...sh.target);
+            controls.radius = controls.targetRadius = lerp(sh.r[0], sh.r[1], e);
+            controls.azimuth = lerp(sh.az[0], sh.az[1], e);
+            controls.elevation = lerp(sh.el[0], sh.el[1], e);
+        }
+        function takeOver() {              // the visitor has the camera now
+            controls.idle = 0;
+            if (shot.state !== 'held') { shot.state = 'held'; controls.targetRadius = controls.radius; }
+        }
         function setupControls() {
             const el = renderer.domElement;
             let dragging = false, lx = 0, ly = 0;
-            el.addEventListener('pointerdown', (e) => { dragging = true; lx = e.clientX; ly = e.clientY; controls.idle = 0; });
+            el.addEventListener('pointerdown', (e) => { dragging = true; lx = e.clientX; ly = e.clientY; takeOver(); });
             window.addEventListener('pointermove', (e) => {
                 if (!dragging) return;
                 const dx = e.clientX - lx, dy = e.clientY - ly; lx = e.clientX; ly = e.clientY;
                 controls.azVel = -dx * 0.004; controls.elVel = -dy * 0.003;
                 controls.azimuth += controls.azVel; controls.elevation += controls.elVel;
-                controls.elevation = Math.max(0.0, Math.min(0.5, controls.elevation));
+                controls.elevation = Math.max(-0.6, Math.min(0.5, controls.elevation));
                 controls.idle = 0;
             });
             const up = () => { dragging = false; };
             window.addEventListener('pointerup', up);
             window.addEventListener('pointercancel', up);
             el.addEventListener('wheel', (e) => {
-                controls.targetRadius = Math.max(22, Math.min(170, controls.targetRadius + e.deltaY * 0.05));
+                takeOver();
+                controls.targetRadius = Math.max(16, Math.min(190, controls.targetRadius + e.deltaY * 0.05));
                 params.pushIn = false;
             }, { passive: true });
         }
         function updateCamera(dt) {
             controls.idle += dt;
-            if (params.pushIn) controls.targetRadius = params.pushTo;
-            controls.radius += (controls.targetRadius - controls.radius) * Math.min(1, dt * 0.6);
-            controls.azimuth += controls.azVel; controls.elevation += controls.elVel;
-            controls.azVel *= 0.9; controls.elVel *= 0.9;
-            if (controls.idle > 2.0) controls.azimuth += params.autoOrbit * dt;
-            controls.azimuth = Math.max(0.12, Math.min(1.35, controls.azimuth));   // keep the plaza side
-            controls.elevation = Math.max(0.0, Math.min(0.5, controls.elevation));
+            const F = shot.FADE;
+            if (params.shots && shot.state === 'play') {
+                const sh = SHOTS[shot.idx];
+                shot.t += dt;
+                applyShot(sh, Math.min(1, shot.t / sh.dur));
+                shot.fade = Math.max(1 - shot.t / F, THREE.MathUtils.smoothstep(shot.t, sh.dur - F, sh.dur));
+                if (shot.t >= sh.dur) { shot.idx = (shot.idx + 1) % SHOTS.length; shot.t = 0; }
+            } else if (params.shots && shot.state === 'leave') {
+                shot.leave += dt;
+                shot.fade = Math.min(1, shot.leave / F);
+                if (shot.leave >= F) { shot.state = 'play'; shot.idx = (shot.idx + 1) % SHOTS.length; shot.t = 0; }
+            } else {
+                // the visitor's camera: drag to look, wheel to close in, a slow idle drift
+                shot.fade = Math.max(0, shot.fade - dt / F);
+                if (params.shots && shot.state === 'held' && controls.idle > shot.resumeAfter) { shot.state = 'leave'; shot.leave = 0; }
+                if (params.pushIn) controls.targetRadius = params.pushTo;
+                controls.radius += (controls.targetRadius - controls.radius) * Math.min(1, dt * 0.6);
+                controls.azimuth += controls.azVel; controls.elevation += controls.elVel;
+                controls.azVel *= 0.9; controls.elVel *= 0.9;
+                if (controls.idle > 2.0) controls.azimuth += params.autoOrbit * dt;
+                controls.azimuth = Math.max(-1.5, Math.min(1.5, controls.azimuth));   // stay on the seaward side of the city
+                controls.elevation = Math.max(-0.6, Math.min(0.5, controls.elevation));
+            }
+            finalPass.uniforms.uFade.value = shot.fade;
             const r = controls.radius, a = controls.azimuth, e = controls.elevation;
             camera.position.set(
                 controls.target.x + r * Math.cos(e) * Math.sin(a),
@@ -1023,16 +1421,17 @@
                 uVignette: { value: params.vignette },
                 uAberration: { value: params.aberration },
                 uDesat: { value: params.desat },
+                uFade: { value: 1 },
             },
             vertexShader: `varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
             fragmentShader: `
                 precision highp float;
                 uniform sampler2D tDiffuse;
-                uniform float uTime, uGrain, uVignette, uAberration, uDesat;
+                uniform float uTime, uGrain, uVignette, uAberration, uDesat, uFade;
                 varying vec2 vUv;
                 float hash(vec2 p){
                     p = fract(p * 0.3183099 + vec2(0.71, 0.113));
-                    p *= 17.0;
+                    p = p * 17.0 + 1.0;
                     return fract(p.x * p.y * (p.x + p.y));
                 }
                 void main(){
@@ -1050,7 +1449,7 @@
                     col += g * uGrain;
                     float vig = smoothstep(0.85, 0.18, r2 * uVignette);
                     col *= mix(0.55, 1.0, vig);
-                    gl_FragColor = vec4(col, 1.0);
+                    gl_FragColor = vec4(col * (1.0 - uFade), 1.0);
                 }
             `,
         };
@@ -1069,15 +1468,19 @@
         }
 
         function buildLights() {
-            scene.add(new THREE.HemisphereLight(0x3d4a6b, 0x4a2f22, 0.72));
-            // what's left of the sun: a low warm graze from the west, going out
-            const dusk = new THREE.DirectionalLight(0xd97a45, 0.7);
-            dusk.position.set(140, 14, -160);
-            scene.add(dusk);
+            hemiLight = new THREE.HemisphereLight(0x3d4a6b, 0x4a2f22, 0.95);
+            scene.add(hemiLight);
+            // what's left of the sun: a low warm graze from where it set, going out
+            duskLight = new THREE.DirectionalLight(0xd97a45, 0.7);
+            duskLight.position.set(140, 14, -160);
+            scene.add(duskLight);
             // cool bounce off the sky, from the plaza side
-            const fill = new THREE.DirectionalLight(0x3e4a6e, 0.45);
-            fill.position.set(-60, 50, 90);
-            scene.add(fill);
+            fillLight = new THREE.DirectionalLight(0x3e4a6e, 0.6);
+            fillLight.position.set(-60, 50, 90);
+            scene.add(fillLight);
+            // the moon, when there is one worth having
+            moonLight = new THREE.DirectionalLight(0xb9c6e6, 0);
+            scene.add(moonLight);
         }
 
         function init() {
@@ -1106,13 +1509,23 @@
             buildBreakwater();
             buildCity();
             buildRidges();
+            buildAlcazaba();
             buildLovers();
+            buildShip();
+            buildSwifts();
             buildEmbers();
             buildComposer();
             setupControls();
             setupGUI();
 
+            // the real sky, now (or at ?when=), unless pinned to the original dusk
+            if (Q.has('when')) { const w = new Date(Q.get('when')); if (!isNaN(w)) SKY.when = w; }
+            if (params.live || SKY.when) computeSky(SKY.when || new Date());
+            pushSky();
+
             // camera query overrides
+            if (Q.has('shot')) shot.idx = Math.max(0, Math.min(SHOTS.length - 1, parseInt(Q.get('shot'), 10) || 0));
+            if (['radius','az','el','tx','ty','tz'].some((k) => Q.has(k))) { params.shots = false; shot.state = 'held'; }
             if (Q.has('radius')) { controls.radius = controls.targetRadius = parseFloat(Q.get('radius')); params.pushIn = false; }
             if (Q.has('az')) controls.azimuth = parseFloat(Q.get('az'));
             if (Q.has('el')) controls.elevation = parseFloat(Q.get('el'));
@@ -1151,6 +1564,22 @@
                         (1 - THREE.MathUtils.smoothstep(cyc, 0.5, 0.72));
             simulateEmbers(t, dt, env);
             updateLovers(t);
+            updateShip(env);
+            updateSwifts(t);
+            if ((params.live || SKY.when) && t - lastSkyAt > 60) {
+                lastSkyAt = t;
+                computeSky(SKY.when ? new Date(SKY.when.getTime() + t * 1000) : new Date());
+                pushSky();
+            }
+            seaMat.uniforms.uEmber.value = env;
+            const LP = seaMat.uniforms.uLightPos.value, LC = seaMat.uniforms.uLightCol.value;
+            lampLights.forEach((pt, i) => {
+                LP[i].copy(pt.position);
+                LC[i].setHex(0xff9b45).multiplyScalar(pt.intensity / 95);
+            });
+            LP[LAMPS.length].copy(lovers.pink.position);     LC[LAMPS.length].setHex(0xff7fb0).multiplyScalar(0.6);
+            LP[LAMPS.length + 1].copy(lovers.blue.position); LC[LAMPS.length + 1].setHex(0x7fa8ff).multiplyScalar(0.6);
+            LP[LAMPS.length + 2].copy(shipMasthead).y += ship.position.y; LC[LAMPS.length + 2].setHex(0xfff0cc).multiplyScalar(0.5 * env);
             embers.material.uniforms.uSize.value = params.emberSize;
             embers.material.uniforms.uGlow.value = params.emberGlow;
             seaMat.uniforms.uTime.value = t;
@@ -1187,9 +1616,14 @@
             look.add(params, 'aberration', 0, 0.006, 0.0002).onChange((v) => finalPass.uniforms.uAberration.value = v);
             look.add(params, 'desat', 0, 1, 0.02).onChange((v) => finalPass.uniforms.uDesat.value = v);
             const cam = gui.addFolder('Camera');
-            cam.add(controls, 'targetRadius', 22, 140, 1).name('distance').onChange(() => params.pushIn = false);
+            cam.add(controls, 'targetRadius', 16, 190, 1).name('distance').onChange(() => { takeOver(); params.pushIn = false; });
             cam.add(controls, 'elevation', 0, 0.5, 0.01);
             cam.add(params, 'autoOrbit', 0, 0.06, 0.002).name('idle orbit');
+            cam.add(params, 'shots').name('shot list');
+            cam.add(shot, 'resumeAfter', 5, 120, 1).name('resume after (s)');
+            const sky = gui.addFolder('Sky');
+            sky.add(SKY, 'dusk', 0, 1, 0.01).name('night').listen().onChange(() => pushSky());
+            sky.add(SKY, 'moonUp', 0, 1, 0.01).name('moon up').onChange(() => pushSky());
             gui.close();
             gui.domElement.style.display = 'none';
             window.addEventListener('keydown', (e) => {
