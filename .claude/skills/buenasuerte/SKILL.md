@@ -14,22 +14,37 @@ Everything lives under `static/` only. Don't mirror anything to
 
 ## Adding new scores
 
-1. Screenshots are iPhone score screens (1206x2622 PNGs), usually in
-   `~/Downloads/puzzle/`. Ask where they are if unclear. New screenshots
-   go in the SAME folder as the old ones: the converter processes the
-   whole folder and filename order (IMG_NNNN) is the play order. A file
-   not named IMG_NNNN (e.g. a Mac "Screenshot ..." capture) sorts wrong
-   and lands out of order: rename it to an unused IMG_NNNN that sits
-   between its neighbours BEFORE converting.
-2. Run the converter:
+1. Screenshots are iPhone score screens (1206x2622 PNGs). The kept set
+   lives in `~/puzzle/` (in the user's home, NOT under Downloads any
+   more). New ones land in `~/Downloads/` first, AirDropped from the
+   phone, mixed in with everything else that gets downloaded. Don't
+   ask where they are; the converter finds them itself (step 2). New
+   screenshots go in the SAME folder as the old ones: the converter
+   processes the whole folder and filename order (IMG_NNNN) is the play
+   order. A file not named IMG_NNNN (e.g. a Mac "Screenshot ..."
+   capture) sorts wrong and lands out of order: rename it to an unused
+   IMG_NNNN that sits between its neighbours BEFORE converting.
+2. Run the converter with `--collect` pointed at Downloads:
 
    ```
-   tools/puzzle.py ~/Downloads/puzzle static/art/buenasuerte-assets
+   tools/puzzle.py ~/puzzle static/art/buenasuerte-assets --collect ~/Downloads
    ```
 
-   It is incremental: screenshots that already have a JPEG are skipped
-   (pass --force to redo them all), so it only reports the new cards.
-   It preserves existing `note` fields and ghost entries.
+   The collect step sweeps `~/Downloads` for PNGs that are score screens
+   and moves them into `~/puzzle` before converting. It recognises one
+   by colour: the app paints the whole screen its green (`#038839`,
+   RGB 2,135,56), and the script samples five fixed spots in the status
+   bar, margins and bottom (the `GREEN_SPOTS` list in `tools/puzzle.py`)
+   that are green on every score screen and on nothing else. Other
+   PNGs in Downloads are never touched. Copies of scores already in
+   `~/puzzle` are left where they are and counted in one summary line.
+   Add `--dry-run` to see what would move without moving or converting
+   anything. If the app ever restyles, resample the spots and update
+   `CORE_GREEN`.
+
+   Conversion is incremental: screenshots that already have a JPEG are
+   skipped (pass --force to redo them all), so it only reports the new
+   cards. It preserves existing `note` fields and ghost entries.
 
    Each card also gets a `date` (the day it was played), shown on the
    page as an amber monospace stamp in the photo's corner, film-print

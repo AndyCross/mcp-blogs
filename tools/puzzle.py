@@ -25,14 +25,21 @@ cards, written by hand for days that were played but never screenshotted
 a plain sort drops them between the right neighbours, and reruns keep
 them too.
 
+New screenshots arrive in ~/Downloads first. With --collect DIR the
+script sweeps that folder before converting: any PNG whose margins are
+the puzzle app's green (#038839, sampled at a few fixed spots) is a
+score screen and gets moved into the source folder. Other screenshots
+are left alone.
+
 Usage:
-    tools/puzzle.py ~/Downloads/puzzle static/art/buenasuerte-assets
+    tools/puzzle.py ~/puzzle static/art/buenasuerte-assets --collect ~/Downloads
 """
 
 from __future__ import annotations
 
 import argparse
 import json
+import shutil
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -47,13 +54,75 @@ CROP_BOTTOM = 1460
 OUT_WIDTH = 720
 JPEG_QUALITY = 78
 
+# The app paints the whole score screen its own green. These spots
+# (in 1206x2622 coordinates, scaled for other sizes) sit in the status
+# bar, the left margin and the bottom, clear of the white card and any
+# text, so they are green on every score screenshot and nothing else.
+CORE_GREEN = (2, 135, 56)
+GREEN_SPOTS = [(50, 50), (600, 470), (100, 2000), (1100, 600), (600, 2500)]
+GREEN_TOLERANCE = 12
+
+
+def is_score_screen(path: Path) -> bool:
+    """True if every sample spot is the app's green."""
+    try:
+        with Image.open(path) as img:
+            img = img.convert("RGB")
+            w, h = img.size
+            if h <= w:  # portrait phone screens only
+                return False
+            scale = w / 1206
+            for x, y in GREEN_SPOTS:
+                px = img.getpixel((min(round(x * scale), w - 1), min(round(y * scale), h - 1)))
+                if any(abs(a - b) > GREEN_TOLERANCE for a, b in zip(px, CORE_GREEN)):
+                    return False
+            return True
+    except OSError:
+        return False
+
+
+def collect(downloads: Path, dest: Path, dry_run: bool = False) -> list[Path]:
+    """Move score screenshots out of downloads into dest. Returns what moved."""
+    moved = []
+    already = 0
+    candidates = sorted(
+        p for p in downloads.iterdir()
+        if p.is_file() and p.suffix.lower() == ".png" and not p.name.startswith(".")
+    )
+    for path in candidates:
+        if not is_score_screen(path):
+            continue
+        target = dest / path.name
+        if target.exists():
+            already += 1
+            continue
+        print(f"  {'would move' if dry_run else 'move'} {path.name} -> {dest}")
+        if not dry_run:
+            shutil.move(str(path), str(target))
+        moved.append(target)
+    if already:
+        print(f"  {already} score screenshot(s) in {downloads} already in {dest}, left alone")
+    if not moved:
+        print(f"  nothing new in {downloads}")
+    return moved
+
 
 def main() -> int:
     ap = argparse.ArgumentParser(description="Crop puzzle score screenshots for the web.")
     ap.add_argument("source", type=Path, help="folder of PNG screenshots")
     ap.add_argument("out", type=Path, help="output folder for JPEGs + manifest.json")
     ap.add_argument("--force", action="store_true", help="reconvert screenshots that already have a JPEG")
+    ap.add_argument("--collect", type=Path, metavar="DIR",
+                    help="first move any score screenshots found in DIR (e.g. ~/Downloads) into source")
+    ap.add_argument("--dry-run", action="store_true", help="with --collect, only report what would move")
     args = ap.parse_args()
+
+    if args.collect:
+        args.source.mkdir(parents=True, exist_ok=True)
+        print(f"collecting from {args.collect}:")
+        collect(args.collect, args.source, dry_run=args.dry_run)
+        if args.dry_run:
+            return 0
 
     sources = sorted(
         p for p in args.source.iterdir()
