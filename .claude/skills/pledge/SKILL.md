@@ -37,6 +37,15 @@ pledges stay behind the glyph in the corner, fading with age.
    }
    ```
 
+   Choose the engine. The default is v1 (the original glow rose) and
+   needs no field at all. Only when the user asks for it ("I want this
+   as v2", "use the lit petals", "v2 please") add `engine: 'v2'` to the
+   new entry, which draws real petal surfaces with light through them,
+   dew, and petals letting go one by one. Never add or change the engine
+   on an old pledge unless asked. The timeline behind the glyph marks
+   any non-v1 pledge with a small "v2" after its date. Either engine can
+   be previewed on the live page with `?engine=v2` or `?engine=v1` in
+   the URL, and `?bare` hides the words for a clear look.
 4. Move `final: true` to the new entry: delete the `final` line from
    the previous last pledge and set it on the new one. The final pledge
    is the one whose words never fade, whose bloom holds longer, whose

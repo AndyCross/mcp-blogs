@@ -138,8 +138,9 @@
         max-width: 34rem;
         margin: 0 auto 3.2rem;
         opacity: 0;
-        animation: bloom 1.4s ease forwards;
     }
+    /* Entries arrive as you scroll to them, not on a clock. */
+    #timeline .entry.in { animation: bloom 1.4s ease forwards; }
     #timeline .entry .date {
         font-family: "Georgia", serif;
         font-variant: small-caps;
@@ -147,6 +148,16 @@
         font-size: 0.7rem;
         opacity: 0.5;
         margin-bottom: 0.8rem;
+    }
+    #timeline .entry .date .engine {
+        display: inline-block;
+        margin-left: 0.9em;
+        padding: 0.05em 0.5em;
+        border: 1px solid currentColor;
+        border-radius: 999px;
+        font-size: 0.85em;
+        letter-spacing: 0.12em;
+        opacity: 0.85;
     }
     #timeline .entry h2 {
         font-family: "Georgia", "Times New Roman", serif;
@@ -207,14 +218,17 @@
         0%, 100% { box-shadow: 0 0 4px rgba(192, 128, 129, 0.2); }
         50%      { box-shadow: 0 0 12px rgba(192, 128, 129, 0.55); }
     }
+
+    /* ?bare in the URL strips the words and controls, for comparing renders. */
+    body.bare #title, body.bare #hint, body.bare #memories, body.bare #back { display: none !important; }
 </style>
 </head>
 <body>
     <a id="back" href="/art/">&larr; art</a>
     <div id="container"></div>
     <div id="title">
-        <h1>Te amaré siempre.</h1>
-        <div id="whisper">I will do the old routines like I always did and I will not mention the empty space beside me. A perfect, beautiful space, preserved preferentially. I abide.</div>
+        <h1>Te echo de menos cada día.</h1>
+        <div id="whisper">Te echo de menos, Bombón.</div>
         <div id="forever">iba a ser la última promesa. vuelvo, por si algún día la lees.</div>
     </div>
     <div id="hint">move closer and it goes sooner</div>
@@ -239,6 +253,13 @@
         // The pledges, oldest first. Append a new entry to update the piece:
         // the last one becomes the opening title, and its tint becomes the
         // colour the rose blooms in. The old ones remain, behind the glyph.
+        //
+        // Each pledge may also name the engine that draws its rose:
+        //   engine: 'v1'  the original: petals as accumulated light, no
+        //                 surfaces, dissolving into a gyroid tangle (default)
+        //   engine: 'v2'  lit petal surfaces with translucency, sheen and dew,
+        //                 which detach and drift away into light as it is lost
+        // Preview either on any pledge with ?engine=v2 (or v1) in the URL.
         const pledges = [
             {
                 date: '2026-06-25',
@@ -436,14 +457,30 @@
                 date: '2026-09-05',
                 title: 'Te amaré siempre.',
                 whisper: 'I will do the old routines like I always did and I will not mention the empty space beside me. A perfect, beautiful space, preserved preferentially. I abide.',
-                tint: '#cd5b45',
+                tint: '#cd5b45'
+            },
+            {
+                date: '2026-09-06',
+                title: 'Te echo de menos cada día.',
+                whisper: 'Te echo de menos, Bombón.',
+                tint: '#7b4b2a',
+                engine: 'v2',
                 final: true
             }
         ];
 
         // --- Core Variables ---
-        let camera, scene, renderer, controls, material;
+        let camera, scene, renderer, controls, material, material2, mesh;
         let clock = new THREE.Clock();
+
+        // Debug and comparison switches, read from the URL:
+        //   ?engine=v2   draw every pledge with that engine, whatever it names
+        //   ?phase=1.2   hold the bloom/loss cycle still at this phase (radians)
+        //   ?bare        hide the words and controls
+        const query = new URLSearchParams(location.search);
+        const engineOverride = ['v1', 'v2'].includes(query.get('engine')) ? query.get('engine') : null;
+        const fixedPhase = query.has('phase') ? parseFloat(query.get('phase')) : null;
+        if (query.has('bare')) document.body.classList.add('bare');
         let titleTimer = null; // the timer that fades the title away after a reveal
         let titleHoldMs = 8000; // null means the words never leave the screen
         // Tracks whether a pointer was scrolling the past rather than choosing from it.
@@ -473,7 +510,14 @@
             edgeFade: 0.6,
             glowIntensity: 0.013,
             petalCount: 22,
-            bloomHold: 1.0          // >1 holds the closed bud longer; 1 is the original cycle
+            bloomHold: 1.0,         // >1 holds the closed bud longer; 1 is the original cycle
+            engine: 'v1',           // which renderer draws the rose (set per pledge)
+            // v2 only
+            v2Halo: 0.35,           // soft light around the petals
+            v2Sheen: 0.55,          // velvet at grazing angles
+            v2Sss: 0.7,             // light through the petal from behind
+            v2Dew: 0.05,            // droplet density; 0 for none
+            v2Key: 1.1              // key light strength
         };
 
         init();
@@ -503,26 +547,386 @@
 
             const geometry = new THREE.PlaneGeometry(2, 2);
 
-            material = new THREE.ShaderMaterial({
+            // One set of uniforms, shared by reference between both engines,
+            // so the cycle, the colour and the camera stay in step whichever
+            // is drawing.
+            const shared = {
+                uTime: { value: 0.0 },
+                uMorph: { value: 0.0 },
+                uSeed: { value: 0.0 },
+                uResolution: { value: new THREE.Vector2(window.innerWidth * params.dpr, window.innerHeight * params.dpr) },
+                cameraWorldMatrix: { value: camera.matrixWorld },
+                cameraProjectionMatrixInverse: { value: camera.projectionMatrixInverse },
+                uColorWarm: { value: new THREE.Color(params.colorWarm) },
+                uColorCold: { value: new THREE.Color(params.colorCold) },
+                uSphereRadius: { value: params.sphereRadius },
+                uEdgeFade: { value: params.edgeFade },
+                uGlowIntensity: { value: params.glowIntensity },
+                uWarpSpeed: { value: params.warpSpeed },
+                uSphereSpin: { value: 0.0 },
+                uTilt: { value: THREE.MathUtils.degToRad(params.roseTilt) },
+                uAberration: { value: params.aberration },
+                uParticleDensity: { value: params.particleDensity },
+                uPetalCount: { value: params.petalCount }
+            };
+
+            const fullscreenVertex = `
+                    varying vec2 vUv;
+                    void main() {
+                        vUv = uv;
+                        gl_Position = vec4(position, 1.0);
+                    }
+                `;
+
+            // ---- v2: the rose as lit petals ----
+            material2 = new THREE.ShaderMaterial({
                 uniforms: {
-                    uTime: { value: 0.0 },
-                    uMorph: { value: 0.0 },
-                    uSeed: { value: 0.0 },
-                    uResolution: { value: new THREE.Vector2(window.innerWidth * params.dpr, window.innerHeight * params.dpr) },
-                    cameraWorldMatrix: { value: camera.matrixWorld },
-                    cameraProjectionMatrixInverse: { value: camera.projectionMatrixInverse },
-                    uColorWarm: { value: new THREE.Color(params.colorWarm) },
-                    uColorCold: { value: new THREE.Color(params.colorCold) },
-                    uSphereRadius: { value: params.sphereRadius },
-                    uEdgeFade: { value: params.edgeFade },
-                    uGlowIntensity: { value: params.glowIntensity },
-                    uWarpSpeed: { value: params.warpSpeed },
-                    uSphereSpin: { value: 0.0 },
-                    uTilt: { value: THREE.MathUtils.degToRad(params.roseTilt) },
-                    uAberration: { value: params.aberration },
-                    uParticleDensity: { value: params.particleDensity },
-                    uPetalCount: { value: params.petalCount }
+                    ...shared,
+                    uHalo:  { value: params.v2Halo },
+                    uSheen: { value: params.v2Sheen },
+                    uSss:   { value: params.v2Sss },
+                    uDew:   { value: params.v2Dew },
+                    uKey:   { value: params.v2Key }
                 },
+                vertexShader: fullscreenVertex,
+                fragmentShader: `
+                    uniform float uTime;
+                    uniform float uMorph;
+                    uniform float uSeed;
+                    uniform vec3 uColorWarm;
+                    uniform vec3 uColorCold;
+                    uniform float uSphereRadius;
+                    uniform float uEdgeFade;
+                    uniform float uSphereSpin;
+                    uniform float uTilt;
+                    uniform float uParticleDensity;
+                    uniform float uPetalCount;
+                    uniform float uHalo;
+                    uniform float uSheen;
+                    uniform float uSss;
+                    uniform float uDew;
+                    uniform float uKey;
+
+                    uniform mat4 cameraWorldMatrix;
+                    uniform mat4 cameraProjectionMatrixInverse;
+
+                    varying vec2 vUv;
+
+                    const float PI = 3.14159265;
+                    const float GOLDEN = 2.39996323;
+
+                    mat2 rot(float a) {
+                        float s = sin(a), c = cos(a);
+                        return mat2(c, -s, s, c);
+                    }
+                    float hash(vec2 p) {
+                        return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453);
+                    }
+                    float hash11(float n) {
+                        return fract(sin(n * 127.1 + 311.7) * 43758.5453);
+                    }
+                    float hash31(vec3 p3) {
+                        p3  = fract(p3 * 0.1031);
+                        p3 += dot(p3, p3.yzx + 33.33);
+                        return fract((p3.x + p3.y) * p3.z);
+                    }
+                    float smin(float a, float b, float k) {
+                        float h = clamp(0.5 + 0.5 * (b - a) / k, 0.0, 1.0);
+                        return mix(b, a, h) - k * h * (1.0 - h);
+                    }
+                    float smax(float a, float b, float k) { return -smin(-a, -b, k); }
+
+                    // One petal of the spiral. m is the loss (0 whole, 1 gone).
+                    // info returns (along the petal, across it 0..1 to the edge,
+                    // ring 0 centre..1 rim, detachment) for the shading.
+                    float petal(float fi, vec3 p, float m, out vec4 info) {
+                        float t = fi / uPetalCount;
+                        float rnd = hash11(fi + uSeed * 7.1);
+                        float ang = fi * GOLDEN + uSeed;
+
+                        vec3 radial = vec3(cos(ang), 0.0, sin(ang));
+                        vec3 tang   = vec3(-sin(ang), 0.0, cos(ang));
+                        vec3 up     = vec3(0.0, 1.0, 0.0);
+
+                        // The outer petals let go first; the heart holds longest.
+                        float start = 0.26 + 0.44 * (1.0 - t) + rnd * 0.08;
+                        float det = smoothstep(start, start + 0.26, m);
+                        float scale = 1.0 - smoothstep(0.5, 1.0, det);
+                        float halfLen = mix(0.34, 0.66, t) * scale;
+                        float halfWid = mix(0.27, 0.64, t) * scale;
+
+                        // Furled and upright at the heart, laid open at the rim.
+                        float openA = mix(0.06, 1.3, pow(t, 0.8)) + m * 0.4 + det * 0.5;
+                        vec3 S = normalize(cos(openA) * up + sin(openA) * radial);
+                        vec3 N = normalize(cross(tang, S));
+
+                        // Let go: tumble about the width axis, lift and drift.
+                        float tumble = det * (1.2 + rnd * 1.6);
+                        vec3 S2 = cos(tumble) * S + sin(tumble) * N;
+                        vec3 N2 = cos(tumble) * N - sin(tumble) * S;
+                        S = S2; N = N2;
+
+                        float baseRadius = mix(0.03, 0.6, t) * (1.0 + m * 0.3);
+                        float baseHeight = mix(0.38, -0.18, t);
+                        vec3 base = radial * baseRadius + up * baseHeight;
+                        base += (S * 1.5 + up * 1.1) * det
+                              + vec3(sin(uTime * 0.7 + fi), 0.0, cos(uTime * 0.6 + fi * 1.3)) * det * 0.35
+                              - up * det * det * 0.9;
+
+                        vec3 dv = p - base;
+                        info = vec4(0.5, 0.0, t, det);
+
+                        // Nothing left of it, or too far away to matter.
+                        float bound = halfLen * 2.3 + 0.15;
+                        float dl = length(dv);
+                        if (scale <= 0.001) return 10.0;
+                        // Stay clear of the hit threshold here, or the marcher
+                        // would stop on the bound itself and draw a ball.
+                        if (dl > bound) return dl - bound + 0.04;
+
+                        float ls = dot(dv, S);
+                        float lw = dot(dv, tang);
+                        float ln = dot(dv, N);
+                        float along = clamp(ls / (2.0 * halfLen), 0.0, 1.0);
+
+                        // Outline: narrow at the base, broadest past the middle,
+                        // closing to a rounded tip with a shallow heart notch.
+                        float w = pow(max(sin(pow(along, 0.62) * PI), 0.0), 0.3);
+                        float hw0 = halfWid * (0.35 + 0.65 * w);
+                        float across = abs(lw) / max(hw0, 0.001);
+                        float notch = 1.0 - 0.14 * smoothstep(0.78, 1.0, along) * (1.0 - smoothstep(0.0, 0.4, across));
+                        float hw = hw0 * notch;
+
+                        // The face: cupped inward at the heart, flatter and
+                        // reflexed back at the tips of the outer rows, with a
+                        // soft ripple along the rim.
+                        float cup = mix(2.4, 0.55, t) * (1.0 - det * 0.6);
+                        float reflex = mix(-0.4, 0.55, pow(t, 0.7)) + m * 0.45;
+                        float a2 = along * along;
+                        float surf = cup * lw * lw * (1.0 - 0.5 * along)
+                                   - reflex * a2 * a2 * 0.9
+                                   + (0.012 + 0.03 * t) * sin(lw * 8.0 + fi * 1.7 + along * 5.0) * smoothstep(0.3, 1.0, along) * scale;
+                        float lnc = ln - surf;
+
+                        float thick = 0.024 + 0.02 * (1.0 - along);
+                        float edge = max(abs(lw) - hw, abs(ls - halfLen) - halfLen);
+                        float d = smax(abs(lnc) - thick, edge, 0.03);
+
+                        info = vec4(along, across, t, det);
+                        return d;
+                    }
+
+                    // The whole bloom, with the shading info of whatever is nearest.
+                    const float BLOOM = 1.32; // the rose, scaled to sit in the frame as v1 does
+                    float scene(vec3 p, out vec4 info) {
+                        p /= BLOOM;
+                        float m = uMorph;
+                        float d = 1e5;
+                        info = vec4(0.5, 0.0, 0.0, 0.0);
+                        int N = int(uPetalCount);
+                        for (int i = 0; i < 40; i++) {
+                            if (i >= N) break;
+                            vec4 pi;
+                            float dp = petal(float(i), p, m, pi);
+                            if (dp < d) info = pi;
+                            d = smin(d, dp, 0.018);
+                        }
+                        // The heart of the bud, the last to go.
+                        float coreScale = 1.0 - smoothstep(0.6, 0.9, m);
+                        vec3 cp = p - vec3(0.0, 0.3, 0.0);
+                        cp.y *= 0.75;
+                        float core = length(cp) - 0.15 * coreScale;
+                        if (core < d) info = vec4(0.1, 0.0, 0.0, 0.0);
+                        d = smin(d, core, 0.06);
+                        return d * BLOOM;
+                    }
+                    float map(vec3 p) {
+                        vec4 tmp;
+                        return scene(p, tmp);
+                    }
+
+                    vec3 calcNormal(vec3 p) {
+                        const vec2 e = vec2(0.0035, -0.0035);
+                        return normalize(
+                            e.xyy * map(p + e.xyy) +
+                            e.yyx * map(p + e.yyx) +
+                            e.yxy * map(p + e.yxy) +
+                            e.xxx * map(p + e.xxx));
+                    }
+
+                    float calcAO(vec3 p, vec3 n) {
+                        float occ = 0.0, sca = 1.0;
+                        for (int i = 1; i <= 4; i++) {
+                            float h = 0.015 + 0.06 * float(i);
+                            float d = map(p + n * h);
+                            occ += (h - d) * sca;
+                            sca *= 0.65;
+                        }
+                        return clamp(1.0 - 2.2 * occ, 0.0, 1.0);
+                    }
+
+                    float softShadow(vec3 ro, vec3 rd) {
+                        float res = 1.0, t = 0.03;
+                        for (int i = 0; i < 10; i++) {
+                            float h = map(ro + rd * t);
+                            res = min(res, 9.0 * h / t);
+                            t += clamp(h, 0.02, 0.16);
+                            if (res < 0.02 || t > 2.6) break;
+                        }
+                        return clamp(res, 0.0, 1.0);
+                    }
+
+                    vec2 intersectSphere(vec3 ro, vec3 rd, float r) {
+                        float b = dot(ro, rd);
+                        float c = dot(ro, ro) - r * r;
+                        float h = b * b - c;
+                        if (h < 0.0) return vec2(0.0);
+                        h = sqrt(h);
+                        return vec2(-b - h, -b + h);
+                    }
+
+                    vec3 aces(vec3 x) {
+                        return clamp((x * (2.51 * x + 0.03)) / (x * (2.43 * x + 0.59) + 0.14), 0.0, 1.0);
+                    }
+
+                    void main() {
+                        vec2 ndc = (vUv - 0.5) * 2.0;
+                        vec4 clipPos = vec4(ndc, -1.0, 1.0);
+                        vec4 viewPos = cameraProjectionMatrixInverse * clipPos;
+                        vec3 rd = normalize((cameraWorldMatrix * vec4(viewPos.xyz, 0.0)).xyz);
+                        vec3 ro = cameraPosition;
+
+                        // The key light sits up and to the left of the viewer, and
+                        // the fill low on the right, so they hold still as the
+                        // orbit turns. Both follow the ray into the rose's frame.
+                        vec3 L1 = normalize((cameraWorldMatrix * vec4(normalize(vec3(-0.55, 0.75, 0.55)), 0.0)).xyz);
+                        vec3 L2 = normalize((cameraWorldMatrix * vec4(normalize(vec3(0.7, -0.35, 0.3)), 0.0)).xyz);
+
+                        mat2 spinRot = rot(uSphereSpin);
+                        ro.xz *= spinRot; rd.xz *= spinRot; L1.xz *= spinRot; L2.xz *= spinRot;
+                        mat2 tiltRot = rot(uTilt);
+                        ro.yz *= tiltRot; rd.yz *= tiltRot; L1.yz *= tiltRot; L2.yz *= tiltRot;
+
+                        vec3 tint = uColorWarm;
+                        float drain = smoothstep(0.35, 0.9, uMorph);
+                        vec3 bg = vec3(0.0006, 0.0008, 0.0016);
+
+                        vec2 hit = intersectSphere(ro, rd, uSphereRadius);
+                        if (hit.y <= 0.0) {
+                            gl_FragColor = vec4(pow(aces(bg), vec3(0.4545)), 1.0);
+                            return;
+                        }
+
+                        float tNear = max(0.0, hit.x);
+                        float tFar = hit.y;
+                        float t = tNear + hash(gl_FragCoord.xy) * 0.02;
+
+                        // March to the surface, remembering how close the ray
+                        // passed and gathering a little light and dust on the way.
+                        float minD = 1e3;
+                        float haze = 0.0;
+                        float spark = 0.0;
+                        bool found = false;
+                        vec3 p = ro;
+                        for (int i = 0; i < 120; i++) {
+                            p = ro + rd * t;
+                            float d = map(p);
+                            minD = min(minD, d);
+                            haze += exp(-abs(d) * 45.0) * min(abs(d) * 0.7, 0.2) * 0.03;
+
+                            float drift = 1.0 + uMorph * 2.0;
+                            vec3 pPos = p * 20.0 + vec3(uTime * 1.2, uTime * (-1.6 * drift), uTime * 0.4);
+                            vec3 pCell = floor(pPos);
+                            float isP = step(1.0 - uParticleDensity * (0.35 + uMorph * 1.6), hash31(pCell));
+                            float pDist = length(fract(pPos) - 0.5);
+                            spark += isP * 0.0009 / (pDist * pDist + 0.004);
+
+                            if (d < 0.0018) { found = true; break; }
+                            t += d * 0.7;
+                            if (t > tFar) break;
+                        }
+
+                        vec3 col = bg;
+                        if (found) {
+                            vec4 info;
+                            scene(p, info);
+                            float along = info.x, across = info.y, ring = info.z, det = info.w;
+
+                            vec3 n = calcNormal(p);
+                            vec3 V = -rd;
+                            // Petals are thin: shade whichever face looks at us.
+                            if (dot(n, V) < 0.0) n = -n;
+
+                            // Cream at the base, the pledge's colour through the
+                            // middle, deeper toward the rim edge.
+                            vec3 pale = mix(tint, vec3(1.0, 0.96, 0.9), 0.35);
+                            vec3 deep = tint * 0.45;
+                            vec3 albedo = mix(pale, tint, smoothstep(0.0, 0.7, along));
+                            albedo = mix(albedo, deep, smoothstep(0.65, 1.0, across) * 0.6);
+                            albedo *= mix(0.72, 1.0, ring);
+                            albedo = mix(albedo, uColorCold * 1.5, clamp(drain * 0.7 + det * 0.35, 0.0, 1.0));
+
+                            float ao = calcAO(p, n);
+                            float sh = mix(0.3, 1.0, softShadow(p + n * 0.035, L1));
+
+                            // Soft wrap diffuse: light spills round a translucent petal.
+                            float wrap = 0.35;
+                            float diff = pow(clamp((dot(n, L1) + wrap) / (1.0 + wrap), 0.0, 1.0), 1.3);
+                            vec3 keyCol = vec3(1.0, 0.95, 0.88) * uKey;
+                            col = albedo * diff * sh * keyCol;
+                            col += albedo * clamp(dot(n, L2) * 0.5 + 0.5, 0.0, 1.0) * vec3(0.35, 0.4, 0.55) * 0.25 * ao;
+                            col += albedo * vec3(0.10, 0.11, 0.15) * ao;
+
+                            // Light from behind, seen through the petal.
+                            float back = clamp(dot(V, -(L1 + n * 0.3)), 0.0, 1.0);
+                            float sss = pow(back, 3.0) * (1.0 - ring * 0.3);
+                            col += mix(tint, pale, 0.4) * sss * keyCol * uSss * 0.6;
+
+                            // Velvet: the nap catches light at grazing angles.
+                            float fres = pow(1.0 - clamp(dot(n, V), 0.0, 1.0), 3.0);
+                            col += mix(tint, vec3(1.0), 0.6) * fres * uSheen * ao * 0.5;
+
+                            // A satin highlight, never glossy.
+                            vec3 H = normalize(L1 + V);
+                            col += vec3(1.0, 0.97, 0.94) * pow(clamp(dot(n, H), 0.0, 1.0), 40.0) * 0.22 * sh;
+
+                            // Dew: small beads that catch the key light.
+                            if (uDew > 0.0) {
+                                vec3 dp = p * 26.0;
+                                vec3 cell = floor(dp);
+                                vec3 f = fract(dp) - 0.5;
+                                float isD = step(1.0 - uDew, hash31(cell + floor(uSeed)));
+                                float r = length(f);
+                                float bead = isD * smoothstep(0.24, 0.12, r);
+                                vec3 bn = normalize(n + f * 3.0);
+                                float glint = pow(clamp(dot(reflect(-L1, bn), V), 0.0, 1.0), 28.0);
+                                col = mix(col, col * 0.85, bead * 0.5);
+                                col += bead * (glint * 1.6 + fres * 0.25) * vec3(1.0);
+                            }
+
+                            // Becoming light as it lets go.
+                            col = mix(col, tint * 1.8 + vec3(0.2), smoothstep(0.1, 0.85, det));
+
+                            float fade = smoothstep(uSphereRadius, uSphereRadius - uEdgeFade, length(p));
+                            col = mix(bg, col, fade);
+                        } else {
+                            // A soft glow where the ray only brushed a petal.
+                            col += tint * uHalo * 0.2 * exp(-max(minD, 0.0) * 55.0);
+                        }
+
+                        col += tint * haze * uHalo * (0.5 + 0.7 * uMorph);
+                        col += vec3(1.0, 0.98, 0.95) * spark * (0.25 + 0.6 * uMorph) * 0.06;
+
+                        col = aces(col);
+                        col = pow(col, vec3(0.4545));
+                        gl_FragColor = vec4(col, 1.0);
+                    }
+                `
+            });
+
+            // ---- v1: the rose as light ----
+            material = new THREE.ShaderMaterial({
+                uniforms: { ...shared },
                 vertexShader: `
                     varying vec2 vUv;
                     void main() {
@@ -755,7 +1159,7 @@
                 `
             });
 
-            const mesh = new THREE.Mesh(geometry, material);
+            mesh = new THREE.Mesh(geometry, material);
             mesh.frustumCulled = false;
             scene.add(mesh);
 
@@ -856,6 +1260,9 @@
             params.colorWarm = p.tint;
             material.uniforms.uColorWarm.value.set(p.tint);
 
+            // Draw it with the engine this pledge asks for (URL override wins).
+            setEngine(engineOverride || p.engine || 'v1');
+
             // The last pledge ever. Everything slows: the rose holds its bloom
             // longer, the orbit drifts rather than turns, a closing line
             // appears, and the words never fade. They stay forever.
@@ -864,6 +1271,12 @@
             params.loopSpeed = p.final ? 0.09 : 0.18;
             params.bloomHold = p.final ? 1.7 : 1.0;
             controls.autoRotateSpeed = p.final ? 0.3 : params.rotationSpeed;
+        }
+
+        // Swap the renderer: v1 is the original glow, v2 the lit petals.
+        function setEngine(name) {
+            params.engine = name === 'v2' ? 'v2' : 'v1';
+            mesh.material = params.engine === 'v2' ? material2 : material;
         }
 
         // Bring the title back and replay its bloom, then let it fade again,
@@ -887,6 +1300,18 @@
         function buildEntries(timeline) {
             timeline.textContent = '';
             const n = pledges.length;
+            // Reveal each pledge as it scrolls into the veil. Ones arriving
+            // together still land one after another.
+            let batch = 0;
+            const reveal = new IntersectionObserver((entries, obs) => {
+                let k = 0;
+                for (const e of entries) {
+                    if (!e.isIntersecting) continue;
+                    obs.unobserve(e.target);
+                    setTimeout(() => e.target.classList.add('in'), (batch === 0 ? 150 : 0) + k++ * 120);
+                }
+                if (k) batch++;
+            }, { root: timeline, rootMargin: '120px 0px', threshold: 0 });
             pledges.forEach((p, i) => {
                 const age = n - 1 - i; // 0 = now, older sinks further
                 const entry = document.createElement('div');
@@ -894,8 +1319,6 @@
                 // Text lifted toward the pale rose so it reads; the raw tint
                 // stays in the glow beneath it.
                 entry.style.color = '#' + new THREE.Color(p.tint).lerp(new THREE.Color('#c6cdd9'), 0.55).getHexString();
-                entry.style.opacity = 0;
-                entry.style.animationDelay = `${0.15 + i * 0.2}s`;
                 // Older pledges have faded with time.
                 const brightness = Math.max(0.45, 1 - age * 0.18);
                 entry.style.filter = `brightness(${brightness})`;
@@ -903,6 +1326,14 @@
                 const date = document.createElement('div');
                 date.className = 'date';
                 date.textContent = p.date;
+                // A quiet note of which rose this one was drawn with, when
+                // it isn't the original.
+                if (p.engine && p.engine !== 'v1') {
+                    const eng = document.createElement('span');
+                    eng.className = 'engine';
+                    eng.textContent = p.engine;
+                    date.appendChild(eng);
+                }
                 entry.appendChild(date);
 
                 const h2 = document.createElement('h2');
@@ -932,6 +1363,7 @@
                     revealTitle();
                 });
                 timeline.appendChild(entry);
+                reveal.observe(entry);
             });
         }
 
@@ -955,6 +1387,15 @@
             sys.add(params, 'loopSpeed', 0.02, 0.8).name('Bloom/Loss Speed');
             sys.add(params, 'bloomHold', 1.0, 3.0, 0.1).name('Hold the Bud');
             sys.add(params, 'sphereSpinSpeed', -3.0, 3.0).name('Inner Spin');
+
+            gui.add(params, 'engine', ['v1', 'v2']).name('Engine').onChange(setEngine);
+
+            const v2 = gui.addFolder('v2: Lit Petals');
+            v2.add(params, 'v2Key', 0.2, 3.0, 0.05).name('Key Light').onChange(v => material2.uniforms.uKey.value = v);
+            v2.add(params, 'v2Halo', 0.0, 1.5, 0.01).name('Halo').onChange(v => material2.uniforms.uHalo.value = v);
+            v2.add(params, 'v2Sheen', 0.0, 2.0, 0.01).name('Velvet').onChange(v => material2.uniforms.uSheen.value = v);
+            v2.add(params, 'v2Sss', 0.0, 2.0, 0.01).name('Translucency').onChange(v => material2.uniforms.uSss.value = v);
+            v2.add(params, 'v2Dew', 0.0, 0.2, 0.005).name('Dew').onChange(v => material2.uniforms.uDew.value = v);
 
             const vis = gui.addFolder('Visuals');
             vis.addColor(params, 'colorWarm').name('Bloom (warm)').onChange(v => material.uniforms.uColorWarm.value.set(v));
@@ -1002,6 +1443,7 @@
             // The loss decays back toward calm, but never stops advancing.
             mouseEnergy *= 0.96;
             phase += dt * (params.loopSpeed * (1.0 + mouseEnergy * 4.0));
+            if (fixedPhase !== null && !isNaN(fixedPhase)) phase = fixedPhase;
 
             // Eased 0 -> 1 -> 0. bloomHold > 1 biases time toward the closed
             // bud; at 1.0 this is the original cosine cycle.
