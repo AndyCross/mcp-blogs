@@ -16,7 +16,7 @@
     "dedication": null,
     "written": "2026-09-07",
     "source": "Another hope.md",
-    "sha": "6c198797acbb1d67",
+    "sha": "05fd519557b91df4",
     "pages": [
       "another-hope.webp"
     ]
@@ -52,6 +52,17 @@
     "sha": "3417b3d51d4ad615",
     "pages": [
       "every-day-is-like-tomorrow.webp"
+    ]
+  },
+  "alone-again": {
+    "slug": "alone-again",
+    "title": "Alone Again",
+    "dedication": null,
+    "written": "2026-09-07",
+    "source": "Alone Again.md",
+    "sha": "ef92d6dad93dd384",
+    "pages": [
+      "alone-again.webp"
     ]
   }
 }
