@@ -42,5 +42,16 @@
     "pages": [
       "in-which-foxhole.webp"
     ]
+  },
+  "every-day-is-like-tomorrow": {
+    "slug": "every-day-is-like-tomorrow",
+    "title": "Every day is like tomorrow",
+    "dedication": null,
+    "written": "2026-09-07",
+    "source": "Every day is like tomorrow.md",
+    "sha": "3417b3d51d4ad615",
+    "pages": [
+      "every-day-is-like-tomorrow.webp"
+    ]
   }
 }
