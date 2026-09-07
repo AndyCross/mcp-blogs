@@ -64,6 +64,12 @@ theme = "stepdev"
     url = "/art/"
     weight = 25
 
+  [[menu.main]]
+    identifier = "words"
+    name = "Words"
+    url = "/words/"
+    weight = 30
+
 [mediaTypes]
   [mediaTypes."text/markdown"]
     suffixes = ["md"]

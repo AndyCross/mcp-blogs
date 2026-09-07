@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Words — Step Into Dev</title>
+<script src="https://cdn.counter.dev/script.js" data-id="72d92ac8-56cf-4fdd-9899-b73adbab2e4d" data-utcoffset="0"></script>
+<style>
+  :root {
+    --bg: #151311;
+    --text: #e8e2d6;
+    --muted: #9a8f80;
+    --accent: #d8b07a;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg); color: var(--text); }
+  body {
+    min-height: 100vh;
+    font-family: Baskerville, "Libre Baskerville", Georgia, "Times New Roman", serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 860px; margin: 0 auto; padding: 3.5rem 1.25rem 5rem; }
+  a.back { color: var(--muted); text-decoration: none; font-size: 0.95rem; }
+  a.back:hover { color: var(--accent); }
+  h1 { font-weight: 400; font-size: 2.4rem; letter-spacing: 0.01em; margin: 1.5rem 0 0.4rem; }
+  .lede { color: var(--muted); font-style: italic; font-size: 1.1rem; margin: 0 0 3rem; max-width: 36rem; }
+  ul.poems { list-style: none; margin: 0; padding: 0; }
+  ul.poems li { border-top: 1px solid rgba(232, 226, 214, 0.12); }
+  ul.poems li:last-child { border-bottom: 1px solid rgba(232, 226, 214, 0.12); }
+  ul.poems a {
+    display: flex; justify-content: space-between; align-items: baseline; gap: 1rem;
+    padding: 1.1rem 0.25rem; color: inherit; text-decoration: none;
+  }
+  ul.poems a:hover .t { color: var(--accent); }
+  ul.poems .t { font-size: 1.25rem; }
+  ul.poems .d { color: var(--muted); font-size: 0.85rem; font-style: italic; white-space: nowrap; }
+  .new-badge {
+    display: inline-block; margin-left: 0.6rem; padding: 0.1rem 0.5rem; font-size: 0.65rem;
+    letter-spacing: 0.1em; border-radius: 999px; vertical-align: middle; font-style: normal;
+    color: var(--accent); border: 1px solid rgba(216, 176, 122, 0.5);
+  }
+  .pages { display: flex; flex-direction: column; align-items: center; gap: 2rem; margin-top: 2.5rem; }
+  .page {
+    width: 100%; max-width: 720px; display: block;
+    border-radius: 2px;
+    box-shadow: 0 30px 60px rgba(0,0,0,0.55), 0 2px 6px rgba(0,0,0,0.4);
+    user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;
+    pointer-events: none;
+  }
+  nav.between { display: flex; justify-content: space-between; margin-top: 3rem; font-style: italic; }
+  nav.between a { color: var(--muted); text-decoration: none; }
+  nav.between a:hover { color: var(--accent); }
+  .colophon { color: var(--muted); font-size: 0.8rem; font-style: italic; margin-top: 3rem; text-align: center; }
+  a.close {
+    position: fixed; top: 1rem; right: 1rem; z-index: 10;
+    width: 2.75rem; height: 2.75rem; display: flex; align-items: center; justify-content: center;
+    border-radius: 999px; color: var(--text); text-decoration: none;
+    background: rgba(21, 19, 17, 0.7); border: 1px solid rgba(232, 226, 214, 0.25);
+    backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+    font-size: 1.5rem; line-height: 1; transition: border-color 0.2s ease, color 0.2s ease;
+  }
+  a.close:hover { color: var(--accent); border-color: var(--accent); }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <a class="back" href="/">← Step Into Dev</a>
+    <h1>Words</h1>
+    <p class="lede">Poems, set as pages. They are pictures of words rather than words, so read them here, slowly, the way you would a book left open on a table.</p>
+    <ul class="poems">
+      <li><a href="/words/trying-to-have-something-right-afterwards.html" data-date="2026-09-07"><span class="t">Trying to have something right afterwards</span><span class="d">7 September 2026</span></a></li>
+      <li><a href="/words/no-you-didn-t-check-that.html" data-date="2026-09-07"><span class="t">No you didn&#x27;t check that</span><span class="d">7 September 2026</span></a></li>
+      <li><a href="/words/another-hope.html" data-date="2026-09-07"><span class="t">Another hope</span><span class="d">7 September 2026</span></a></li>
+    </ul>
+    <script>
+      // A poem counts as new for 48 hours from its date's midnight.
+      const FRESH_MS = 48 * 60 * 60 * 1000;
+      document.querySelectorAll('ul.poems a[data-date]').forEach(a => {
+        const d = new Date(a.dataset.date + 'T00:00:00');
+        if (Date.now() - d.getTime() < FRESH_MS) {
+          const b = document.createElement('span');
+          b.className = 'new-badge'; b.textContent = 'new';
+          a.querySelector('.t').appendChild(b);
+        }
+      });
+    </script>
+  </div>
+</body>
+</html>

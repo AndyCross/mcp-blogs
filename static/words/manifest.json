@@ -1,0 +1,35 @@
+{
+  "trying-to-have-something-right-afterwards": {
+    "slug": "trying-to-have-something-right-afterwards",
+    "title": "Trying to have something right afterwards",
+    "dedication": "hommage å Gilbert",
+    "written": "2026-09-07",
+    "source": "Trying to have something right afterwards.md",
+    "sha": "7e55b2f3da915905",
+    "pages": [
+      "trying-to-have-something-right-afterwards.webp"
+    ]
+  },
+  "another-hope": {
+    "slug": "another-hope",
+    "title": "Another hope",
+    "dedication": null,
+    "written": "2026-09-07",
+    "source": "Another hope.md",
+    "sha": "0cac0c710b8162fc",
+    "pages": [
+      "another-hope.webp"
+    ]
+  },
+  "no-you-didn-t-check-that": {
+    "slug": "no-you-didn-t-check-that",
+    "title": "No you didn't check that",
+    "dedication": null,
+    "written": "2026-09-07",
+    "source": "No you didn't check that.md",
+    "sha": "652844ed0a812a05",
+    "pages": [
+      "no-you-didn-t-check-that.webp"
+    ]
+  }
+}
