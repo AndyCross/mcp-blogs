@@ -31,5 +31,16 @@
     "pages": [
       "no-you-didn-t-check-that.webp"
     ]
+  },
+  "in-which-foxhole": {
+    "slug": "in-which-foxhole",
+    "title": "In which foxhole",
+    "dedication": null,
+    "written": "2026-09-07",
+    "source": "In which foxhole.md",
+    "sha": "b5be40dfd6851381",
+    "pages": [
+      "in-which-foxhole.webp"
+    ]
   }
 }
