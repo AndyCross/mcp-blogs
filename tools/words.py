@@ -353,7 +353,8 @@ HEAD = """<!DOCTYPE html>
     font-family: Baskerville, "Libre Baskerville", Georgia, "Times New Roman", serif;
     -webkit-font-smoothing: antialiased;
   }}
-  .wrap {{ max-width: 860px; margin: 0 auto; padding: 3.5rem 1.25rem 5rem; }}
+  .wrap {{ max-width: 860px; margin: 0 auto; padding: 3.5rem 1rem 5rem; }}
+  @media (max-width: 600px) {{ .wrap {{ padding: 3.5rem 0.5rem 4rem; }} .pages {{ margin-top: 1.5rem; }} }}
   a.back {{ color: var(--muted); text-decoration: none; font-size: 0.95rem; }}
   a.back:hover {{ color: var(--accent); }}
   h1 {{ font-weight: 400; font-size: 2.4rem; letter-spacing: 0.01em; margin: 1.5rem 0 0.4rem; }}
@@ -375,7 +376,7 @@ HEAD = """<!DOCTYPE html>
   }}
   .pages {{ display: flex; flex-direction: column; align-items: center; gap: 2rem; margin-top: 2.5rem; }}
   .page {{
-    width: 100%; max-width: 720px; display: block;
+    width: 100%; max-width: 720px; height: auto; display: block;
     border-radius: 2px;
     box-shadow: 0 30px 60px rgba(0,0,0,0.55), 0 2px 6px rgba(0,0,0,0.4);
     user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;
