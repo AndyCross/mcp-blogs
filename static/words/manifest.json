@@ -53,5 +53,16 @@
     "pages": [
       "every-day-is-like-tomorrow.webp"
     ]
+  },
+  "it-s-a-bridge": {
+    "slug": "it-s-a-bridge",
+    "title": "It's a bridge",
+    "dedication": "the connection/la conexión",
+    "written": "2026-09-08",
+    "source": "It's a bridge.md",
+    "sha": "b52408c41e7dad50",
+    "pages": [
+      "it-s-a-bridge.webp"
+    ]
   }
 }
