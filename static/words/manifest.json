@@ -53,5 +53,16 @@
     "pages": [
       "it-s-a-bridge.webp"
     ]
+  },
+  "building-v3": {
+    "slug": "building-v3",
+    "title": "Building v3",
+    "dedication": "this is an attempt at describing /art/ooo",
+    "written": "2026-09-09",
+    "source": "Building v3.md",
+    "sha": "aca61eecbda43dfb",
+    "pages": [
+      "building-v3.webp"
+    ]
   }
 }
