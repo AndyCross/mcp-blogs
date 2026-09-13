@@ -64,5 +64,16 @@
     "pages": [
       "building-v3.webp"
     ]
+  },
+  "objects": {
+    "slug": "objects",
+    "title": "Objects",
+    "dedication": null,
+    "written": "2026-09-13",
+    "source": "Objects.md",
+    "sha": "ed8ee65b7d50a5b2",
+    "pages": [
+      "objects.webp"
+    ]
   }
 }
