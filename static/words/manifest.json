@@ -75,5 +75,38 @@
     "pages": [
       "objects.webp"
     ]
+  },
+  "documento-sin-valor-fiscal": {
+    "slug": "documento-sin-valor-fiscal",
+    "title": "Documento sin valor fiscal",
+    "dedication": null,
+    "written": "2026-09-14",
+    "source": "Documento sin valor fiscal.md",
+    "sha": "d2bd180b2f0f0217",
+    "pages": [
+      "documento-sin-valor-fiscal.webp"
+    ]
+  },
+  "table-four": {
+    "slug": "table-four",
+    "title": "Table four",
+    "dedication": null,
+    "written": "2026-09-14",
+    "source": "Table four.md",
+    "sha": "42a1901be2127311",
+    "pages": [
+      "table-four.webp"
+    ]
+  },
+  "what-can-happen-in-a-month": {
+    "slug": "what-can-happen-in-a-month",
+    "title": "What can happen in a month",
+    "dedication": null,
+    "written": "2026-09-14",
+    "source": "What can happen in a month.md",
+    "sha": "8b36d350ac763866",
+    "pages": [
+      "what-can-happen-in-a-month.webp"
+    ]
   }
 }

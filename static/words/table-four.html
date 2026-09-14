@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Words — Step Into Dev</title>
+<title>Table four — Words</title>
 <script src="https://cdn.counter.dev/script.js" data-id="72d92ac8-56cf-4fdd-9899-b73adbab2e4d" data-utcoffset="0"></script>
 <style>
   :root {
@@ -65,33 +65,16 @@
 </head>
 <body>
   <div class="wrap">
-    <a class="back" href="/">← Step Into Dev</a>
-    <h1>Words</h1>
-    <p class="lede">Poems, set as pages. They are pictures of words rather than words, so read them here, slowly, the way you would a book left open on a table.</p>
-    <ul class="poems">
-      <li><a href="/words/what-can-happen-in-a-month.html" data-date="2026-09-14"><span class="t">What can happen in a month</span><span class="d">14 September 2026</span></a></li>
-      <li><a href="/words/table-four.html" data-date="2026-09-14"><span class="t">Table four</span><span class="d">14 September 2026</span></a></li>
-      <li><a href="/words/documento-sin-valor-fiscal.html" data-date="2026-09-14"><span class="t">Documento sin valor fiscal</span><span class="d">14 September 2026</span></a></li>
-      <li><a href="/words/objects.html" data-date="2026-09-13"><span class="t">Objects</span><span class="d">13 September 2026</span></a></li>
-      <li><a href="/words/building-v3.html" data-date="2026-09-09"><span class="t">Building v3</span><span class="d">9 September 2026</span></a></li>
-      <li><a href="/words/it-s-a-bridge.html" data-date="2026-09-08"><span class="t">It&#x27;s a bridge</span><span class="d">8 September 2026</span></a></li>
-      <li><a href="/words/every-day-is-like-tomorrow.html" data-date="2026-08-31"><span class="t">Every day is like tomorrow</span><span class="d">31 August 2026</span></a></li>
-      <li><a href="/words/in-which-foxhole.html" data-date="2026-08-23"><span class="t">In which foxhole</span><span class="d">23 August 2026</span></a></li>
-      <li><a href="/words/no-you-didn-t-check-that.html" data-date="2026-08-16"><span class="t">No you didn&#x27;t check that</span><span class="d">16 August 2026</span></a></li>
-      <li><a href="/words/trying-to-have-something-right-afterwards.html" data-date="2026-08-09"><span class="t">Trying to have something right afterwards</span><span class="d">9 August 2026</span></a></li>
-    </ul>
-    <script>
-      // A poem counts as new for 48 hours from its date's midnight.
-      const FRESH_MS = 48 * 60 * 60 * 1000;
-      document.querySelectorAll('ul.poems a[data-date]').forEach(a => {
-        const d = new Date(a.dataset.date + 'T00:00:00');
-        if (Date.now() - d.getTime() < FRESH_MS) {
-          const b = document.createElement('span');
-          b.className = 'new-badge'; b.textContent = 'new';
-          a.querySelector('.t').appendChild(b);
-        }
-      });
-    </script>
+    <a class="close" href="/words/" aria-label="Back to Words" title="Back to Words">×</a>
+    <a class="back" href="/words/">← Words</a>
+    <div class="pages">
+      <img class="page" src="/words/pages/table-four.webp" alt="Table four, page 1" draggable="false" width="720" height="1040" loading="eager">
+    </div>
+    <nav class="between">
+      <a href="/words/what-can-happen-in-a-month.html">← What can happen in a month</a>
+      <a href="/words/documento-sin-valor-fiscal.html">Documento sin valor fiscal →</a>
+    </nav>
+    <p class="colophon">Set in Baskerville.</p>
   </div>
 </body>
 </html>
