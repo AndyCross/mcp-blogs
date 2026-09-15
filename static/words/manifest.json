@@ -65,17 +65,6 @@
       "building-v3.webp"
     ]
   },
-  "objects": {
-    "slug": "objects",
-    "title": "Objects",
-    "dedication": null,
-    "written": "2026-09-13",
-    "source": "Objects.md",
-    "sha": "a6ca2866a95f1e79",
-    "pages": [
-      "objects.webp"
-    ]
-  },
   "documento-sin-valor-fiscal": {
     "slug": "documento-sin-valor-fiscal",
     "title": "Documento sin valor fiscal",
@@ -107,6 +96,17 @@
     "sha": "8b36d350ac763866",
     "pages": [
       "what-can-happen-in-a-month.webp"
+    ]
+  },
+  "not-to-flowers": {
+    "slug": "not-to-flowers",
+    "title": "Not to flowers",
+    "dedication": null,
+    "written": "2026-09-15",
+    "source": "Not to flowers.md",
+    "sha": "234a961f09d7a195",
+    "pages": [
+      "not-to-flowers.webp"
     ]
   }
 }
