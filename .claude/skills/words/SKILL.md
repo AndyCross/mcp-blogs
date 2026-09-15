@@ -66,6 +66,12 @@ Verse lines. A blank line is a stanza break.
   hash changes). Renaming the title changes the slug, so the old entry
   lingers in the manifest: delete its object from `manifest.json` and
   its images from `static/words/pages/` by hand, then rerun.
+- To unlist a poem, move its source to `~/poetry_unlisted/`. The
+  manifest still remembers it and the renderer will keep listing it, so
+  also delete its object from `manifest.json`, remove
+  `static/words/<slug>.html` and its images from `static/words/pages/`,
+  then rerun so the index and the neighbours' previous/next links drop
+  it. Check with `grep -rl <slug> static/words` that nothing remains.
 - `--force` redraws everything, for instance after changing the page
   design in `tools/words.py`.
 
