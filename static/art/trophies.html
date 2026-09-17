@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Things I hold true</title>
+<script src="https://cdn.counter.dev/script.js" data-id="72d92ac8-56cf-4fdd-9899-b73adbab2e4d" data-utcoffset="0"></script>
+<style>
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; background: #050403; }
+    #container { position: fixed; inset: 0; }
+    canvas { display: block; width: 100vw; height: 100vh; cursor: grab; touch-action: none; }
+    canvas:active { cursor: grabbing; }
+
+    /* ---- Title ---- */
+    #title {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        pointer-events: none;
+        z-index: 10;
+        text-align: center;
+        padding: 1.5rem;
+        transition: opacity 4s ease 1s;
+    }
+    #title.gone { opacity: 0; }
+    #title h1 {
+        font-family: "Georgia", "Times New Roman", serif;
+        font-weight: 400;
+        font-style: italic;
+        font-size: clamp(2rem, 6.5vw, 4.4rem);
+        letter-spacing: 0.015em;
+        color: #f3e6c8;
+        margin: 0;
+        text-shadow: 0 2px 18px rgba(0, 0, 0, 0.85), 0 0 38px rgba(255, 196, 110, 0.45), 0 0 90px rgba(160, 110, 40, 0.4);
+        opacity: 0;
+        animation: bloom 5s ease forwards 0.6s;
+    }
+    #whisper {
+        font-family: "Georgia", serif;
+        font-style: italic;
+        font-size: clamp(0.9rem, 2.3vw, 1.1rem);
+        color: rgba(243, 230, 200, 0.6);
+        text-shadow: 0 1px 12px rgba(0, 0, 0, 0.75);
+        margin-top: 1.5rem;
+        opacity: 0;
+        animation: bloom 5s ease forwards 2.4s;
+    }
+    @keyframes bloom {
+        from { opacity: 0; filter: blur(10px); transform: translateY(10px); }
+        to   { opacity: 1; filter: blur(0);    transform: translateY(0); }
+    }
+
+    /* ---- Hint ---- */
+    #hint {
+        position: fixed;
+        bottom: 1.5rem;
+        left: 0; right: 0;
+        text-align: center;
+        font-family: "Courier New", monospace;
+        font-size: 0.72rem;
+        letter-spacing: 0.32em;
+        text-transform: uppercase;
+        color: rgba(243, 230, 200, 0.34);
+        pointer-events: none;
+        z-index: 9;
+        opacity: 0;
+        animation: bloom 3s ease forwards 6.5s;
+    }
+    .lil-gui { z-index: 20; --background-color: rgba(14, 10, 6, 0.9); }
+</style>
+</head>
+<body>
+    <div id="container"></div>
+    <div id="title">
+        <h1>Things I hold true</h1>
+        <div id="whisper">If you see this, you may know its meaning. (ES)</div>
+    </div>
+    <div id="hint">drag to turn it &nbsp;·&nbsp; scroll to come closer</div>
+
+    <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/",
+        "lil-gui": "https://cdn.jsdelivr.net/npm/lil-gui@0.19.1/dist/lil-gui.esm.min.js"
+      }
+    }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+        import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+        import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+        import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+        import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+        import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+        import GUI from 'lil-gui';
+
+        // ============================================================
+        //  TROPHIES
+        //  One golden owl on a plinth in a dark room. It turns slowly on
+        //  its own; you may turn it yourself. A single warm light from
+        //  above, a cool sliver from behind, and dust in the air.
+        //  Units are metres. The owl stands about a metre tall so the
+        //  camera maths stays readable.
+        // ============================================================
+
+        const params = {
+            dpr: Math.min(window.devicePixelRatio, 1.6),
+            owlHeight: 1.0,
+            autoRotate: 0.35,
+            exposure: 1.0,
+            bloomStrength: 0.35,
+            bloomRadius: 0.4,
+            bloomThreshold: 0.8,
+            keyIntensity: 26,
+            rimIntensity: 6,
+        };
+
+        let camera, scene, renderer, composer, bloomPass, controls, motes, keyLight, rimLight, owl;
+        const clock = new THREE.Clock();
+        const pedestal = new THREE.Group();
+
+        function init() {
+            const container = document.getElementById('container');
+
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x050403);
+            scene.fog = new THREE.Fog(0x050403, 4.5, 11);
+
+            camera = new THREE.PerspectiveCamera(32, innerWidth / innerHeight, 0.05, 40);
+            camera.position.set(0.9, 0.95, 3.1);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+            renderer.setPixelRatio(params.dpr);
+            renderer.setSize(innerWidth, innerHeight);
+            renderer.toneMapping = THREE.ACESFilmicToneMapping;
+            renderer.toneMappingExposure = params.exposure;
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            container.appendChild(renderer.domElement);
+
+            buildEnvironment();
+            buildLights();
+            buildRoom();
+            buildMotes();
+            loadOwl();
+            buildComposer();
+            setupControls();
+            setupGUI();
+
+            setTimeout(() => document.getElementById('title').classList.add('gone'), 7500);
+            window.addEventListener('resize', onResize);
+        }
+
+        // ---- environment: a small dark room baked to a PMREM, so the gold
+        //      has something to reflect. Warm above and right, cool left. ----
+        function buildEnvironment() {
+            const env = new THREE.Scene();
+            env.background = new THREE.Color(0x030202);
+            const add = (w, h, c, i, x, y, z, rx = 0, ry = 0) => {
+                const m = new THREE.Mesh(
+                    new THREE.PlaneGeometry(w, h),
+                    new THREE.MeshBasicMaterial({ color: new THREE.Color(c).multiplyScalar(i) })
+                );
+                m.position.set(x, y, z);
+                m.rotation.set(rx, ry, 0);
+                env.add(m);
+            };
+            add(2.0, 2.0, 0xffd9a0, 5.0, 0, 3.0, 0, Math.PI / 2);          // warm lamp overhead
+            add(1.2, 3.0, 0xffbf80, 2.2, 3.0, 1.2, 0.6, 0, -Math.PI / 2);   // warm wall, right
+            add(0.6, 3.0, 0x6f8fc0, 1.4, -3.0, 1.2, -0.8, 0, Math.PI / 2);  // cool sliver, left
+            add(4.0, 1.0, 0x3a2a18, 0.5, 0, 0.3, -3.0);                    // dim wall behind
+            const pmrem = new THREE.PMREMGenerator(renderer);
+            scene.environment = pmrem.fromScene(env, 0.04).texture;
+            pmrem.dispose();
+        }
+
+        function buildLights() {
+            scene.add(new THREE.AmbientLight(0x2a2016, 0.6));
+
+            // the key: one warm spot from high and slightly forward, shadowed
+            keyLight = new THREE.SpotLight(0xffd39a, params.keyIntensity, 0, Math.PI / 7, 0.55, 1.6);
+            keyLight.position.set(0.9, 3.4, 1.6);
+            keyLight.castShadow = true;
+            keyLight.shadow.mapSize.set(2048, 2048);
+            keyLight.shadow.bias = -0.0004;
+            keyLight.shadow.normalBias = 0.01;
+            keyLight.shadow.camera.near = 0.5;
+            keyLight.shadow.camera.far = 8;
+            scene.add(keyLight);
+            scene.add(keyLight.target);
+            keyLight.target.position.set(0, 0.55, 0);
+
+            // the rim: a cool edge from behind-left so the silhouette reads
+            rimLight = new THREE.PointLight(0x7f9fd0, params.rimIntensity, 0, 2);
+            rimLight.position.set(-1.8, 1.4, -1.6);
+            scene.add(rimLight);
+        }
+
+        // ---- the room: a floor that falls away into the dark, and a plinth ----
+        function buildRoom() {
+            const floor = new THREE.Mesh(
+                new THREE.CircleGeometry(7, 64),
+                new THREE.MeshStandardMaterial({ color: 0x14100b, roughness: 0.85, metalness: 0.05 })
+            );
+            floor.rotation.x = -Math.PI / 2;
+            floor.receiveShadow = true;
+            scene.add(floor);
+
+            const stone = new THREE.MeshStandardMaterial({ color: 0x1c1813, roughness: 0.55, metalness: 0.1 });
+            const base = new THREE.Mesh(new THREE.CylinderGeometry(0.46, 0.5, 0.08, 64), stone);
+            base.position.y = 0.04;
+            const column = new THREE.Mesh(new THREE.CylinderGeometry(0.38, 0.42, 0.62, 64), stone);
+            column.position.y = 0.08 + 0.31;
+            const cap = new THREE.Mesh(new THREE.CylinderGeometry(0.44, 0.40, 0.06, 64), stone);
+            cap.position.y = 0.70 + 0.03;
+            // a thin brass ring where the cap meets the column
+            const ring = new THREE.Mesh(
+                new THREE.TorusGeometry(0.405, 0.008, 16, 96),
+                new THREE.MeshStandardMaterial({ color: 0xc9a24a, roughness: 0.3, metalness: 1.0 })
+            );
+            ring.rotation.x = Math.PI / 2;
+            ring.position.y = 0.70;
+            for (const m of [base, column, cap, ring]) { m.castShadow = true; m.receiveShadow = true; }
+            pedestal.add(base, column, cap, ring);
+            pedestal.userData.top = 0.76;
+            scene.add(pedestal);
+        }
+
+        // ---- the owl itself: meshopt-compressed scan, sized and set on the cap ----
+        function loadOwl() {
+            const loader = new GLTFLoader();
+            loader.setMeshoptDecoder(MeshoptDecoder);
+            loader.load('trophies/owl.glb', (gltf) => {
+                owl = gltf.scene;
+                const box = new THREE.Box3().setFromObject(owl);
+                const size = box.getSize(new THREE.Vector3());
+                owl.scale.setScalar(params.owlHeight / size.y);
+                box.setFromObject(owl);
+                const centre = box.getCenter(new THREE.Vector3());
+                owl.position.set(-centre.x, pedestal.userData.top - box.min.y, -centre.z);
+                owl.traverse((o) => {
+                    if (o.isMesh) {
+                        o.castShadow = true;
+                        o.receiveShadow = true;
+                        o.material.envMapIntensity = 1.4;
+                    }
+                });
+                pedestal.add(owl);
+            }, undefined, (err) => console.error('owl.glb failed to load', err));
+        }
+
+        // ---- dust in the shaft of light ----
+        function buildMotes() {
+            const COUNT = 260;
+            const pos = new Float32Array(COUNT * 3);
+            const seed = new Float32Array(COUNT);
+            for (let i = 0; i < COUNT; i++) {
+                const r = Math.sqrt(Math.random()) * 1.6;
+                const t = Math.random() * Math.PI * 2;
+                pos[i * 3] = Math.cos(t) * r;
+                pos[i * 3 + 1] = 0.1 + Math.random() * 2.6;
+                pos[i * 3 + 2] = Math.sin(t) * r;
+                seed[i] = Math.random();
+            }
+            const geo = new THREE.BufferGeometry();
+            geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+            geo.setAttribute('aSeed', new THREE.BufferAttribute(seed, 1));
+            const mat = new THREE.ShaderMaterial({
+                transparent: true,
+                depthWrite: false,
+                blending: THREE.AdditiveBlending,
+                uniforms: { uTime: { value: 0 } },
+                vertexShader: `
+                    attribute float aSeed;
+                    uniform float uTime;
+                    varying float vTw;
+                    void main(){
+                        vec3 p = position;
+                        float t = uTime * (0.04 + aSeed * 0.06);
+                        p.x += sin(t + aSeed * 30.0) * 0.12;
+                        p.y += sin(t * 0.7 + aSeed * 17.0) * 0.10 - uTime * 0.01 * aSeed;
+                        p.y = 0.1 + mod(p.y - 0.1, 2.6);
+                        p.z += cos(t * 1.1 + aSeed * 9.0) * 0.12;
+                        vTw = 0.3 + 0.7 * (0.5 + 0.5 * sin(uTime * 1.2 + aSeed * 40.0));
+                        vec4 mv = modelViewMatrix * vec4(p, 1.0);
+                        gl_PointSize = (5.0 + aSeed * 9.0) / max(1.0, -mv.z);
+                        gl_Position = projectionMatrix * mv;
+                    }
+                `,
+                fragmentShader: `
+                    precision highp float;
+                    varying float vTw;
+                    void main(){
+                        vec2 d = gl_PointCoord - 0.5;
+                        float a = smoothstep(0.5, 0.0, length(d));
+                        gl_FragColor = vec4(vec3(1.0, 0.88, 0.62) * vTw, a * vTw * 0.45);
+                    }
+                `,
+            });
+            motes = new THREE.Points(geo, mat);
+            motes.frustumCulled = false;
+            scene.add(motes);
+        }
+
+        function buildComposer() {
+            composer = new EffectComposer(renderer);
+            composer.setPixelRatio(params.dpr);
+            composer.setSize(innerWidth, innerHeight);
+            composer.addPass(new RenderPass(scene, camera));
+            bloomPass = new UnrealBloomPass(
+                new THREE.Vector2(innerWidth, innerHeight),
+                params.bloomStrength, params.bloomRadius, params.bloomThreshold
+            );
+            composer.addPass(bloomPass);
+            composer.addPass(new OutputPass());
+        }
+
+        function setupControls() {
+            controls = new OrbitControls(camera, renderer.domElement);
+            controls.target.set(0, 1.15, 0);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.06;
+            controls.enablePan = false;
+            controls.minDistance = 1.2;
+            controls.maxDistance = 6.0;
+            controls.minPolarAngle = 0.25;
+            controls.maxPolarAngle = Math.PI / 2 - 0.04;   // never below the floor
+            controls.autoRotate = true;
+            controls.autoRotateSpeed = params.autoRotate;
+            controls.update();
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const dt = Math.min(clock.getDelta(), 0.05);
+            const t = clock.elapsedTime;
+
+            // the lamp breathes, barely
+            keyLight.intensity = params.keyIntensity * (0.97 + 0.03 * Math.sin(t * 0.9) * Math.sin(t * 2.3));
+            motes.material.uniforms.uTime.value = t;
+
+            controls.autoRotateSpeed = params.autoRotate;
+            controls.update(dt);
+            composer.render();
+        }
+
+        function onResize() {
+            camera.aspect = innerWidth / innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(innerWidth, innerHeight);
+            composer.setSize(innerWidth, innerHeight);
+        }
+
+        function setupGUI() {
+            const gui = new GUI({ title: 'trophies' });
+            gui.add(params, 'autoRotate', 0.0, 2.0, 0.05).name('Turn');
+            const vis = gui.addFolder('Light');
+            vis.add(params, 'exposure', 0.4, 2.0, 0.02).name('Exposure').onChange((v) => renderer.toneMappingExposure = v);
+            vis.add(params, 'keyIntensity', 0, 60, 0.5).name('Lamp');
+            vis.add(params, 'rimIntensity', 0, 20, 0.25).name('Rim').onChange((v) => rimLight.intensity = v);
+            vis.add(params, 'bloomStrength', 0.0, 2.0, 0.02).name('Bloom').onChange((v) => bloomPass.strength = v);
+            vis.add(params, 'bloomRadius', 0.0, 1.0, 0.02).name('Bloom radius').onChange((v) => bloomPass.radius = v);
+            vis.add(params, 'bloomThreshold', 0.0, 1.0, 0.02).name('Bloom threshold').onChange((v) => bloomPass.threshold = v);
+            gui.close();
+            gui.domElement.style.display = 'none';
+            window.addEventListener('keydown', (e) => {
+                if (e.key === 'g' || e.key === 'G') {
+                    const d = gui.domElement.style;
+                    d.display = d.display === 'none' ? '' : 'none';
+                }
+            });
+        }
+
+        init();
+        animate();
+    </script>
+</body>
+</html>
