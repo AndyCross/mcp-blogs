@@ -24,7 +24,7 @@
       "sky_color": "#667790",
       "depth": 0.194,
       "elevation": 21.8,
-      "azimuth": 12.4,
+      "azimuth": 12.0,
       "horizon": null,
       "taken": "2026-08-08"
     },
@@ -38,7 +38,7 @@
       "sky_color": "#95adc3",
       "depth": 0.198,
       "elevation": 21.9,
-      "azimuth": 24.8,
+      "azimuth": 24.0,
       "horizon": null,
       "taken": "2026-08-22"
     },
@@ -52,7 +52,7 @@
       "sky_color": "#5c6e8c",
       "depth": 0.248,
       "elevation": 23.4,
-      "azimuth": 37.2,
+      "azimuth": 36.0,
       "horizon": null,
       "taken": "2026-08-18"
     },
@@ -66,7 +66,7 @@
       "sky_color": "#839bc0",
       "depth": 0.263,
       "elevation": 11.2,
-      "azimuth": 49.7,
+      "azimuth": 48.0,
       "horizon": null,
       "taken": "2026-08-17"
     },
@@ -80,7 +80,7 @@
       "sky_color": "#60789d",
       "depth": 0.267,
       "elevation": 24.0,
-      "azimuth": 62.1,
+      "azimuth": 60.0,
       "horizon": null,
       "taken": "2026-08-17"
     },
@@ -94,7 +94,7 @@
       "sky_color": "#8fabcf",
       "depth": 0.276,
       "elevation": 0.0,
-      "azimuth": 74.5,
+      "azimuth": 72.0,
       "horizon": 0.115,
       "taken": "2026-08-15"
     },
@@ -108,7 +108,7 @@
       "sky_color": "#88a2ca",
       "depth": 0.285,
       "elevation": 24.5,
-      "azimuth": 86.9,
+      "azimuth": 84.0,
       "horizon": null,
       "taken": "2026-08-30"
     },
@@ -122,7 +122,7 @@
       "sky_color": "#5d779d",
       "depth": 0.287,
       "elevation": 24.6,
-      "azimuth": 99.3,
+      "azimuth": 96.0,
       "horizon": null,
       "taken": "2026-08-01"
     },
@@ -136,7 +136,7 @@
       "sky_color": "#7590b8",
       "depth": 0.289,
       "elevation": 0.0,
-      "azimuth": 111.7,
+      "azimuth": 108.0,
       "horizon": 0.609,
       "taken": "2026-08-15"
     },
@@ -150,7 +150,7 @@
       "sky_color": "#404d65",
       "depth": 0.334,
       "elevation": 26.0,
-      "azimuth": 124.1,
+      "azimuth": 120.0,
       "horizon": null,
       "taken": "2026-08-30"
     },
@@ -164,9 +164,23 @@
       "sky_color": "#475675",
       "depth": 0.34,
       "elevation": 12.1,
-      "azimuth": 136.6,
+      "azimuth": 132.0,
       "horizon": null,
       "taken": "2026-08-24"
+    },
+    {
+      "name": "img_5815.jpg",
+      "source": "IMG_5815.HEIC",
+      "mode": "sky",
+      "width": 1200,
+      "height": 1600,
+      "sky_fraction": 1.0,
+      "sky_color": "#6f8ec1",
+      "depth": 0.354,
+      "elevation": 26.6,
+      "azimuth": 144.0,
+      "horizon": null,
+      "taken": "2026-09-17"
     },
     {
       "name": "img_5227.jpg",
@@ -178,7 +192,7 @@
       "sky_color": "#7c9bcf",
       "depth": 0.358,
       "elevation": 26.7,
-      "azimuth": 149.0,
+      "azimuth": 156.0,
       "horizon": null,
       "taken": "2026-08-15"
     },
@@ -192,7 +206,7 @@
       "sky_color": "#7697cb",
       "depth": 0.367,
       "elevation": 27.0,
-      "azimuth": 161.4,
+      "azimuth": 168.0,
       "horizon": null,
       "taken": "2026-08-08"
     },
@@ -206,7 +220,7 @@
       "sky_color": "#4e689b",
       "depth": 0.395,
       "elevation": 12.7,
-      "azimuth": 173.8,
+      "azimuth": 180.0,
       "horizon": null,
       "taken": "2026-08-16"
     },
@@ -220,7 +234,7 @@
       "sky_color": "#597bb6",
       "depth": 0.401,
       "elevation": 28.0,
-      "azimuth": 186.2,
+      "azimuth": 192.0,
       "horizon": null,
       "taken": "2026-09-05"
     },
@@ -234,7 +248,7 @@
       "sky_color": "#6184bf",
       "depth": 0.405,
       "elevation": 12.9,
-      "azimuth": 198.6,
+      "azimuth": 204.0,
       "horizon": null,
       "taken": "2026-07-31"
     },
@@ -248,7 +262,7 @@
       "sky_color": "#6a8ec8",
       "depth": 0.405,
       "elevation": 12.9,
-      "azimuth": 211.0,
+      "azimuth": 216.0,
       "horizon": null,
       "taken": "2026-08-13"
     },
@@ -262,7 +276,7 @@
       "sky_color": "#6186c5",
       "depth": 0.431,
       "elevation": 28.9,
-      "azimuth": 223.4,
+      "azimuth": 228.0,
       "horizon": null,
       "taken": "2026-08-15"
     },
@@ -276,7 +290,7 @@
       "sky_color": "#7096d6",
       "depth": 0.44,
       "elevation": 13.3,
-      "azimuth": 235.9,
+      "azimuth": 240.0,
       "horizon": null,
       "taken": "2026-08-15"
     },
@@ -290,7 +304,7 @@
       "sky_color": "#6f97dc",
       "depth": 0.47,
       "elevation": 13.6,
-      "azimuth": 248.3,
+      "azimuth": 252.0,
       "horizon": null,
       "taken": "2026-08-15"
     },
@@ -304,7 +318,7 @@
       "sky_color": "#44629f",
       "depth": 0.489,
       "elevation": 30.7,
-      "azimuth": 260.7,
+      "azimuth": 264.0,
       "horizon": null,
       "taken": "2026-09-16"
     },
@@ -318,7 +332,7 @@
       "sky_color": "#446aa0",
       "depth": 0.491,
       "elevation": 30.7,
-      "azimuth": 273.1,
+      "azimuth": 276.0,
       "horizon": null,
       "taken": "2026-08-02"
     },
@@ -332,7 +346,7 @@
       "sky_color": "#426095",
       "depth": 0.491,
       "elevation": 30.7,
-      "azimuth": 285.5,
+      "azimuth": 288.0,
       "horizon": null,
       "taken": "2026-08-15"
     },
@@ -346,7 +360,7 @@
       "sky_color": "#4162a0",
       "depth": 0.519,
       "elevation": 31.6,
-      "azimuth": 297.9,
+      "azimuth": 300.0,
       "horizon": null,
       "taken": "2026-09-12"
     },
@@ -360,7 +374,7 @@
       "sky_color": "#35558f",
       "depth": 0.622,
       "elevation": 34.7,
-      "azimuth": 310.3,
+      "azimuth": 312.0,
       "horizon": null,
       "taken": "2026-08-02"
     },
@@ -374,7 +388,7 @@
       "sky_color": "#365b99",
       "depth": 0.625,
       "elevation": 34.8,
-      "azimuth": 322.8,
+      "azimuth": 324.0,
       "horizon": null,
       "taken": "2026-08-16"
     },
@@ -388,7 +402,7 @@
       "sky_color": "#2b4f82",
       "depth": 0.731,
       "elevation": 37.9,
-      "azimuth": 335.2,
+      "azimuth": 336.0,
       "horizon": null,
       "taken": "2026-09-01"
     },
@@ -402,7 +416,7 @@
       "sky_color": "#234374",
       "depth": 0.831,
       "elevation": 40.9,
-      "azimuth": 347.6,
+      "azimuth": 348.0,
       "horizon": null,
       "taken": "2026-08-30"
     }
