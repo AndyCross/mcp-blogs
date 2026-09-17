@@ -108,5 +108,16 @@
     "pages": [
       "not-to-flowers.webp"
     ]
+  },
+  "u-shaped": {
+    "slug": "u-shaped",
+    "title": "U shaped",
+    "dedication": null,
+    "written": "2026-09-17",
+    "source": "The valley remembers the glacier.md",
+    "sha": "5fc69a9e39c902ba",
+    "pages": [
+      "u-shaped.webp"
+    ]
   }
 }
