@@ -119,5 +119,27 @@
     "pages": [
       "u-shaped.webp"
     ]
+  },
+  "quantum": {
+    "slug": "quantum",
+    "title": "QUANTUM",
+    "dedication": null,
+    "written": "2026-09-19",
+    "source": "Quantum.md",
+    "sha": "7460d1b7c900b8b0",
+    "pages": [
+      "quantum.webp"
+    ]
+  },
+  "to-look-at-you": {
+    "slug": "to-look-at-you",
+    "title": "To look at you",
+    "dedication": null,
+    "written": "2026-09-18",
+    "source": "To look at you.md",
+    "sha": "323f3ac61eec27aa",
+    "pages": [
+      "to-look-at-you.webp"
+    ]
   }
 }
